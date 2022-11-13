@@ -6,7 +6,7 @@ This is fundamentally grounded in our belief that accessibility is the differenc
 
 For more info and details, please read this [article](https://hackmd.io/@REJeq0MuTUiqnjx9w5SsUA/HJj9s-nfi#Rainlang-has-a-spectrum-of-representations-from-concise-gtexplicit)
 
-If you find an issue or you want to propose a better way to show a specific script or opcodes, pleasefeel to do it on: [issues](https://github.com/rouzwelt/rainlang/issues)
+If you find an issue or you want to propose an improvement, please feel to post it on: [issues](https://github.com/rouzwelt/rainlang/issues)
 
 
 ## **Tutorial**
@@ -19,7 +19,7 @@ npm install --save-dev https://github.com/rouzwelt/rainlang.git
 
 
 ### **Parser**
-Parser is a compiler to generate a valid StateConfig (deployable bytes) from a text i.e. rain expressions.
+Parser is a compiler to generate a valid StateConfig (deployable bytes) from rain expressions.
 ```typescript
 // to import
 import { Parser } from "@beehiveinnovation/rainlang";
@@ -47,9 +47,9 @@ let parseTree = Parser.getParseTree(expression, [, customOpMeta]);
 // to get StateConfig only
 let stateConfig = Parser.getStateConfig(expression, [, customOpMeta]);
 
-// to build StateConfig (bytes) from ParseTree object or a Node or array of Node
+// to build(compile) StateConfig from ParseTree object or a Node or array of Node
 let argument: Node || Node[] || ParseTree = objectInstanceOfSpecifiedType;
-let stateConfig = Parser.buildBytes(argument)
+let stateConfig = Parser.compile(argument)
 ```
 
 

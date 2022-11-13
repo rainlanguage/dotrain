@@ -9,9 +9,10 @@
 type IOpMeta = {
     enum: number;
     name: string;
-    pushes: (opcode: number, operand: number) => number;
-    pops: (opcode: number, operand: number) => number;
-    isZeroOperand: boolean;
+    outputs: IOpIO;
+    inputs: IOpIO;
+    operand: IOperand;
+    paramsValidRange: ParamsValidRange;
     description?: string;
     aliases?: string[];
     data?: any;

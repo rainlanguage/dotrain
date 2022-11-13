@@ -10,5 +10,6 @@ Type of Parser's Error node
 type Error = {
     error: string;
     position: number[];
+    tag?: Tag;
 };
 ```

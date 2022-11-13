@@ -10,6 +10,7 @@ Type of Parser's State
 type State = {
     parse: {
         tree: Node[];
+        tags: Tag[][];
         moCache: (Op | Value)[][];
     };
     track: {
@@ -17,6 +18,11 @@ type State = {
         parens: {
             open: number[];
             close: number[];
+        };
+        operandArgs: {
+            cache: number[][];
+            errorCache: string[];
+            lenCache: number[];
         };
     };
     depthLevel: number;

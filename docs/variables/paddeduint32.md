@@ -7,5 +7,5 @@ Utility function to produce 32 bits size hexString
 <b>Signature:</b>
 
 ```typescript
-paddedUInt32: (number: BigNumberish) => string
+paddedUInt32: (value: BigNumberish) => string
 ```

@@ -1,62 +1,62 @@
 {
-  "name": "@beehiveinnovation/rainlang",
-  "description": "Formatter and Parser written in Typescript used to read and write in Rain Language",
-  "version": "0.1.0",
-  "author": "Beehive Innovation",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/beehive-innovation/rainlang.git"
-  },
-  "keywords": [],
-  "bugs": {
-    "url": "https://github.com/beehive-innovation/rainlang/issues"
-  },
-  "homepage": "http://beehive-innovation.github.io/rainlang/",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
-  "module": "dist/rainlang.esm.js",
-  "files": [
-    "dist",
-    "src",
-    "docs"
-  ],
-  "engines": {
-    "node": ">=10"
-  },
-  "scripts": {
-    "build": "tsc",
-    "prepare": "tsc",
-    "test": "npx hardhat test",
-    "lint": "eslint \"src/**\" \"test/**\"",
-    "docgen": "api-extractor run --local && api-documenter -i ./ -o ./docs"
-  },
-  "prettier": {
-    "printWidth": 100,
-    "singleQuote": true,
-    "semi": false,
-    "tabWidth": 4,
-    "useTabs": false,
-    "trailingComma": "es5"
-  },
-  "devDependencies": {
-    "@microsoft/api-extractor": "^7.33.5",
-    "@princjef/api-documenter": "^1.0.2",
-    "@types/chai": "^4.3.3",
-    "@types/mocha": "^10.0.0",
-    "@types/node": "^18.11.9",
-    "@typescript-eslint/eslint-plugin": "^5.42.0",
-    "@typescript-eslint/parser": "^5.42.0",
-    "chai": "^4.3.6",
-    "eslint": "^8.26.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "mocha": "^10.1.0",
-    "ts-node": "^10.9.1",
-    "tslib": "^2.4.1",
-    "typescript": "^4.8.4"
-  },
-  "dependencies": {
-    "ethers": "^5.7.2",
-    "prettier": "^2.7.1"
-  }
+    "name": "@beehiveinnovation/rainlang",
+    "description": "Formatter and Parser written in Typescript used to read and write in Rain Language",
+    "version": "1.0.0",
+    "author": "Beehive Innovation",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/beehive-innovation/rainlang.git"
+    },
+    "keywords": [],
+    "bugs": {
+        "url": "https://github.com/beehive-innovation/rainlang/issues"
+    },
+    "homepage": "http://beehive-innovation.github.io/rainlang/",
+    "main": "dist/index.js",
+    "typings": "dist/index.d.ts",
+    "module": "dist/index.js",
+    "files": [
+        "dist",
+        "src",
+        "docs"
+    ],
+    "engines": {
+        "node": ">=10"
+    },
+    "scripts": {
+        "build": "tsc",
+        "prepare": "tsc",
+        "test": "npx hardhat test",
+        "lint": "eslint \"src/**\" \"test/**\"",
+        "docgen": "api-extractor run --local && api-documenter -i ./ -o ./docs"
+    },
+    "prettier": {
+        "printWidth": 100,
+        "singleQuote": true,
+        "semi": false,
+        "tabWidth": 4,
+        "useTabs": false,
+        "trailingComma": "es5"
+    },
+    "devDependencies": {
+        "@microsoft/api-extractor": "^7.33.5",
+        "@princjef/api-documenter": "^1.0.2",
+        "@types/chai": "^4.3.3",
+        "@types/mocha": "^10.0.0",
+        "@types/node": "^18.11.9",
+        "@typescript-eslint/eslint-plugin": "^5.42.0",
+        "@typescript-eslint/parser": "^5.42.0",
+        "chai": "^4.3.6",
+        "eslint": "^8.26.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "mocha": "^10.1.0",
+        "ts-node": "^10.9.1",
+        "tslib": "^2.4.1",
+        "typescript": "^4.8.4"
+    },
+    "dependencies": {
+        "ethers": "^5.7.2",
+        "prettier": "^2.7.1"
+    }
 }

@@ -20,5 +20,6 @@ type Op = {
     data?: any;
     error?: string;
     infixOp?: boolean;
+    tag?: Tag;
 };
 ```
