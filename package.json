@@ -14,7 +14,7 @@
   "homepage": "http://beehive-innovation.github.io/rainlang/",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
-  "module": "dist/rainlang.esm.js",
+  "module": "dist/index.js",
   "files": [
     "dist",
     "src",
