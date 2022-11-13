@@ -55,7 +55,7 @@ let stateConfig = Parser.compile(argument)
 
 ### **Formatter**
 The generator of human friendly readable source.
-Parse an StateConfig/Script to a more human readable form, making easier to understand. This form allows users read exactly
+Format an StateConfig/Script to a more human readable form, making easier to understand. This form allows users read exactly
 what the Script will do, like the conditions, values used, etc. Also, anyone can learn to write their own scripts
 if use the Human Form to see the output for each combination that they made.
 
