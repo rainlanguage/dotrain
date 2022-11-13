@@ -1,7 +1,7 @@
 {
   "name": "@beehiveinnovation/rainlang",
   "description": "Formatter and Parser written in Typescript used to read and write in Rain Language",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "Beehive Innovation",
   "repository": {
     "type": "git",
