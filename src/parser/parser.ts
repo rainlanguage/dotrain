@@ -536,7 +536,7 @@ export class Parser {
         // ----------- convert html &nbps to standard whitespace -----------
         while(script.includes(`&nbsp`)) script = script.replace(`&nbsp`, ' ')
 
-        // ----------- beging caching expression sentences -----------
+        // ----------- begin caching expression sentences -----------
         const originalExp = script
         let offset = 0;
         [script, offset] = this.trimLeft(script)
@@ -562,7 +562,7 @@ export class Parser {
         }
         else expressions.push(script)
 
-        // ----------- beging parsing expression sentences -----------
+        // ----------- begin parsing expression sentences -----------
         for (let i = 0; i < expressions.length; i++) {
             this.reset()
             const entry = positions[i][0]
@@ -573,7 +573,6 @@ export class Parser {
             let lhs: string
 
             // ----------- cache the sub-expressions -----------
-            // if (tmpExp.includes(',')) {
             while (tmpExp.includes(',')) {
                 subExp.push(tmpExp.slice(0, tmpExp.indexOf(',') + 1))
                 subExpEntry.push(expressions[i].length - tmpExp.length)
@@ -582,7 +581,7 @@ export class Parser {
             subExp.push(tmpExp)
             subExpEntry.push(expressions[i].length - tmpExp.length)
 
-            // begin parsing sub-expressions
+            // ----------- begin parsing sub-expressions -----------
             for (let j = 0; j < subExp.length; j++) {
                 this.input = subExp[j]
 
