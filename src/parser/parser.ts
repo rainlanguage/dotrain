@@ -666,7 +666,7 @@ export class Parser {
                                     })
                                 }
                                 this.state.depthLevel++
-                                const op = this.getTreeElement(
+                                const op = this.getLastTreeElementAtDepth(
                                     this.state.depthLevel - 1
                                 ) as Op
                                 op.parens.push(currentPosition)
@@ -688,7 +688,7 @@ export class Parser {
                                         else this.resolveInfix(false)
                                     }
                                     if (postfix && this.isPrefix()) {
-                                        const op = this.getTreeElement(
+                                        const op = this.getLastTreeElementAtDepth(
                                             this.state.depthLevel - 1
                                         ) as Op
                                         this.updateTree(
@@ -717,7 +717,7 @@ export class Parser {
                                         // )
                                         // if (this.exp.startsWith('<')) {
                                         //     const _updtatedOp = this.resolveOperand(
-                                        //         this.getTreeElement(this.state.depthLevel) as Op,
+                                        //         this.getLastTreeElementAtDepth(this.state.depthLevel) as Op,
                                         //         true
                                         //     ) as Op
                                         //     this.updateTree(_updtatedOp, true)
@@ -728,7 +728,7 @@ export class Parser {
                                         this.state.track.notation.pop()
                                         this.state.track.notation.pop()
                                     }
-                                    const item = this.getTreeElement(
+                                    const item = this.getLastTreeElementAtDepth(
                                         multiOutputResolvingDepth
                                     ) as Op
                                     if (item.output > 1) this.resolveMultiOutput(
@@ -981,7 +981,7 @@ export class Parser {
     /**
      * Method to get the last item of a Node at a specified depth level of parse tree
      */
-    private static getTreeElement(depthLevel: number): Node {
+    private static getLastTreeElementAtDepth(depthLevel: number): Node {
         let tmp: Node
         tmp = this.state.parse.tree[this.state.parse.tree.length - 1]
         for (let i = 0; i < depthLevel; i++) {
@@ -1031,6 +1031,9 @@ export class Parser {
         }
     }
 
+    /**
+     * Method to handle operand arguments
+     */
     private static resolveOperand(op?: Op, postfixCheck?: boolean): Op | Error | undefined {
         let _err: string | undefined
         let _len = this.exp.length
@@ -1275,7 +1278,7 @@ export class Parser {
         delete (op as Op).infixOp
         if (!err) op = this.resolveOp(op as Op)
         if (isParameter) {
-            const item = this.getTreeElement(this.state.depthLevel - 1) as Op
+            const item = this.getLastTreeElementAtDepth(this.state.depthLevel - 1) as Op
             item.parameters = [op]
             op = item
         }
