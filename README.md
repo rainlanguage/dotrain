@@ -6,7 +6,7 @@ This is fundamentally grounded in our belief that accessibility is the differenc
 
 For more info and details, please read this [article](https://hackmd.io/@REJeq0MuTUiqnjx9w5SsUA/HJj9s-nfi#Rainlang-has-a-spectrum-of-representations-from-concise-gtexplicit)
 
-If you find an issue or you want to propose an improvement, please feel to post it on: [issues](https://github.com/rouzwelt/rainlang/issues)
+If you find an issue or you want to propose an improvement, please feel free to post it on: [issues](https://github.com/rouzwelt/rainlang/issues)
 
 
 ## **Tutorial**
