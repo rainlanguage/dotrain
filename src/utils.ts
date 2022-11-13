@@ -38,12 +38,14 @@ export const {
 } = utils
 
 /**
- * @public a native type for ethers Hexable
+ * @public
+ * A native type for ethers Hexable
  */
 export type Hexable = utils.Hexable;
 
 /**
- * @public An enum for selectLte logic
+ * @public
+ * An enum for selectLte logic
  */
 export enum selectLteLogic {
     every,
@@ -51,7 +53,8 @@ export enum selectLteLogic {
 }
 
 /**
- * @public An enum for selectLte mode
+ * @public
+ * An enum for selectLte mode
  */
 export enum selectLteMode {
     min,
@@ -61,16 +64,18 @@ export enum selectLteMode {
 
 /**
  * @public
- * Converts an opcode and operand to bytes, and returns their concatenation.
- *
- * @param code - the opcode
- * @param erand - the operand, currently limited to 1 byte (defaults to 0)
  */
-export const op = (
-    code: number,
-    erand: number | BytesLike | utils.Hexable = 0
-): Uint8Array => {
-    return concat([bytify(code), bytify(erand)])
+export enum MemoryType {
+    Stack,
+    Constant,
+}
+
+/**
+ * @public
+ */
+export enum Debug {
+    StatePacked,
+    Stack,
 }
 
 /**
@@ -93,33 +98,69 @@ export const bytify = (
 
 /**
  * @public
- * Utility function that transforms a BigNumberish from the output of the ITierV2 contract report
+ * Converts an opcode and operand to bytes, and returns their concatenation.
  *
- * @param report - report as bignumberish from the ITierV2 contract
- * @returns hexadecimal string of the report already padded (64 char hexString)
+ * @param code - the opcode
+ * @param erand - the operand, currently limited to 1 byte (defaults to 0)
  */
-export const paddedUInt256 = (report: BigNumberish): string => {
-    if (BigNumber.from(report).gt(ethers.constants.MaxUint256)) {
-        throw new Error(`${report} exceeds max uint256`)
-    }
-    return (
-        '0x' +
-        BigNumber.from(report).toHexString().substring(2).padStart(64, '0')
-    )
+export const op = (
+    code: number,
+    erand: number | BytesLike | utils.Hexable = 0
+): Uint8Array => {
+    return concat([bytify(code, 2), bytify(erand, 2)])
 }
 
 /**
- * @public Utility function to produce 32 bits size hexString
- *
- * @param number - the value to convert into a 32bit size hexString
- *
- * @returns a 8 char hexString (without 0x prefix)
+ * @public
+ * Constructs operand for standard STATE opecode
+ * 
+ * @param type - Type of the opcode, either 'stack' or 'constant'
+ * @param offset - the position of the item in respect to its type
  */
-export const paddedUInt32 = (number: BigNumberish): string => {
-    if (BigNumber.from(number).gt('0xffffffff')) {
-        throw new Error(`${number} exceeds max uint32`)
+export function memoryOperand(type: number, offset: number): number {
+    return (offset << 1) + type
+}
+
+/**
+ * @public
+ * Constructs the operand for RainInterpreter's `CALL` opcode by packing 3 numbers into a single byte.
+ *
+ * @param inputSize - number of inputs being passed to the source (range 0-7)
+ * @param outputSize - number of output returned by the source (range 1-3)
+ * @param sourceIndex - index of function source
+ */
+export function callOperand(
+    inputSize: number,
+    outputSize: number,
+    sourceIndex: number
+): number {
+    if (sourceIndex < 0 || sourceIndex > 7) {
+        throw new Error("Invalid sourceIndex")
+    } else if (inputSize < 0 || inputSize > 7) {
+        throw new Error("Invalid inputSize")
+    } else if (outputSize < 1 || outputSize > 3) {
+        throw new Error("Invalid outputSize")
     }
-    return BigNumber.from(number).toHexString().substring(2).padStart(8, '0')
+  
+    return (sourceIndex << 5) + (outputSize << 3) + inputSize
+}
+  
+/**
+ * @public
+ * Constructs the operand for RainInterpreter's `LOOP_N` opcode by packing 2 numbers into a single byte.
+ *
+ * @param n - loop the source for n times (range 0-15)
+ * @param sourceIndex - index of function source
+ */
+export function loopNOperand(n: number, sourceIndex: number): number {
+    if (sourceIndex < 0 || sourceIndex > 15) {
+        throw new Error("Invalid sourceIndex")
+    }
+    else if (n < 0 || n > 15) {
+        throw new Error("Invalid n")
+    }
+  
+    return (sourceIndex << 4) + n
 }
 
 /**
@@ -205,38 +246,66 @@ export function selectLte(logic: number, mode: number, length: number): number {
 }
 
 /**
+ * @public
+ * Utility function that transforms a BigNumberish from the output of the ITierV2 contract report
+ *
+ * @param report - report as bignumberish from the ITierV2 contract
+ * @returns hexadecimal string of the report already padded (64 char hexString)
+ */
+export const paddedUInt256 = (report: BigNumberish): string => {
+    if (BigNumber.from(report).gt(ethers.constants.MaxUint256)) {
+        throw new Error(`${report} exceeds max uint256`)
+    }
+    return (
+        '0x' +
+        BigNumber.from(report).toHexString().substring(2).padStart(64, '0')
+    )
+}
+
+/**
+ * @public Utility function to produce 32 bits size hexString
+ *
+ * @param value - the value to convert into a 32bit size hexString
+ * @returns a 8 char hexString (without 0x prefix)
+ */
+export const paddedUInt32 = (value: BigNumberish): string => {
+    if (BigNumber.from(value).gt('0xffffffff')) {
+        throw new Error(`${value} exceeds max uint32`)
+    }
+    return BigNumber.from(value).toHexString().substring(2).padStart(8, '0')
+}
+
+/**
  * @public Utility function to produce 64 bits size hexString
  *
- * @param number - the value to convert into a 64bit size hexString
- *
+ * @param value - the value to convert into a 64bit size hexString
  * @returns a 16 character hexString (without 0x prefix)
  */
-export const paddedUInt64 = (number: BigNumberish): string => {
-    if (BigNumber.from(number).gt('0xffffffffffffffff')) {
-        throw new Error(`${number} exceeds max uint64`)
+export const paddedUInt64 = (value: BigNumberish): string => {
+    if (BigNumber.from(value).gt('0xffffffffffffffff')) {
+        throw new Error(`${value} exceeds max uint64`)
     }
-    return BigNumber.from(number).toHexString().substring(2).padStart(16, '0')
+    return BigNumber.from(value).toHexString().substring(2).padStart(16, '0')
 }
 
 /**
  * @public Utility function to produce 128 bits size hexString
  *
- * @param number - the value to convert into a 128bit size hexString
- *
+ * @param value - the value to convert into a 128bit size hexString
  * @returns a 32 character hexString (without 0x prefix)
  */
-export const paddedUInt128 = (number: BigNumberish): string => {
-    if (BigNumber.from(number).gt('0xffffffffffffffffffffffffffffffff')) {
-        throw new Error(`${number} exceeds max uint128`)
+export const paddedUInt128 = (value: BigNumberish): string => {
+    if (BigNumber.from(value).gt('0xffffffffffffffffffffffffffffffff')) {
+        throw new Error(`${value} exceeds max uint128`)
     }
-    return BigNumber.from(number).toHexString().substring(2).padStart(32, '0')
+    return BigNumber.from(value).toHexString().substring(2).padStart(32, '0')
 }
 
 /**
  * @public
  * Utility function that transforms a BigNumberish to an ether address (40 char length hexString)
  *
- * @param report - value as bignumberish
+ * @param address - value as bignumberish
  * @returns hexadecimal string as an ether address (40 char length hexString)
  */
 export const paddedUInt160 = (address: BigNumberish): string => {
@@ -262,11 +331,11 @@ export function isBigNumberish(value: any): boolean {
     return (
         value != null &&
         (BigNumber.isBigNumber(value) ||
-            (typeof value === 'number' && value % 1 === 0) ||
-            (typeof value === 'string' && !!value.match(/^-?[0-9]+$/)) ||
-            isHexString(value) ||
-            typeof value === 'bigint' ||
-            isBytes(value))
+        (typeof value === 'number' && value % 1 === 0) ||
+        (typeof value === 'string' && !!value.match(/^-?[0-9]+$/)) ||
+        isHexString(value) ||
+        typeof value === 'bigint' ||
+        isBytes(value))
     )
 }
 
@@ -392,7 +461,7 @@ export function recordToMap<K extends string | number | symbol>(
  * @param config2 - second StateConfig
  * @returns boolean
  */
-export const areEqualConfigs = (
+export const areEqualStateConfigs = (
     config1: StateConfig,
     config2: StateConfig
 ): boolean => {

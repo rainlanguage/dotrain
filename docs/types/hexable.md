@@ -2,7 +2,7 @@
 
 # Type Hexable
 
-a native type for ethers Hexable
+A native type for ethers Hexable
 
 <b>Signature:</b>
 

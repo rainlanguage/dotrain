@@ -1,4 +1,4 @@
-import { rainOpMeta } from "../opmeta"
+import { IOpMeta } from "../types"
 
 /**
  * @public
@@ -29,7 +29,7 @@ export type Config = {
     /**
      * An opmeta object to be used for creating the human friendly read
      */
-    opmeta?: typeof rainOpMeta;
+    opmeta?: IOpMeta[];
 }
 
 /**

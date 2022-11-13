@@ -11,5 +11,6 @@ type Value = {
     value: BigNumberish;
     position: number[];
     error?: string;
+    tag?: Tag;
 };
 ```
