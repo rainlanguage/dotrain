@@ -249,8 +249,10 @@ export class Formatter {
                 }
             }
 
-            // construct the source expression at current index
+            // cache the LHS elements
             for (let j = 0; j < _stack.length; j++) lhs.push('_')
+
+            // construct the source expression at current index, both LHS and RHS
             _finalStack.push(
                 lhs.join(' ').concat(': ') + 
                 _stack.join(' ').concat(';')
