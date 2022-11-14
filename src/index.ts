@@ -1,4 +1,4 @@
-// export * from './formatter/formatter'
+export * from './formatter/formatter'
 export * from './formatter/types'
 
 export * from './parser/parser'

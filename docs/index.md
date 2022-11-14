@@ -6,6 +6,7 @@
 
 |  Class | Description |
 |  --- | --- |
+|  [Formatter](./classes/formatter.md) | The generator of human friendly readable source. |
 |  [Parser](./classes/parser.md) | Rain Parser is a compiler written in TypeScript in order to parse, compile and output Rain Expressions into deployable bytes for Rain Protocol's smart contracts and also a parse tree object which contains all the parsed data and info of the opcode, values, errors and ... that can be used by the caller, for example to be make an enriched Rain in-bowser text editor. Rain Parser uses an standard opcode metadata callled OpMeta in order to parse opcodes into deployable bytes of an Rain Interpreter. |
 
 ## Enumerations
