@@ -2,7 +2,7 @@
 
 # Class Parser
 
-Parser is a mini compiler to generate a valid StateConfig (deployable bytes) from a text script
+Rain Parser is a compiler written in TypeScript in order to parse, compile and output Rain Expressions into deployable bytes for Rain Protocol's smart contracts and also a parse tree object which contains all the parsed data and info of the opcode, values, errors and ... that can be used by the caller, for example to be make an enriched Rain in-bowser text editor. Rain Parser uses an standard opcode metadata callled OpMeta in order to parse opcodes into deployable bytes of an Rain Interpreter.
 
 <b>Signature:</b>
 
@@ -45,25 +45,36 @@ let stateConfig = Parser.compile(argument)
 
 |  Property | Type | Description |
 |  --- | --- | --- |
+|  [\_resolveMultiOutput](./parser.md#_resolveMultiOutput-property-static) | `(totalCount: number, depthLevel: number) => void` | Method to resolve multi output nodes at current state of parsing |
 |  [constants](./parser.md#constants-property-static) | `BigNumberish[]` |  |
 |  [parseTree](./parser.md#parseTree-property-static) | [ParseTree](../types/parsetree.md) |  |
-|  [resolveMultiOutput](./parser.md#resolveMultiOutput-property-static) | `(totalCount: number, depthLevel: number) => void` | Method to resolve multi output nodes at current state of parsing |
 |  [sources](./parser.md#sources-property-static) | `BytesLike[]` |  |
 
 ## Static Methods
 
 |  Method | Description |
 |  --- | --- |
-|  [compile(parseTree, offset, constants)](./parser.md#compile-method-static-1) | Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes |
-|  [get(expression, opmeta, multiOutputPlaceholderChar)](./parser.md#get-method-static-1) | Method to get parse tree object and StateConfig |
-|  [getParseTree(expression, opmeta, multiOutputPlaceholderChar)](./parser.md#getParseTree-method-static-1) | Method to get the parse tree object |
-|  [getStateConfig(expression, opmeta, multiOutputPlaceholderChar)](./parser.md#getStateConfig-method-static-1) | Method to get the StateConfig |
+|  [compile(parseTree, constants)](./parser.md#compile-method-static-1) | Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes |
+|  [get(expression, opmeta)](./parser.md#get-method-static-1) | Method to get parse tree object and StateConfig |
+|  [getParseTree(expression, opmeta)](./parser.md#getParseTree-method-static-1) | Method to get the parse tree object |
+|  [getStateConfig(expression, opmeta)](./parser.md#getStateConfig-method-static-1) | Method to get the StateConfig |
 |  [setGteMeta(name, description, data, aliases)](./parser.md#setGteMeta-method-static-1) | Method to set the details of the GTE opcode |
-|  [setIneqMeta(name, description, data, aliases)](./parser.md#setIneqMeta-method-static-1) | Method to set the details of the INEQ opcode |
+|  [setInEqMeta(name, description, data, aliases)](./parser.md#setInEqMeta-method-static-1) | Method to set the details of the INEQ opcode |
 |  [setLteMeta(name, description, data, aliases)](./parser.md#setLteMeta-method-static-1) | Method to set the details of the LTE opcode |
-|  [updateArgs(config)](./parser.md#updateArgs-method-static-1) | Method to update the arguments of zipmaps after full bytes build (if any present) |
 
 ## Static Property Details
+
+<a id="_resolveMultiOutput-property-static"></a>
+
+### \_resolveMultiOutput
+
+Method to resolve multi output nodes at current state of parsing
+
+<b>Signature:</b>
+
+```typescript
+static _resolveMultiOutput: (totalCount: number, depthLevel: number) => void;
+```
 
 <a id="constants-property-static"></a>
 
@@ -85,18 +96,6 @@ static constants: BigNumberish[];
 static parseTree: ParseTree;
 ```
 
-<a id="resolveMultiOutput-property-static"></a>
-
-### resolveMultiOutput
-
-Method to resolve multi output nodes at current state of parsing
-
-<b>Signature:</b>
-
-```typescript
-static resolveMultiOutput: (totalCount: number, depthLevel: number) => void;
-```
-
 <a id="sources-property-static"></a>
 
 ### sources
@@ -111,7 +110,7 @@ static sources: BytesLike[];
 
 <a id="compile-method-static-1"></a>
 
-### compile(parseTree, offset, constants)
+### compile(parseTree, constants)
 
 Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes
 
@@ -121,7 +120,7 @@ Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of
 static compile(parseTree: Node | Node[] | Record<number, Node[]> | Record<number, {
         tree: Node[];
         position: number[];
-    }>, offset?: number, constants?: BigNumberish[]): StateConfig;
+    }>, constants?: BigNumberish[]): StateConfig;
 ```
 
 #### Parameters
@@ -129,7 +128,6 @@ static compile(parseTree: Node | Node[] | Record<number, Node[]> | Record<number
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  parseTree | <pre>Node \| Node[] \| Record<number, Node[]> \| Record<number, {&#010;    tree: Node[];&#010;    position: number[];&#010;}></pre> | Tree like object (Parse Tree object or a Node or array of Nodes) to get the StateConfig from |
-|  offset | `number` | This argument is used internally and should be ignored when calling this method externally |
 |  constants | `BigNumberish[]` | This argument is used internally and should be ignored when calling this method externally |
 
 <b>Returns:</b>
@@ -140,14 +138,14 @@ StateConfig, i.e. compiled bytes
 
 <a id="get-method-static-1"></a>
 
-### get(expression, opmeta, multiOutputPlaceholderChar)
+### get(expression, opmeta)
 
 Method to get parse tree object and StateConfig
 
 <b>Signature:</b>
 
 ```typescript
-static get(expression: string, opmeta?: typeof standardOpMeta, multiOutputPlaceholderChar?: string): [ParseTree, StateConfig];
+static get(expression: string, opmeta?: OpMeta[]): [ParseTree, StateConfig];
 ```
 
 #### Parameters
@@ -155,8 +153,7 @@ static get(expression: string, opmeta?: typeof standardOpMeta, multiOutputPlaceh
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `typeof standardOpMeta` | (optional) custom opmeta |
-|  multiOutputPlaceholderChar | `string` | (optional) custom multi output placeholder character, default is '\_' |
+|  opmeta | `OpMeta[]` | (optional) custom opmeta |
 
 <b>Returns:</b>
 
@@ -166,14 +163,14 @@ Array of parse tree object and StateConfig
 
 <a id="getParseTree-method-static-1"></a>
 
-### getParseTree(expression, opmeta, multiOutputPlaceholderChar)
+### getParseTree(expression, opmeta)
 
 Method to get the parse tree object
 
 <b>Signature:</b>
 
 ```typescript
-static getParseTree(expression: string, opmeta?: typeof standardOpMeta, multiOutputPlaceholderChar?: string): ParseTree;
+static getParseTree(expression: string, opmeta?: OpMeta[]): ParseTree;
 ```
 
 #### Parameters
@@ -181,8 +178,7 @@ static getParseTree(expression: string, opmeta?: typeof standardOpMeta, multiOut
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `typeof standardOpMeta` | (optional) custom opmeta |
-|  multiOutputPlaceholderChar | `string` | (optional) custom multi output placeholder character, default is '\_' |
+|  opmeta | `OpMeta[]` | (optional) custom opmeta |
 
 <b>Returns:</b>
 
@@ -192,14 +188,14 @@ A parse tree object
 
 <a id="getStateConfig-method-static-1"></a>
 
-### getStateConfig(expression, opmeta, multiOutputPlaceholderChar)
+### getStateConfig(expression, opmeta)
 
 Method to get the StateConfig
 
 <b>Signature:</b>
 
 ```typescript
-static getStateConfig(expression: string, opmeta?: typeof standardOpMeta, multiOutputPlaceholderChar?: string): StateConfig;
+static getStateConfig(expression: string, opmeta?: OpMeta[]): StateConfig;
 ```
 
 #### Parameters
@@ -207,8 +203,7 @@ static getStateConfig(expression: string, opmeta?: typeof standardOpMeta, multiO
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `typeof standardOpMeta` | (optional) custom opmeta |
-|  multiOutputPlaceholderChar | `string` | (optional) custom multi output placeholder character, default is '\_' |
+|  opmeta | `OpMeta[]` | (optional) custom opmeta |
 
 <b>Returns:</b>
 
@@ -241,16 +236,16 @@ static setGteMeta(name?: string, description?: string, data?: any, aliases?: str
 
 `void`
 
-<a id="setIneqMeta-method-static-1"></a>
+<a id="setInEqMeta-method-static-1"></a>
 
-### setIneqMeta(name, description, data, aliases)
+### setInEqMeta(name, description, data, aliases)
 
 Method to set the details of the INEQ opcode
 
 <b>Signature:</b>
 
 ```typescript
-static setIneqMeta(name?: string, description?: string, data?: any, aliases?: string[]): void;
+static setInEqMeta(name?: string, description?: string, data?: any, aliases?: string[]): void;
 ```
 
 #### Parameters
@@ -290,26 +285,4 @@ static setLteMeta(name?: string, description?: string, data?: any, aliases?: str
 <b>Returns:</b>
 
 `void`
-
-<a id="updateArgs-method-static-1"></a>
-
-### updateArgs(config)
-
-Method to update the arguments of zipmaps after full bytes build (if any present)
-
-<b>Signature:</b>
-
-```typescript
-static updateArgs(config: StateConfig): StateConfig;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  config | [StateConfig](../types/stateconfig.md) |  |
-
-<b>Returns:</b>
-
-`StateConfig`
 

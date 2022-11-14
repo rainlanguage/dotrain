@@ -265,28 +265,12 @@ export type StateConfig = {
 
 /**
  * @public
- * Interface for accessible by vm storage's slots range available for a contract to be
- * used as local opcodes.
  */
-export type StorageOpcodesRange = {
-    /**
-     * pointer to the storage slot of the first property of properties of a contract used
-     * as STORAGE opcode.
-     */
-    pointer: BigNumberish;
-    /**
-     * Length of the storage opcodes of a contract, i.e. the number of local opcodes
-     */
-    length: BigNumberish;
-}
+export type OpIO = (_operand: number) => number
 
 /**
  * @public
- */
-export type IOpIO = (_operand: number) => number
-
-/**
- * @public
+ * valid number of parameteres an opcode's can have inside its parens
  */
 export type ParamsValidRange = (_paramsLength: number) => boolean
 
@@ -294,30 +278,39 @@ export type ParamsValidRange = (_paramsLength: number) => boolean
 /**
  * @public
  */
-export type OperandArgRange = (_value: number, _paramsLength: number) => boolean
+export type OperandArgConstraints = (_value: number, _paramsLength: number) => boolean
 
 /**
  * @public
  */
-export type IOperand = {
+export type OperandEncoder = (_args: number[], _paramsLength: number) => number
+
+/**
+ * @public
+ */
+export type OperandDecoder = (_operand: number) => number[]
+
+/**
+ * @public
+ */
+export type OperandMeta = {
     // specifying the rule of each operand argument, the length of the array defines the length of the arguments of an opcode
-    argsRules: OperandArgRange[];
+    argsConstraints: OperandArgConstraints[];
     // function for ops' operands
-    encoder: (_args: number[], _paramsLength: number) => number;
+    encoder: OperandEncoder
     // function to decode ops' opernads
-    decoder: (_operand: number) => number[];
+    decoder: OperandDecoder
 }
 
 /**
  * @public
  */
-export type IOpMeta = {
+export type OpMeta = {
     enum: number;
     name: string;
-    outputs: IOpIO;
-    inputs: IOpIO;
-    operand: IOperand,
-    // valid number of parameteres an opcode's can have inside its parens
+    outputs: OpIO;
+    inputs: OpIO;
+    operand: OperandMeta,
     paramsValidRange: ParamsValidRange;
     description?: string;
     aliases?: string[];
@@ -328,7 +321,7 @@ export type IOpMeta = {
  * @public
  * Valid functions for Opcodes number of stack outputs and inputs
  */
-export const opIO: Record<string, IOpIO> = {
+export const opIoBook: Record<string, OpIO> = {
     /**
      * @public
      */

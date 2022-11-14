@@ -1,17 +1,17 @@
-[Home](../index.md) &gt; [IOpMeta](./iopmeta.md)
+[Home](../index.md) &gt; [OpMeta](./opmeta.md)
 
-# Type IOpMeta
+# Type OpMeta
 
 
 <b>Signature:</b>
 
 ```typescript
-type IOpMeta = {
+type OpMeta = {
     enum: number;
     name: string;
-    outputs: IOpIO;
-    inputs: IOpIO;
-    operand: IOperand;
+    outputs: OpIO;
+    inputs: OpIO;
+    operand: OperandMeta;
     paramsValidRange: ParamsValidRange;
     description?: string;
     aliases?: string[];

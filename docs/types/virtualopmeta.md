@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [iOpMetaLike](./iopmetalike.md)
+[Home](../index.md) &gt; [virtualOpMeta](./virtualopmeta.md)
 
-# Type iOpMetaLike
+# Type virtualOpMeta
 
 OpMeta-like type
 
 <b>Signature:</b>
 
 ```typescript
-type iOpMetaLike = {
+type virtualOpMeta = {
     name: string;
     pushes: (opcode: number, operand: number) => number;
     pops: (opcode: number, operand: number) => number;

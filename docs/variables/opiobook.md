@@ -1,11 +1,11 @@
-[Home](../index.md) &gt; [opIO](./opio.md)
+[Home](../index.md) &gt; [opIoBook](./opiobook.md)
 
-# Variable opIO
+# Variable opIoBook
 
 Valid functions for Opcodes number of stack outputs and inputs
 
 <b>Signature:</b>
 
 ```typescript
-opIO: Record<string, IOpIO>
+opIoBook: Record<string, OpIO>
 ```
