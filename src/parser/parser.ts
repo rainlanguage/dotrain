@@ -241,7 +241,7 @@ export class Parser {
             | Record<number, { tree: Node[], position: number[] }>,
         constants: BigNumberish[] = [],
     ): StateConfig {
-        let sources: BytesLike[] = []
+        const sources: BytesLike[] = []
         let sourcesCache: BytesLike[] = []
         let nodes : Node[][]
         // let argOffset: number[] = []
@@ -433,7 +433,6 @@ export class Parser {
      */
     private static _reset = () => {
         this.state.parse.tree = []
-        this.state.parse.tags = []
         this.state.depthLevel = 0
         this.state.ambiguity = false
         this.state.track.parens.open = []
@@ -547,7 +546,7 @@ export class Parser {
 
         // ----------- convert html &nbps to standard whitespace -----------
         script = script.replace(/&nbsp/g, '')
-        console.log(script)
+
         // ----------- begin caching expression sentences -----------
         const originalExp = script
         let offset = 0;
@@ -798,10 +797,11 @@ export class Parser {
                         position: positions[i]
                     }]
                 }
+                this.state.parse.tree = []
             }
             this.treeArray[i] = this.parseTree[i].tree
         }
-
+        
         // ----------- compile bytes -----------
         ({constants: this.constants, sources: this.sources } = this.compile(this.treeArray))
     }
@@ -1352,7 +1352,9 @@ export class Parser {
         this.state.parse.tree = tmp[0]
         if (count !== totalCount) {
             const item = tmp[0].pop()!
-            tmp[0].push(...this.state.parse.multiOutputCache[this.state.parse.multiOutputCache.length - 1])
+            tmp[0].push(...this.state.parse.multiOutputCache[
+                this.state.parse.multiOutputCache.length - 1
+            ])
             this.state.parse.multiOutputCache.pop()
             tmp[0].push(item)
         }
@@ -1421,7 +1423,9 @@ export class Parser {
             if (opNode.output > 1) {
                 this.state.parse.multiOutputCache.push([])
                 for (let i = 0; i < opNode.output - 1; i++) {
-                    this.state.parse.multiOutputCache[this.state.parse.multiOutputCache.length - 1].push({
+                    this.state.parse.multiOutputCache[
+                        this.state.parse.multiOutputCache.length - 1
+                    ].push({
                         value: `${opNode.opcode.name} output ${i + 1} placeholder`,
                         position: [],
                     })
