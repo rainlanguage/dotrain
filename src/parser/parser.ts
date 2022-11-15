@@ -589,9 +589,11 @@ export class Parser {
                 subExpEntry.push(expressions[i].length - tmpExp.length)
                 tmpExp = tmpExp.slice(tmpExp.indexOf(',') + 1)
             }
-            subExp.push(tmpExp)
-            subExpEntry.push(expressions[i].length - tmpExp.length)
-
+            if (tmpExp.length) {
+                subExp.push(tmpExp)
+                subExpEntry.push(expressions[i].length - tmpExp.length)
+            }
+            
             // ----------- begin parsing sub-expressions -----------
             for (let j = 0; j < subExp.length; j++) {
                 this.input = subExp[j]
