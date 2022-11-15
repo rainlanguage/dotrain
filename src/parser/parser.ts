@@ -773,7 +773,7 @@ export class Parser {
                             (this.state.parse.tags[i].length - tagsOffset) - 
                             (this.state.parse.tree.length - treeOffset)
                         if (diff === 0) {
-                            for (let k = 0; k < this.state.parse.tags[i].length - tagsOffset; k++) {
+                            for (let k = 0; k < this.state.parse.tags[i].length; k++) {
                                 if (this.state.parse.tags[i][k].name !== '_') {
                                     this.state.parse.tree[k].tag = this.state.parse.tags[i][k]
                                 }
@@ -817,6 +817,7 @@ export class Parser {
                     }
                 }
 
+                // ----------- constructing final parse tree -----------
                 this.parseTree[i] = {
                     position: positions[i],
                     tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
@@ -1838,3 +1839,4 @@ export class Parser {
     //     return argCache
     // }
 }
+console.log(JSON.stringify(Parser.get(`jj: add(1 2), kk: mul(2 3)`)[0]))
