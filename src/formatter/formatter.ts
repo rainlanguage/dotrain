@@ -82,7 +82,7 @@ export class Formatter {
         // if (!length) length = 20
         const space = ' '
         let counter = 0
-        let _expressions: string[] = []
+        const _expressions: string[] = []
 
         // extract individual expression (sources expressions) that are seperated by semi
         while (_text.length) {
@@ -157,8 +157,8 @@ export class Formatter {
             const lhs: string[] = []
             const src = arrayify(sources[i], { allowMissingPrefix: true })
             for (let j = 0; j < src.length; j += 4) {
-                let _op = (src[j] << 8) + src[j + 1]
-                let _operand = (src[j + 2] << 8) + src[j + 3]
+                const _op = (src[j] << 8) + src[j + 1]
+                const _operand = (src[j + 2] << 8) + src[j + 3]
                 const _index = this.opmeta.findIndex(v => v.enum === _op)
 
                 // error if an opcode not found in opmeta
@@ -182,12 +182,19 @@ export class Formatter {
                         // construct operand arguments
                         if (this.opmeta[_index].operand.argsConstraints.length) {
                             const args = this.opmeta[_index].operand.decoder(_operand)
-                            if (args.length === this.opmeta[_index].operand.argsConstraints.length) {
+                            if (
+                                args.length === this.opmeta[_index].operand.argsConstraints.length
+                            ) {
                                 operandArgs = '<'
-                                for (let k = 0; k < this.opmeta[_index].operand.argsConstraints.length; k++) {
-                                    operandArgs += k === this.opmeta[_index].operand.argsConstraints.length - 1
-                                        ? args[k].toString()
-                                        : args[k].toString() + ' '
+                                for (
+                                    let k = 0;
+                                    k < this.opmeta[_index].operand.argsConstraints.length;
+                                    k++
+                                ) {
+                                    operandArgs += 
+                                        k === this.opmeta[_index].operand.argsConstraints.length - 1
+                                            ? args[k].toString()
+                                            : args[k].toString() + ' '
 
                                 }
                                 operandArgs += '>'

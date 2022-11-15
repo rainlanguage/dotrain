@@ -1118,7 +1118,10 @@ export class Parser {
     private static _resolveOperand(op?: Op, postfixCheck?: boolean): Op | Error | undefined {
         let _err: string | undefined
         let _len = this.exp.length
-        if (!this.exp.includes('>')) _err = 'expected ">"'
+        if (!this.exp.includes('>')) {
+            _err = 'expected ">"'
+            this.exp = this.exp.slice(this.exp.indexOf('<') + 1)
+        }
         else {
             let _operandArgs = this.exp.slice(1, this.exp.indexOf('>'))
             this.exp = this.exp.slice(this.exp.indexOf('>') + 1)
@@ -1669,7 +1672,10 @@ export class Parser {
                             parameters: [],
                             data: this.data[enum_],
                         }
-                        if (this.exp.startsWith('<')) this._resolveOperand(op)
+                        if (this.exp.startsWith('<')) {
+                            this._resolveOperand(op)
+
+                        }
                         if (this.exp.startsWith('(')) {
                             if (consumee.endsWith(str)) {
                                 op.error = this.state.ambiguity
@@ -1844,3 +1850,4 @@ export class Parser {
     //     return argCache
     // }
 }
+console.log(JSON.stringify(Parser.get(`aa: call<`)[0]))
