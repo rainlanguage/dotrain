@@ -1850,4 +1850,3 @@ export class Parser {
     //     return argCache
     // }
 }
-console.log(JSON.stringify(Parser.get(`aa: call<`)[0]))
