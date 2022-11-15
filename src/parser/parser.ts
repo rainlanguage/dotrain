@@ -20,7 +20,6 @@ import {
     Node,
     Error,
     Op,
-    Tag,
     Value,
 } from './types'
 
@@ -440,6 +439,8 @@ export class Parser {
         this.state.track.operandArgs.cache = []
         this.state.track.operandArgs.errorCache = []
         this.state.track.operandArgs.lenCache = []
+        this.state.track.notation = []
+        this.state.parse.multiOutputCache = []
     }
 
     /**
@@ -537,6 +538,7 @@ export class Parser {
         this.parseTree = {}
         opmeta ? this.set(opmeta) : this.set(rainterpreterOpMeta)
         this.placeholder = placeholder ? placeholder : '_'
+        this.state.parse.tags = []
 
         // start parsing if the string is not empty
         if (script.length) {
@@ -554,7 +556,7 @@ export class Parser {
             let offset = 0;
             [script, offset] = this._trimLeft(script)
             const expressions: string[] = []
-            let positions = [[0, originalExp.length - 1]]
+            let positions = [[offset, originalExp.length - 1]]
             if (script.includes(';')) {
                 positions = [[
                     offset,
@@ -599,6 +601,8 @@ export class Parser {
                 // ----------- begin parsing sub-expressions -----------
                 for (let j = 0; j < subExp.length; j++) {
                     this.input = subExp[j]
+                    const tagsOffset = this.state.parse.tags[i].length
+                    const treeOffset = this.state.parse.tree.length
 
                     // check for lhs/rhs delimitter, exit from parsing this sub-expression if 
                     // no or more than one delimitter was found, else start parsing lhs and rhs
@@ -763,6 +767,43 @@ export class Parser {
                                 else this._consume(currentPosition)
                             }
                         }
+
+                        // ----------- validating RHS against LHS -----------
+                        const diff = 
+                            (this.state.parse.tags[i].length - tagsOffset) - 
+                            (this.state.parse.tree.length - treeOffset)
+                        if (diff === 0) {
+                            for (let k = 0; k < this.state.parse.tags[i].length - tagsOffset; k++) {
+                                if (this.state.parse.tags[i][k].name !== '_') {
+                                    this.state.parse.tree[k].tag = this.state.parse.tags[i][k]
+                                }
+                            }
+                        }
+                        else if (diff > 0) {
+                            for ( let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
+                                this.state.parse.tree[treeOffset + k].tag = 
+                                    this.state.parse.tags[i][treeOffset + k]
+                            }
+                            for (let k = 0; k < diff; k++) {
+                                this.state.parse.tree.push({
+                                    error: 'no RHS item exists at this position to match LHS',
+                                    position: []
+                                })
+                            }
+                        }
+                        else {
+                            for (let k = 0; k < this.state.parse.tags[i].length - tagsOffset; k++) {
+                                this.state.parse.tree[treeOffset + k].tag = 
+                                    this.state.parse.tags[i][treeOffset + k]
+                            }
+                            for (let k = 0; k < diff; k++) {
+                                const _removed = this.state.parse.tree.pop()!
+                                this.state.parse.tree.push({
+                                    error: 'no LHS item exists at this position to match existing RHS',
+                                    position: _removed.position
+                                })
+                            }
+                        }
                     }
                     else {
                         this._updateTree({
@@ -776,36 +817,44 @@ export class Parser {
                     }
                 }
 
-                // ----------- validating RHS against LHS -----------
-                if (this.state.parse.tags[i].length === this.state.parse.tree.length) {
-                    for (let j = 0; j < this.state.parse.tags[i].length; j++) {
-                        if (this.state.parse.tags[i][j].name !== '_') {
-                            if (!(
-                                'name' in this.state.parse.tree[j] && 
-                                !('opcode' in this.state.parse.tree[j])
-                            )) {
-                                (this.state.parse.tree[j] as Exclude<Node, Tag>).tag = 
-                                this.state.parse.tags[i][j]
-                            }
-                        }
-                    }
-                    this.parseTree[i] = {
-                        position: positions[i],
-                        tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
-                    }
-                }
-                else {
-                    this.parseTree[i] = {
-                        position: positions[i],
-                        tree: [{
-                            error: `invalid expression, RHS and LHS don't match`,
-                            position: positions[i]
-                        }]
-                    }
-                    this.state.parse.tree = []
+                this.parseTree[i] = {
+                    position: positions[i],
+                    tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
                 }
                 this.treeArray[i] = this.parseTree[i].tree
+
+                // // ----------- validating RHS against LHS -----------
+                // if (this.state.parse.tags[i].length === this.state.parse.tree.length) {
+                //     for (let j = 0; j < this.state.parse.tags[i].length; j++) {
+                //         if (this.state.parse.tags[i][j].name !== '_') {
+                //             if (!(
+                //                 'name' in this.state.parse.tree[j] && 
+                //                 !('opcode' in this.state.parse.tree[j])
+                //             )) {
+                //                 (this.state.parse.tree[j] as Exclude<Node, Tag>).tag = 
+                //                 this.state.parse.tags[i][j]
+                //             }
+                //         }
+                //     }
+                //     this.parseTree[i] = {
+                //         position: positions[i],
+                //         tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
+                //     }
+                // }
+                // else {
+                //     this.parseTree[i] = {
+                //         position: positions[i],
+                //         tree: [{
+                //             error: `invalid expression, RHS and LHS don't match`,
+                //             position: positions[i]
+                //         }]
+                //     }
+                //     this.state.parse.tree = []
+                // }
+                // this.treeArray[i] = this.parseTree[i].tree
             }
+
+
             
             // ----------- compile bytes -----------
             ({constants: this.constants, sources: this.sources } = this.compile(this.treeArray))

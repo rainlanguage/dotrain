@@ -58,7 +58,9 @@ export type Op = {
  */
 export type Tag = {
     name: string;
-    position: number[]
+    position: number[];
+    error?: string;
+    tag?: Tag;
 }
 
 /**
