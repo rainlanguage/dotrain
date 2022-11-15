@@ -530,81 +530,240 @@ export class Parser {
      * expression and is responsible for building the Parse Tree and Bytes
      */
     private static _parse(script: string, opmeta?: OpMeta[], placeholder?: string) {
-        this._reset()
-        this.sources = []
-        this.constants = []
-        this.treeArray = []
-        this.parseTree = {}
-        opmeta ? this.set(opmeta) : this.set(rainterpreterOpMeta)
-        this.placeholder = placeholder ? placeholder : '_'
+        if (script.length) {
+            this._reset()
+            this.sources = []
+            this.constants = []
+            this.treeArray = []
+            this.parseTree = {}
+            opmeta ? this.set(opmeta) : this.set(rainterpreterOpMeta)
+            this.placeholder = placeholder ? placeholder : '_'
 
-        // ----------- remove indents -----------
-        script = script.replace(/\n/g, '')
+            // ----------- remove indents -----------
+            script = script.replace(/\n/g, '')
 
-        // ----------- remove extra whitespaces -----------
-        //script = script.replace(/\s\s/g, '')
+            // ----------- remove extra whitespaces -----------
+            //script = script.replace(/\s\s/g, '')
 
-        // ----------- convert html &nbps to standard whitespace -----------
-        script = script.replace(/&nbsp/g, '')
+            // ----------- convert html &nbps to standard whitespace -----------
+            script = script.replace(/&nbsp/g, '')
 
-        // ----------- begin caching expression sentences -----------
-        const originalExp = script
-        let offset = 0;
-        [script, offset] = this._trimLeft(script)
-        const expressions: string[] = []
-        let positions = [[0, originalExp.length - 1]]
-        if (script.includes(';')) {
-            positions = [[
-                offset,
-                originalExp.indexOf(';')
-            ]]
-            while (script.includes(';')) {
-                const tmp = script.slice(0, script.indexOf(';') + 1)
-                script = script.slice(script.indexOf(';') + 1)
-                script = this._trimLeft(script)[0]
-                expressions.push(tmp.slice(0, tmp.length - 1))
-                if (script.includes(';')) {
-                    positions.push([
-                        originalExp.length - script.length,
-                        originalExp.length - script.length + script.indexOf(';'),
-                    ])
+            // ----------- begin caching expression sentences -----------
+            const originalExp = script
+            let offset = 0;
+            [script, offset] = this._trimLeft(script)
+            const expressions: string[] = []
+            let positions = [[0, originalExp.length - 1]]
+            if (script.includes(';')) {
+                positions = [[
+                    offset,
+                    originalExp.indexOf(';')
+                ]]
+                while (script.includes(';')) {
+                    const tmp = script.slice(0, script.indexOf(';') + 1)
+                    script = script.slice(script.indexOf(';') + 1)
+                    script = this._trimLeft(script)[0]
+                    expressions.push(tmp.slice(0, tmp.length - 1))
+                    if (script.includes(';')) {
+                        positions.push([
+                            originalExp.length - script.length,
+                            originalExp.length - script.length + script.indexOf(';'),
+                        ])
+                    }
                 }
             }
-        }
-        else expressions.push(script)
+            else expressions.push(script)
 
-        // ----------- begin parsing expression sentences -----------
-        for (let i = 0; i < expressions.length; i++) {
-            this._reset()
-            const entry = positions[i][0]
-            this.state.parse.tags.push([])
-            const subExp: string[] = []
-            const subExpEntry: number[] = []
-            let tmpExp = expressions[i]
-            let lhs: string
+            // ----------- begin parsing expression sentences -----------
+            for (let i = 0; i < expressions.length; i++) {
+                this._reset()
+                const entry = positions[i][0]
+                this.state.parse.tags.push([])
+                const subExp: string[] = []
+                const subExpEntry: number[] = []
+                let tmpExp = expressions[i]
+                let lhs: string
 
-            // ----------- cache the sub-expressions -----------
-            while (tmpExp.includes(',')) {
-                subExp.push(tmpExp.slice(0, tmpExp.indexOf(',') + 1))
-                subExpEntry.push(expressions[i].length - tmpExp.length)
-                tmpExp = tmpExp.slice(tmpExp.indexOf(',') + 1)
-            }
-            if (tmpExp.length) {
-                subExp.push(tmpExp)
-                subExpEntry.push(expressions[i].length - tmpExp.length)
-            }
-            
-            // ----------- begin parsing sub-expressions -----------
-            for (let j = 0; j < subExp.length; j++) {
-                this.input = subExp[j]
+                // ----------- cache the sub-expressions -----------
+                while (tmpExp.includes(',')) {
+                    subExp.push(tmpExp.slice(0, tmpExp.indexOf(',') + 1))
+                    subExpEntry.push(expressions[i].length - tmpExp.length)
+                    tmpExp = tmpExp.slice(tmpExp.indexOf(',') + 1)
+                }
+                if (tmpExp.length) {
+                    subExp.push(tmpExp)
+                    subExpEntry.push(expressions[i].length - tmpExp.length)
+                }
+                
+                // ----------- begin parsing sub-expressions -----------
+                for (let j = 0; j < subExp.length; j++) {
+                    this.input = subExp[j]
 
-                // check for lhs/rhs delimitter, exit from parsing this sub-expression if 
-                // no or more than one delimitter was found, else start parsing lhs and rhs
-                if (this.input.includes(':')) {
-                    lhs = this.input.slice(0, this.input.indexOf(':'))
-                    const _lhs = lhs
-                    this.exp = this.input.slice(this.input.indexOf(':') + 1)
-                    if (this.exp.includes(':')) {
+                    // check for lhs/rhs delimitter, exit from parsing this sub-expression if 
+                    // no or more than one delimitter was found, else start parsing lhs and rhs
+                    if (this.input.includes(':')) {
+                        lhs = this.input.slice(0, this.input.indexOf(':'))
+                        const _lhs = lhs
+                        this.exp = this.input.slice(this.input.indexOf(':') + 1)
+                        if (this.exp.includes(':')) {
+                            this._updateTree({
+                                error: 'invalid sub-expression',
+                                position: [
+                                    entry + subExpEntry[j],
+                                    entry + subExpEntry[j + 1] + this.input.length - 1
+                                ]
+                            })
+                            break
+                        }
+
+                        // ----------- begin parsing lhs -----------
+                        while (lhs.length > 0) {
+                            lhs = this._trimLeft(lhs)[0]
+                            if (lhs.length > 0) {
+                                const index = lhs.indexOf(' ') > -1 ? lhs.indexOf(' ') : lhs.length
+                                let tagName = lhs.slice(0, index)
+                                const tagNameLen = tagName.length
+                                lhs = lhs.slice(index)
+                                if (this._includesInvalidChars(tagName, [')', '(', '<', '>'])) {
+                                    tagName = 'invalid character in tag'
+                                }
+                                this.state.parse.tags[this.state.parse.tags.length - 1].push({
+                                    name: tagName,
+                                    position: [
+                                        entry + subExpEntry[j] + 
+                                            _lhs.length - lhs.length - tagNameLen,
+                                        entry + subExpEntry[j] +
+                                            _lhs.length - lhs.length - 1
+                                    ]
+                                })
+                            }
+                        }
+
+                        // ----------- begin parsing rhs -----------
+                        while (this.exp.length > 0) {
+                            this.exp = this._trimLeft(this.exp)[0]
+                            const currentPosition = 
+                                entry + subExpEntry[j] + this.input.length - this.exp.length
+
+                            if (this.exp.length > 0) {
+                                if (this.exp.startsWith('(')) {
+                                    this.state.track.parens.open.push(currentPosition)
+                                    this.exp = this.exp.replace('(', '')
+                                    if (
+                                        this.state.track.notation[
+                                            this.state.track.notation.length - 1
+                                        ] !== Notations.prefix ||
+                                        this.state.track.notation[
+                                            this.state.track.notation.length - 2
+                                        ] !== this.state.depthLevel
+                                    ) {
+                                        this._updateTree({
+                                            opcode: {
+                                                name: 'unknown opcode',
+                                                position: [],
+                                            },
+                                            operand: NaN,
+                                            output: NaN,
+                                            position: [
+                                                currentPosition - (
+                                                    this.state.track.operandArgs.lenCache.length > 0
+                                                        ? this.state.track.operandArgs.lenCache
+                                                            .pop()!
+                                                        : 0
+                                                )
+                                            ],
+                                            parens: [],
+                                            parameters: [],
+                                            error: 
+                                            // this.state.track.operandArgs.errorCache.length > 0
+                                            //     ? this.state.track.operandArgs.errorCache.pop() 
+                                                'unknown opcode',
+                                        })
+                                    }
+                                    this.state.depthLevel++
+                                    const op = this._getLastTreeElementAtDepth(
+                                        this.state.depthLevel - 1
+                                    ) as Op
+                                    op.parens.push(currentPosition)
+                                    this._updateTree(op, true)
+                                }
+                                else if (this.exp.startsWith(')')) {
+                                    if (this.state.track.parens.open.length > 0) {
+                                        let multiOutputResolvingDepth = this.state.depthLevel - 1
+                                        this.exp = this.exp.replace(')', '')
+                                        const postfix = this._isPostfix(this.exp)
+                                        this.state.track.parens.close.push(currentPosition)
+                                        if (this._isInfix()) {
+                                            this.state.track.notation.pop()
+                                            this.state.track.notation.pop()
+                                            if (postfix || this._isPrefix()) {
+                                                this._resolveInfix(true)
+                                                multiOutputResolvingDepth++
+                                            }
+                                            else this._resolveInfix(false)
+                                        }
+                                        if (postfix && this._isPrefix()) {
+                                            const op = this._getLastTreeElementAtDepth(
+                                                this.state.depthLevel - 1
+                                            ) as Op
+                                            this._updateTree(
+                                                {
+                                                    error: 'invalid notation',
+                                                    position: [
+                                                        op.position[0],
+                                                        Number(postfix[2]) + currentPosition + 1,
+                                                    ],
+                                                },
+                                                true
+                                            )
+                                            this.state.track.notation.pop()
+                                            this.state.track.notation.pop()
+                                        }
+                                        else if (postfix) {
+                                            this._resolvePostfix(
+                                                postfix[0],
+                                                Number(postfix[1]) + currentPosition + 1,
+                                                Number(postfix[2]) + currentPosition + 1,
+                                                entry,
+                                                postfix[3]
+                                            )
+                                        }
+                                        else if (this._isPrefix()) {
+                                            this._resolvePrefix()
+                                            this.state.track.notation.pop()
+                                            this.state.track.notation.pop()
+                                        }
+                                        const item = this._getLastTreeElementAtDepth(
+                                            multiOutputResolvingDepth
+                                        ) as Op
+                                        if (item.output > 1) this._resolveMultiOutput(
+                                            item.output,
+                                            multiOutputResolvingDepth
+                                        )
+                                        this.state.depthLevel--
+                                    }
+                                    else {
+                                        this.state.parse.tree.push({
+                                            error: 'invalid closing paren',
+                                            position: [currentPosition]
+                                        })
+                                    }
+                                }
+                                else if (this.exp.startsWith('<')) {
+                                    const tmp = this._resolveOperand()
+                                    if (tmp) {
+                                        (tmp as Error).position = [
+                                            currentPosition,
+                                            currentPosition + (tmp as Error).position[0] - 1
+                                        ]
+                                        this._updateTree(tmp)
+                                    }
+                                }
+                                else this._consume(currentPosition)
+                            }
+                        }
+                    }
+                    else {
                         this._updateTree({
                             error: 'invalid sub-expression',
                             position: [
@@ -614,198 +773,42 @@ export class Parser {
                         })
                         break
                     }
+                }
 
-                    // ----------- begin parsing lhs -----------
-                    while (lhs.length > 0) {
-                        lhs = this._trimLeft(lhs)[0]
-                        if (lhs.length > 0) {
-                            const index = lhs.indexOf(' ') > -1 ? lhs.indexOf(' ') : lhs.length
-                            let tagName = lhs.slice(0, index)
-                            const tagNameLen = tagName.length
-                            lhs = lhs.slice(index)
-                            if (this._includesInvalidChars(tagName, [')', '(', '<', '>'])) {
-                                tagName = 'invalid character in tag'
+                // ----------- validating RHS against LHS -----------
+                if (this.state.parse.tags[i].length === this.state.parse.tree.length) {
+                    for (let j = 0; j < this.state.parse.tags[i].length; j++) {
+                        if (this.state.parse.tags[i][j].name !== '_') {
+                            if (!(
+                                'name' in this.state.parse.tree[j] && 
+                                !('opcode' in this.state.parse.tree[j])
+                            )) {
+                                (this.state.parse.tree[j] as Exclude<Node, Tag>).tag = 
+                                this.state.parse.tags[i][j]
                             }
-                            this.state.parse.tags[this.state.parse.tags.length - 1].push({
-                                name: tagName,
-                                position: [
-                                    entry + subExpEntry[j] + 
-                                        _lhs.length - lhs.length - tagNameLen,
-                                    entry + subExpEntry[j] +
-                                        _lhs.length - lhs.length - 1
-                                ]
-                            })
                         }
                     }
-
-                    // ----------- begin parsing rhs -----------
-                    while (this.exp.length > 0) {
-                        this.exp = this._trimLeft(this.exp)[0]
-                        const currentPosition = 
-                            entry + subExpEntry[j] + this.input.length - this.exp.length
-
-                        if (this.exp.length > 0) {
-                            if (this.exp.startsWith('(')) {
-                                this.state.track.parens.open.push(currentPosition)
-                                this.exp = this.exp.replace('(', '')
-                                if (
-                                    this.state.track.notation[
-                                        this.state.track.notation.length - 1
-                                    ] !== Notations.prefix ||
-                                    this.state.track.notation[
-                                        this.state.track.notation.length - 2
-                                    ] !== this.state.depthLevel
-                                ) {
-                                    this._updateTree({
-                                        opcode: {
-                                            name: 'unknown opcode',
-                                            position: [],
-                                        },
-                                        operand: NaN,
-                                        output: NaN,
-                                        position: [
-                                            currentPosition - (
-                                                this.state.track.operandArgs.lenCache.length > 0 
-                                                    ? this.state.track.operandArgs.lenCache.pop()! 
-                                                    : 0
-                                            )
-                                        ],
-                                        parens: [],
-                                        parameters: [],
-                                        error: 
-                                        // this.state.track.operandArgs.errorCache.length > 0
-                                        //     ? this.state.track.operandArgs.errorCache.pop() 
-                                            'unknown opcode',
-                                    })
-                                }
-                                this.state.depthLevel++
-                                const op = this._getLastTreeElementAtDepth(
-                                    this.state.depthLevel - 1
-                                ) as Op
-                                op.parens.push(currentPosition)
-                                this._updateTree(op, true)
-                            }
-                            else if (this.exp.startsWith(')')) {
-                                if (this.state.track.parens.open.length > 0) {
-                                    let multiOutputResolvingDepth = this.state.depthLevel - 1
-                                    this.exp = this.exp.replace(')', '')
-                                    const postfix = this._isPostfix(this.exp)
-                                    this.state.track.parens.close.push(currentPosition)
-                                    if (this._isInfix()) {
-                                        this.state.track.notation.pop()
-                                        this.state.track.notation.pop()
-                                        if (postfix || this._isPrefix()) {
-                                            this._resolveInfix(true)
-                                            multiOutputResolvingDepth++
-                                        }
-                                        else this._resolveInfix(false)
-                                    }
-                                    if (postfix && this._isPrefix()) {
-                                        const op = this._getLastTreeElementAtDepth(
-                                            this.state.depthLevel - 1
-                                        ) as Op
-                                        this._updateTree(
-                                            {
-                                                error: 'invalid notation',
-                                                position: [
-                                                    op.position[0],
-                                                    Number(postfix[2]) + currentPosition + 1,
-                                                ],
-                                            },
-                                            true
-                                        )
-                                        this.state.track.notation.pop()
-                                        this.state.track.notation.pop()
-                                    }
-                                    else if (postfix) {
-                                        this._resolvePostfix(
-                                            postfix[0],
-                                            Number(postfix[1]) + currentPosition + 1,
-                                            Number(postfix[2]) + currentPosition + 1,
-                                            entry,
-                                            postfix[3]
-                                        )
-                                    }
-                                    else if (this._isPrefix()) {
-                                        this._resolvePrefix()
-                                        this.state.track.notation.pop()
-                                        this.state.track.notation.pop()
-                                    }
-                                    const item = this._getLastTreeElementAtDepth(
-                                        multiOutputResolvingDepth
-                                    ) as Op
-                                    if (item.output > 1) this._resolveMultiOutput(
-                                        item.output,
-                                        multiOutputResolvingDepth
-                                    )
-                                    this.state.depthLevel--
-                                }
-                                else {
-                                    this.state.parse.tree.push({
-                                        error: 'invalid closing paren',
-                                        position: [currentPosition]
-                                    })
-                                }
-                            }
-                            else if (this.exp.startsWith('<')) {
-                                const tmp = this._resolveOperand()
-                                if (tmp) {
-                                    (tmp as Error).position = [
-                                        currentPosition,
-                                        currentPosition + (tmp as Error).position[0] - 1
-                                    ]
-                                    this._updateTree(tmp)
-                                }
-                            }
-                            else this._consume(currentPosition)
-                        }
+                    this.parseTree[i] = {
+                        position: positions[i],
+                        tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
                     }
                 }
                 else {
-                    this._updateTree({
-                        error: 'invalid sub-expression',
-                        position: [
-                            entry + subExpEntry[j],
-                            entry + subExpEntry[j + 1] + this.input.length - 1
-                        ]
-                    })
-                    break
-                }
-            }
-
-            // ----------- validating RHS against LHS -----------
-            if (this.state.parse.tags[i].length === this.state.parse.tree.length) {
-                for (let j = 0; j < this.state.parse.tags[i].length; j++) {
-                    if (this.state.parse.tags[i][j].name !== '_') {
-                        if (!(
-                            'name' in this.state.parse.tree[j] && 
-                            !('opcode' in this.state.parse.tree[j])
-                        )) {
-                            (this.state.parse.tree[j] as Exclude<Node, Tag>).tag = 
-                            this.state.parse.tags[i][j]
-                        }
+                    this.parseTree[i] = {
+                        position: positions[i],
+                        tree: [{
+                            error: `invalid expression, RHS and LHS don't match`,
+                            position: positions[i]
+                        }]
                     }
+                    this.state.parse.tree = []
                 }
-                this.parseTree[i] = {
-                    position: positions[i],
-                    tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
-                }
+                this.treeArray[i] = this.parseTree[i].tree
             }
-            else {
-                this.parseTree[i] = {
-                    position: positions[i],
-                    tree: [{
-                        error: `invalid expression, RHS and LHS don't match`,
-                        position: positions[i]
-                    }]
-                }
-                this.state.parse.tree = []
-            }
-            this.treeArray[i] = this.parseTree[i].tree
+            
+            // ----------- compile bytes -----------
+            ({constants: this.constants, sources: this.sources } = this.compile(this.treeArray))
         }
-        
-        // ----------- compile bytes -----------
-        ({constants: this.constants, sources: this.sources } = this.compile(this.treeArray))
     }
 
     /**
@@ -1785,3 +1788,4 @@ export class Parser {
     //     return argCache
     // }
 }
+console.log(Parser.get(""))
