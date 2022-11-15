@@ -530,15 +530,16 @@ export class Parser {
      * expression and is responsible for building the Parse Tree and Bytes
      */
     private static _parse(script: string, opmeta?: OpMeta[], placeholder?: string) {
-        if (script.length) {
-            this._reset()
-            this.sources = []
-            this.constants = []
-            this.treeArray = []
-            this.parseTree = {}
-            opmeta ? this.set(opmeta) : this.set(rainterpreterOpMeta)
-            this.placeholder = placeholder ? placeholder : '_'
+        this._reset()
+        this.sources = []
+        this.constants = []
+        this.treeArray = []
+        this.parseTree = {}
+        opmeta ? this.set(opmeta) : this.set(rainterpreterOpMeta)
+        this.placeholder = placeholder ? placeholder : '_'
 
+        // start parsing if the string is not empty
+        if (script.length) {
             // ----------- remove indents -----------
             script = script.replace(/\n/g, '')
 
@@ -1788,4 +1789,3 @@ export class Parser {
     //     return argCache
     // }
 }
-console.log(Parser.get(""))
