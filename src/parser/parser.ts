@@ -773,16 +773,19 @@ export class Parser {
                             (this.state.parse.tags[i].length - tagsOffset) - 
                             (this.state.parse.tree.length - treeOffset)
                         if (diff === 0) {
-                            for (let k = 0; k < this.state.parse.tags[i].length; k++) {
-                                if (this.state.parse.tags[i][k].name !== '_') {
-                                    this.state.parse.tree[k].tag = this.state.parse.tags[i][k]
+                            for (let k = 0; k < this.state.parse.tags[i].length - tagsOffset; k++) {
+                                if (this.state.parse.tags[i][tagsOffset + k].name !== '_') {
+                                    this.state.parse.tree[tagsOffset + k].tag = 
+                                        this.state.parse.tags[i][tagsOffset + k]
                                 }
                             }
                         }
                         else if (diff > 0) {
-                            for ( let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
-                                this.state.parse.tree[treeOffset + k].tag = 
-                                    this.state.parse.tags[i][treeOffset + k]
+                            for (let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
+                                if (this.state.parse.tags[i][treeOffset + k].name !== '_') {
+                                    this.state.parse.tree[treeOffset + k].tag = 
+                                        this.state.parse.tags[i][treeOffset + k]
+                                }
                             }
                             for (let k = 0; k < diff; k++) {
                                 this.state.parse.tree.push({
@@ -793,10 +796,12 @@ export class Parser {
                         }
                         else {
                             for (let k = 0; k < this.state.parse.tags[i].length - tagsOffset; k++) {
-                                this.state.parse.tree[treeOffset + k].tag = 
-                                    this.state.parse.tags[i][treeOffset + k]
+                                if (this.state.parse.tags[i][treeOffset + k].name !== '_') {
+                                    this.state.parse.tree[tagsOffset + k].tag = 
+                                        this.state.parse.tags[i][tagsOffset + k]
+                                }
                             }
-                            for (let k = 0; k < diff; k++) {
+                            for (let k = 0; k < -diff; k++) {
                                 const _removed = this.state.parse.tree.pop()!
                                 this.state.parse.tree.push({
                                     error: 'no LHS item exists at this position to match existing RHS',
@@ -1839,4 +1844,3 @@ export class Parser {
     //     return argCache
     // }
 }
-console.log(JSON.stringify(Parser.get(`jj: add(1 2), kk: mul(2 3)`)[0]))
