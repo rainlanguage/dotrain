@@ -68,6 +68,7 @@ export class Parser {
 
     private static exp: string
     private static input: string
+    private static argErr = false
     private static placeholder = '_'
     private static treeArray: Record<number, Node[]> = {}
     private static data: any[] = rainterpreterOpMeta.map(v => v.data)
@@ -441,29 +442,14 @@ export class Parser {
         this.state.track.operandArgs.lenCache = []
         this.state.track.notation = []
         this.state.parse.multiOutputCache = []
+        this.argErr = false
     }
 
     /**
      * Method to find index of next element within the text expression
      */
     private static _findIndex = (str: string): number => {
-        const indexes = []
-        indexes[0] = str.indexOf('(')
-        indexes[1] = str.indexOf(')')
-        indexes[2] = str.indexOf(' ')
-        indexes[3] = str.indexOf('<')
-        if (
-            indexes[0] === -1 && 
-            indexes[1] === -1 && 
-            indexes[2] === -1 && 
-            indexes[3] === -1
-        ) {
-            return -1
-        }
-        else {
-            const ret = indexes.filter(v => v !== -1)
-            return ret.reduce((a, b) => (a <= b ? a : b))
-        }
+        return str.search(/[()<> ]/g)
     }
 
     /**
@@ -499,23 +485,6 @@ export class Parser {
             leadingOffset++
         }
         return [str, leadingOffset]
-    }
-
-    /**
-     * Method to check if a string has any invalid characters which can be passed to it
-     */
-    private static _includesInvalidChars = (
-        str: string,
-        charsToCheck: string[]
-    ): boolean => {
-        let check = false
-        for (let i = 0; i < charsToCheck.length; i++) {
-            if (str.includes(charsToCheck[i])) {
-                check = true
-                break
-            }
-        }
-        return check
     }
 
     /**
@@ -601,6 +570,7 @@ export class Parser {
                 // ----------- begin parsing sub-expressions -----------
                 for (let j = 0; j < subExp.length; j++) {
                     this.input = subExp[j]
+                    this.argErr = false
                     const tagsOffset = this.state.parse.tags[i].length
                     const treeOffset = this.state.parse.tree.length
 
@@ -629,7 +599,7 @@ export class Parser {
                                 let tagName = lhs.slice(0, index)
                                 const tagNameLen = tagName.length
                                 lhs = lhs.slice(index)
-                                if (this._includesInvalidChars(tagName, [')', '(', '<', '>'])) {
+                                if (tagName.search(/[)(<>]/g) > -1) {
                                     tagName = 'invalid character in tag'
                                 }
                                 this.state.parse.tags[this.state.parse.tags.length - 1].push({
@@ -1086,20 +1056,19 @@ export class Parser {
     private static _resolveOperand(op?: Op, postfixCheck?: boolean): Op | Error | undefined {
         let _err: string | undefined
         let _len = this.exp.length
+        
         if (!this.exp.includes('>')) {
-            _err = 'expected ">"'
-            this.exp = this.exp.slice(this.exp.indexOf('<') + 1)
+            _err = 'expected >'
+            this.exp = ''
+            this.argErr = true
         }
         else {
             let _operandArgs = this.exp.slice(1, this.exp.indexOf('>'))
             this.exp = this.exp.slice(this.exp.indexOf('>') + 1)
             _len = _operandArgs.length + 2
-            if (
-                _operandArgs.includes('(') || 
-                _operandArgs.includes(')') ||
-                _operandArgs.includes('<')
-            ) {
+            if (_operandArgs.search(/[()<]/g) > -1) {
                 _err = 'found invalid character in operand arguments'
+                this.argErr = true
             }
             else {
                 this.state.track.operandArgs.cache.push([])
@@ -1119,6 +1088,7 @@ export class Parser {
                     }
                     else {
                         _err = 'found invalid character in operand arguments'
+                        this.argErr = true
                         break
                     }
                 }
@@ -1581,16 +1551,20 @@ export class Parser {
                                     Notations.prefix
                                 )
                                 if (consumee.endsWith(str)) {
-                                    op.error = this.state.ambiguity
-                                        ? 'ambiguous expression/opcode'
-                                        : 'no closing parenthesis'
+                                    if (!this.argErr) {
+                                        op.error = this.state.ambiguity 
+                                            ? 'ambiguous expression/opcode'
+                                            : 'no closing parenthesis'
+                                    }
                                     this._updateTree(op)
                                     if (this.state.ambiguity) this.state.ambiguity = false
                                 }
                                 else {
-                                    op.error = this.state.ambiguity
-                                        ? 'ambiguous expression/opcode'
-                                        : 'illigal characters between opcode and parenthesis'
+                                    if (!this.argErr) {
+                                        op.error = this.state.ambiguity
+                                            ? 'ambiguous expression/opcode'
+                                            : 'illigal characters between opcode and parenthesis'
+                                    }
                                     this._updateTree(op)
                                     if (this.state.ambiguity) this.state.ambiguity = false
                                 }
@@ -1604,8 +1578,10 @@ export class Parser {
                                     op.infixOp = true
                                 }
                                 else {
-                                    op.error = 
-                                        'opcodes with no parens is only allowed if wrapped by parens'
+                                    if (!this.argErr) {
+                                        op.error = 
+                                            'opcodes with no parens is only allowed if wrapped by parens'
+                                    }
                                 }
                                 op.position = []
                                 this._updateTree(op)
@@ -1640,22 +1616,23 @@ export class Parser {
                             parameters: [],
                             data: this.data[enum_],
                         }
-                        if (this.exp.startsWith('<')) {
-                            this._resolveOperand(op)
-
-                        }
+                        if (this.exp.startsWith('<')) this._resolveOperand(op)
                         if (this.exp.startsWith('(')) {
                             if (consumee.endsWith(str)) {
-                                op.error = this.state.ambiguity
-                                    ? 'ambiguous expression/opcode'
-                                    : 'no closing parenthesis'
+                                if (!this.argErr) {
+                                    op.error = this.state.ambiguity 
+                                        ? 'ambiguous expression/opcode'
+                                        : 'no closing parenthesis'
+                                }
                                 this._updateTree(op)
                                 if (this.state.ambiguity) this.state.ambiguity = false
                             }
                             else {
-                                op.error = this.state.ambiguity
-                                    ? 'ambiguous expression/opcode'
-                                    : 'illigal characters between opcode and parenthesis'
+                                if (!this.argErr) {
+                                    op.error = this.state.ambiguity
+                                        ? 'ambiguous expression/opcode'
+                                        : 'illigal characters between opcode and parenthesis'
+                                }
                                 this._updateTree(op)
                                 if (this.state.ambiguity) this.state.ambiguity = false
                             }
@@ -1669,8 +1646,10 @@ export class Parser {
                                 op.infixOp = true
                             }
                             else {
-                                op.error = 
-                                    'opcodes with no parens is only allowed if wrapped by parens'
+                                if (!this.argErr) {
+                                    op.error = 
+                                        'opcodes with no parens is only allowed if wrapped by parens'
+                                }
                             }
                             op.position = []
                             this._updateTree(op)
@@ -1736,9 +1715,7 @@ export class Parser {
                                 position: [startPosition],
                                 parens: [],
                                 parameters: [],
-                                error: this.state.ambiguity
-                                    ? 'ambiguous expression/opcode'
-                                    : 'unknown opcode',
+                                error: 'unknown opcode',
                             })
                             if (this.state.ambiguity) this.state.ambiguity = false
                         }
