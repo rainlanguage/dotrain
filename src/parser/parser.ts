@@ -553,29 +553,29 @@ export class Parser {
 
             // ----------- begin caching expression sentences -----------
             const originalExp = script
-            let offset = 0;
-            [script, offset] = this._trimLeft(script)
+            let offset = 0
             const expressions: string[] = []
-            let positions = [[offset, originalExp.length - 1]]
-            if (script.includes(';')) {
-                positions = [[
-                    offset,
-                    originalExp.indexOf(';')
-                ]]
-                while (script.includes(';')) {
-                    const tmp = script.slice(0, script.indexOf(';') + 1)
+            const positions: number[][] = []
+            while (script.length) {
+                [script, offset] = this._trimLeft(script)
+                if (script.includes(';')) {
+                    const tmp = script.slice(0, script.indexOf(';'))
+                    positions.push([
+                        originalExp.length - script.length,
+                        originalExp.length - script.length + script.indexOf(';'),
+                    ])
                     script = script.slice(script.indexOf(';') + 1)
-                    script = this._trimLeft(script)[0]
-                    expressions.push(tmp.slice(0, tmp.length - 1))
-                    if (script.includes(';')) {
-                        positions.push([
-                            originalExp.length - script.length,
-                            originalExp.length - script.length + script.indexOf(';'),
-                        ])
-                    }
+                    expressions.push(tmp)
+                }
+                else {
+                    positions.push([
+                        originalExp.length - script.length - offset,
+                        originalExp.length - 1,
+                    ])
+                    expressions.push(script)
+                    script = ''
                 }
             }
-            else expressions.push(script)
 
             // ----------- begin parsing expression sentences -----------
             for (let i = 0; i < expressions.length; i++) {
@@ -828,40 +828,8 @@ export class Parser {
                     tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
                 }
                 this.treeArray[i] = this.parseTree[i].tree
-
-                // // ----------- validating RHS against LHS -----------
-                // if (this.state.parse.tags[i].length === this.state.parse.tree.length) {
-                //     for (let j = 0; j < this.state.parse.tags[i].length; j++) {
-                //         if (this.state.parse.tags[i][j].name !== '_') {
-                //             if (!(
-                //                 'name' in this.state.parse.tree[j] && 
-                //                 !('opcode' in this.state.parse.tree[j])
-                //             )) {
-                //                 (this.state.parse.tree[j] as Exclude<Node, Tag>).tag = 
-                //                 this.state.parse.tags[i][j]
-                //             }
-                //         }
-                //     }
-                //     this.parseTree[i] = {
-                //         position: positions[i],
-                //         tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
-                //     }
-                // }
-                // else {
-                //     this.parseTree[i] = {
-                //         position: positions[i],
-                //         tree: [{
-                //             error: `invalid expression, RHS and LHS don't match`,
-                //             position: positions[i]
-                //         }]
-                //     }
-                //     this.state.parse.tree = []
-                // }
-                // this.treeArray[i] = this.parseTree[i].tree
             }
 
-
-            
             // ----------- compile bytes -----------
             ({constants: this.constants, sources: this.sources } = this.compile(this.treeArray))
         }
