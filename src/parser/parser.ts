@@ -1517,12 +1517,12 @@ export class Parser {
                                 this.state.depthLevel,
                                 Notations.infix
                             )
-                            op.infixOp = true
                         }
                         else {
                             op.error = 
                                 'opcodes with no parens is only allowed if wrapped by parens'
                         }
+                        op.infixOp = true
                         op.position = []
                         this._updateTree(op)
                         if (this.state.ambiguity) this.state.ambiguity = false
@@ -1575,7 +1575,6 @@ export class Parser {
                                         this.state.depthLevel,
                                         Notations.infix
                                     )
-                                    op.infixOp = true
                                 }
                                 else {
                                     if (!this.argErr) {
@@ -1583,6 +1582,7 @@ export class Parser {
                                             'opcodes with no parens is only allowed if wrapped by parens'
                                     }
                                 }
+                                op.infixOp = true
                                 op.position = []
                                 this._updateTree(op)
                                 if (this.state.ambiguity) this.state.ambiguity = false
@@ -1643,7 +1643,6 @@ export class Parser {
                                     this.state.depthLevel,
                                     Notations.infix
                                 )
-                                op.infixOp = true
                             }
                             else {
                                 if (!this.argErr) {
@@ -1651,6 +1650,7 @@ export class Parser {
                                         'opcodes with no parens is only allowed if wrapped by parens'
                                 }
                             }
+                            op.infixOp = true
                             op.position = []
                             this._updateTree(op)
                             if (this.state.ambiguity) this.state.ambiguity = false
