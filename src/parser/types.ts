@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BigNumberish } from "ethers"
-import { opIO } from "../types"
+import { opIoBook } from "../types"
 
 /**
  * @public
@@ -58,7 +58,9 @@ export type Op = {
  */
 export type Tag = {
     name: string;
-    position: number[]
+    position: number[];
+    error?: string;
+    tag?: Tag;
 }
 
 /**
@@ -75,7 +77,7 @@ export type State = {
     parse: {
         tree: Node[];
         tags: Tag[][];
-        moCache: (Op | Value)[][];
+        multiOutputCache: (Op | Value)[][];
     };
     track: {
         notation: number[];
@@ -106,7 +108,7 @@ export type ParseTree = Record<
  * @public
  * OpMeta-like type
  */
-export type iOpMetaLike = {
+export type virtualOpMeta = {
     name: string,
     pushes: (opcode: number, operand: number) => number,
     pops: (opcode: number, operand: number) => number,
@@ -119,11 +121,11 @@ export type iOpMetaLike = {
  * @public
  * Special opemta-like object for providing GTE in parser
  */
-export const gteParserOpcode: iOpMetaLike = {
+export const virtualGte: virtualOpMeta = {
     name: 'GREATER_THAN_EQUAL',
     description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is greater than equal the second value and false/0 if not.',
-    pushes: opIO.one,
-    pops: opIO.two,
+    pushes: opIoBook.one,
+    pops: opIoBook.two,
     aliases: ['GTE', 'GREATERTHANEQUAL', 'BIGGERTHANEQUAL', 'BIGGER_THAN_EQUAL', ">=", "≥"],
     data: {
         description: "Returns true if value X is greater than value Y.",
@@ -148,11 +150,11 @@ export const gteParserOpcode: iOpMetaLike = {
  * @public
  * Special opmeta-like object for providing GTE in parser
  */
-export const lteParserOpcode: iOpMetaLike = {
+export const virtualLte: virtualOpMeta = {
     name: 'LESS_THAN_EQUAL',
     description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is less than equal the second value and false/0 if not.',
-    pushes: opIO.one,
-    pops: opIO.two,
+    pushes: opIoBook.one,
+    pops: opIoBook.two,
     aliases: ["LTE", "LESSTHANEQUAL", "LITTLE_THAN_EQUAL", "LITTLETHANEQUAL", "<=", "≤"],
     data: {
         description: "Returns true if value X is less than value Y.",
@@ -177,11 +179,11 @@ export const lteParserOpcode: iOpMetaLike = {
  * @public
  * Special opmeta-like object for providing inequality check in parser
  */
-export const ineqParserOpcode: iOpMetaLike = {
+export const virtualInEq: virtualOpMeta = {
     name: 'INEQUAL_TO',
     description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is not equal to the second value and false/0 if not.',
-    pushes: opIO.one,
-    pops: opIO.two,
+    pushes: opIoBook.one,
+    pops: opIoBook.two,
     aliases: ['INEQ', 'INEQUALTO', 'NOTEQUAL', 'NOT_EQUAL', "NOTEQ", "NOT_EQUAL_TO", "NOTEQUALTO","!=", "!=="],
     data: {
         description: "Returns true if value X is not equal to value Y.",

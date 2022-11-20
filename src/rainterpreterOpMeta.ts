@@ -1,20 +1,20 @@
-import { AllStandardOps, opIO, IOpMeta } from './types'
+import { AllStandardOps, opIoBook, OpMeta } from './types'
 import { callOperand, hexlify, loopNOperand, memoryOperand, selectLte, tierRange } from './utils'
 
 /**
  * @public
  * All Standard Rainterpreter Op Meta
  */
-export const standardOpMeta: IOpMeta[] = [
+export const rainterpreterOpMeta: OpMeta[] = [
     {
         enum: AllStandardOps.CHAINLINK_PRICE,
         name: 'CHAINLIN_PRICE',
         description: 'Takes 2 items from constants array and calls the Chainlink Oracle to get price and insert into the stack',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -41,19 +41,19 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.CALL,
         name: 'CALL',
         description: 'Takes some items from the stack and runs a source with sub-stack and puts the results back to the stack',
-        outputs: opIO.callOutputs,
-        inputs: opIO.callInputs,
+        outputs: opIoBook.callOutputs,
+        inputs: opIoBook.callInputs,
         paramsValidRange: (_paramsLength) => _paramsLength >= 0 && _paramsLength < 8,
         operand: {
             // 3 args that construct CALL operand
-            argsRules: [
+            argsConstraints: [
                 (_value, _paramsLength) =>
                     _value < 8 && _value >= 0 && _paramsLength === _value,      // inputSize valid range
                 (_value) => _value < 4 && _value > 0,                           // outputSize valid range
                 (_value) => _value < 8 && _value > 0,                           // sourceIndex valid range
             ],
             encoder: (_args) => callOperand(_args[0], _args[1], _args[2]),
-            decoder: (_operand) => [_operand & 7, (_operand & 24) >> 3, _operand >> 5],
+            decoder: (_operand) => [_operand & 7, (_operand >> 3) & 3, _operand >> 5],
         },
         aliases: ['FUNCTION', 'FN'],
         data: {
@@ -74,7 +74,7 @@ export const standardOpMeta: IOpMeta[] = [
                 {
                     spread: true,
                     name: 'input values',
-                    argsRules: [],
+                    argsConstraints: [],
                 },
             ],
         },
@@ -83,12 +83,12 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.CONTEXT,
         name: 'CONTEXT',
         description: 'Inserts an argument passed to a contracts function into the stack, context is a 2D array of uint256',
-        outputs: opIO.one,
-        inputs: opIO.zero,
+        outputs: opIoBook.one,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
             // 2 args that construct CONTEXT operand
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 256 && _value >= 0,     // column valid range
                 (_value) => _value < 256 && _value >= 0,     // row valid range
             ],
@@ -125,11 +125,13 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.DEBUG,
         name: 'DEBUG',
         description: 'ABI encodes the entire stack and logs it to the hardhat console.',
-        outputs: opIO.zero,
-        inputs: opIO.zero,
+        outputs: opIoBook.zero,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
-            argsRules: [],
+            argsConstraints: [
+                (_value) => _value === 0 || _value === 1,     // type of debug
+            ],
             encoder: (_args) => _args[0],
             decoder: (_operand) => [_operand]
         },
@@ -145,12 +147,12 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.DO_WHILE,
         name: 'DO_WHILE',
         description: 'Runs a source on stack item(s) until a condition is not met anymore',
-        outputs: opIO.doWhileOutputs,
-        inputs: opIO.doWhileInputs,
+        outputs: opIoBook.zero,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength > 0,
         operand: {
             // 1 arg that constructs DO_WHILE operand
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 256 && _value > 0,     // sourceIndex valid range
             ],
             encoder: (_args) => _args[0],
@@ -174,12 +176,12 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.LOOP_N,
         name: 'LOOP_N',
         description: 'Loop a source n times on stack items',
-        outputs: opIO.loopOutputs,
-        inputs: opIO.loopInputs,
+        outputs: opIoBook.zero,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
             // 2 args that construct LOOP_N operand
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 16 && _value >= 0,     // loopSize valid range
                 (_value) => _value < 16 && _value > 0,     // sourceIndex valid range
             ],
@@ -212,12 +214,12 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.STATE,
         name: 'STATE',
         description: 'Takes an item from constants array or copy from stack items and insert it into the stack',
-        outputs: opIO.one,
-        inputs: opIO.zero,
+        outputs: opIoBook.one,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
             // 2 args that construct STATE operand
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 2 && _value >= 0,     // type of STATE (constants or stack) valid range
                 (_value) => _value < 128 && _value >= 0,     // index valid range
             ],
@@ -241,11 +243,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.STORAGE,
         name: 'STORAGE',
         description: 'Insert a value from contract storage into the stack',
-        outputs: opIO.one,
-        inputs: opIO.zero,
+        outputs: opIoBook.one,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 256 && _value >= 0,     // index of Storage slot valid range
             ],
             encoder: (_args) => _args[0],
@@ -269,11 +271,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.HASH,
         name: 'HASH',
         description: 'Hash (solidity keccak256) item(s) of the stack and put the result into the stack',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 0,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -295,11 +297,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ERC20_BALANCE_OF,
         name: 'IERC20_BALANCE_OF',
         description: 'Get the balance of an ERC20 token for an account by taking the contract and account address from stack',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -326,11 +328,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ERC20_TOTAL_SUPPLY,
         name: 'IERC20_TOTAL_SUPPLY',
         description: 'Get the supply of an ERC20 token by taking the contract address from stack',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -356,11 +358,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ERC20_SNAPSHOT_BALANCE_OF_AT,
         name: 'IERC20_SNAPSHOT_BALANCE_OF_AT',
         description: 'Get the snapshot balance of an ERC20 token for an account by taking the contract and account address and snapshot id from stack',
-        outputs: opIO.one,
-        inputs: opIO.three,
+        outputs: opIoBook.one,
+        inputs: opIoBook.three,
         paramsValidRange: (_paramsLength) => _paramsLength === 3,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -396,11 +398,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ERC20_SNAPSHOT_TOTAL_SUPPLY_AT,
         name: 'IERC20_SNAPSHOT_TOTAL_SUPPLY_AT',
         description: 'Get the snapshot supply of an ERC20 token by taking the contract address and snapshot id from stack',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -431,11 +433,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.IERC721_BALANCE_OF,
         name: 'IERC721_BALANCE_OF',
         description: 'Get the balance of an ERC721 token for an account by taking the contract and account address from stack',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -466,11 +468,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.IERC721_OWNER_OF,
         name: 'IERC721_OWNER_OF',
         description: 'Get the owner of an ERC20 token for an account by taking the contract address and token id from stack',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -497,11 +499,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.IERC1155_BALANCE_OF,
         name: 'IERC1155_BALANCE_OF',
         description: 'Get the balance of an ERC1155 token for an account by taking the contract and account address and token id from stack',
-        outputs: opIO.one,
-        inputs: opIO.three,
+        outputs: opIoBook.one,
+        inputs: opIoBook.three,
         paramsValidRange: (_paramsLength) => _paramsLength === 3,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -537,12 +539,12 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.IERC1155_BALANCE_OF_BATCH,
         name: 'IERC1155_BALANCE_OF_BATCH',
         description: 'Get the batch balances of an ERC1155 token for an account by taking the contract address and array of account addresses and token ids from stack',
-        outputs: opIO.dynamic,
-        inputs: opIO.ierc20BalanceOfBatchInputs,
+        outputs: opIoBook.dynamic,
+        inputs: opIoBook.ierc20BalanceOfBatchInputs,
         paramsValidRange: (_paramsLength) => 
             _paramsLength > 2 && ((_paramsLength % 2) === 1),
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => (_paramsLength - 1) / 2,
             decoder: (_operand) => [(_operand * 2) + 1]
         },
@@ -578,11 +580,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.BLOCK_NUMBER,
         name: 'BLOCK_NUMBER',
         description: 'Inserts the current block number into the stack',
-        outputs: opIO.one,
-        inputs: opIO.zero,
+        outputs: opIoBook.one,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -598,11 +600,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.CALLER,
         name: 'CALLER',
         description: 'Inserts the msg.sender address into the stack',
-        outputs: opIO.one,
-        inputs: opIO.zero,
+        outputs: opIoBook.one,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -618,11 +620,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.THIS_ADDRESS,
         name: 'THIS_ADDRESS',
         description: 'Inserts this contract address into the stack',
-        outputs: opIO.one,
-        inputs: opIO.zero,
+        outputs: opIoBook.one,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -638,11 +640,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.BLOCK_TIMESTAMP,
         name: 'BLOCK_TIMESTAMP',
         description: 'Insert the current block timestamp into the stack',
-        outputs: opIO.one,
-        inputs: opIO.zero,
+        outputs: opIoBook.one,
+        inputs: opIoBook.zero,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -664,11 +666,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ENSURE,
         name: 'ENSURE',
         description: 'Require ietms(s) of the stack to be true, i.e. greater than zero and revert if fails',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 0,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -690,11 +692,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SCALE18,
         name: 'SCALE18',
         description: 'Rescale some fixed point number to 18 OOMs in situ.',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 256 && _value > 0,
             ],
             encoder: (_args) => _args[0],
@@ -723,11 +725,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SCALE18_DIV,
         name: 'SCALE18_DIV',
         description: 'Inserts the result of dividing the 2 items of the stack by keeping the 18 fixed point decimals into the stack',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 256 && _value > 0,
             ],
             encoder: (_args) => _args[0],
@@ -761,11 +763,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SCALE18_MUL,
         name: 'SCALE18_MUL',
         description: 'Inserts the result of multiplying the 2 items of the stack by keeping the 18 fixed point decimals into the stack',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 256 && _value > 0,
             ],
             encoder: (_args) => _args[0],
@@ -799,11 +801,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SCALE_BY,
         name: 'SCALE_BY',
         description: 'Scale a fixed point up or down by opernad.',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 128 && _value > -129,
             ],
             encoder: (_args) => _args[0] < 0 ? 256 + _args[0] : _args[0],
@@ -832,11 +834,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SCALEN,
         name: 'SCALEN',
         description: 'Rescale an 18 OOMs fixed point number to scale N.',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value < 256 && _value > 0,
             ],
             encoder: (_args) => _args[0],
@@ -865,11 +867,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.EXPLODE32,
         name: 'EXPLODE32',
         description: 'Part an uint256 value into 8 seperate 1 byte size values.',
-        outputs: opIO.eight,
-        inputs: opIO.one,
+        outputs: opIoBook.eight,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -891,11 +893,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ANY,
         name: 'ANY',
         description: 'Inserts the first non-zero value of all the values it checks if there exists one, else inserts zero into the stack.',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -917,11 +919,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.EAGER_IF,
         name: 'EAGER_IF',
         description: 'Takes 3 items from the stack and check if the first item is non-zero the inserts the second item into the stack, else inserts the 3rd item',
-        outputs: opIO.one,
-        inputs: opIO.three,
+        outputs: opIoBook.one,
+        inputs: opIoBook.three,
         paramsValidRange: (_paramsLength) => _paramsLength === 3,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -953,11 +955,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.EQUAL_TO,
         name: 'EQUAL_TO',
         description: 'Comapres the last 2 items of the stack together and inserts true/1 into stack if they are euqal, else inserts false/0',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -984,11 +986,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.EVERY,
         name: 'EVERY',
         description: 'Inserts the first value of all the values it checks if all of them are non-zero, else inserts zero into the stack.',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1010,11 +1012,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.GREATER_THAN,
         name: 'GREATER_THAN',
         description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is greater than the second value and false/0 if not.',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -1041,11 +1043,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ISZERO,
         name: 'ISZERO',
         description: 'Checks if the value is zero and inserts true/1 into the stack if it is, else inserts false/0',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -1067,11 +1069,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.LESS_THAN,
         name: 'LESS_THAN',
         description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is less than the second value and false/0 if not.',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -1098,11 +1100,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SATURATING_ADD,
         name: 'SATURATING_ADD',
         description: 'Inserts sum of the specified items from the stack and if prevernts reverts if the result goes above max 256 bit size',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1132,11 +1134,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SATURATING_MUL,
         name: 'SATURATING_MUL',
         description: 'Inserts multiplied result of the specified items from the stack and if prevernts reverts if the result goes above max 256 bit size',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1158,11 +1160,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SATURATING_SUB,
         name: 'SATURATING_SUB',
         description: 'Inserts subtraction of the specified items from the stack and if prevernts reverts if the result goes blow zero',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1192,11 +1194,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ADD,
         name: 'ADD',
         description: 'Inserts the result of sum of N values taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1218,11 +1220,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.DIV,
         name: 'DIV',
         description: 'Inserts the result of divide of N values taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1244,11 +1246,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.EXP,
         name: 'EXP',
         description: 'Inserts the result of exponention of N values taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1277,11 +1279,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.MAX,
         name: 'MAX',
         description: 'Inserts the maximum of N values taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1303,11 +1305,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.MIN,
         name: 'MIN',
         description: 'Inserts the minimum of N values taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1329,11 +1331,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.MOD,
         name: 'MOD',
         description: 'Inserts the mod of N values taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1355,11 +1357,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.MUL,
         name: 'MUL',
         description: 'Inserts the multiplication of N values taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
@@ -1381,15 +1383,15 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SUB,
         name: 'SUB',
         description: 'Inserts the subtraction of N values taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.dynamic,
+        outputs: opIoBook.one,
+        inputs: opIoBook.dynamic,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
-        aliases: ['-', 'MINUS'],
+        aliases: ['MINUS'],
         data: {
             description: 'Subtracts N number of values',
             category: 'math',
@@ -1407,11 +1409,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ISALEV2_REMAINING_TOKEN_INVENTORY,
         name: 'ISALEV2_REMAINING_TOKEN_INVENTORY',
         description: 'The remaining rTKNs left to to be sold',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -1433,11 +1435,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ISALEV2_RESERVE,
         name: 'ISALEV2_RESERVE',
         description: 'The reserve token address',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -1459,11 +1461,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ISALEV2_SALE_STATUS,
         name: 'ISALEV2_SALE_STATUS',
         description: 'Insert the status of a Sale contract into the stack by taking its address from the stack',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -1485,11 +1487,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ISALEV2_TOKEN,
         name: 'The rTKN address',
         description: 'ISALEV2_TOKEN',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -1511,11 +1513,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ISALEV2_TOTAL_RESERVE_RECEIVED,
         name: 'The total amount of reserve tokens received by the sale',
         description: 'ISALEV2_TOTAL_RESERVE_RECEIVED',
-        outputs: opIO.one,
-        inputs: opIO.one,
+        outputs: opIoBook.one,
+        inputs: opIoBook.one,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -1537,12 +1539,12 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ITIERV2_REPORT,
         name: 'ITIERV2_REPORT',
         description: 'Inserts the report of an account of a tier contract and optionally contexts which are taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.iTierV2ReportInputs,
+        outputs: opIoBook.one,
+        inputs: opIoBook.iTierV2ReportInputs,
         paramsValidRange: (_paramsLength) => 
             _paramsLength === 2 || _paramsLength === 3 || _paramsLength === 10,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength - 2,
             decoder: (_operand) => [_operand + 2]
         },
@@ -1581,12 +1583,12 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.ITIERV2_REPORT_TIME_FOR_TIER,
         name: 'ITIERV2_REPORT_TIME_FOR_TIER',
         description: 'Inserts the specified tier level report of an account of a tier contract and optionally contexts which are taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.iTierV2ReportTimeForTierInputs,
+        outputs: opIoBook.one,
+        inputs: opIoBook.iTierV2ReportTimeForTierInputs,
         paramsValidRange: (_paramsLength) => 
             _paramsLength === 3 || _paramsLength === 4 || _paramsLength === 11,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => _paramsLength - 3,
             decoder: (_operand) => [_operand + 3]
         },
@@ -1629,11 +1631,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SATURATING_DIFF,
         name: 'SATURATING_DIFF',
         description: 'Inserts the saturating difference of 2 reports taken from the stack into the stack and prevents reverts if the result below zero',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [],
+            argsConstraints: [],
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => [0]
         },
@@ -1660,11 +1662,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.SELECT_LTE,
         name: 'SELECT_LTE',
         description: 'Inserts the result of selecting the less than equal to specified value taken from stack among number of reports by a logic and mode into the stack',
-        outputs: opIO.one,
-        inputs: opIO.selectLteInputs,
+        outputs: opIoBook.one,
+        inputs: opIoBook.selectLteInputs,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value >= 0 && _value <= 1,    // logic
                 (_value) => _value >= 0 && _value <= 2,    // mode
                 (_value, _paramsLength) =>
@@ -1707,11 +1709,11 @@ export const standardOpMeta: IOpMeta[] = [
         enum: AllStandardOps.UPDATE_TIMES_FOR_TIER_RANGE,
         name: 'UPDATE_TIMES_FOR_TIER_RANGE',
         description: 'Inserts the result of updating the range of tiers of a report taken from stack by a value taken from the stack into the stack',
-        outputs: opIO.one,
-        inputs: opIO.two,
+        outputs: opIoBook.one,
+        inputs: opIoBook.two,
         paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsRules: [
+            argsConstraints: [
                 (_value) => _value >= 0 && _value <= 8,    // start tier
                 (_value) => _value >= 0 && _value <= 8,    // end tier
             ],

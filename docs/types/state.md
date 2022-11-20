@@ -11,7 +11,7 @@ type State = {
     parse: {
         tree: Node[];
         tags: Tag[][];
-        moCache: (Op | Value)[][];
+        multiOutputCache: (Op | Value)[][];
     };
     track: {
         notation: number[];

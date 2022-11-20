@@ -1,4 +1,4 @@
-import { IOpMeta } from "../types"
+import { OpMeta } from "../types"
 
 /**
  * @public
@@ -29,7 +29,7 @@ export type Config = {
     /**
      * An opmeta object to be used for creating the human friendly read
      */
-    opmeta?: IOpMeta[];
+    opmeta?: OpMeta[];
 }
 
 /**
@@ -41,8 +41,8 @@ export type PrettifyConfig = {
      * Multiplier to the indent space
      */
     n?: number;
-    /**
-     * Max length of each line
-     */
-    length?: number;
+    // /**
+    //  * Max length of each line
+    //  */
+    // length?: number;
 }

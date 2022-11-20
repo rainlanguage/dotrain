@@ -6,7 +6,8 @@
 
 |  Class | Description |
 |  --- | --- |
-|  [Parser](./classes/parser.md) | Parser is a mini compiler to generate a valid StateConfig (deployable bytes) from a text script |
+|  [Formatter](./classes/formatter.md) | The generator of human friendly readable source. |
+|  [Parser](./classes/parser.md) | Rain Parser is a compiler written in TypeScript in order to parse, compile and output Rain Expressions into deployable bytes for Rain Protocol's smart contracts and also a parse tree object which contains all the parsed data and info of the opcode, values, errors and ... that can be used by the caller, for example to be make an enriched Rain in-bowser text editor. Rain Parser uses an standard opcode metadata callled OpMeta in order to parse opcodes into deployable bytes of an Rain Interpreter. |
 
 ## Enumerations
 
@@ -43,20 +44,20 @@
 |  [arrayify](./variables/arrayify.md) | ethers arrayify |
 |  [bytify](./variables/bytify.md) | Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte, unless a desired `bytesLength` is specified. |
 |  [concat](./variables/concat.md) | ethers concat |
-|  [gteParserOpcode](./variables/gteparseropcode.md) | Special opemta-like object for providing GTE in parser |
 |  [hexlify](./variables/hexlify.md) | ethers hexlify |
 |  [hexZeroPad](./variables/hexzeropad.md) | ethers hexZeroPad |
-|  [ineqParserOpcode](./variables/ineqparseropcode.md) | Special opmeta-like object for providing inequality check in parser |
-|  [lteParserOpcode](./variables/lteparseropcode.md) | Special opmeta-like object for providing GTE in parser |
 |  [op](./variables/op.md) | Converts an opcode and operand to bytes, and returns their concatenation. |
-|  [opIO](./variables/opio.md) | Valid functions for Opcodes number of stack outputs and inputs |
+|  [opIoBook](./variables/opiobook.md) | Valid functions for Opcodes number of stack outputs and inputs |
 |  [paddedUInt128](./variables/paddeduint128.md) | Utility function to produce 128 bits size hexString |
 |  [paddedUInt160](./variables/paddeduint160.md) | Utility function that transforms a BigNumberish to an ether address (40 char length hexString) |
 |  [paddedUInt256](./variables/paddeduint256.md) | Utility function that transforms a BigNumberish from the output of the ITierV2 contract report |
 |  [paddedUInt32](./variables/paddeduint32.md) | Utility function to produce 32 bits size hexString |
 |  [paddedUInt64](./variables/paddeduint64.md) | Utility function to produce 64 bits size hexString |
 |  [parseUnits](./variables/parseunits.md) | ethers parseUnits |
-|  [standardOpMeta](./variables/standardopmeta.md) | All Standard Rainterpreter Op Meta |
+|  [rainterpreterOpMeta](./variables/rainterpreteropmeta.md) | All Standard Rainterpreter Op Meta |
+|  [virtualGte](./variables/virtualgte.md) | Special opemta-like object for providing GTE in parser |
+|  [virtualInEq](./variables/virtualineq.md) | Special opmeta-like object for providing inequality check in parser |
+|  [virtualLte](./variables/virtuallte.md) | Special opmeta-like object for providing GTE in parser |
 |  [zeroPad](./variables/zeropad.md) | ethers zeroPad |
 
 ## Type Aliases
@@ -66,19 +67,20 @@
 |  [Config](./types/config.md) | Specific the configuration of the generation method |
 |  [Error\_2](./types/error_2.md) | Type of Parser's Error node |
 |  [Hexable](./types/hexable.md) | A native type for ethers Hexable |
-|  [IOperand](./types/ioperand.md) |  |
-|  [IOpIO](./types/iopio.md) |  |
-|  [IOpMeta](./types/iopmeta.md) |  |
-|  [iOpMetaLike](./types/iopmetalike.md) | OpMeta-like type |
 |  [Node\_2](./types/node_2.md) | Type of Parser's Node |
 |  [Op](./types/op.md) | Type of Parser's Opcode node |
-|  [OperandArgRange](./types/operandargrange.md) |  |
-|  [ParamsValidRange](./types/paramsvalidrange.md) |  |
+|  [OperandArgConstraints](./types/operandargconstraints.md) |  |
+|  [OperandDecoder](./types/operanddecoder.md) |  |
+|  [OperandEncoder](./types/operandencoder.md) |  |
+|  [OperandMeta](./types/operandmeta.md) |  |
+|  [OpIO](./types/opio.md) |  |
+|  [OpMeta](./types/opmeta.md) |  |
+|  [ParamsValidRange](./types/paramsvalidrange.md) | valid number of parameteres an opcode's can have inside its parens |
 |  [ParseTree](./types/parsetree.md) | Type of a parse tree object |
 |  [PrettifyConfig](./types/prettifyconfig.md) | Specifies the configuration of the Prettify method. |
 |  [State](./types/state.md) | Type of Parser's State |
 |  [StateConfig](./types/stateconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
-|  [StorageOpcodesRange](./types/storageopcodesrange.md) | Interface for accessible by vm storage's slots range available for a contract to be used as local opcodes. |
 |  [Tag](./types/tag.md) |  |
 |  [Value](./types/value.md) | Type of Parser's Value node |
+|  [virtualOpMeta](./types/virtualopmeta.md) | OpMeta-like type |
 

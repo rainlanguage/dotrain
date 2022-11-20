@@ -9,5 +9,7 @@
 type Tag = {
     name: string;
     position: number[];
+    error?: string;
+    tag?: Tag;
 };
 ```

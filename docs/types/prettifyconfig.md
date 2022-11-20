@@ -9,6 +9,5 @@ Specifies the configuration of the Prettify method.
 ```typescript
 type PrettifyConfig = {
     n?: number;
-    length?: number;
 };
 ```

@@ -13,6 +13,6 @@ type Config = {
     contextEnums?: string[];
     tags?: string[];
     enableTagging?: boolean;
-    opmeta?: IOpMeta[];
+    opmeta?: OpMeta[];
 };
 ```
