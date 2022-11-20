@@ -3,6 +3,7 @@
     "description": "Formatter and Parser written in Typescript used to read and write in Rain Language",
     "version": "1.0.0",
     "author": "Beehive Innovation",
+    "license": "CAL-1.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/beehive-innovation/rainlang.git"
