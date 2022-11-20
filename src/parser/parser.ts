@@ -602,6 +602,7 @@ export class Parser {
                                 if (tagName.search(/[)(<>]/g) > -1) {
                                     tagName = 'invalid character in tag'
                                 }
+
                                 this.state.parse.tags[this.state.parse.tags.length - 1].push({
                                     name: tagName,
                                     position: [
