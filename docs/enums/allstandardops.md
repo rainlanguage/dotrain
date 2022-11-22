@@ -41,15 +41,16 @@ enum AllStandardOps
 |  IERC1155\_BALANCE\_OF\_BATCH | `16` | Number of provided opcodes for `IERC1155Ops`<!-- -->. |
 |  IERC721\_BALANCE\_OF | `13` | Opcode for `IERC721` `balanceOf`<!-- -->. |
 |  IERC721\_OWNER\_OF | `14` | Number of provided opcodes for `IERC721Ops`<!-- -->. |
-|  ISALEV2\_REMAINING\_TOKEN\_INVENTORY | `46` | Put the remaining number of rTKNs of a SaleV2 into the stack. in order words the balance of rTKN of the SaleV2 contract |
-|  ISALEV2\_RESERVE | `47` | Address of the reserve of a SaleV2 contract |
-|  ISALEV2\_SALE\_STATUS | `48` | Status of the a SaleV2 contract, PENDING, LIVE etc |
-|  ISALEV2\_TOKEN | `49` | Address of the rTKN of a SaleV2 contract |
-|  ISALEV2\_TOTAL\_RESERVE\_RECEIVED | `50` | Put the total number of reserve tokens received by a SaleV2 into the stack. in order words the balance of reserve token of the SaleV2 contract |
+|  IORDERBOOKV1\_VAULT\_BALANCE | `46` | Opcode to get balance of an orderbook vault |
+|  ISALEV2\_REMAINING\_TOKEN\_INVENTORY | `47` | Put the remaining number of rTKNs of a SaleV2 into the stack. in order words the balance of rTKN of the SaleV2 contract |
+|  ISALEV2\_RESERVE | `48` | Address of the reserve of a SaleV2 contract |
+|  ISALEV2\_SALE\_STATUS | `49` | Status of the a SaleV2 contract, PENDING, LIVE etc |
+|  ISALEV2\_TOKEN | `50` | Address of the rTKN of a SaleV2 contract |
+|  ISALEV2\_TOTAL\_RESERVE\_RECEIVED | `51` | Put the total number of reserve tokens received by a SaleV2 into the stack. in order words the balance of reserve token of the SaleV2 contract |
 |  ISZERO | `33` | Opcode for ISZERO. |
-|  ITIERV2\_REPORT | `51` | Opcode to call `report` on an `ITierV2` contract. |
-|  ITIERV2\_REPORT\_TIME\_FOR\_TIER | `52` | Opcode to call `reportTimeForTier` on an `ITierV2` contract. |
-|  length | `56` | length of available opcodes |
+|  ITIERV2\_REPORT | `52` | Opcode to call `report` on an `ITierV2` contract. |
+|  ITIERV2\_REPORT\_TIME\_FOR\_TIER | `53` | Opcode to call `reportTimeForTier` on an `ITierV2` contract. |
+|  length | `57` | length of available opcodes |
 |  LESS\_THAN | `34` | Opcode for LESS\_THAN. |
 |  LOOP\_N | `5` | Loop over a source for n times |
 |  MAX | `41` | Opcode for maximum. |
@@ -57,7 +58,7 @@ enum AllStandardOps
 |  MOD | `43` | Opcode for modulo. |
 |  MUL | `44` | Opcode for multiplication. |
 |  SATURATING\_ADD | `35` | Opcode for saturating addition. |
-|  SATURATING\_DIFF | `53` | Opcode to calculate the tierwise diff of two reports. |
+|  SATURATING\_DIFF | `54` | Opcode to calculate the tierwise diff of two reports. |
 |  SATURATING\_MUL | `36` | Opcode for saturating multiplication. |
 |  SATURATING\_SUB | `37` | Opcode for saturating subtraction. |
 |  SCALE\_BY | `26` | Opcode to rescale an arbitrary fixed point number by some OOMs. |
@@ -65,10 +66,10 @@ enum AllStandardOps
 |  SCALE18\_DIV | `24` | Opcode for division. |
 |  SCALE18\_MUL | `25` | Opcode for multiplication. |
 |  SCALEN | `27` | Opcode to rescale an 18 OOMs fixed point number to scale N. |
-|  SELECT\_LTE | `54` | Opcode to tierwise select the best block lte a reference block. |
+|  SELECT\_LTE | `55` | Opcode to tierwise select the best block lte a reference block. |
 |  STATE | `6` | Copies a value either off `stack` or `constants` to the top of the stack. |
 |  STORAGE | `7` | used as local opcodes i.e. opcodes to stack the contract's storage contents i.e. porperties/variables. operand determines the storage location to be stacked. |
 |  SUB | `45` | Opcode for subtraction. |
 |  THIS\_ADDRESS | `20` | Opcode for `this` address of the current contract. |
-|  UPDATE\_TIMES\_FOR\_TIER\_RANGE | `55` | Opcode to update the timestamp over a range of tiers for a report. |
+|  UPDATE\_TIMES\_FOR\_TIER\_RANGE | `56` | Opcode to update the timestamp over a range of tiers for a report. |
 

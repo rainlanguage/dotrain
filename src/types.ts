@@ -201,6 +201,10 @@ export enum AllStandardOps {
      */
     SUB,
     /**
+     * Opcode to get balance of an orderbook vault
+     */
+    IORDERBOOKV1_VAULT_BALANCE,
+    /**
      * Put the remaining number of rTKNs of a SaleV2 into the stack. in order words
      * the balance of rTKN of the SaleV2 contract
      */
@@ -315,70 +319,4 @@ export type OpMeta = {
     description?: string;
     aliases?: string[];
     data?: any;
-};
-
-/**
- * @public
- * Valid functions for Opcodes number of stack outputs and inputs
- */
-export const opIoBook: Record<string, OpIO> = {
-    /**
-     * @public
-     */
-    zero: () => 0,
-
-    /**
-     * @public
-     */
-    one: () => 1,
-
-    /**
-     * @public
-     */
-    two: () => 2,
-
-    /**
-     * @public
-     */
-    three: () => 3,
-
-    /**
-     * @public
-     */
-    eight: () => 8,
-
-    /**
-     * @public
-     */
-    dynamic: (_operand: number) => _operand,
-
-    /**
-     * @public
-     */
-    callInputs: (_operand: number) => _operand & 7,
-
-    /**
-     * @public
-     */
-    callOutputs: (_operand: number) => (_operand >> 3) & 3,
-
-    /**
-     * @public
-     */
-    selectLteInputs: (_operand: number) => (_operand & 31) + 1,
-
-    /**
-     * @public
-     */
-    ierc20BalanceOfBatchInputs: (_operand: number) => (_operand * 2) + 1,
-
-    /**
-     * @public
-     */
-    iTierV2ReportInputs: (_operand: number) => _operand  + 2,
-
-    /**
-     * @public
-     */
-    iTierV2ReportTimeForTierInputs: (_operand: number) => _operand + 3
 }
