@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BigNumberish } from "ethers"
-import { opIoBook } from "../types"
 
 /**
  * @public
@@ -110,8 +109,8 @@ export type ParseTree = Record<
  */
 export type virtualOpMeta = {
     name: string,
-    pushes: (opcode: number, operand: number) => number,
-    pops: (opcode: number, operand: number) => number,
+    outputs: (opcode: number, operand: number) => number,
+    inputs: (opcode: number, operand: number) => number,
     description?: string,
     aliases?: string[],
     data?: any
@@ -124,8 +123,8 @@ export type virtualOpMeta = {
 export const virtualGte: virtualOpMeta = {
     name: 'GREATER_THAN_EQUAL',
     description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is greater than equal the second value and false/0 if not.',
-    pushes: opIoBook.one,
-    pops: opIoBook.two,
+    outputs: (_operand) => 1,
+    inputs: (_operand) => 2,
     aliases: ['GTE', 'GREATERTHANEQUAL', 'BIGGERTHANEQUAL', 'BIGGER_THAN_EQUAL', ">=", "≥"],
     data: {
         description: "Returns true if value X is greater than value Y.",
@@ -153,8 +152,8 @@ export const virtualGte: virtualOpMeta = {
 export const virtualLte: virtualOpMeta = {
     name: 'LESS_THAN_EQUAL',
     description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is less than equal the second value and false/0 if not.',
-    pushes: opIoBook.one,
-    pops: opIoBook.two,
+    outputs: (_operand) => 1,
+    inputs: (_operand) => 2,
     aliases: ["LTE", "LESSTHANEQUAL", "LITTLE_THAN_EQUAL", "LITTLETHANEQUAL", "<=", "≤"],
     data: {
         description: "Returns true if value X is less than value Y.",
@@ -182,8 +181,8 @@ export const virtualLte: virtualOpMeta = {
 export const virtualInEq: virtualOpMeta = {
     name: 'INEQUAL_TO',
     description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is not equal to the second value and false/0 if not.',
-    pushes: opIoBook.one,
-    pops: opIoBook.two,
+    outputs: (_operand) => 1,
+    inputs: (_operand) => 2,
     aliases: ['INEQ', 'INEQUALTO', 'NOTEQUAL', 'NOT_EQUAL', "NOTEQ", "NOT_EQUAL_TO", "NOTEQUALTO","!=", "!=="],
     data: {
         description: "Returns true if value X is not equal to value Y.",

@@ -19,6 +19,7 @@
 |  [Notations](./enums/notations.md) | Expression Notations |
 |  [selectLteLogic](./enums/selectltelogic.md) | An enum for selectLte logic |
 |  [selectLteMode](./enums/selectltemode.md) | An enum for selectLte mode |
+|  [Tier](./enums/tier.md) | All the contract tier levels availables in all ITier contracts. |
 
 ## Functions
 
@@ -47,7 +48,6 @@
 |  [hexlify](./variables/hexlify.md) | ethers hexlify |
 |  [hexZeroPad](./variables/hexzeropad.md) | ethers hexZeroPad |
 |  [op](./variables/op.md) | Converts an opcode and operand to bytes, and returns their concatenation. |
-|  [opIoBook](./variables/opiobook.md) | Valid functions for Opcodes number of stack outputs and inputs |
 |  [paddedUInt128](./variables/paddeduint128.md) | Utility function to produce 128 bits size hexString |
 |  [paddedUInt160](./variables/paddeduint160.md) | Utility function that transforms a BigNumberish to an ether address (40 char length hexString) |
 |  [paddedUInt256](./variables/paddeduint256.md) | Utility function that transforms a BigNumberish from the output of the ITierV2 contract report |
