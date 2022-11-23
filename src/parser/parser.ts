@@ -614,6 +614,8 @@ export class Parser {
                 
                 // ----------- begin parsing sub-expressions -----------
                 for (let j = 0; j < subExp.length; j++) {
+                    let _break = false
+                    const _rmInvalidCms: number[] = []
                     this.input = subExp[j]
                     this.argErr = false
                     const tagsOffset = this.state.parse.tags[i].length
@@ -630,12 +632,40 @@ export class Parser {
                                 error: 'invalid sub-expression',
                                 position: [
                                     entry + subExpEntry[j],
-                                    entry + subExpEntry[j + 1] + this.input.length - 1
+                                    entry + subExpEntry[j] + this.input.length - 1
                                 ]
                             })
                             break
                         }
+                        if (_break) break
 
+                        // ----------- check for invalid RHS comments -----------
+                        for (let k = 0; k < comments.length; k++) {
+                            if (
+                                comments[k].position[0] > entry + subExpEntry[j] + 
+                                    this.input.indexOf(':') &&
+                                comments[k].position[0] < entry + subExpEntry[j] + 
+                                    this.input.length
+                            ) {
+                                console.log("ljshdf")
+                                this._updateTree({
+                                    error: 'invalid RHS, comments are not allowed',
+                                    position: [
+                                        entry + subExpEntry[j] + this.input.indexOf(':') + 1,
+                                        entry + subExpEntry[j] + this.input.length - 1
+                                    ]
+                                })
+                                _rmInvalidCms.push(k)
+                                _break = true
+                            }
+                        }
+                        if (_break) {
+                            for (let k = 0; k < _rmInvalidCms.length; k++) {
+                                comments.splice(_rmInvalidCms[k], 1)
+                            }
+                            break
+                        }
+                        console.log("didnt break")
                         // ----------- begin parsing lhs -----------
                         while (lhs.length > 0) {
                             lhs = this._trimLeft(lhs)[0]
@@ -783,7 +813,7 @@ export class Parser {
                                 else this._consume(currentPosition)
                             }
                         }
-
+                        console.log(this.state.parse.tree)
                         // ----------- validating RHS against LHS -----------
                         const diff = 
                             (this.state.parse.tags[i].length - tagsOffset) - 
@@ -831,7 +861,7 @@ export class Parser {
                             error: 'invalid sub-expression',
                             position: [
                                 entry + subExpEntry[j],
-                                entry + subExpEntry[j + 1] + this.input.length - 1
+                                entry + subExpEntry[j] + this.input.length - 1
                             ]
                         })
                         break
@@ -1842,4 +1872,3 @@ export class Parser {
     //     return argCache
     // }
 }
-console.log(JSON.stringify(Parser.getParseTree("/*abcd*/j: add(1 2) /*")))
