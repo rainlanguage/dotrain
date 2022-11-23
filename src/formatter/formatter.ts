@@ -163,7 +163,7 @@ export class Formatter {
 
                 // error if an opcode not found in opmeta
                 if (_index < 0) throw new Error(
-                    `opcode with enum "${this.opmeta[_index].name}" does not exist on OpMeta`
+                    `opcode with enum "${_op}" does not exist on OpMeta`
                 )
                 else {
                     if (_op === AllStandardOps.STATE && (_operand & 1) === 1) {

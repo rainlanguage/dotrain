@@ -552,7 +552,7 @@ export class Parser {
                     }
                     if (cm === '') {
                         comments.push({
-                            error: 'expected */ to close the comment',
+                            error: 'expected "*/" to close the comment',
                             position: [startCm]
                         })
                     }
@@ -1105,7 +1105,7 @@ export class Parser {
         let _len = this.exp.length
         
         if (!this.exp.includes('>')) {
-            _err = 'expected >'
+            _err = 'expected ">"'
             this.exp = ''
             this.argErr = true
         }
