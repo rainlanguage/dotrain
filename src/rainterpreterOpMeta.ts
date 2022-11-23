@@ -649,6 +649,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
             decoder: (_operand) => []
         },
         aliases: [
+            'NOW',
             'CURRENT_TIMESTAMP',
             'CURRENTTIMESTAMP',
             'BLOCKTIMESTAMP',
