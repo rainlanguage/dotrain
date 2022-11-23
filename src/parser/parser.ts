@@ -21,6 +21,7 @@ import {
     Error,
     Op,
     Value,
+    Comment,
 } from './types'
 
 /**
@@ -70,6 +71,7 @@ export class Parser {
     private static input: string
     private static argErr = false
     private static placeholder = '_'
+    private static comments: Comment[] = []
     private static treeArray: Record<number, Node[]> = {}
     private static data: any[] = rainterpreterOpMeta.map(v => v.data)
     private static enums: number[] = rainterpreterOpMeta.map(v => v.enum)
@@ -182,10 +184,15 @@ export class Parser {
     public static get(
         expression: string,
         opmeta?: OpMeta[],
-    ): [ParseTree, StateConfig] {
+    ): [ParseTree | (ParseTree & { 'comments': Comment[] }), StateConfig] {
         this._parse(expression, opmeta)
+        let ret: any = this.parseTree as ParseTree
+        if (this.comments.length > 0) ret = {
+            ...this.parseTree,
+            'comments': this.comments
+        } as (ParseTree & { 'comments': Comment[] })
         return [
-            this.parseTree,
+            ret,
             { constants: this.constants, sources: this.sources }
         ]
     }
@@ -201,9 +208,14 @@ export class Parser {
     public static getParseTree(
         expression: string,
         opmeta?: OpMeta[],
-    ): ParseTree {
+    ): ParseTree | (ParseTree & { 'comments': Comment[] }) {
         this._parse(expression, opmeta)
-        return this.parseTree
+        let ret: any = this.parseTree as ParseTree
+        if (this.comments.length > 0) ret = {
+            ...this.parseTree,
+            'comments': this.comments
+        } as (ParseTree & { 'comments': Comment[] })
+        return ret
     }
 
     /**
@@ -443,6 +455,7 @@ export class Parser {
         this.state.track.notation = []
         this.state.parse.multiOutputCache = []
         this.argErr = false
+        this.comments = []
     }
 
     /**
@@ -508,9 +521,11 @@ export class Parser {
         opmeta ? this.set(opmeta) : this.set(rainterpreterOpMeta)
         this.placeholder = placeholder ? placeholder : '_'
         this.state.parse.tags = []
+        const comments: Comment[] = []
 
         // start parsing if the string is not empty
         if (script.length) {
+
             // ----------- remove indents -----------
             script = script.replace(/\n/g, '')
 
@@ -520,13 +535,43 @@ export class Parser {
             // ----------- convert html &nbps to standard whitespace -----------
             script = script.replace(/&nbsp/g, '')
 
+            // ----------- extract comments if any exists -----------
+            if(script.includes('/*')) {
+                while(script.includes('/*')) {
+                    const startCm = script.indexOf('/*')
+                    let endCm = script.length - 1
+                    let cm = ''
+                    if (script.includes('*/')) {
+                        endCm = script.indexOf('*/')
+                        cm = script.slice(startCm, endCm + 2)
+                    }
+                    for (let i = startCm; i < endCm + 2; i++) {
+                        if (script[i]) {
+                            script = script.slice(0, i) + ' ' + script.slice(i + 1)
+                        }
+                    }
+                    if (cm === '') {
+                        comments.push({
+                            error: 'expected */ to close the comment',
+                            position: [startCm]
+                        })
+                    }
+                    else {
+                        comments.push({
+                            comment: cm,
+                            position: [startCm, endCm + 1]
+                        })
+                    }
+                }
+            }
+
             // ----------- begin caching expression sentences -----------
             const originalExp = script
-            let offset = 0
+            //let offset = 0
             const expressions: string[] = []
             const positions: number[][] = []
             while (script.length) {
-                [script, offset] = this._trimLeft(script)
+                //[script, offset] = this._trimLeft(script)
                 if (script.includes(';')) {
                     const tmp = script.slice(0, script.indexOf(';'))
                     positions.push([
@@ -538,7 +583,7 @@ export class Parser {
                 }
                 else {
                     positions.push([
-                        originalExp.length - script.length - offset,
+                        originalExp.length - script.length,
                         originalExp.length - 1,
                     ])
                     expressions.push(script)
@@ -801,6 +846,7 @@ export class Parser {
                 this.treeArray[i] = this.parseTree[i].tree
             }
 
+            if (comments.length > 0) this.comments = comments;
             // ----------- compile bytes -----------
             ({constants: this.constants, sources: this.sources } = this.compile(this.treeArray))
         }
@@ -1796,3 +1842,4 @@ export class Parser {
     //     return argCache
     // }
 }
+console.log(JSON.stringify(Parser.getParseTree("/*abcd*/j: add(1 2) /*")))
