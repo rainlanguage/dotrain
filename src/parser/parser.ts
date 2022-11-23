@@ -815,12 +815,19 @@ export class Parser {
                         }
                         console.log(this.state.parse.tree)
                         // ----------- validating RHS against LHS -----------
+                        const zeroOps = this.checkZeroOutputs(this.state.parse.tree, treeOffset)
                         const diff = 
                             (this.state.parse.tags[i].length - tagsOffset) - 
-                            (this.state.parse.tree.length - treeOffset)
+                            (this.state.parse.tree.length - treeOffset - zeroOps)
                         if (diff === 0) {
                             for (let k = 0; k < this.state.parse.tags[i].length - tagsOffset; k++) {
-                                if (this.state.parse.tags[i][tagsOffset + k].name !== '_') {
+                                if (
+                                    this.state.parse.tags[i][tagsOffset + k].name !== '_' &&
+                                    !(
+                                        'opcode' in this.state.parse.tree[treeOffset + k] && 
+                                        (this.state.parse.tree[treeOffset + k] as Op).output !== 0
+                                    )
+                                ) {
                                     this.state.parse.tree[tagsOffset + k].tag = 
                                         this.state.parse.tags[i][tagsOffset + k]
                                 }
@@ -828,7 +835,13 @@ export class Parser {
                         }
                         else if (diff > 0) {
                             for (let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
-                                if (this.state.parse.tags[i][treeOffset + k].name !== '_') {
+                                if (
+                                    this.state.parse.tags[i][treeOffset + k].name !== '_' &&
+                                    !(
+                                        'opcode' in this.state.parse.tree[treeOffset + k] && 
+                                        (this.state.parse.tree[treeOffset + k] as Op).output !== 0
+                                    )
+                                ) {
                                     this.state.parse.tree[treeOffset + k].tag = 
                                         this.state.parse.tags[i][treeOffset + k]
                                 }
@@ -842,7 +855,13 @@ export class Parser {
                         }
                         else {
                             for (let k = 0; k < this.state.parse.tags[i].length - tagsOffset; k++) {
-                                if (this.state.parse.tags[i][treeOffset + k].name !== '_') {
+                                if (
+                                    this.state.parse.tags[i][treeOffset + k].name !== '_' &&
+                                    !(
+                                        'opcode' in this.state.parse.tree[treeOffset + k] && 
+                                        (this.state.parse.tree[treeOffset + k] as Op).output !== 0
+                                    )
+                                ) {
                                     this.state.parse.tree[tagsOffset + k].tag = 
                                         this.state.parse.tags[i][tagsOffset + k]
                                 }
@@ -876,7 +895,9 @@ export class Parser {
                 this.treeArray[i] = this.parseTree[i].tree
             }
 
+            // ----------- store valid parsed comments -----------
             if (comments.length > 0) this.comments = comments;
+
             // ----------- compile bytes -----------
             ({constants: this.constants, sources: this.sources } = this.compile(this.treeArray))
         }
@@ -1442,7 +1463,9 @@ export class Parser {
     /**
      * Method that resolves the opcode Node once its respective closing paren has consumed
      */
-    private static _resolveOp = (opNode: Op): Op => {
+    private static _resolveOp = (opNode: Op): Op | Error => {
+        let check = true
+        let result: Op | Error = opNode
         const op = this.names.indexOf(opNode.opcode.name)
         if (
             opNode.opcode.name === this.gte.name || 
@@ -1463,9 +1486,9 @@ export class Parser {
                 ]
                 if (this.paramsValidRange[op](opNode.parameters.length)) {
                     if (this.operandMetas[op].argsConstraints.length) {
+                        this.state.track.operandArgs.cache.pop()
                         if (this.operandMetas[op].argsConstraints.length === _operandArgs.length) {
                             let _err = false
-                            this.state.track.operandArgs.cache.pop()
                             for (let i = 0; i < this.operandMetas[op].argsConstraints.length; i++) {
                                 if (!this.operandMetas[op].argsConstraints[i](
                                     _operandArgs[i],
@@ -1492,6 +1515,13 @@ export class Parser {
                     else {
                         opNode.operand = this.operandMetas[op].encoder([], opNode.parameters.length)
                         opNode.output = this.pushes[op](opNode.operand)
+                        if (opNode.output === 0 && this.state.depthLevel > 1) {
+                            check = false
+                            result = {
+                                error: 'zero output opcodes cannot be nested',
+                                position: opNode.position
+                            }
+                        }
                     }
                 }
                 else {
@@ -1511,7 +1541,8 @@ export class Parser {
                 }
             }
         }
-        return opNode
+        if (check) result = opNode
+        return result
     }
 
     /**
@@ -1823,6 +1854,19 @@ export class Parser {
         }
         else if ('error' in element) return false
         else return true
+    }
+
+    /**
+     * Method to check for zero output opcodes
+     */
+    private static checkZeroOutputs(nodes: Node[], skip?: number): number {
+        let _count = 0
+        if (skip) nodes = nodes.splice(skip - nodes.length)
+        for (let i = 0; i < nodes.length; i++) {
+            const _node = nodes[i]
+            if ('opcode' in _node && _node.output === 0) _count++
+        }
+        return _count
     }
 
     // /**
