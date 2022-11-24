@@ -9,5 +9,6 @@
 type Comment = Error | {
     comment: string;
     position: number[];
+    error?: string;
 };
 ```

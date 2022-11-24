@@ -611,11 +611,11 @@ export class Parser {
                     subExp.push(tmpExp)
                     subExpEntry.push(expressions[i].length - tmpExp.length)
                 }
-                
+
                 // ----------- begin parsing sub-expressions -----------
                 for (let j = 0; j < subExp.length; j++) {
                     let _break = false
-                    const _rmInvalidCms: number[] = []
+                    // const _errRhsComments: number[] = []
                     this.input = subExp[j]
                     this.argErr = false
                     const tagsOffset = this.state.parse.tags[i].length
@@ -647,7 +647,6 @@ export class Parser {
                                 comments[k].position[0] < entry + subExpEntry[j] + 
                                     this.input.length
                             ) {
-                                console.log("ljshdf")
                                 this._updateTree({
                                     error: 'invalid RHS, comments are not allowed',
                                     position: [
@@ -655,17 +654,17 @@ export class Parser {
                                         entry + subExpEntry[j] + this.input.length - 1
                                     ]
                                 })
-                                _rmInvalidCms.push(k)
+                                comments[k].error = 'invalid comment, RHS comments are not allowed'
                                 _break = true
                             }
                         }
                         if (_break) {
-                            for (let k = 0; k < _rmInvalidCms.length; k++) {
-                                comments.splice(_rmInvalidCms[k], 1)
-                            }
+                            // for (let k = 0; k < _errRhsComments.length; k++) {
+                            //     comments.splice(_errRhsComments[k], 1)
+                            // }
                             break
                         }
-                        console.log("didnt break")
+
                         // ----------- begin parsing lhs -----------
                         while (lhs.length > 0) {
                             lhs = this._trimLeft(lhs)[0]
@@ -813,38 +812,51 @@ export class Parser {
                                 else this._consume(currentPosition)
                             }
                         }
-                        console.log(this.state.parse.tree)
+
                         // ----------- validating RHS against LHS -----------
-                        const zeroOps = this.checkZeroOutputs(this.state.parse.tree, treeOffset)
+                        const tmpTree = this.state.parse.tree
+                        const zeroOps = this.checkZeroOutputs(tmpTree, treeOffset)
                         const diff = 
                             (this.state.parse.tags[i].length - tagsOffset) - 
                             (this.state.parse.tree.length - treeOffset - zeroOps)
                         if (diff === 0) {
-                            for (let k = 0; k < this.state.parse.tags[i].length - tagsOffset; k++) {
+                            let counter = 0
+                            for (let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
                                 if (
-                                    this.state.parse.tags[i][tagsOffset + k].name !== '_' &&
+                                    this.state.parse.tags[i][tagsOffset + k - counter].name !== '_' &&
                                     !(
                                         'opcode' in this.state.parse.tree[treeOffset + k] && 
-                                        (this.state.parse.tree[treeOffset + k] as Op).output !== 0
+                                        (this.state.parse.tree[treeOffset + k] as Op).output === 0
                                     )
                                 ) {
                                     this.state.parse.tree[tagsOffset + k].tag = 
-                                        this.state.parse.tags[i][tagsOffset + k]
+                                        this.state.parse.tags[i][tagsOffset + k - counter]
+                                }
+                                if (
+                                    'opcode' in this.state.parse.tree[treeOffset + k] && 
+                                    (this.state.parse.tree[treeOffset + k] as Op).output === 0
+                                ) {
+                                    ++counter
                                 }
                             }
                         }
                         else if (diff > 0) {
+                            let counter = 0
                             for (let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
                                 if (
-                                    this.state.parse.tags[i][treeOffset + k].name !== '_' &&
+                                    this.state.parse.tags[i][treeOffset + k - counter].name !== '_' &&
                                     !(
                                         'opcode' in this.state.parse.tree[treeOffset + k] && 
-                                        (this.state.parse.tree[treeOffset + k] as Op).output !== 0
+                                        (this.state.parse.tree[treeOffset + k] as Op).output === 0
                                     )
                                 ) {
                                     this.state.parse.tree[treeOffset + k].tag = 
-                                        this.state.parse.tags[i][treeOffset + k]
+                                        this.state.parse.tags[i][treeOffset + k - counter]
                                 }
+                                if (
+                                    'opcode' in this.state.parse.tree[treeOffset + k] && 
+                                    (this.state.parse.tree[treeOffset + k] as Op).output === 0
+                                ) counter++
                             }
                             for (let k = 0; k < diff; k++) {
                                 this.state.parse.tree.push({
@@ -854,17 +866,22 @@ export class Parser {
                             }
                         }
                         else {
-                            for (let k = 0; k < this.state.parse.tags[i].length - tagsOffset; k++) {
+                            let counter = 0
+                            for (let k = 0; k < this.state.parse.tree.length - tagsOffset; k++) {
                                 if (
-                                    this.state.parse.tags[i][treeOffset + k].name !== '_' &&
+                                    this.state.parse.tags[i][treeOffset + k - counter].name !== '_' &&
                                     !(
                                         'opcode' in this.state.parse.tree[treeOffset + k] && 
-                                        (this.state.parse.tree[treeOffset + k] as Op).output !== 0
+                                        (this.state.parse.tree[treeOffset + k] as Op).output === 0
                                     )
                                 ) {
                                     this.state.parse.tree[tagsOffset + k].tag = 
-                                        this.state.parse.tags[i][tagsOffset + k]
+                                        this.state.parse.tags[i][tagsOffset + k - counter]
                                 }
+                                if (
+                                    'opcode' in this.state.parse.tree[treeOffset + k] && 
+                                    (this.state.parse.tree[treeOffset + k] as Op).output === 0
+                                ) counter++
                             }
                             for (let k = 0; k < -diff; k++) {
                                 const _removed = this.state.parse.tree.pop()!
@@ -1861,7 +1878,7 @@ export class Parser {
      */
     private static checkZeroOutputs(nodes: Node[], skip?: number): number {
         let _count = 0
-        if (skip) nodes = nodes.splice(skip - nodes.length)
+        if (skip) nodes = nodes.slice(skip - nodes.length)
         for (let i = 0; i < nodes.length; i++) {
             const _node = nodes[i]
             if ('opcode' in _node && _node.output === 0) _count++

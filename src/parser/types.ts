@@ -68,6 +68,7 @@ export type Tag = {
 export type Comment = Error | {
     comment: string;
     position: number[];
+    error?: string;
 }
 
 /**
