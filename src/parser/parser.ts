@@ -860,8 +860,10 @@ export class Parser {
                             }
                             for (let k = 0; k < diff; k++) {
                                 this.state.parse.tree.push({
-                                    error: 'no RHS item exists at this position to match LHS',
-                                    position: []
+                                    error: 'no RHS item exists to match this LHS item',
+                                    position: this.state.parse.tags[i][
+                                        this.state.parse.tags[i].length - diff + k
+                                    ].position
                                 })
                             }
                         }
@@ -883,13 +885,9 @@ export class Parser {
                                     (this.state.parse.tree[treeOffset + k] as Op).output === 0
                                 ) counter++
                             }
-                            for (let k = 0; k < -diff; k++) {
-                                const _removed = this.state.parse.tree.pop()!
-                                this.state.parse.tree.push({
-                                    error: 'no LHS item exists at this position to match existing RHS',
-                                    position: _removed.position
-                                })
-                            }
+                            for (let k = 0; k < -diff; k++) this.state.parse.tree[
+                                this.state.parse.tree.length - k
+                            ].error = 'no LHS item exists to match this existing RHS item'
                         }
                     }
                     else {
