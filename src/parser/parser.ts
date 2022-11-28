@@ -846,7 +846,6 @@ export class Parser {
                                 else this._consume(currentPosition)
                             }
                         }
-
                         // ----------- validating RHS against LHS -----------
                         const tmpTree = this.state.parse.tree
                         const zeroOps = this.checkZeroOutputs(tmpTree, treeOffset)
@@ -901,7 +900,7 @@ export class Parser {
                         }
                         else {
                             let counter = 0
-                            for (let k = 0; k < this.state.parse.tree.length - tagsOffset; k++) {
+                            for (let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
                                 if (
                                     this.state.parse.tags[i][tagsOffset + k - counter]?.name !== '_' &&
                                     !(
@@ -909,8 +908,8 @@ export class Parser {
                                         (this.state.parse.tree[treeOffset + k] as Op).output === 0
                                     )
                                 ) {
-                                    this.state.parse.tree[tagsOffset + k].tag = 
-                                        this.state.parse.tags[i][tagsOffset + k - counter]
+                                    this.state.parse.tree[treeOffset + k].tag = 
+                                        this.state.parse.tags[i][treeOffset + k - counter]
                                 }
                                 if (
                                     'opcode' in this.state.parse.tree[treeOffset + k] && 
@@ -1281,7 +1280,10 @@ export class Parser {
         const node = tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op
         node.position.push(endPosition)
         node.parens.push(endPosition)
-        if (node.error === 'no closing parenthesis') node.error = undefined
+        if (node.error === 'no closing parenthesis') {
+            if (node.opcode.name.includes('unknown')) node.error = 'unknown opcode'
+            else node.error = undefined
+        }
         if (!node.error) {
             tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] = this._resolveOp(node)
         }
@@ -1760,10 +1762,6 @@ export class Parser {
                         (v, i, names) => names[i] = this._unifyLetterCase(v)
                     )
                     if (names.includes(str_)) {
-                        this.state.track.notation.push(
-                            this.state.depthLevel,
-                            Notations.prefix
-                        )
                         this.exp = this.exp.replace(consumee, '')
                         const enum_ = names.indexOf(str_)
                         const op: Op = {
@@ -1780,6 +1778,10 @@ export class Parser {
                         }
                         if (this.exp.startsWith('<')) this._resolveOperand(op)
                         if (this.exp.startsWith('(')) {
+                            this.state.track.notation.push(
+                                this.state.depthLevel,
+                                Notations.prefix
+                            )
                             if (consumee.endsWith(str)) {
                                 if (!this.argErr) {
                                     op.error = this.state.ambiguity 
@@ -1862,23 +1864,29 @@ export class Parser {
                     }
                     else {
                         this.exp = this.exp.replace(consumee, '')
+                        const op = {
+                            opcode: {
+                                name: `${str} is unknown opcode`,
+                                position: [startPosition, startPosition + str.length],
+                            },
+                            operand: NaN,
+                            output: NaN,
+                            position: [startPosition],
+                            parens: [],
+                            parameters: []
+                        } as Op
+                        if (this.exp.startsWith('<')) this._resolveOperand(op)
                         if (this.exp.startsWith('(')) {
                             this.state.track.notation.push(
                                 this.state.depthLevel,
                                 Notations.prefix
                             )
-                            this._updateTree({
-                                opcode: {
-                                    name: `${str} is unknown opcode`,
-                                    position: [startPosition, startPosition + str.length],
-                                },
-                                operand: NaN,
-                                output: NaN,
-                                position: [startPosition],
-                                parens: [],
-                                parameters: [],
-                                error: 'unknown opcode',
-                            })
+                            if (!this.argErr) {
+                                op.error = this.state.ambiguity 
+                                    ? 'ambiguous expression/opcode'
+                                    : 'no closing parenthesis'
+                            }
+                            this._updateTree(op)
                             if (this.state.ambiguity) this.state.ambiguity = false
                         }
                         else {
