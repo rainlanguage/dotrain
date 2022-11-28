@@ -184,17 +184,23 @@ export class Parser {
     public static get(
         expression: string,
         opmeta?: OpMeta[],
-    ): [ParseTree | (ParseTree & { 'comments': Comment[] }), StateConfig] {
-        this._parse(expression, opmeta)
-        let ret: any = this.parseTree as ParseTree
-        if (this.comments.length > 0) ret = {
-            ...this.parseTree,
-            'comments': this.comments
-        } as (ParseTree & { 'comments': Comment[] })
-        return [
-            ret,
-            { constants: this.constants, sources: this.sources }
-        ]
+    ): [ParseTree | (ParseTree & { 'comments': Comment[] }), StateConfig] | string {
+        try {
+            this._parse(expression, opmeta)
+            let ret: any = this.parseTree as ParseTree
+            if (this.comments.length > 0) ret = {
+                ...this.parseTree,
+                'comments': this.comments
+            } as (ParseTree & { 'comments': Comment[] })
+            return [
+                ret,
+                { constants: this.constants, sources: this.sources }
+            ]
+        }
+        catch(err) {
+            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+            return `an error occured duting parsing, please try again, reason: ${err}`
+        }
     }
 
     /**
@@ -208,14 +214,20 @@ export class Parser {
     public static getParseTree(
         expression: string,
         opmeta?: OpMeta[],
-    ): ParseTree | (ParseTree & { 'comments': Comment[] }) {
-        this._parse(expression, opmeta)
-        let ret: any = this.parseTree as ParseTree
-        if (this.comments.length > 0) ret = {
-            ...this.parseTree,
-            'comments': this.comments
-        } as (ParseTree & { 'comments': Comment[] })
-        return ret
+    ): ParseTree | (ParseTree & { 'comments': Comment[] }) | string {
+        try {
+            this._parse(expression, opmeta)
+            let ret: any = this.parseTree as ParseTree
+            if (this.comments.length > 0) ret = {
+                ...this.parseTree,
+                'comments': this.comments
+            } as (ParseTree & { 'comments': Comment[] })
+            return ret
+        }
+        catch(err) {
+            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+            return `an error occured duting parsing, please try again, reason: ${err}`
+        }
     }
 
     /**
@@ -229,11 +241,17 @@ export class Parser {
     public static getStateConfig(
         expression: string,
         opmeta?: OpMeta[],
-    ): StateConfig {
-        this._parse(expression, opmeta)
-        return {
-            constants: this.constants,
-            sources: this.sources
+    ): StateConfig | string {
+        try {
+            this._parse(expression, opmeta)
+            return {
+                constants: this.constants,
+                sources: this.sources
+            }
+        }
+        catch(err) {
+            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+            return `an error occured duting parsing, please try again, reason: ${err}`
         }
     }
 
@@ -623,21 +641,21 @@ export class Parser {
 
                     // check for lhs/rhs delimitter, exit from parsing this sub-expression if 
                     // no or more than one delimitter was found, else start parsing lhs and rhs
-                    if (this.input.includes(':')) {
+                    if (this.input.match(/:/g)?.length === 1) {
                         lhs = this.input.slice(0, this.input.indexOf(':'))
                         const _lhs = lhs
                         this.exp = this.input.slice(this.input.indexOf(':') + 1)
-                        if (this.exp.includes(':')) {
-                            this._updateTree({
-                                error: 'invalid sub-expression',
-                                position: [
-                                    entry + subExpEntry[j],
-                                    entry + subExpEntry[j] + this.input.length - 1
-                                ]
-                            })
-                            break
-                        }
-                        if (_break) break
+                        // if (this.exp.includes(':')) {
+                        //     this._updateTree({
+                        //         error: 'invalid sub-expression',
+                        //         position: [
+                        //             entry + subExpEntry[j],
+                        //             entry + subExpEntry[j] + this.input.length - 1
+                        //         ]
+                        //     })
+                        //     break
+                        // }
+                        // if (_break) break
 
                         // ----------- check for invalid RHS comments -----------
                         for (let k = 0; k < comments.length; k++) {
@@ -691,6 +709,7 @@ export class Parser {
 
                         // ----------- begin parsing rhs -----------
                         while (this.exp.length > 0) {
+
                             this.exp = this._trimLeft(this.exp)[0]
                             const currentPosition = 
                                 entry + subExpEntry[j] + this.input.length - this.exp.length
@@ -793,10 +812,25 @@ export class Parser {
                                         this.state.depthLevel--
                                     }
                                     else {
-                                        this.state.parse.tree.push({
-                                            error: 'invalid closing paren',
-                                            position: [currentPosition]
+                                        this.state.parse.tree.splice(
+                                            treeOffset - this.state.parse.tree.length
+                                        )
+                                        this.state.parse.tags[i].splice(
+                                            tagsOffset - this.state.parse.tags[i].length
+                                        )
+                                        this.state.parse.tags[i].push({
+                                            name: '_',
+                                            position: []
                                         })
+                                        this.state.parse.tree.push({
+                                            error: 'unexpected ")"',
+                                            position: [
+                                                entry + subExpEntry[j],
+                                                entry + subExpEntry[j] + this.input.length - 1
+                                            ]
+                                        })
+                                        this.exp = this.exp.replace(')', '')
+                                        break
                                     }
                                 }
                                 else if (this.exp.startsWith('<')) {
@@ -835,16 +869,14 @@ export class Parser {
                                 if (
                                     'opcode' in this.state.parse.tree[treeOffset + k] && 
                                     (this.state.parse.tree[treeOffset + k] as Op).output === 0
-                                ) {
-                                    ++counter
-                                }
+                                ) counter++
                             }
                         }
                         else if (diff > 0) {
                             let counter = 0
                             for (let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
                                 if (
-                                    this.state.parse.tags[i][treeOffset + k - counter].name !== '_' &&
+                                    this.state.parse.tags[i][tagsOffset + k - counter].name !== '_' &&
                                     !(
                                         'opcode' in this.state.parse.tree[treeOffset + k] && 
                                         (this.state.parse.tree[treeOffset + k] as Op).output === 0
@@ -871,7 +903,7 @@ export class Parser {
                             let counter = 0
                             for (let k = 0; k < this.state.parse.tree.length - tagsOffset; k++) {
                                 if (
-                                    this.state.parse.tags[i][treeOffset + k - counter].name !== '_' &&
+                                    this.state.parse.tags[i][tagsOffset + k - counter]?.name !== '_' &&
                                     !(
                                         'opcode' in this.state.parse.tree[treeOffset + k] && 
                                         (this.state.parse.tree[treeOffset + k] as Op).output === 0
@@ -885,20 +917,27 @@ export class Parser {
                                     (this.state.parse.tree[treeOffset + k] as Op).output === 0
                                 ) counter++
                             }
-                            for (let k = 0; k < -diff; k++) this.state.parse.tree[
-                                this.state.parse.tree.length - k
-                            ].error = 'no LHS item exists to match this existing RHS item'
+                            for (let k = 0; k < -diff; k++) {
+                                this.state.parse.tree[
+                                    this.state.parse.tree.length - 1 - k 
+                                ].error = 'no LHS item exists to match this existing RHS item'
+
+                            }
                         }
                     }
                     else {
-                        this._updateTree({
+                        this.state.parse.tags[i].push({
+                            name: '_',
+                            position: []
+                        })
+                        this.state.parse.tree.push({
                             error: 'invalid sub-expression',
                             position: [
                                 entry + subExpEntry[j],
                                 entry + subExpEntry[j] + this.input.length - 1
                             ]
                         })
-                        break
+                        // break
                     }
                 }
 
@@ -1885,6 +1924,17 @@ export class Parser {
     }
 
     // /**
+    //  * Count stackless errors, stackless error are those that do not represent an actual Node
+    //  */
+    // private static countStacklessErrors(nodes: Node[]): number {
+    //     let count = 0
+    //     for (let i = 0; i < nodes.length; i++) {
+    //         if ('stackless' in nodes[i]) count++
+    //     }
+    //     return count
+    // }
+
+    // /**
     //  * Method to update the arguments of zipmaps after full bytes compilation (if any present)
     //  */
     // public static _updateArgs(config: StateConfig): StateConfig {
@@ -1931,3 +1981,4 @@ export class Parser {
     //     return argCache
     // }
 }
+
