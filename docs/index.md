@@ -64,6 +64,7 @@
 
 |  Type Alias | Description |
 |  --- | --- |
+|  [Comment\_2](./types/comment_2.md) |  |
 |  [Config](./types/config.md) | Specific the configuration of the generation method |
 |  [Error\_2](./types/error_2.md) | Type of Parser's Error node |
 |  [Hexable](./types/hexable.md) | A native type for ethers Hexable |

@@ -64,6 +64,15 @@ export type Tag = {
 
 /**
  * @public
+ */
+export type Comment = Error | {
+    comment: string;
+    position: number[];
+    error?: string;
+}
+
+/**
+ * @public
  * Type of Parser's Node
  */
 export type Node = Error | Value | Op | Tag;
@@ -99,7 +108,7 @@ export type State = {
 * Type of a parse tree object
 */
 export type ParseTree = Record<
-    number,
+    string,
     { tree: Node[]; position: number[] }
 >;
 

@@ -122,7 +122,6 @@ export class Formatter {
                         space.repeat(counter * n) +
                         _expressions[j].slice(i)
                     i += (counter * n) + 1
-                    console.log(counter * n)
                 }
             }
         }
@@ -156,6 +155,7 @@ export class Formatter {
         for (let i = 0; i < sources.length; i++) {
             const lhs: string[] = []
             const src = arrayify(sources[i], { allowMissingPrefix: true })
+            let zeroOpCounter = 0
             for (let j = 0; j < src.length; j += 4) {
                 const _op = (src[j] << 8) + src[j + 1]
                 const _operand = (src[j + 2] << 8) + src[j + 3]
@@ -163,7 +163,7 @@ export class Formatter {
 
                 // error if an opcode not found in opmeta
                 if (_index < 0) throw new Error(
-                    `opcode with enum "${this.opmeta[_index].name}" does not exist on OpMeta`
+                    `opcode with enum "${_op}" does not exist on OpMeta`
                 )
                 else {
                     if (_op === AllStandardOps.STATE && (_operand & 1) === 1) {
@@ -178,6 +178,9 @@ export class Formatter {
                         const _multiOutputs: string[] = []
                         const inputs = this.opmeta[_index].inputs(_operand)
                         const outputs = this.opmeta[_index].outputs(_operand)
+
+                        // count zero output ops
+                        if (outputs === 0) zeroOpCounter++
 
                         // construct operand arguments
                         if (this.opmeta[_index].operand.argsConstraints.length) {
@@ -257,7 +260,7 @@ export class Formatter {
             }
 
             // cache the LHS elements
-            for (let j = 0; j < _stack.length; j++) lhs.push('_')
+            for (let j = 0; j < _stack.length - zeroOpCounter; j++) lhs.push('_')
 
             // construct the source expression at current index, both LHS and RHS
             _finalStack.push(
@@ -272,5 +275,3 @@ export class Formatter {
         return _finalStack.join('\n')
     }
 }
-
-

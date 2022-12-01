@@ -608,7 +608,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => []
         },
-        aliases: ['MSG_SENDER', 'MSGSENDER', 'SIGNER'],
+        aliases: ['MSG_SENDER', 'MSGSENDER', 'SIGNER', 'SENDER'],
         data: {
             description: 'The sender of the current transaction.',
             category: 'EVM',
@@ -649,6 +649,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
             decoder: (_operand) => []
         },
         aliases: [
+            'NOW',
             'CURRENT_TIMESTAMP',
             'CURRENTTIMESTAMP',
             'BLOCKTIMESTAMP',

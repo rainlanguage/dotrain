@@ -145,7 +145,9 @@ Method to get parse tree object and StateConfig
 <b>Signature:</b>
 
 ```typescript
-static get(expression: string, opmeta?: OpMeta[]): [ParseTree, StateConfig];
+static get(expression: string, opmeta?: OpMeta[]): [ParseTree | (ParseTree & {
+        'comments': Comment[];
+    }), StateConfig];
 ```
 
 #### Parameters
@@ -157,7 +159,9 @@ static get(expression: string, opmeta?: OpMeta[]): [ParseTree, StateConfig];
 
 <b>Returns:</b>
 
-`[ParseTree, StateConfig]`
+`[ParseTree | (ParseTree & {
+        'comments': Comment[];
+    }), StateConfig]`
 
 Array of parse tree object and StateConfig
 
@@ -170,7 +174,9 @@ Method to get the parse tree object
 <b>Signature:</b>
 
 ```typescript
-static getParseTree(expression: string, opmeta?: OpMeta[]): ParseTree;
+static getParseTree(expression: string, opmeta?: OpMeta[]): ParseTree | (ParseTree & {
+        'comments': Comment[];
+    });
 ```
 
 #### Parameters
@@ -182,7 +188,9 @@ static getParseTree(expression: string, opmeta?: OpMeta[]): ParseTree;
 
 <b>Returns:</b>
 
-`ParseTree`
+`ParseTree | (ParseTree & {
+        'comments': Comment[];
+    })`
 
 A parse tree object
 
