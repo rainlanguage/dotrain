@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { rainterpreterOpMeta } from '../rainterpreterOpMeta'
-import { BigNumberish, BytesLike } from 'ethers'
-import { AllStandardOps, OperandMeta, OpIO, OpMeta, ParamsValidRange, StateConfig } from '../types'
+import { AllStandardOps } from '../../rainterpreter/allStandardOps';
+import { rainterpreterOpMeta } from '../../rainterpreter/opmeta';
+import { BigNumberish, BytesLike } from 'ethers';
+import { OperandMeta, OpIO, OpMeta, ParamsValidRange, StateConfig } from '../../types';
 import {
     concat,
     isBigNumberish,
     memoryOperand,
     MemoryType,
     op
-} from '../utils'
+} from '../../utils';
 import {
     virtualGte,
     virtualInEq,
@@ -22,7 +23,7 @@ import {
     Op,
     Value,
     Comment,
-} from './types'
+} from './types';
 
 /**
  * @public
@@ -215,19 +216,19 @@ export class Parser {
         expression: string,
         opmeta?: OpMeta[],
     ): ParseTree | (ParseTree & { 'comments': Comment[] }) | string {
-        try {
-            this._parse(expression, opmeta)
-            let ret: any = this.parseTree as ParseTree
-            if (this.comments.length > 0) ret = {
-                ...this.parseTree,
-                'comments': this.comments
-            } as (ParseTree & { 'comments': Comment[] })
-            return ret
-        }
-        catch(err) {
-            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
-            return `an error occured duting parsing, please try again, reason: ${err}`
-        }
+        //try {
+        this._parse(expression, opmeta)
+        let ret: any = this.parseTree as ParseTree
+        if (this.comments.length > 0) ret = {
+            ...this.parseTree,
+            'comments': this.comments
+        } as (ParseTree & { 'comments': Comment[] })
+        return ret
+        // }
+        // catch(err) {
+        //     console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+        //     return `an error occured duting parsing, please try again, reason: ${err}`
+        // }
     }
 
     /**
@@ -277,10 +278,14 @@ export class Parser {
         // let argOffset: number[] = []
         // let isRecord = false
 
-        // convertion to a single type
-        if ('0' in parseTree) {
+        // convertion to a standard format
+        if ('splice' in parseTree) {
+            if ('splice' in parseTree[0]) nodes = parseTree as any as Node[][]
+            else nodes = [parseTree]
+        }   
+        else if('0' in parseTree) {
             const array: any = Object.values(parseTree)
-            if (!('0' in array[0])) nodes = [array as Node[]]
+            if ('splice' in array[0]) nodes = [array as Node[]]
             else {
                 if ('tree' in array[0]) {
                     for (let i = 0; i < array.length; i++) {
@@ -291,7 +296,7 @@ export class Parser {
                 //     parseTree as Record<number, Node[]>
                 // )
                 // isRecord = true
-                nodes = array as Node[][]
+                nodes = [array as Node[]]
             }
         }
         else nodes = [[parseTree as Node]]
@@ -312,6 +317,7 @@ export class Parser {
         // const argCount = isRecord ? argOffset.unshift()! : 0
 
         for (let i = 0; i < nodes.length; i++) {
+            if (nodes[i].length === 0) sourcesCache = []
             for (let j = 0; j < nodes[i].length; j++) {
                 const node = nodes[i][j]
                 if ('value' in node) {
@@ -319,7 +325,7 @@ export class Parser {
                         if (constants.includes(node.value)) {
                             sourcesCache.push(
                                 op(
-                                    AllStandardOps.STATE,
+                                    AllStandardOps.READ_MEMORY,
                                     memoryOperand(
                                         MemoryType.Constant,
                                         constants.indexOf(node.value)
@@ -330,7 +336,7 @@ export class Parser {
                         else {
                             sourcesCache.push(
                                 op(
-                                    AllStandardOps.STATE,
+                                    AllStandardOps.READ_MEMORY,
                                     memoryOperand(MemoryType.Constant, constants.length)
                                 )
                             )
@@ -355,7 +361,7 @@ export class Parser {
                         ) {
                             sourcesCache.push(
                                 op(
-                                    AllStandardOps.STATE,
+                                    AllStandardOps.READ_MEMORY,
                                     memoryOperand(
                                         MemoryType.Constant,
                                         constants.indexOf(node.value)
@@ -366,7 +372,7 @@ export class Parser {
                         else {
                             sourcesCache.push(
                                 op(
-                                    AllStandardOps.STATE,
+                                    AllStandardOps.READ_MEMORY,
                                     memoryOperand(MemoryType.Constant, constants.length)
                                 )
                             )
@@ -379,7 +385,7 @@ export class Parser {
                 else if ('name' in node && !('opcode' in node)) {
                     sourcesCache.push(
                         op(
-                            AllStandardOps.STATE,
+                            AllStandardOps.READ_MEMORY,
                             memoryOperand(
                                 MemoryType.Stack,
                                 this.state.parse.tags[i].findIndex(
@@ -925,22 +931,25 @@ export class Parser {
                         }
                     }
                     else {
-                        this.state.parse.tags[i].push({
-                            name: '_',
-                            position: []
-                        })
-                        this.state.parse.tree.push({
-                            error: 'invalid sub-expression',
-                            position: [
-                                entry + subExpEntry[j],
-                                entry + subExpEntry[j] + this.input.length - 1
-                            ]
-                        })
+                        if (this._trim(this.input)[0]) {
+                            this.state.parse.tags[i].push({
+                                name: '_',
+                                position: []
+                            })
+                            this.state.parse.tree.push({
+                                error: 'invalid sub-expression',
+                                position: [
+                                    entry + subExpEntry[j],
+                                    entry + subExpEntry[j] + this.input.length - 1
+                                ]
+                            })
+                        }
                         // break
                     }
                 }
 
                 // ----------- constructing final parse tree -----------
+                // if (this.state.parse.tree.length) {
                 this.parseTree[i] = {
                     position: positions[i],
                     tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
@@ -1989,4 +1998,3 @@ export class Parser {
     //     return argCache
     // }
 }
-

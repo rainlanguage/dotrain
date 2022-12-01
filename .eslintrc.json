@@ -15,13 +15,6 @@
         "@typescript-eslint"
     ],
     "rules": {
-        "semi": [
-            "error",
-            "never",
-            {
-                "beforeStatementContinuationChars": "always"
-            }
-        ],
         "indent": [
             "error",
             4,

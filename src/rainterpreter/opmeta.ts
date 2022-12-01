@@ -1,5 +1,6 @@
-import { AllStandardOps, OpMeta } from './types'
-import { callOperand, hexlify, loopNOperand, memoryOperand, selectLte, tierRange } from './utils'
+import { OpMeta } from '../types'
+import { AllStandardOps } from './allStandardOps'
+import { callOperand, hexlify, loopNOperand, memoryOperand, selectLteOperand, tierRange } from '../utils'
 
 /**
  * @public
@@ -121,6 +122,49 @@ export const rainterpreterOpMeta: OpMeta[] = [
             ],
         },
     },
+    // {
+    // enum: AllStandardOps.CONTEXT_ROW,
+    // name: 'CONTEXT',
+    // description: 'Inserts an argument passed to a contracts function into the stack, context is a 2D array of uint256',
+    // outputs: (_operand) => 1,
+    // inputs: (_operand) => 0,
+    // paramsValidRange: (_paramsLength) => _paramsLength === 0,
+    // operand: {
+    //     // 2 args that construct CONTEXT operand
+    //     argsConstraints: [
+    //         (_value) => _value < 256 && _value >= 0,     // column valid range
+    //         (_value) => _value < 256 && _value >= 0,     // row valid range
+    //     ],
+    //     encoder: (_args) => Number(hexlify(
+    //         new Uint8Array([
+    //             _args[0],    // column
+    //             _args[1]     // row
+    //         ])
+    //     )),
+    //     decoder: (_operand) => [
+    //         _operand >> 8,      // column
+    //         _operand & 0xff     // row
+    //     ]
+    // },
+        
+    // data: {
+    //     description: 'Insert a value from the calling function context',
+    //     category: 'core',
+    //     example: 'context<2 6>()',
+    //     parameters: [
+    //         {
+    //             spread: false,  // not sure 
+    //             name: 'column index',
+    //             description: 'The index of the context column to insert.',
+    //         },
+    //         {
+    //             spread: false,  // not sure
+    //             name: 'row index',
+    //             description: 'The index of the constant row to insert.',
+    //         },
+    //     ],
+    // },
+    // }
     {
         enum: AllStandardOps.DEBUG,
         name: 'DEBUG',
@@ -172,6 +216,49 @@ export const rainterpreterOpMeta: OpMeta[] = [
             ],
         },
     },
+    // {
+    // enum: AllStandardOps.FOLD_CONTEXT,
+    // name: 'CONTEXT',
+    // description: 'Inserts an argument passed to a contracts function into the stack, context is a 2D array of uint256',
+    // outputs: (_operand) => 1,
+    // inputs: (_operand) => 0,
+    // paramsValidRange: (_paramsLength) => _paramsLength === 0,
+    // operand: {
+    //     // 2 args that construct CONTEXT operand
+    //     argsConstraints: [
+    //         (_value) => _value < 256 && _value >= 0,     // column valid range
+    //         (_value) => _value < 256 && _value >= 0,     // row valid range
+    //     ],
+    //     encoder: (_args) => Number(hexlify(
+    //         new Uint8Array([
+    //             _args[0],    // column
+    //             _args[1]     // row
+    //         ])
+    //     )),
+    //     decoder: (_operand) => [
+    //         _operand >> 8,      // column
+    //         _operand & 0xff     // row
+    //     ]
+    // },
+        
+    // data: {
+    //     description: 'Insert a value from the calling function context',
+    //     category: 'core',
+    //     example: 'context<2 6>()',
+    //     parameters: [
+    //         {
+    //             spread: false,  // not sure 
+    //             name: 'column index',
+    //             description: 'The index of the context column to insert.',
+    //         },
+    //         {
+    //             spread: false,  // not sure
+    //             name: 'row index',
+    //             description: 'The index of the constant row to insert.',
+    //         },
+    //     ],
+    // },
+    // }
     {
         enum: AllStandardOps.LOOP_N,
         name: 'LOOP_N',
@@ -211,16 +298,17 @@ export const rainterpreterOpMeta: OpMeta[] = [
         },
     },
     {
-        enum: AllStandardOps.STATE,
-        name: 'STATE',
+        // @TODO: update
+        enum: AllStandardOps.READ_MEMORY,
+        name: 'READ_MEMORY',
         description: 'Takes an item from constants array or copy from stack items and insert it into the stack',
         outputs: (_operand) => 1,
         inputs: (_operand) => 0,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
-            // 2 args that construct STATE operand
+            // 2 args that construct READ_MEMORY operand
             argsConstraints: [
-                (_value) => _value < 2 && _value >= 0,     // type of STATE (constants or stack) valid range
+                (_value) => _value < 2 && _value >= 0,     // type of READ_MEMORY (constants or stack) valid range
                 (_value) => _value < 128 && _value >= 0,     // index valid range
             ],
             encoder: (_args) => memoryOperand(0, _args[0]),
@@ -229,7 +317,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
         data: {
             description: 'Copy stack item into the expression.',
             category: 'core',
-            example: 'state(3)',
+            example: 'READ_MEMORY(3)',
             parameters: [
                 {
                     spread: false,
@@ -240,29 +328,32 @@ export const rainterpreterOpMeta: OpMeta[] = [
         },
     },
     {
-        enum: AllStandardOps.STORAGE,
-        name: 'STORAGE',
-        description: 'Insert a value from contract storage into the stack',
-        outputs: (_operand) => 1,
-        inputs: (_operand) => 0,
-        paramsValidRange: (_paramsLength) => _paramsLength === 0,
+        enum: AllStandardOps.SET,
+        name: 'SET',
+        description: 'Write a key/value pair from constants array into contract storage',
+        outputs: (_operand) => 0,
+        inputs: (_operand) => 2,
+        paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsConstraints: [
-                (_value) => _value < 256 && _value >= 0,     // index of Storage slot valid range
-            ],
-            encoder: (_args) => _args[0],
-            decoder: (_operand) => [_operand]
+            argsConstraints: [],
+            encoder: (_args, _paramsLength) => 0,
+            decoder: (_operand) => []
         },
-        aliases: ['MEMORY'],
+        aliases: ['WRITE'],
         data: {
-            description: 'Insert a value from contract storage.',
+            description: 'Write a key/value to contract storage.',
             category: 'core',
-            example: 'storage(0)',
+            example: 'set(0x123456 0xabcde)',
             parameters: [
                 {
                     spread: false,
-                    name: 'index',
-                    description: 'The index of the storage value to insert.',
+                    name: 'key',
+                    description: 'The key of the key/value pair.',
+                },
+                {
+                    spread: false,
+                    name: 'value',
+                    description: 'The value of the value/key pair.',
                 },
             ],
         },
@@ -608,7 +699,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => []
         },
-        aliases: ['MSG_SENDER', 'MSGSENDER', 'SIGNER', 'SENDER'],
+        aliases: ['MSG_SENDER', 'MSGSENDER', 'SIGNER'],
         data: {
             description: 'The sender of the current transaction.',
             category: 'EVM',
@@ -649,7 +740,6 @@ export const rainterpreterOpMeta: OpMeta[] = [
             decoder: (_operand) => []
         },
         aliases: [
-            'NOW',
             'CURRENT_TIMESTAMP',
             'CURRENTTIMESTAMP',
             'BLOCKTIMESTAMP',
@@ -1714,7 +1804,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
                 (_value, _paramsLength) =>
                     _value >= 1 && _value <= 31 && _paramsLength - _value === 1,   // length
             ],
-            encoder: (_args) => selectLte(_args[0], _args[1], _args[2]),
+            encoder: (_args) => selectLteOperand(_args[0], _args[1], _args[2]),
             decoder: (_operand) => [_operand >> 7, (_operand >> 5) & 3, _operand & 31],
         },
         aliases: ['SELECTLTE', 'SELECT'],
@@ -1796,6 +1886,32 @@ export const rainterpreterOpMeta: OpMeta[] = [
                     spread: false,
                     name: 'report',
                     description: 'The report to update its tier range',
+                },
+            ],
+        },
+    },
+    {
+        enum: AllStandardOps.GET,
+        name: 'GET',
+        description: 'Read a key/value pair from contract storage by providing the key and stack the value',
+        outputs: (_operand) => 1,
+        inputs: (_operand) => 1,
+        paramsValidRange: (_paramsLength) => _paramsLength === 1,
+        operand: {
+            argsConstraints: [],
+            encoder: (_args, _paramsLength) => 0,
+            decoder: (_operand) => []
+        },
+        aliases: ['READ'],
+        data: {
+            description: 'Read a key/value pair from contract storage by providing the key and stack the value.',
+            category: 'core',
+            example: 'get(0x123456)',
+            parameters: [
+                {
+                    spread: false,
+                    name: 'key',
+                    description: 'The key of the key/value pair.',
                 },
             ],
         },

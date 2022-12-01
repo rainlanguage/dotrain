@@ -1,8 +1,9 @@
-import { BytesLike, BigNumber, ethers } from 'ethers'
-import { AllStandardOps, StateConfig, OpMeta } from '../types'
-import { arrayify } from '../utils'
-import { rainterpreterOpMeta } from '../rainterpreterOpMeta'
-import { Config, PrettifyConfig } from './types'
+import { BytesLike, BigNumber, ethers } from 'ethers';
+import { StateConfig, OpMeta } from '../../types';
+import { arrayify } from '../../utils';
+import { rainterpreterOpMeta } from '../../rainterpreter/opmeta';
+import { Config, PrettifyConfig } from './types';
+import { AllStandardOps } from '../../rainterpreter/allStandardOps';
 
 /**
  * @public
@@ -166,7 +167,7 @@ export class Formatter {
                     `opcode with enum "${_op}" does not exist on OpMeta`
                 )
                 else {
-                    if (_op === AllStandardOps.STATE && (_operand & 1) === 1) {
+                    if (_op === AllStandardOps.READ_MEMORY && (_operand & 1) === 1) {
                         _stack.push(
                             BigNumber.from(constants[_operand >> 1]).eq(ethers.constants.MaxUint256)
                                 ? 'MaxUint256'

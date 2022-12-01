@@ -29,7 +29,7 @@
         "prepare": "tsc",
         "test": "npx hardhat test",
         "lint": "eslint \"src/**\" \"test/**\"",
-        "docgen": "api-extractor run --local && api-documenter -i ./ -o ./docs"
+        "docgen": "rm -rf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs"
     },
     "prettier": {
         "printWidth": 100,

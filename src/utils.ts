@@ -279,7 +279,7 @@ export function callSize(
  *
  * @returns a byte size number
  */
-export function selectLte(logic: number, mode: number, length: number): number {
+export function selectLteOperand(logic: number, mode: number, length: number): number {
     let lte = logic
     lte <<= 2
     lte += mode

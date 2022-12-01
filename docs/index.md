@@ -34,7 +34,7 @@
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [memoryOperand(type, offset)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
 |  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
-|  [selectLte(logic, mode, length)](./variables/selectlte_1.md) | function to set up the operand for a SELECT\_LTE opcode |
+|  [selectLteOperand(logic, mode, length)](./variables/selectlteoperand_1.md) | function to set up the operand for a SELECT\_LTE opcode |
 |  [tierRange(startTier, endTier)](./variables/tierrange_1.md) | function to pack start/end tier range into a byte size number for the UPDATE\_BLOCKS\_FOR\_TIER\_RANGE opcode |
 
 ## Variables
