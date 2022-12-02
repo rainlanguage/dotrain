@@ -1,0 +1,27 @@
+name: Standard Test
+on: [push, pull_request]
+jobs:
+  build:
+    name: Build, lint, and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Install nix
+        uses: cachix/install-nix-action@v13
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Build
+        run: nix-shell
+
+      - name: Lint
+        run: nix-shell --run lint
+
+      - name: Test
+        run: nix-shell --run local-test
+
+      - name: Test doc generation
+        run: nix-shell --run docgen
