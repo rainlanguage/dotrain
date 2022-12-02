@@ -862,7 +862,7 @@ export class Parser {
                             let counter = 0
                             for (let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
                                 if (
-                                    this.state.parse.tags[i][tagsOffset + k - counter].name !== '_' &&
+                                    this.state.parse.tags[i][tagsOffset + k - counter]?.name !== '_' &&
                                     !(
                                         'opcode' in this.state.parse.tree[treeOffset + k] && 
                                         (this.state.parse.tree[treeOffset + k] as Op).output === 0
@@ -881,7 +881,7 @@ export class Parser {
                             let counter = 0
                             for (let k = 0; k < this.state.parse.tree.length - treeOffset; k++) {
                                 if (
-                                    this.state.parse.tags[i][tagsOffset + k - counter].name !== '_' &&
+                                    this.state.parse.tags[i][tagsOffset + k - counter]?.name !== '_' &&
                                     !(
                                         'opcode' in this.state.parse.tree[treeOffset + k] && 
                                         (this.state.parse.tree[treeOffset + k] as Op).output === 0
