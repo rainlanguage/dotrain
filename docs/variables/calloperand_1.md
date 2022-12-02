@@ -2,7 +2,7 @@
 
 # Function callOperand()
 
-Constructs the operand for RainInterpreter's `CALL` opcode by packing 3 numbers into a single byte.
+Builds the operand for RainInterpreter's `CALL` opcode by packing 3 numbers into a single byte.
 
 <b>Signature:</b>
 
@@ -14,8 +14,8 @@ function callOperand(inputSize: number, outputSize: number, sourceIndex: number)
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  inputSize | `number` | number of inputs being passed to the source (range 0-7) |
-|  outputSize | `number` | number of output returned by the source (range 1-3) |
+|  inputSize | `number` | number of inputs being passed to the source |
+|  outputSize | `number` | number of outputs returned by the source |
 |  sourceIndex | `number` | index of function source |
 
 <b>Returns:</b>

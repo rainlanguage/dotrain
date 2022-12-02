@@ -171,6 +171,7 @@ export function memoryOperand(type: number, offset: number): number {
 }
 
 /**
+ * @public
  * Builds the operand for RainInterpreter's `CALL` opcode by packing 3 numbers into a single byte.
  *
  * @param inputSize - number of inputs being passed to the source
@@ -187,13 +188,14 @@ export function callOperand(
 }
   
 /**
-   * Builds the operand for RainInterpreter's `LOOP_N` opcode by packing 4 numbers into a single byte.
-   *
-   * @param n - loop the source for n times
-   * @param inputSize - number of inputs being passed to the source
-   * @param outputSize - number of outputs returned by the source
-   * @param sourceIndex - index of function source
-   */
+ * @public
+ * Builds the operand for RainInterpreter's `LOOP_N` opcode by packing 4 numbers into a single byte.
+ *
+ * @param n - loop the source for n times
+ * @param inputSize - number of inputs being passed to the source
+ * @param outputSize - number of outputs returned by the source
+ * @param sourceIndex - index of function source
+ */
 export function loopNOperand(
     n: number,
     inputSize: number,
@@ -205,12 +207,13 @@ export function loopNOperand(
 }
   
 /**
-   * Builds the operand for RainInterpreter's `DO_WHILE` opcode by packing 3 numbers into a single byte.
-   *
-   * @param inputSize - number of inputs being passed to the source
-   * @param reserved - reserved bytes
-   * @param sourceIndex - index of function source
-   */
+ * @public
+ * Builds the operand for RainInterpreter's `DO_WHILE` opcode by packing 3 numbers into a single byte.
+ *
+ * @param inputSize - number of inputs being passed to the source
+ * @param reserved - reserved bytes
+ * @param sourceIndex - index of function source
+ */
 export function doWhileOperand(
     inputSize: number,
     reserved: number,
@@ -221,11 +224,11 @@ export function doWhileOperand(
 }
 
 /**
- * @public function to pack start/end tier range into a byte size number for the UPDATE_BLOCKS_FOR_TIER_RANGE opcode
+ * @public
+ * function to pack start/end tier range into a byte size number for the UPDATE_BLOCKS_FOR_TIER_RANGE opcode
  *
  * @param startTier - the start tier of the updating which ranges between 0 to 8 (exclusive)
  * @param endTier - the end tier of the updating which ranges between 0 to 8 (inclusive)
- *
  * @returns a byte size number
  */
 export function tierRange(startTier: number, endTier: number): number {
@@ -284,12 +287,12 @@ export function callSize(
 }
 
 /**
- * @public function to set up the operand for a SELECT_LTE opcode
+ * @public
+ * function to set up the operand for a SELECT_LTE opcode
  *
  * @param logic - 0 = every, 1 = any, acts like a logical and/or for the check against BLOCK_NUMBER
  * @param mode - 0 = min, 1 = max, 2 = first, the way to select the reports that pass the check against BLOCK_NUMBER
  * @param inputSize - the number of reports to stack for SELECT_LTE opcode
- *
  * @returns a byte size number
  */
 export function selectLteOperand(
