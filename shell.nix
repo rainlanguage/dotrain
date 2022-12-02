@@ -8,7 +8,7 @@ let
         { };
 
     local-test = pkgs.writeShellScriptBin "local-test" ''
-        yarn run test
+        yarn test
     '';
 
     flush-all = pkgs.writeShellScriptBin "flush-all" ''
@@ -18,25 +18,27 @@ let
 
     ci-test = pkgs.writeShellScriptBin "ci-test" ''
         flush-all
-        yarn install
+        yarn install --ignore-scripts
+        build
         local-test
     '';
 
     build = pkgs.writeShellScriptBin "build" ''
-        yarn run build
+        yarn build
     '';
 
     build-all = pkgs.writeShellScriptBin "build-all" ''
         flush-all
-        yarn install
+        yarn install --ignore-scripts
+        build
     '';
 
     docgen = pkgs.writeShellScriptBin "docgen" ''
-        yarn run docgen
+        yarn docgen
     '';
 
     lint = pkgs.writeShellScriptBin "lint" ''
-        yarn run lint
+        yarn lint
     '';
 
     in
@@ -58,6 +60,7 @@ let
         shellHook = ''
             export PATH=$( npm bin ):$PATH
             # keep it fresh
-            yarn install
+            yarn install --ignore-scripts
+            build
         '';
     }

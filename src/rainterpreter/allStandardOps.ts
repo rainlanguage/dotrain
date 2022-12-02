@@ -1,6 +1,5 @@
 /**
  * @public
- *
  * All the standard Op Codes
  */
 export enum AllStandardOps {

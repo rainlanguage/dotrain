@@ -27,7 +27,7 @@
     "scripts": {
         "build": "tsc",
         "prepare": "tsc",
-        "test": "npx hardhat test",
+        "test": "echo 'there is not test at the moment'",
         "lint": "eslint \"src/**\" \"test/**\"",
         "docgen": "rm -rf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs"
     },
