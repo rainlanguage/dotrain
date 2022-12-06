@@ -216,19 +216,19 @@ export class Parser {
         expression: string,
         opmeta?: OpMeta[],
     ): ParseTree | (ParseTree & { 'comments': Comment[] }) | string {
-        //try {
-        this._parse(expression, opmeta)
-        let ret: any = this.parseTree as ParseTree
-        if (this.comments.length > 0) ret = {
-            ...this.parseTree,
-            'comments': this.comments
-        } as (ParseTree & { 'comments': Comment[] })
-        return ret
-        // }
-        // catch(err) {
-        //     console.log(`an error occured duting parsing, please try again, reason: ${err}`)
-        //     return `an error occured duting parsing, please try again, reason: ${err}`
-        // }
+        try {
+            this._parse(expression, opmeta)
+            let ret: any = this.parseTree as ParseTree
+            if (this.comments.length > 0) ret = {
+                ...this.parseTree,
+                'comments': this.comments
+            } as (ParseTree & { 'comments': Comment[] })
+            return ret
+        }
+        catch(err) {
+            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+            return `an error occured duting parsing, please try again, reason: ${err}`
+        }
     }
 
     /**
@@ -638,6 +638,11 @@ export class Parser {
 
                 // ----------- begin parsing sub-expressions -----------
                 for (let j = 0; j < subExp.length; j++) {
+                    this.state.depthLevel = 0
+                    this.state.ambiguity = false
+                    this.state.track.notation = []
+                    this.state.track.parens.open = []
+                    this.state.track.parens.close = []
                     let _break = false
                     // const _errRhsComments: number[] = []
                     this.input = subExp[j]
