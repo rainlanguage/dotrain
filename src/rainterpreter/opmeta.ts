@@ -190,7 +190,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
         enum: AllStandardOps.DO_WHILE,
         name: 'DO_WHILE',
         description: 'Runs a while loop on number of items taken from a stack until a conditions is met',
-        outputs: (_operand) => 0,
+        outputs: (_operand) => (_operand & 15) + 1,
         inputs: (_operand) => _operand & 15,
         paramsValidRange: (_paramsLength) => _paramsLength >= 0 && _paramsLength < 16,
         operand: {
