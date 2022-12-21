@@ -703,19 +703,66 @@ export class Parser {
                                 let tagName = lhs.slice(0, index)
                                 const tagNameLen = tagName.length
                                 lhs = lhs.slice(index)
+                                let _err = ''
                                 if (tagName.search(/[)(<>]/g) > -1) {
-                                    tagName = 'invalid character in tag'
+                                    _err = 'invalid character in tag'
                                 }
-
-                                this.state.parse.tags[this.state.parse.tags.length - 1].push({
-                                    name: tagName,
-                                    position: [
-                                        entry + subExpEntry[j] + 
-                                            _lhs.length - lhs.length - tagNameLen,
-                                        entry + subExpEntry[j] +
-                                            _lhs.length - lhs.length - 1
-                                    ]
-                                })
+                                const _i = this.state.parse.tags[
+                                    this.state.parse.tags.length - 1
+                                ].findIndex(
+                                    v => v.name = tagName
+                                )
+                                if (_err.length > 0) {
+                                    if (_i > -1) this.state.parse.tags[
+                                        this.state.parse.tags.length - 1
+                                    ].push({
+                                        name: tagName,
+                                        position: [
+                                            entry + subExpEntry[j] + 
+                                                _lhs.length - lhs.length - tagNameLen,
+                                            entry + subExpEntry[j] +
+                                                _lhs.length - lhs.length - 1
+                                        ],
+                                        error: 'invalid name, word already in use'
+                                    })
+                                    else this.state.parse.tags[
+                                        this.state.parse.tags.length -1
+                                    ].push({
+                                        name: tagName,
+                                        position: [
+                                            entry + subExpEntry[j] + 
+                                                _lhs.length - lhs.length - tagNameLen,
+                                            entry + subExpEntry[j] +
+                                                _lhs.length - lhs.length - 1
+                                        ],
+                                        error: _err
+                                    })
+                                }
+                                else {
+                                    if (_i > -1) this.state.parse.tags[
+                                        this.state.parse.tags.length - 1
+                                    ].push({
+                                        name: tagName,
+                                        position: [
+                                            entry + subExpEntry[j] + 
+                                                _lhs.length - lhs.length - tagNameLen,
+                                            entry + subExpEntry[j] +
+                                                _lhs.length - lhs.length - 1
+                                        ],
+                                        error: 'invalid name, word already in use'
+                                    })
+                                    else this.state.parse.tags[
+                                        this.state.parse.tags.length -1
+                                    ].push({
+                                        name: tagName,
+                                        position: [
+                                            entry + subExpEntry[j] + 
+                                                _lhs.length - lhs.length - tagNameLen,
+                                            entry + subExpEntry[j] +
+                                                _lhs.length - lhs.length - 1
+                                        ]
+                                    })
+                                }
                             }
                         }
 
