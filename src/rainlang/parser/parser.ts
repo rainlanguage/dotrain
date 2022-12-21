@@ -1868,9 +1868,20 @@ export class Parser {
                         this.exp = this.exp.replace(consumee, '')
                     }
                     else if (
-                        this.state.parse.tags[this.state.parse.tags.length - 1]
-                            .map(v => v.name).includes(str)
+                        this.state.parse.tags[this.state.parse.tags.length - 1].findIndex(
+                            (v, i) => {
+                                if (this.state.depthLevel === 0) return (
+                                    v.name === str &&
+                                    i !== this.state.parse.tree.length
+                                )
+                                else return (
+                                    v.name === str &&
+                                    i !== this.state.parse.tree.length - 1
+                                )
+                            }
+                        ) > -1
                     ) {
+                        console.log('kjh')
                         this._updateTree({
                             name: str,
                             position: [startPosition, startPosition + str.length - 1],
