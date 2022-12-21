@@ -700,7 +700,7 @@ export class Parser {
                             lhs = this._trimLeft(lhs)[0]
                             if (lhs.length > 0) {
                                 const index = lhs.indexOf(' ') > -1 ? lhs.indexOf(' ') : lhs.length
-                                let tagName = lhs.slice(0, index)
+                                const tagName = lhs.slice(0, index)
                                 const tagNameLen = tagName.length
                                 lhs = lhs.slice(index)
                                 let _err = ''
@@ -1919,7 +1919,9 @@ export class Parser {
                             (v) => v.name === str
                         ) > -1
                     ) {
-                        const _i = this.state.parse.tags[this.state.parse.tags.length - 1].findIndex(
+                        const _i = this.state.parse.tags[
+                            this.state.parse.tags.length - 1
+                        ].findIndex(
                             (v) => v.name === str
                         )
                         if (this.state.depthLevel === 0) {
