@@ -187,17 +187,16 @@ export const rainterpreterOpMeta: OpMeta[] = [
         name: 'DO_WHILE',
         description: 'Runs a while loop on number of items taken from a stack until a conditions is met',
         outputs: (_operand) => (_operand & 15) + 1,
-        inputs: (_operand) => _operand & 15,
+        inputs: (_operand) => (_operand & 15) + 1,
         paramsValidRange: (_paramsLength) => _paramsLength >= 0 && _paramsLength < 16,
         operand: {
-            // 1 arg that constructs DO_WHILE operand
+            // 2 arg that constructs DO_WHILE operand
             argsConstraints: [
-                (_value, _paramsLength) => _value < 16 && _value > 0 && _value === _paramsLength,       // inputSize valid range
-                (_value) => _value < 16 && _value >= 0,                                                 // reserved valid range
-                (_value) => _value < 16 && _value > 0,                                                  // sourceIndex valid range
+                (_value, _paramsLength) => _value < 16 && _value >= 0 && _value === _paramsLength,        // inputSize valid range
+                (_value) => _value < 16 && _value >= 0,                                                   // sourceIndex valid range
             ],
-            encoder: (_args) => doWhileOperand(_args[0], _args[1], _args[2]),
-            decoder: (_operand) => [_operand & 15, (_operand >> 4) & 15, _operand >> 8],
+            encoder: (_args) => doWhileOperand(_args[0], _args[1]),
+            decoder: (_operand) => [_operand & 15, _operand >> 8],
         },
         aliases: ['WHILE', 'DOWHILE'],
         data: {
@@ -209,11 +208,6 @@ export const rainterpreterOpMeta: OpMeta[] = [
                     spread: true,
                     name: 'inputs',
                     description: 'inputs of the do_while op.',
-                },
-                {
-                    spread: false,
-                    name: 'reserved',
-                    description: 'reserved bits.',
                 },
                 {
                     spread: false,

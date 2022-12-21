@@ -211,15 +211,13 @@ export function loopNOperand(
  * Builds the operand for RainInterpreter's `DO_WHILE` opcode by packing 3 numbers into a single byte.
  *
  * @param inputSize - number of inputs being passed to the source
- * @param reserved - reserved bytes
  * @param sourceIndex - index of function source
  */
 export function doWhileOperand(
     inputSize: number,
-    reserved: number,
     sourceIndex: number
 ): number {
-    const operand = (sourceIndex << 8) + (reserved << 4) + inputSize;
+    const operand = (sourceIndex << 8) + inputSize;
     return operand;
 }
 
