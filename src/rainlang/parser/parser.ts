@@ -1869,23 +1869,34 @@ export class Parser {
                     }
                     else if (
                         this.state.parse.tags[this.state.parse.tags.length - 1].findIndex(
-                            (v, i) => {
-                                if (this.state.depthLevel === 0) return (
-                                    v.name === str &&
-                                    i !== this.state.parse.tree.length
-                                )
-                                else return (
-                                    v.name === str &&
-                                    i !== this.state.parse.tree.length - 1
-                                )
-                            }
+                            (v) => v.name === str
                         ) > -1
                     ) {
-                        console.log('kjh')
-                        this._updateTree({
-                            name: str,
-                            position: [startPosition, startPosition + str.length - 1],
-                        })
+                        const _i = this.state.parse.tags[this.state.parse.tags.length - 1].findIndex(
+                            (v) => v.name === str
+                        )
+                        if (this.state.depthLevel === 0) {
+                            if (_i === this.state.parse.tree.length) this._updateTree({
+                                name: str,
+                                position: [startPosition, startPosition + str.length - 1],
+                                error: 'invalid word, cannot reference to self'
+                            })
+                            else this._updateTree({
+                                name: str,
+                                position: [startPosition, startPosition + str.length - 1],
+                            })
+                        }
+                        else {
+                            if (_i === this.state.parse.tree.length - 1) this._updateTree({
+                                name: str,
+                                position: [startPosition, startPosition + str.length - 1],
+                                error: 'invalid word, cannot reference to self'
+                            })
+                            else this._updateTree({
+                                name: str,
+                                position: [startPosition, startPosition + str.length - 1],
+                            })
+                        }
                         this.exp = this.exp.replace(consumee, '')
                     }
                     else {
