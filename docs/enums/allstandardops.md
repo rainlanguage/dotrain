@@ -37,7 +37,7 @@ enum AllStandardOps
 |  EXP | `42` | Opcode for exponentiation. |
 |  EXPLODE32 | `24` | Splite an uint256 value into 8 seperate 1 byte size values as uint256 each. |
 |  FOLD\_CONTEXT | `6` |  |
-|  GET | `59` | Opcode to read the value of storage key/value pair which is set by SET opcode |
+|  GET | `60` | Opcode to read the value of storage key/value pair which is set by SET opcode |
 |  GREATER\_THAN | `34` | Opcode for GREATER\_THAN. |
 |  HASH | `10` | Hash (solidty kecca256) item(s) of the stack |
 |  IERC1155\_BALANCE\_OF | `17` | Opcode for `IERC1155` `balanceOf`<!-- -->. |
@@ -51,9 +51,10 @@ enum AllStandardOps
 |  ISALEV2\_TOKEN | `52` | Address of the rTKN of a SaleV2 contract |
 |  ISALEV2\_TOTAL\_RESERVE\_RECEIVED | `53` | Put the total number of reserve tokens received by a SaleV2 into the stack. in order words the balance of reserve token of the SaleV2 contract |
 |  ISZERO | `35` | Opcode for ISZERO. |
-|  ITIERV2\_REPORT | `54` | Opcode to call `report` on an `ITierV2` contract. |
-|  ITIERV2\_REPORT\_TIME\_FOR\_TIER | `55` | Opcode to call `reportTimeForTier` on an `ITierV2` contract. |
-|  length | `60` | length of available opcodes |
+|  ITIERV2\_REPORT | `55` | Opcode to call `report` on an `ITierV2` contract. |
+|  ITIERV2\_REPORT\_TIME\_FOR\_TIER | `56` | Opcode to call `reportTimeForTier` on an `ITierV2` contract. |
+|  IVERIFYV1\_ACCOUNT\_STATUS\_AT\_TIME | `54` | Verify status of an account from an IVerifyV1 contract |
+|  length | `61` | length of available opcodes |
 |  LESS\_THAN | `36` | Opcode for LESS\_THAN. |
 |  LOOP\_N | `7` | Loop over a source for n times |
 |  MAX | `43` | Opcode for maximum. |
@@ -62,7 +63,7 @@ enum AllStandardOps
 |  MUL | `46` | Opcode for multiplication. |
 |  READ\_MEMORY | `8` | Copies a value either off `stack` or `constants` to the top of the stack. |
 |  SATURATING\_ADD | `37` | Opcode for saturating addition. |
-|  SATURATING\_DIFF | `56` | Opcode to calculate the tierwise diff of two reports. |
+|  SATURATING\_DIFF | `57` | Opcode to calculate the tierwise diff of two reports. |
 |  SATURATING\_MUL | `38` | Opcode for saturating multiplication. |
 |  SATURATING\_SUB | `39` | Opcode for saturating subtraction. |
 |  SCALE\_BY | `28` | Opcode to rescale an arbitrary fixed point number by some OOMs. |
@@ -70,9 +71,9 @@ enum AllStandardOps
 |  SCALE18\_DIV | `26` | Opcode for division. |
 |  SCALE18\_MUL | `27` | Opcode for multiplication. |
 |  SCALEN | `29` | Opcode to rescale an 18 OOMs fixed point number to scale N. |
-|  SELECT\_LTE | `57` | Opcode to tierwise select the best block lte a reference block. |
+|  SELECT\_LTE | `58` | Opcode to tierwise select the best block lte a reference block. |
 |  SET | `9` | Opcode to write a key/value pair into storage |
 |  SUB | `47` | Opcode for subtraction. |
 |  THIS\_ADDRESS | `22` | Opcode for `this` address of the current contract. |
-|  UPDATE\_TIMES\_FOR\_TIER\_RANGE | `58` | Opcode to update the timestamp over a range of tiers for a report. |
+|  UPDATE\_TIMES\_FOR\_TIER\_RANGE | `59` | Opcode to update the timestamp over a range of tiers for a report. |
 

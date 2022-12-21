@@ -231,6 +231,10 @@ export enum AllStandardOps {
        */
       ISALEV2_TOTAL_RESERVE_RECEIVED,
       /**
+       * Verify status of an account from an IVerifyV1 contract
+       */
+      IVERIFYV1_ACCOUNT_STATUS_AT_TIME,
+      /**
        * Opcode to call `report` on an `ITierV2` contract.
        */
       ITIERV2_REPORT,

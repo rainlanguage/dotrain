@@ -1626,7 +1626,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => []
         },
-        aliases: ['SALE_STATUS', 'STATUS'],
+        aliases: ['SALE_STATUS', 'SALESTATUS'],
         data: {
             description: 'Insert the status of a Sale contract into the stack by taking its address from the stack',
             category: 'sale',
@@ -1642,8 +1642,8 @@ export const rainterpreterOpMeta: OpMeta[] = [
     },
     {
         enum: AllStandardOps.ISALEV2_TOKEN,
-        name: 'The rTKN address',
-        description: 'ISALEV2_TOKEN',
+        name: 'ISALEV2_TOKEN',
+        description: 'The rTKN address',
         outputs: (_operand) => 1,
         inputs: (_operand) => 1,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
@@ -1668,8 +1668,8 @@ export const rainterpreterOpMeta: OpMeta[] = [
     },
     {
         enum: AllStandardOps.ISALEV2_TOTAL_RESERVE_RECEIVED,
-        name: 'The total amount of reserve tokens received by the sale',
-        description: 'ISALEV2_TOTAL_RESERVE_RECEIVED',
+        name: 'ISALEV2_TOTAL_RESERVE_RECEIVED',
+        description: 'The total amount of reserve tokens received by the sale',
         outputs: (_operand) => 1,
         inputs: (_operand) => 1,
         paramsValidRange: (_paramsLength) => _paramsLength === 1,
@@ -1688,6 +1688,37 @@ export const rainterpreterOpMeta: OpMeta[] = [
                     spread: false,
                     name: 'address',
                     description: 'The address of the ISaleV2.',
+                },
+            ],
+        }
+    },
+    {
+        enum: AllStandardOps.IVERIFYV1_ACCOUNT_STATUS_AT_TIME,
+        name: 'IVERFYV1_ACCOUNT_STATUS_AT_TIME',
+        description: 'Read and put the status of an account from the verify v1 contract into the stack',
+        outputs: (_operand) => 1,
+        inputs: (_operand) => 2,
+        paramsValidRange: (_paramsLength) => _paramsLength === 2,
+        operand: {
+            argsConstraints: [],
+            encoder: (_args, _paramsLength) => 0,
+            decoder: (_operand) => []
+        },
+        aliases: ['VERIFY_STATUS', 'VERIFYSTATUS'],
+        data: {
+            description: 'Read and put the status of an account from the verify v1 contract into the stack',
+            category: 'verify',
+            example: 'iverifyv1-account-status-at-time(verifyContractAddress accountAddress)',
+            parameters: [
+                {
+                    spread: false,
+                    name: 'verify contract',
+                    description: 'The address of the IVerifyV1 contract.',
+                },
+                {
+                    spread: false,
+                    name: 'account',
+                    description: 'The address of the account.',
                 },
             ],
         }
