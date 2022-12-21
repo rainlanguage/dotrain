@@ -710,7 +710,7 @@ export class Parser {
                                 const _i = this.state.parse.tags[
                                     this.state.parse.tags.length - 1
                                 ].findIndex(
-                                    v => v.name = tagName
+                                    v => v.name === tagName
                                 )
                                 if (_err.length > 0) {
                                     if (_i > -1) this.state.parse.tags[
@@ -723,7 +723,7 @@ export class Parser {
                                             entry + subExpEntry[j] +
                                                 _lhs.length - lhs.length - 1
                                         ],
-                                        error: 'invalid name, word already in use'
+                                        error: `${tagName} already in use`
                                     })
                                     else this.state.parse.tags[
                                         this.state.parse.tags.length -1
@@ -749,7 +749,7 @@ export class Parser {
                                             entry + subExpEntry[j] +
                                                 _lhs.length - lhs.length - 1
                                         ],
-                                        error: 'invalid name, word already in use'
+                                        error: `${tagName} already in use`
                                     })
                                     else this.state.parse.tags[
                                         this.state.parse.tags.length -1

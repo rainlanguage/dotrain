@@ -40,9 +40,9 @@
         "trailingComma": "es5"
     },
     "devDependencies": {
-        "@rainprotocol/rain-protocol": "git+https://github.com/rainprotocol/rain-protocol.git#ea99544d47c4f5b02c3e450b7a2965907f242581",
         "@microsoft/api-extractor": "^7.33.5",
         "@princjef/api-documenter": "^1.0.2",
+        "@rainprotocol/rain-protocol": "git+https://github.com/rainprotocol/rain-protocol.git#ea99544d47c4f5b02c3e450b7a2965907f242581",
         "@types/chai": "^4.3.3",
         "@types/mocha": "^10.0.0",
         "@types/node": "^18.11.9",
