@@ -1,4 +1,4 @@
-import { OpMeta } from "../types"
+import { OpMeta } from "../../types"
 
 /**
  * @public
@@ -41,8 +41,4 @@ export type PrettifyConfig = {
      * Multiplier to the indent space
      */
     n?: number;
-    // /**
-    //  * Max length of each line
-    //  */
-    // length?: number;
 }

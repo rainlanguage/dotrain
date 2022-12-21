@@ -1,9 +1,11 @@
-export * from './formatter/formatter'
-export * from './formatter/types'
+export * from './rainlang/formatter/formatter';
+export * from './rainlang/formatter/types';
 
-export * from './parser/parser'
-export * from './parser/types'
+export * from './rainlang/parser/parser';
+export * from './rainlang/parser/types';
 
-export * from './types'
-export * from './utils'
-export * from './rainterpreterOpMeta'
+export * from './rainterpreter/opmeta';
+export * from './rainterpreter/allStandardOps';
+
+export * from './types';
+export * from './utils';

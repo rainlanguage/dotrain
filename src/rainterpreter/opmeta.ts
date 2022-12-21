@@ -1,5 +1,16 @@
-import { AllStandardOps, OpMeta } from './types'
-import { callOperand, hexlify, loopNOperand, memoryOperand, selectLte, tierRange } from './utils'
+import { OpMeta } from '../types';
+import { AllStandardOps } from './allStandardOps'
+import { 
+    callOperand, 
+    doWhileOperand, 
+    foldContextOperand, 
+    hexlify, 
+    loopNOperand, 
+    memoryOperand, 
+    selectLteOperand, 
+    tierRange 
+} from '../utils';
+
 
 /**
  * @public
@@ -41,26 +52,30 @@ export const rainterpreterOpMeta: OpMeta[] = [
         enum: AllStandardOps.CALL,
         name: 'CALL',
         description: 'Takes some items from the stack and runs a source with sub-stack and puts the results back to the stack',
-        outputs: (_operand) => (_operand >> 3) & 3,
-        inputs: (_operand) => _operand & 7,
-        paramsValidRange: (_paramsLength) => _paramsLength >= 0 && _paramsLength < 8,
+        outputs: (_operand) => (_operand >> 4) & 15,
+        inputs: (_operand) => _operand & 15,
+        paramsValidRange: (_paramsLength) => _paramsLength >= 0 && _paramsLength < 16,
         operand: {
             // 3 args that construct CALL operand
             argsConstraints: [
-                (_value, _paramsLength) =>
-                    _value < 8 && _value >= 0 && _paramsLength === _value,      // inputSize valid range
-                (_value) => _value < 4 && _value > 0,                           // outputSize valid range
-                (_value) => _value < 8 && _value > 0,                           // sourceIndex valid range
+                (_value, _paramsLength) => _value < 16 && _value > 0 && _value === _paramsLength,       // inputSize valid range
+                (_value) => _value < 16 && _value >= 0,                                                 // outputSize valid range
+                (_value) => _value < 16 && _value > 0,                                                  // sourceIndex valid range
             ],
             encoder: (_args) => callOperand(_args[0], _args[1], _args[2]),
-            decoder: (_operand) => [_operand & 7, (_operand >> 3) & 3, _operand >> 5],
+            decoder: (_operand) => [_operand & 15, (_operand >> 4) & 15, _operand >> 8],
         },
         aliases: ['FUNCTION', 'FN'],
         data: {
             description: 'Call a source with some inputs and put the outputs back into the stack',
             category: 'core',
-            example: 'call<1, 1>(100 50)',
+            example: 'call<1, 1, 1>(100)',
             parameters: [
+                {
+                    spread: true,
+                    name: 'inputSize',
+                    description: 'number of inputs',
+                },
                 {
                     spread: false,
                     name: 'outputSize',
@@ -70,11 +85,6 @@ export const rainterpreterOpMeta: OpMeta[] = [
                     spread: false,
                     name: 'sourceIndex',
                     description: 'Source index to run.',
-                },
-                {
-                    spread: true,
-                    name: 'input values',
-                    argsConstraints: [],
                 },
             ],
         },
@@ -122,6 +132,35 @@ export const rainterpreterOpMeta: OpMeta[] = [
         },
     },
     {
+        enum: AllStandardOps.CONTEXT_ROW,
+        name: 'CONTEXT_ROW',
+        description: 'Put a context cell into the stack by reading the column index from operand and row index from stack',
+        outputs: (_operand) => 1,
+        inputs: (_operand) => 1,
+        paramsValidRange: (_paramsLength) => _paramsLength === 1,
+        operand: {
+            // 1 args that construct CONTEXT_ROW operand
+            argsConstraints: [
+                (_value) => _value < 256 && _value >= 0,     // column index
+            ],
+            encoder: (_args) => _args[0],
+            decoder: (_operand) => [_operand]
+        },
+        aliases: ['CONTEXTROW', 'ROW'],
+        data: {
+            description: 'Put an item from context into stack by reading column from operand and row from stack item',
+            category: 'core',
+            example: 'context_row<2>(6)',
+            parameters: [
+                {
+                    spread: false,
+                    name: 'column index',
+                    description: 'The index of the context column to insert.',
+                },
+            ],
+        },
+    },
+    {
         enum: AllStandardOps.DEBUG,
         name: 'DEBUG',
         description: 'ABI encodes the entire stack and logs it to the hardhat console.',
@@ -146,24 +185,30 @@ export const rainterpreterOpMeta: OpMeta[] = [
     {
         enum: AllStandardOps.DO_WHILE,
         name: 'DO_WHILE',
-        description: 'Runs a source on stack item(s) until a condition is not met anymore',
-        outputs: (_operand) => 0,
-        inputs: (_operand) => 0,
-        paramsValidRange: (_paramsLength) => _paramsLength > 0,
+        description: 'Runs a while loop on number of items taken from a stack until a conditions is met',
+        outputs: (_operand) => (_operand & 15) + 1,
+        inputs: (_operand) => (_operand & 15) + 1,
+        paramsValidRange: (_paramsLength) => _paramsLength >= 0 && _paramsLength < 16,
         operand: {
-            // 1 arg that constructs DO_WHILE operand
+            // 2 arg that constructs DO_WHILE operand
             argsConstraints: [
-                (_value) => _value < 256 && _value > 0,     // sourceIndex valid range
+                (_value, _paramsLength) => _value < 16 && _value >= 0 && _value === _paramsLength,        // inputSize valid range
+                (_value) => _value < 16 && _value >= 0,                                                   // sourceIndex valid range
             ],
-            encoder: (_args) => _args[0],
-            decoder: (_operand) => [_operand]
+            encoder: (_args) => doWhileOperand(_args[0], _args[1]),
+            decoder: (_operand) => [_operand & 15, _operand >> 8],
         },
         aliases: ['WHILE', 'DOWHILE'],
         data: {
-            description: 'Insert a constant into the expression.',
+            description: 'Runs a while loop on number of items taken from a stack until a conditions is met.',
             category: 'core',
-            example: 'do_while<1>(exp1 exp2 condition); add(STATE<0> STATE<1>) sub(STATE<1> 1) condition;',
+            example: 'do_while<2 0 1>(exp1 condition); add(STATE<0> STATE<1>) sub(STATE<1> 1) condition;',
             parameters: [
+                {
+                    spread: true,
+                    name: 'inputs',
+                    description: 'inputs of the do_while op.',
+                },
                 {
                     spread: false,
                     name: 'condition',
@@ -173,34 +218,101 @@ export const rainterpreterOpMeta: OpMeta[] = [
         },
     },
     {
+        enum: AllStandardOps.FOLD_CONTEXT,
+        name: 'FOLD_CONTEXT',
+        description: 'Performs a looped call over some inputs and some context rows specified by folding a column as start column index and width in operand arguments as length of items in rows',
+        outputs: (_operand) => _operand >> 12,
+        inputs: (_operand) => _operand >> 12,
+        paramsValidRange: (_paramsLength) => _paramsLength >= 0 && _paramsLength < 16,
+        operand: {
+            // 4 args that construct FOLD_CONTEXT operand
+            argsConstraints: [
+                (_value, __paramsLength) => 
+                    _value < 16 && _value >= 0 && _value === __paramsLength,    // inputs valid range
+                (_value) => _value < 16 && _value >= 0,                         // width
+                (_value) => _value < 16 && _value >= 0,                         // fold column
+                (_value) => _value < 16 && _value >= 0,                         // source index
+            ],
+            encoder: (_args) => foldContextOperand(_args[0], _args[1], _args[2], _args[3]),
+            decoder: (_operand) => [
+                _operand >> 12,         // inputs
+                (_operand >> 8) & 15,   // width
+                (_operand >> 4) & 15,   // fold column
+                _operand & 15,          // source index
+            ]
+        },
+        aliases: ['FOLDCONTEXT', 'FOLD'], 
+        data: {
+            description: 'Perform a call loop over some inputs and context items folded by a clomn and width',
+            category: 'core',
+            example: 'fold_context<2 3 2 1>(10 20)',
+            parameters: [
+                {
+                    spread: true,
+                    name: 'inputs',
+                    description: 'The inputs of the fold_context as accumulator.',
+                },
+                {
+                    spread: false,
+                    name: 'width',
+                    description: 'Defines the width of the loop, ie how many columns to loop starting from foldColumn.',
+                },
+                {
+                    spread: false,
+                    name: 'fold column',
+                    description: 'Defines the starting point of the loop in context and its length defines the number of the rows to loop over.',
+                },
+                {
+                    spread: false,
+                    name: 'source index',
+                    description: 'The source item to call at each loop.',
+                },
+            ],
+        },
+    },
+    {
         enum: AllStandardOps.LOOP_N,
         name: 'LOOP_N',
-        description: 'Loop a source n times on stack items',
-        outputs: (_operand) => 0,
-        inputs: (_operand) => 0,
-        paramsValidRange: (_paramsLength) => _paramsLength === 0,
+        description: 'Loop a source n times by taking some items from stack and putting the results back into stack',
+        outputs: (_operand) => (_operand >> 4) & 15,
+        inputs: (_operand) => _operand & 15,
+        paramsValidRange: (_paramsLength) => _paramsLength >= 0 && _paramsLength < 16,
         operand: {
             // 2 args that construct LOOP_N operand
             argsConstraints: [
-                (_value) => _value < 16 && _value >= 0,     // loopSize valid range
-                (_value) => _value < 16 && _value > 0,     // sourceIndex valid range
+                (_value) => _value < 16 && _value >= 0,                                                 // loopSize valid range
+                (_value, _paramsLength) => _value < 16 && _value > 0 && _value === _paramsLength,       // inputSize valid range
+                (_value) => _value < 16 && _value >= 0,                                                 // outputSize valid range
+                (_value) => _value < 16 && _value > 0,                                                  // sourceIndex valid range
             ],
             encoder: (_args) => loopNOperand(
-                _args[0],    // loop size, n times 
-                _args[1]     // source index
+                _args[0],   // loop size, n times 
+                _args[1],   // inputSize
+                _args[2],   // outputSize
+                _args[3]    // source index
             ),
             decoder: (_operand) => [_operand & 15, _operand >> 4]
         },
         aliases: ['LOOP', 'LOOPN', 'FOR'],
         data: {
-            description: 'Loop a source n times on stack items.',
+            description: 'Loop a source n times by taking some items from stack and putting the results back into stack.',
             category: 'core',
-            example: 'loop_n<8 1>(exp1 exp2); add(STATE<0> STATE<1>) sub(1 STATE<1>);',
+            example: 'loop_n<8 1 2 1>(exp1); add(STATE<0> STATE<1>) sub(1 STATE<1>);',
             parameters: [
                 {
                     spread: false,
                     name: 'loopSize',
                     description: 'loop for this size times (0<n<16).',
+                },
+                {
+                    spread: false,
+                    name: 'inputSize',
+                    description: 'number of inputs',
+                },
+                {
+                    spread: false,
+                    name: 'outputSize',
+                    description: 'number of outputs',
                 },
                 {
                     spread: false,
@@ -211,16 +323,17 @@ export const rainterpreterOpMeta: OpMeta[] = [
         },
     },
     {
-        enum: AllStandardOps.STATE,
-        name: 'STATE',
+        // @TODO: update
+        enum: AllStandardOps.READ_MEMORY,
+        name: 'READ_MEMORY',
         description: 'Takes an item from constants array or copy from stack items and insert it into the stack',
         outputs: (_operand) => 1,
         inputs: (_operand) => 0,
         paramsValidRange: (_paramsLength) => _paramsLength === 0,
         operand: {
-            // 2 args that construct STATE operand
+            // 2 args that construct READ_MEMORY operand
             argsConstraints: [
-                (_value) => _value < 2 && _value >= 0,     // type of STATE (constants or stack) valid range
+                (_value) => _value < 2 && _value >= 0,     // type of READ_MEMORY (constants or stack) valid range
                 (_value) => _value < 128 && _value >= 0,     // index valid range
             ],
             encoder: (_args) => memoryOperand(0, _args[0]),
@@ -229,7 +342,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
         data: {
             description: 'Copy stack item into the expression.',
             category: 'core',
-            example: 'state(3)',
+            example: 'READ_MEMORY(3)',
             parameters: [
                 {
                     spread: false,
@@ -240,29 +353,32 @@ export const rainterpreterOpMeta: OpMeta[] = [
         },
     },
     {
-        enum: AllStandardOps.STORAGE,
-        name: 'STORAGE',
-        description: 'Insert a value from contract storage into the stack',
-        outputs: (_operand) => 1,
-        inputs: (_operand) => 0,
-        paramsValidRange: (_paramsLength) => _paramsLength === 0,
+        enum: AllStandardOps.SET,
+        name: 'SET',
+        description: 'Write a key/value pair from constants array into contract storage',
+        outputs: (_operand) => 0,
+        inputs: (_operand) => 2,
+        paramsValidRange: (_paramsLength) => _paramsLength === 2,
         operand: {
-            argsConstraints: [
-                (_value) => _value < 256 && _value >= 0,     // index of Storage slot valid range
-            ],
-            encoder: (_args) => _args[0],
-            decoder: (_operand) => [_operand]
+            argsConstraints: [],
+            encoder: (_args, _paramsLength) => 0,
+            decoder: (_operand) => []
         },
-        aliases: ['MEMORY'],
+        aliases: ['WRITE'],
         data: {
-            description: 'Insert a value from contract storage.',
+            description: 'Write a key/value to contract storage.',
             category: 'core',
-            example: 'storage(0)',
+            example: 'set(0x123456 0xabcde)',
             parameters: [
                 {
                     spread: false,
-                    name: 'index',
-                    description: 'The index of the storage value to insert.',
+                    name: 'key',
+                    description: 'The key of the key/value pair.',
+                },
+                {
+                    spread: false,
+                    name: 'value',
+                    description: 'The value of the value/key pair.',
                 },
             ],
         },
@@ -608,7 +724,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
             encoder: (_args, _paramsLength) => 0,
             decoder: (_operand) => []
         },
-        aliases: ['MSG_SENDER', 'MSGSENDER', 'SIGNER', 'SENDER'],
+        aliases: ['MSG_SENDER', 'MSGSENDER', 'SIGNER'],
         data: {
             description: 'The sender of the current transaction.',
             category: 'EVM',
@@ -649,7 +765,6 @@ export const rainterpreterOpMeta: OpMeta[] = [
             decoder: (_operand) => []
         },
         aliases: [
-            'NOW',
             'CURRENT_TIMESTAMP',
             'CURRENTTIMESTAMP',
             'BLOCKTIMESTAMP',
@@ -1705,17 +1820,17 @@ export const rainterpreterOpMeta: OpMeta[] = [
         name: 'SELECT_LTE',
         description: 'Inserts the result of selecting the less than equal to specified value taken from stack among number of reports by a logic and mode into the stack',
         outputs: (_operand) => 1,
-        inputs: (_operand) => _operand & 31,
+        inputs: (_operand) => _operand & 256,
         paramsValidRange: (_paramsLength) => _paramsLength > 1,
         operand: {
             argsConstraints: [
                 (_value) => _value >= 0 && _value <= 1,    // logic
                 (_value) => _value >= 0 && _value <= 2,    // mode
                 (_value, _paramsLength) =>
-                    _value >= 1 && _value <= 31 && _paramsLength - _value === 1,   // length
+                    _value >= 1 && _value < 256 && _paramsLength === _value,   // inputSize valid range
             ],
-            encoder: (_args) => selectLte(_args[0], _args[1], _args[2]),
-            decoder: (_operand) => [_operand >> 7, (_operand >> 5) & 3, _operand & 31],
+            encoder: (_args) => selectLteOperand(_args[0], _args[1], _args[2]),
+            decoder: (_operand) => [_operand >> 13, (_operand >> 8) & 31, _operand & 256],
         },
         aliases: ['SELECTLTE', 'SELECT'],
         data: {
@@ -1796,6 +1911,32 @@ export const rainterpreterOpMeta: OpMeta[] = [
                     spread: false,
                     name: 'report',
                     description: 'The report to update its tier range',
+                },
+            ],
+        },
+    },
+    {
+        enum: AllStandardOps.GET,
+        name: 'GET',
+        description: 'Read a key/value pair from contract storage by providing the key and stack the value',
+        outputs: (_operand) => 1,
+        inputs: (_operand) => 1,
+        paramsValidRange: (_paramsLength) => _paramsLength === 1,
+        operand: {
+            argsConstraints: [],
+            encoder: (_args, _paramsLength) => 0,
+            decoder: (_operand) => []
+        },
+        aliases: ['READ'],
+        data: {
+            description: 'Read a key/value pair from contract storage by providing the key and stack the value.',
+            category: 'core',
+            example: 'get(0x123456)',
+            parameters: [
+                {
+                    spread: false,
+                    name: 'key',
+                    description: 'The key of the key/value pair.',
                 },
             ],
         },
