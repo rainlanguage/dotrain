@@ -25,6 +25,7 @@ import {
     Comment,
 } from './types';
 
+
 /**
  * @public
  * Rain Parser is a compiler written in TypeScript in order to parse, compile and output 

@@ -306,6 +306,25 @@ export function selectLteOperand(
 
 /**
  * @public
+ * Builds the operand for RainInterpreter's `FOLD_CONTEXT` opcode by packing 4 numbers into 2 bytes.
+ *
+ * @param inputs - accumulator input count
+ * @param width - width of the column 
+ * @param foldColumn - column to start from
+ * @param sourceIndex - index of function source
+ * @returns a 2 bytes size number
+ */
+export function foldContextOperand(
+    inputs: number,
+    width: number,
+    foldColumn: number,
+    sourceIndex: number
+): number {
+    return (inputs << 12) + (width << 8) + (foldColumn << 4) + sourceIndex
+}
+
+/**
+ * @public
  * Utility function that transforms a BigNumberish from the output of the ITierV2 contract report
  *
  * @param report - report as bignumberish from the ITierV2 contract

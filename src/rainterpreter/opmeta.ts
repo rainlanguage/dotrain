@@ -1,6 +1,16 @@
-import { OpMeta } from '../types'
+import { OpMeta } from '../types';
 import { AllStandardOps } from './allStandardOps'
-import { callOperand, doWhileOperand, hexlify, loopNOperand, memoryOperand, selectLteOperand, tierRange } from '../utils'
+import { 
+    callOperand, 
+    doWhileOperand, 
+    foldContextOperand, 
+    hexlify, 
+    loopNOperand, 
+    memoryOperand, 
+    selectLteOperand, 
+    tierRange 
+} from '../utils';
+
 
 /**
  * @public
@@ -121,49 +131,35 @@ export const rainterpreterOpMeta: OpMeta[] = [
             ],
         },
     },
-    // {
-    // enum: AllStandardOps.CONTEXT_ROW,
-    // name: 'CONTEXT',
-    // description: 'Inserts an argument passed to a contracts function into the stack, context is a 2D array of uint256',
-    // outputs: (_operand) => 1,
-    // inputs: (_operand) => 0,
-    // paramsValidRange: (_paramsLength) => _paramsLength === 0,
-    // operand: {
-    //     // 2 args that construct CONTEXT operand
-    //     argsConstraints: [
-    //         (_value) => _value < 256 && _value >= 0,     // column valid range
-    //         (_value) => _value < 256 && _value >= 0,     // row valid range
-    //     ],
-    //     encoder: (_args) => Number(hexlify(
-    //         new Uint8Array([
-    //             _args[0],    // column
-    //             _args[1]     // row
-    //         ])
-    //     )),
-    //     decoder: (_operand) => [
-    //         _operand >> 8,      // column
-    //         _operand & 0xff     // row
-    //     ]
-    // },
-        
-    // data: {
-    //     description: 'Insert a value from the calling function context',
-    //     category: 'core',
-    //     example: 'context<2 6>()',
-    //     parameters: [
-    //         {
-    //             spread: false,  // not sure 
-    //             name: 'column index',
-    //             description: 'The index of the context column to insert.',
-    //         },
-    //         {
-    //             spread: false,  // not sure
-    //             name: 'row index',
-    //             description: 'The index of the constant row to insert.',
-    //         },
-    //     ],
-    // },
-    // }
+    {
+        enum: AllStandardOps.CONTEXT_ROW,
+        name: 'CONTEXT_ROW',
+        description: 'Put a context cell into the stack by reading the column index from operand and row index from stack',
+        outputs: (_operand) => 1,
+        inputs: (_operand) => 1,
+        paramsValidRange: (_paramsLength) => _paramsLength === 1,
+        operand: {
+            // 1 args that construct CONTEXT_ROW operand
+            argsConstraints: [
+                (_value) => _value < 256 && _value >= 0,     // column index
+            ],
+            encoder: (_args) => _args[0],
+            decoder: (_operand) => [_operand]
+        },
+        aliases: ['CONTEXTROW', 'ROW'],
+        data: {
+            description: 'Put an item from context into stack by reading column from operand and row from stack item',
+            category: 'core',
+            example: 'context_row<2>(6)',
+            parameters: [
+                {
+                    spread: false,
+                    name: 'column index',
+                    description: 'The index of the context column to insert.',
+                },
+            ],
+        },
+    },
     {
         enum: AllStandardOps.DEBUG,
         name: 'DEBUG',
@@ -227,49 +223,59 @@ export const rainterpreterOpMeta: OpMeta[] = [
             ],
         },
     },
-    // {
-    // enum: AllStandardOps.FOLD_CONTEXT,
-    // name: 'CONTEXT',
-    // description: 'Inserts an argument passed to a contracts function into the stack, context is a 2D array of uint256',
-    // outputs: (_operand) => 1,
-    // inputs: (_operand) => 0,
-    // paramsValidRange: (_paramsLength) => _paramsLength === 0,
-    // operand: {
-    //     // 2 args that construct CONTEXT operand
-    //     argsConstraints: [
-    //         (_value) => _value < 256 && _value >= 0,     // column valid range
-    //         (_value) => _value < 256 && _value >= 0,     // row valid range
-    //     ],
-    //     encoder: (_args) => Number(hexlify(
-    //         new Uint8Array([
-    //             _args[0],    // column
-    //             _args[1]     // row
-    //         ])
-    //     )),
-    //     decoder: (_operand) => [
-    //         _operand >> 8,      // column
-    //         _operand & 0xff     // row
-    //     ]
-    // },
-        
-    // data: {
-    //     description: 'Insert a value from the calling function context',
-    //     category: 'core',
-    //     example: 'context<2 6>()',
-    //     parameters: [
-    //         {
-    //             spread: false,  // not sure 
-    //             name: 'column index',
-    //             description: 'The index of the context column to insert.',
-    //         },
-    //         {
-    //             spread: false,  // not sure
-    //             name: 'row index',
-    //             description: 'The index of the constant row to insert.',
-    //         },
-    //     ],
-    // },
-    // }
+    {
+        enum: AllStandardOps.FOLD_CONTEXT,
+        name: 'FOLD_CONTEXT',
+        description: 'Performs a looped call over some inputs and some context rows specified by folding a column as start column index and width in operand arguments as length of items in rows',
+        outputs: (_operand) => _operand >> 12,
+        inputs: (_operand) => _operand >> 12,
+        paramsValidRange: (_paramsLength) => _paramsLength >= 0 && _paramsLength < 16,
+        operand: {
+            // 4 args that construct FOLD_CONTEXT operand
+            argsConstraints: [
+                (_value, __paramsLength) => 
+                    _value < 16 && _value >= 0 && _value === __paramsLength,    // inputs valid range
+                (_value) => _value < 16 && _value >= 0,                         // width
+                (_value) => _value < 16 && _value >= 0,                         // fold column
+                (_value) => _value < 16 && _value >= 0,                         // source index
+            ],
+            encoder: (_args) => foldContextOperand(_args[0], _args[1], _args[2], _args[3]),
+            decoder: (_operand) => [
+                _operand >> 12,         // inputs
+                (_operand >> 8) & 15,   // width
+                (_operand >> 4) & 15,   // fold column
+                _operand & 15,          // source index
+            ]
+        },
+        aliases: ['FOLDCONTEXT', 'FOLD'], 
+        data: {
+            description: 'Perform a call loop over some inputs and context items folded by a clomn and width',
+            category: 'core',
+            example: 'fold_context<2 3 2 1>(10 20)',
+            parameters: [
+                {
+                    spread: true,
+                    name: 'inputs',
+                    description: 'The inputs of the fold_context as accumulator.',
+                },
+                {
+                    spread: false,
+                    name: 'width',
+                    description: 'Defines the width of the loop, ie how many columns to loop starting from foldColumn.',
+                },
+                {
+                    spread: false,
+                    name: 'fold column',
+                    description: 'Defines the starting point of the loop in context and its length defines the number of the rows to loop over.',
+                },
+                {
+                    spread: false,
+                    name: 'source index',
+                    description: 'The source item to call at each loop.',
+                },
+            ],
+        },
+    },
     {
         enum: AllStandardOps.LOOP_N,
         name: 'LOOP_N',

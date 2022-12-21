@@ -31,6 +31,7 @@
 |  [doWhileOperand(inputSize, reserved, sourceIndex)](./variables/dowhileoperand_1.md) | Builds the operand for RainInterpreter's `DO_WHILE` opcode by packing 3 numbers into a single byte. |
 |  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properites from a Map as a new Map with same keys. |
 |  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
+|  [foldContextOperand(inputs, width, foldColumn, sourceIndex)](./variables/foldcontextoperand_1.md) | Builds the operand for RainInterpreter's `FOLD_CONTEXT` opcode by packing 4 numbers into 2 bytes. |
 |  [isBigNumberish(value)](./variables/isbignumberish_1.md) | function to check if the a value is of type BigNumberish |
 |  [loopNOperand(n, inputSize, outputSize, sourceIndex)](./variables/loopnoperand_1.md) | Builds the operand for RainInterpreter's `LOOP_N` opcode by packing 4 numbers into a single byte. |
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
