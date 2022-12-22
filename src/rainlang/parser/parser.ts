@@ -1226,41 +1226,51 @@ export class Parser {
      * Method to update the elements of a Node
      */
     private static _updateTree(item: Node, replace?: boolean) {
+        let tmp: Node[] = this.state.parse.tree
         if (replace) {
-            const tmp: Node[][] = []
-            tmp.push(this.state.parse.tree)
+            // const tmp: Node[][] = []
+            // tmp.push(this.state.parse.tree)
+            // for (let i = 0; i < this.state.depthLevel - 1; i++) {
+            //     tmp.push(
+            //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
+            //     )
+            // }
+            // tmp[tmp.length - 1].pop()
+            // tmp[tmp.length - 1].push(item)
+            // while (tmp.length > 1) {
+            //     const updatedParams = tmp.pop()!;
+            //     (tmp[tmp.length - 1][
+            //         tmp[tmp.length - 1].length - 1
+            //     ] as Op).parameters = updatedParams
+            // }
+            // this.state.parse.tree = tmp[0]
+            
             for (let i = 0; i < this.state.depthLevel - 1; i++) {
-                tmp.push(
-                    (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-                )
+                tmp = (tmp[tmp.length - 1] as Op).parameters
             }
-            tmp[tmp.length - 1].pop()
-            tmp[tmp.length - 1].push(item)
-            while (tmp.length > 1) {
-                const updatedParams = tmp.pop()!;
-                (tmp[tmp.length - 1][
-                    tmp[tmp.length - 1].length - 1
-                ] as Op).parameters = updatedParams
-            }
-            this.state.parse.tree = tmp[0]
+            tmp.pop()
         }
         else {
-            const tmp: Node[][] = []
-            tmp.push(this.state.parse.tree)
+            // const tmp: Node[][] = []
+            // tmp.push(this.state.parse.tree)
+            // for (let i = 0; i < this.state.depthLevel; i++) {
+            //     tmp.push(
+            //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
+            //     )
+            // }
+            // tmp[tmp.length - 1].push(item)
+            // while (tmp.length > 1) {
+            //     const updatedParams = tmp.pop()!;
+            //     (tmp[tmp.length - 1][
+            //         tmp[tmp.length - 1].length - 1
+            //     ] as Op).parameters = updatedParams
+            // }
+            // this.state.parse.tree = tmp[0]
             for (let i = 0; i < this.state.depthLevel; i++) {
-                tmp.push(
-                    (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-                )
+                tmp = (tmp[tmp.length - 1] as Op).parameters
             }
-            tmp[tmp.length - 1].push(item)
-            while (tmp.length > 1) {
-                const updatedParams = tmp.pop()!;
-                (tmp[tmp.length - 1][
-                    tmp[tmp.length - 1].length - 1
-                ] as Op).parameters = updatedParams
-            }
-            this.state.parse.tree = tmp[0]
         }
+        tmp.push(item)
     }
 
     /**
@@ -1332,30 +1342,42 @@ export class Parser {
     private static _resolvePrefix() {
         this.state.track.parens.open.pop()
         const endPosition = this.state.track.parens.close.pop()!
-        const tmp: Node[][] = []
-        tmp.push(this.state.parse.tree)
+        // const tmp: Node[][] = []
+        // tmp.push(this.state.parse.tree)
+        // for (let i = 0; i < this.state.depthLevel - 1; i++) {
+        //     tmp.push(
+        //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
+        //     )
+        // }
+        // const node = tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op
+        // node.position.push(endPosition)
+        // node.parens.push(endPosition)
+        // if (node.error === 'no closing parenthesis') {
+        //     if (node.opcode.name.includes('unknown')) node.error = 'unknown opcode'
+        //     else node.error = undefined
+        // }
+        // if (!node.error) {
+        //     tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] = this._resolveOp(node)
+        // }
+        // while (tmp.length > 1) {
+        //     const resolvedExp = tmp.pop()!;
+        //     (tmp[tmp.length - 1][
+        //         tmp[tmp.length - 1].length - 1
+        //     ] as Op).parameters = resolvedExp
+        // }
+        // this.state.parse.tree = tmp[0]
+        let tmp: Node[] = this.state.parse.tree
         for (let i = 0; i < this.state.depthLevel - 1; i++) {
-            tmp.push(
-                (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-            )
+            tmp = (tmp[tmp.length - 1] as Op).parameters
         }
-        const node = tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op
+        const node = tmp[tmp.length - 1] as Op
         node.position.push(endPosition)
         node.parens.push(endPosition)
         if (node.error === 'no closing parenthesis') {
             if (node.opcode.name.includes('unknown')) node.error = 'unknown opcode'
-            else node.error = undefined
+            else delete node.error
         }
-        if (!node.error) {
-            tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] = this._resolveOp(node)
-        }
-        while (tmp.length > 1) {
-            const resolvedExp = tmp.pop()!;
-            (tmp[tmp.length - 1][
-                tmp[tmp.length - 1].length - 1
-            ] as Op).parameters = resolvedExp
-        }
-        this.state.parse.tree = tmp[0]
+        tmp[tmp.length - 1] = this._resolveOp(node)
     }
 
     /**
@@ -1370,15 +1392,20 @@ export class Parser {
     ) {
         this.exp = this.input.slice(endPosition + 1 - entry)
         this.state.track.parens.open.pop()
-        const tmp: Node[][] = []
-        tmp.push(this.state.parse.tree)
+        // const tmp: Node[][] = []
+        // tmp.push(this.state.parse.tree)
+        // for (let i = 0; i < this.state.depthLevel - 1; i++) {
+        //     tmp.push(
+        //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op)
+        //             .parameters
+        //     )
+        // }
+        // const node = tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op
+        let tmp: Node[] = this.state.parse.tree
         for (let i = 0; i < this.state.depthLevel - 1; i++) {
-            tmp.push(
-                (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op)
-                    .parameters
-            )
+            tmp = (tmp[tmp.length - 1] as Op).parameters
         }
-        const node = tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op
+        const node = tmp[tmp.length - 1] as Op
         let op = {
             opcode: {
                 name: opcode,
@@ -1406,31 +1433,40 @@ export class Parser {
             tag: node.tag
         } as Op
         if (this.exp.startsWith('<')) op = this._resolveOperand(op, true) as Op
-        tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] = this._resolveOp(op)
-        while (tmp.length > 1) {
-            const resolvedExp = tmp.pop()!;
-            (tmp[tmp.length - 1][
-                tmp[tmp.length - 1].length - 1
-            ] as Op).parameters = resolvedExp
-        }
-        this.state.parse.tree = tmp[0]
+        tmp[tmp.length - 1] = this._resolveOp(op)
+        // while (tmp.length > 1) {
+        //     const resolvedExp = tmp.pop()!;
+        //     (tmp[tmp.length - 1][
+        //         tmp[tmp.length - 1].length - 1
+        //     ] as Op).parameters = resolvedExp
+        // }
+        // this.state.parse.tree = tmp[0]
     }
 
     /**
      * Method to resolve infix notations at current state of parsing
      */
     private static _resolveInfix(isParameter: boolean) {
-        const tmp: Node[][] = []
-        tmp.push(this.state.parse.tree)
+        // const tmp: Node[][] = []
+        // tmp.push(this.state.parse.tree)
+        // for (let i = 0; i < this.state.depthLevel; i++) {
+        //     tmp.push(
+        //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
+        //     )
+        // } 
+        let tmp: Node[] = this.state.parse.tree
+        let node: Op = tmp[tmp.length - 1] as Op
         for (let i = 0; i < this.state.depthLevel; i++) {
-            tmp.push(
-                (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-            )
+            tmp = (tmp[tmp.length - 1] as Op).parameters
+            if (this.state.depthLevel - 1 !== i) 
+                node = tmp[tmp.length - 1] as Op
         }
+        const elements = tmp
+        //const node = tmp[tmp.length -1] as Op
         let err = false
         let op: Node
-        const elements: Node[] = tmp[tmp.length - 1]
-        const node = tmp[tmp.length - 2][tmp[tmp.length - 2].length - 1] as Op
+        //const elements: Node[] = tmp[tmp.length - 1]
+        //const node = tmp[tmp.length - 2][tmp[tmp.length - 2].length - 1] as Op
         const closeParenPosition =
             this.state.track.parens.close[this.state.track.parens.close.length - 1]
 
@@ -1506,7 +1542,7 @@ export class Parser {
                 op = {
                     error: 'invalid infix expression',
                     position: [
-                        (tmp[tmp.length - 2][tmp[tmp.length - 2].length - 1] as Op).parens[0],
+                        node.parens[0],
                         closeParenPosition,
                     ],
                 }
@@ -1531,50 +1567,108 @@ export class Parser {
      * Method to resolve multi output nodes at current state of parsing
      */
     public static _resolveMultiOutput = (totalCount: number, depthLevel: number) => {
-        let count = 0
-        const tmp: Node[][] = []
         const isOutput = (element: Node): boolean => {
             return ('value' in element && element.value === this.placeholder)
         }
-        tmp.push(this.state.parse.tree)
+        let count = 0
+        // const tmp: Node[][] = []
+        // tmp.push(this.state.parse.tree)
+        // for (let i = 0; i < depthLevel; i++) {
+        //     tmp.push(
+        //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
+        //     )
+        // }
+        // for (let i = tmp[tmp.length - 1].length - 2; i > -1; i--) {
+        //     if (count !== totalCount) {
+        //         if (!isOutput(tmp[tmp.length - 1][i])) {
+        //             (tmp[tmp.length - 2][tmp[tmp.length - 2].length - 1] as Op).error =
+        //                 `illigal placement of outputs, parameter ${i - 1} cannot be accessed by this opcode`
+        //             break
+        //         }
+        //         else {
+        //             count++
+        //             tmp[tmp.length - 1][i] = {
+        //                 value: (this.state.parse.multiOutputCache[
+        //                     this.state.parse.multiOutputCache.length - 1
+        //                 ].pop()! as Value).value,
+        //                 position: tmp[tmp.length - 1][i].position
+        //             }
+        //         }
+        //     }
+        //     else break
+        // }
+        // while (tmp.length > 1) {
+        //     const resolvedExp = tmp.pop()!;
+        //     (tmp[tmp.length - 1][
+        //         tmp[tmp.length - 1].length - 1
+        //     ] as Op).parameters = resolvedExp
+        // }
+        // this.state.parse.tree = tmp[0]
+        // if (count !== totalCount) {
+        //     const item = tmp[0].pop()!
+        //     tmp[0].push(...this.state.parse.multiOutputCache[
+        //         this.state.parse.multiOutputCache.length - 1
+        //     ])
+        //     this.state.parse.multiOutputCache.pop()
+        //     tmp[0].push(item)
+        // }
+        let _childeNodes: Node[] = this.state.parse.tree
+        const _parentNodes: Node[] = [_childeNodes[_childeNodes.length - 1]]
         for (let i = 0; i < depthLevel; i++) {
-            tmp.push(
-                (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-            )
+            _childeNodes = (_childeNodes[_childeNodes.length - 1] as Op).parameters
+            if (depthLevel - 1 !== i) 
+                _parentNodes.push(_childeNodes[_childeNodes.length - 1])
         }
-        for (let i = tmp[tmp.length - 1].length - 2; i > -1; i--) {
+        for (let i = _childeNodes.length - 2; i > -1; i--) {
             if (count !== totalCount) {
-                if (!isOutput(tmp[tmp.length - 1][i])) {
-                    (tmp[tmp.length - 2][tmp[tmp.length - 2].length - 1] as Op).error =
-                        `illigal placement of outputs, parameter ${i - 1} cannot be accessed by this opcode`
-                    break
+                if (isOutput(_childeNodes[i])) {
+                    count++
+                    (_childeNodes[i] as Value).value = (
+                        this.state.parse.multiOutputCache[
+                            this.state.parse.multiOutputCache.length - 1
+                        ].pop()! as Value).value
                 }
                 else {
-                    count++
-                    tmp[tmp.length - 1][i] = {
-                        value: (this.state.parse.multiOutputCache[
-                            this.state.parse.multiOutputCache.length - 1
-                        ].pop()! as Value).value,
-                        position: tmp[tmp.length - 1][i].position
+                    if (depthLevel > 0) {
+                        _childeNodes[i].error = 'invalid placement'
+                        _parentNodes[_parentNodes.length -1].error = 
+                            `unexpected inputs, parameter ${
+                                i - 1
+                            } cannot be accessed by this opcode`
                     }
+                    // else {
+                    //     _childeNodes[i].error = 'invalid placement'
+                    //     // if (i > 0) _childeNodes[i - 1].error = 
+                    //     //     'invalid placement'
+                    // }
+                    break
                 }
             }
             else break
         }
-        while (tmp.length > 1) {
-            const resolvedExp = tmp.pop()!;
-            (tmp[tmp.length - 1][
-                tmp[tmp.length - 1].length - 1
-            ] as Op).parameters = resolvedExp
-        }
-        this.state.parse.tree = tmp[0]
         if (count !== totalCount) {
-            const item = tmp[0].pop()!
-            tmp[0].push(...this.state.parse.multiOutputCache[
-                this.state.parse.multiOutputCache.length - 1
-            ])
-            this.state.parse.multiOutputCache.pop()
-            tmp[0].push(item)
+            if (depthLevel > 1) {
+                for (let i = _parentNodes.length - 2; i > -1; i--) {
+                    if ((_parentNodes[i] as Op).parameters.length !== 1) {
+                        const item = (_parentNodes[i] as Op).parameters.pop()!;
+                        (_parentNodes[i] as Op).parameters.push(
+                            ...this.state.parse.multiOutputCache[
+                                this.state.parse.multiOutputCache.length - 1
+                            ]
+                        )
+                        this.state.parse.multiOutputCache.pop();
+                        (_parentNodes[i] as Op).parameters.push(item)
+                    }
+                }
+            }
+            else {
+                const item = this.state.parse.tree.pop()!
+                this.state.parse.tree.push(...this.state.parse.multiOutputCache[
+                    this.state.parse.multiOutputCache.length - 1
+                ])
+                this.state.parse.multiOutputCache.pop()
+                this.state.parse.tree.push(item)
+            }
         }
     }
 
