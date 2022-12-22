@@ -700,22 +700,69 @@ export class Parser {
                             lhs = this._trimLeft(lhs)[0]
                             if (lhs.length > 0) {
                                 const index = lhs.indexOf(' ') > -1 ? lhs.indexOf(' ') : lhs.length
-                                let tagName = lhs.slice(0, index)
+                                const tagName = lhs.slice(0, index)
                                 const tagNameLen = tagName.length
                                 lhs = lhs.slice(index)
+                                let _err = ''
                                 if (tagName.search(/[)(<>]/g) > -1) {
-                                    tagName = 'invalid character in tag'
+                                    _err = 'invalid character in tag'
                                 }
-
-                                this.state.parse.tags[this.state.parse.tags.length - 1].push({
-                                    name: tagName,
-                                    position: [
-                                        entry + subExpEntry[j] + 
-                                            _lhs.length - lhs.length - tagNameLen,
-                                        entry + subExpEntry[j] +
-                                            _lhs.length - lhs.length - 1
-                                    ]
-                                })
+                                const _i = this.state.parse.tags[
+                                    this.state.parse.tags.length - 1
+                                ].findIndex(
+                                    v => v.name === tagName
+                                )
+                                if (_err.length > 0) {
+                                    if (_i > -1) this.state.parse.tags[
+                                        this.state.parse.tags.length - 1
+                                    ].push({
+                                        name: tagName,
+                                        position: [
+                                            entry + subExpEntry[j] + 
+                                                _lhs.length - lhs.length - tagNameLen,
+                                            entry + subExpEntry[j] +
+                                                _lhs.length - lhs.length - 1
+                                        ],
+                                        error: `${tagName} already in use`
+                                    })
+                                    else this.state.parse.tags[
+                                        this.state.parse.tags.length -1
+                                    ].push({
+                                        name: tagName,
+                                        position: [
+                                            entry + subExpEntry[j] + 
+                                                _lhs.length - lhs.length - tagNameLen,
+                                            entry + subExpEntry[j] +
+                                                _lhs.length - lhs.length - 1
+                                        ],
+                                        error: _err
+                                    })
+                                }
+                                else {
+                                    if (_i > -1) this.state.parse.tags[
+                                        this.state.parse.tags.length - 1
+                                    ].push({
+                                        name: tagName,
+                                        position: [
+                                            entry + subExpEntry[j] + 
+                                                _lhs.length - lhs.length - tagNameLen,
+                                            entry + subExpEntry[j] +
+                                                _lhs.length - lhs.length - 1
+                                        ],
+                                        error: `${tagName} already in use`
+                                    })
+                                    else this.state.parse.tags[
+                                        this.state.parse.tags.length -1
+                                    ].push({
+                                        name: tagName,
+                                        position: [
+                                            entry + subExpEntry[j] + 
+                                                _lhs.length - lhs.length - tagNameLen,
+                                            entry + subExpEntry[j] +
+                                                _lhs.length - lhs.length - 1
+                                        ]
+                                    })
+                                }
                             }
                         }
 
@@ -1868,13 +1915,37 @@ export class Parser {
                         this.exp = this.exp.replace(consumee, '')
                     }
                     else if (
-                        this.state.parse.tags[this.state.parse.tags.length - 1]
-                            .map(v => v.name).includes(str)
+                        this.state.parse.tags[this.state.parse.tags.length - 1].findIndex(
+                            (v) => v.name === str
+                        ) > -1
                     ) {
-                        this._updateTree({
-                            name: str,
-                            position: [startPosition, startPosition + str.length - 1],
-                        })
+                        const _i = this.state.parse.tags[
+                            this.state.parse.tags.length - 1
+                        ].findIndex(
+                            (v) => v.name === str
+                        )
+                        if (this.state.depthLevel === 0) {
+                            if (_i === this.state.parse.tree.length) this._updateTree({
+                                name: str,
+                                position: [startPosition, startPosition + str.length - 1],
+                                error: 'invalid word, cannot reference to self'
+                            })
+                            else this._updateTree({
+                                name: str,
+                                position: [startPosition, startPosition + str.length - 1],
+                            })
+                        }
+                        else {
+                            if (_i === this.state.parse.tree.length - 1) this._updateTree({
+                                name: str,
+                                position: [startPosition, startPosition + str.length - 1],
+                                error: 'invalid word, cannot reference to self'
+                            })
+                            else this._updateTree({
+                                name: str,
+                                position: [startPosition, startPosition + str.length - 1],
+                            })
+                        }
                         this.exp = this.exp.replace(consumee, '')
                     }
                     else {

@@ -1,18 +1,18 @@
 {
-    "name": "@beehiveinnovation/rainlang",
+    "name": "@rainprotocol/rainlang",
     "description": "Formatter and Parser written in Typescript used to read and write in Rain Language",
     "version": "1.0.0",
-    "author": "Beehive Innovation",
+    "author": "Rain Protocol",
     "license": "CAL-1.0",
     "repository": {
         "type": "git",
-        "url": "https://github.com/beehive-innovation/rainlang.git"
+        "url": "https://github.com/rainprotocol/rainlang.git"
     },
     "keywords": [],
     "bugs": {
-        "url": "https://github.com/beehive-innovation/rainlang/issues"
+        "url": "https://github.com/rainprotocol/rainlang/issues"
     },
-    "homepage": "http://beehive-innovation.github.io/rainlang/",
+    "homepage": "http://rainprotocol.github.io/rainlang/",
     "main": "dist/index.js",
     "typings": "dist/index.d.ts",
     "module": "dist/index.js",
@@ -42,6 +42,7 @@
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
         "@princjef/api-documenter": "^1.0.2",
+        "@rainprotocol/rain-protocol": "git+https://github.com/rainprotocol/rain-protocol.git#ea99544d47c4f5b02c3e450b7a2965907f242581",
         "@types/chai": "^4.3.3",
         "@types/mocha": "^10.0.0",
         "@types/node": "^18.11.9",

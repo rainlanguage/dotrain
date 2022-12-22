@@ -1,6 +1,6 @@
 [Home](./index.md)
 
-# @beehiveinnovation/rainlang
+# @rainprotocol/rainlang
 
 ## Classes
 
