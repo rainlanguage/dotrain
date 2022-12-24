@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { AllStandardOps } from '../../rainterpreter/allStandardOps';
 import { rainterpreterOpMeta } from '../../rainterpreter/opmeta';
-import { BigNumberish, BytesLike } from 'ethers';
+import { BigNumberish, BytesLike, ethers } from 'ethers';
 import { OperandMeta, OpIO, OpMeta, ParamsValidRange, StateConfig } from '../../types';
 import {
     concat,
@@ -128,7 +128,7 @@ export class Parser {
         if (aliases) this.gte.description = description
         if (this.gte.aliases) {
             this.gte.aliases.forEach(
-                (v, i, array) => array[i] = this._unifyLetterCase(v)
+                (v, i, array) => array[i] = this._normalizeChar(v)
             )
         }
     }
@@ -149,7 +149,7 @@ export class Parser {
         if (aliases) this.lte.description = description
         if (this.lte.aliases) {
             this.lte.aliases.forEach(
-                (v, i, array) => array[i] = this._unifyLetterCase(v)
+                (v, i, array) => array[i] = this._normalizeChar(v)
             )
         }
     }
@@ -170,7 +170,7 @@ export class Parser {
         if (aliases) this.ineq.description = description
         if (this.ineq.aliases) {
             this.ineq.aliases.forEach(
-                (v, i, array) => array[i] = this._unifyLetterCase(v)
+                (v, i, array) => array[i] = this._normalizeChar(v)
             )
         }
     }
@@ -262,16 +262,34 @@ export class Parser {
      * Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes
      *
      * @param parseTree - Tree like object (Parse Tree object or a Node or array of Nodes) to get the StateConfig from
-     * @param constants - This argument is used internally and should be ignored when calling this method externally
-     * @returns StateConfig, i.e. compiled bytes
+     * @returns StateConfig, i.e. compiled bytes ready to be deployed
      */
     public static compile(
         parseTree:
             | Node
             | Node[]
             | Record<number, Node[]>
+            | Record<number, { tree: Node[], position: number[] }>
+    ): StateConfig {
+        return this._compile(parseTree)
+    }
+
+    /**
+     * Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes
+     *
+     * @param parseTree - Tree like object (Parse Tree object or a Node or array of Nodes) to get the StateConfig from
+     * @param constants - (internal) Used to keep the constants across recursions
+     * @param sourceIndex - (internal) Used to keep the original source index across recursions
+     * @returns StateConfig
+     */
+    private static _compile(
+        parseTree:
+            | Node
+            | Node[]
+            | Record<number, Node[]>
             | Record<number, { tree: Node[], position: number[] }>,
         constants: BigNumberish[] = [],
+        sourceIndex = 0
     ): StateConfig {
         const sources: BytesLike[] = []
         let sourcesCache: BytesLike[] = []
@@ -320,6 +338,7 @@ export class Parser {
         for (let i = 0; i < nodes.length; i++) {
             if (nodes[i].length === 0) sourcesCache = []
             for (let j = 0; j < nodes[i].length; j++) {
+                if (i > sourceIndex) sourceIndex = i
                 const node = nodes[i][j]
                 if ('value' in node) {
                     if (isBigNumberish(node.value)) {
@@ -357,16 +376,14 @@ export class Parser {
                     //     )
                     // }
                     else if (node.value === 'MaxUint256' || node.value === 'Infinity') {
-                        if (constants.includes(
-                            '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
-                        ) {
+                        const _i = constants.findIndex(
+                            v => ethers.constants.MaxUint256.eq(v)
+                        )
+                        if (_i > -1) {
                             sourcesCache.push(
                                 op(
                                     AllStandardOps.READ_MEMORY,
-                                    memoryOperand(
-                                        MemoryType.Constant,
-                                        constants.indexOf(node.value)
-                                    )
+                                    memoryOperand(MemoryType.Constant, _i)
                                 )
                             )
                         }
@@ -384,23 +401,23 @@ export class Parser {
                     }
                 }
                 else if ('name' in node && !('opcode' in node)) {
-                    sourcesCache.push(
+                    const _i = this.state.parse.tags[sourceIndex].findIndex(
+                        v => v.name === node.name
+                    )
+                    if (_i > -1) sourcesCache.push(
                         op(
                             AllStandardOps.READ_MEMORY,
-                            memoryOperand(
-                                MemoryType.Stack,
-                                this.state.parse.tags[i].findIndex(
-                                    v => v.name === node.name
-                                )
-                            )
+                            memoryOperand(MemoryType.Stack, _i)
                         )
                     )
+                    else throw new Error(`cannot find "${node.name}"`)
                 }
                 else {
                     for (let i = 0; i < (node as Op).parameters.length; i++) {
-                        const tmp = this.compile(
+                        const tmp = this._compile(
                             (node as Op).parameters[i],
                             constants,
+                            sourceIndex
                             // isRecord ? argOffset[i] : offset ? offset : 0,
                         )
                         sourcesCache.push(...tmp.sources)
@@ -459,7 +476,7 @@ export class Parser {
         for (let i = 0; i < this.aliases.length; i++) {
             if (this.aliases[i]) {
                 this.aliases[i]!.forEach(
-                    (v, i, array) => array[i] = this._unifyLetterCase(v)
+                    (v, i, array) => array[i] = this._normalizeChar(v)
                 )
             }
         }
@@ -528,8 +545,10 @@ export class Parser {
     /**
      * Method to handle letter case senivity
      */
-    private static _unifyLetterCase = (str: string): string => {
-        while (str.includes('-')) str = str.replace('-', '_')
+    private static _normalizeChar = (str: string): string => {
+        if (str !== '-') 
+            while (str.includes('-')) 
+                str = str.replace('-', '_')
         return str.toUpperCase()
     }
 
@@ -723,7 +742,7 @@ export class Parser {
                                             entry + subExpEntry[j] +
                                                 _lhs.length - lhs.length - 1
                                         ],
-                                        error: `${tagName} already in use`
+                                        error: `"${tagName}" is already in use`
                                     })
                                     else this.state.parse.tags[
                                         this.state.parse.tags.length -1
@@ -749,7 +768,7 @@ export class Parser {
                                             entry + subExpEntry[j] +
                                                 _lhs.length - lhs.length - 1
                                         ],
-                                        error: `${tagName} already in use`
+                                        error: `"${tagName}" is already in use`
                                     })
                                     else this.state.parse.tags[
                                         this.state.parse.tags.length -1
@@ -892,16 +911,16 @@ export class Parser {
                                         break
                                     }
                                 }
-                                else if (this.exp.startsWith('<')) {
-                                    const tmp = this._resolveOperand()
-                                    if (tmp) {
-                                        (tmp as Error).position = [
-                                            currentPosition,
-                                            currentPosition + (tmp as Error).position[0] - 1
-                                        ]
-                                        this._updateTree(tmp)
-                                    }
-                                }
+                                // else if (this.exp.startsWith('<')) {
+                                //     const tmp = this._resolveOperand()
+                                //     if (tmp) {
+                                //         (tmp as Error).position = [
+                                //             currentPosition,
+                                //             currentPosition + (tmp as Error).position[0] - 1
+                                //         ]
+                                //         this._updateTree(tmp)
+                                //     }
+                                // }
                                 else this._consume(currentPosition)
                             }
                         }
@@ -1054,14 +1073,14 @@ export class Parser {
             offset++
         }
         if (str[0] === ' ' || str[0] === '(' || str[0] === ')') return undefined
-        const _str = this._unifyLetterCase(str)
-        if (_str.startsWith(this._unifyLetterCase(this.gte.name))) {
+        const _str = this._normalizeChar(str)
+        if (_str.startsWith(this._normalizeChar(this.gte.name))) {
             const tmp = [
                 this.gte.name,
                 offset.toString(),
                 (offset + this.gte.name.length - 1).toString(),
             ]
-            if (_str.replace(this._unifyLetterCase(this.gte.name), '').startsWith('(')) {
+            if (_str.replace(this._normalizeChar(this.gte.name), '').startsWith('(')) {
                 tmp.push(
                     'ambiguous expression/opcode'
                 )
@@ -1072,13 +1091,13 @@ export class Parser {
             )
             return tmp
         }
-        if (_str.startsWith(this._unifyLetterCase(this.lte.name))) {
+        if (_str.startsWith(this._normalizeChar(this.lte.name))) {
             const tmp = [
                 this.lte.name,
                 offset.toString(),
                 (offset + this.lte.name.length - 1).toString(),
             ]
-            if (_str.replace(this._unifyLetterCase(this.lte.name), '').startsWith('(')) {
+            if (_str.replace(this._normalizeChar(this.lte.name), '').startsWith('(')) {
                 tmp.push(
                     'ambiguous expression/opcode'
                 )
@@ -1089,13 +1108,13 @@ export class Parser {
             )
             return tmp
         }
-        if (_str.startsWith(this._unifyLetterCase(this.ineq.name))) {
+        if (_str.startsWith(this._normalizeChar(this.ineq.name))) {
             const tmp = [
                 this.ineq.name,
                 offset.toString(),
                 (offset + this.ineq.name.length - 1).toString(),
             ]
-            if (_str.replace(this._unifyLetterCase(this.ineq.name), '').startsWith('(')) {
+            if (_str.replace(this._normalizeChar(this.ineq.name), '').startsWith('(')) {
                 tmp.push(
                     'ambiguous expression/opcode'
                 )
@@ -1170,13 +1189,13 @@ export class Parser {
             }
         }
         for (let i = 0; i < this.names.length; i++) {
-            if (_str.startsWith(this._unifyLetterCase(this.names[i]))) {
+            if (_str.startsWith(this._normalizeChar(this.names[i]))) {
                 const tmp = [
                     this.names[i],
                     offset.toString(),
                     (offset + this.names[i].length - 1).toString(),
                 ]
-                if (_str.replace(this._unifyLetterCase(this.names[i]), '').startsWith('(')) {
+                if (_str.replace(this._normalizeChar(this.names[i]), '').startsWith('(')) {
                     this.state.ambiguity = true
                     tmp.push('ambiguous expression/opcode')
                 }
@@ -1782,21 +1801,21 @@ export class Parser {
                 this.exp = this.exp.replace(consumee, '')
             }
             else {
-                const str_ = this._unifyLetterCase(str)
+                const str_ = this._normalizeChar(str)
                 if (                        
-                    str_ === this._unifyLetterCase(this.gte.name) ||
+                    str_ === this._normalizeChar(this.gte.name) ||
                     this.gte.aliases?.includes(str_) ||
-                    str_ === this._unifyLetterCase(this.lte.name) ||
+                    str_ === this._normalizeChar(this.lte.name) ||
                     this.lte.aliases?.includes(str_) ||
-                    str_ === this._unifyLetterCase(this.ineq.name) ||
+                    str_ === this._normalizeChar(this.ineq.name) ||
                     this.ineq.aliases?.includes(str_)
                 ) {
                     check = false
                     const isGte =
-                        str_ === this._unifyLetterCase(this.gte.name) ||
+                        str_ === this._normalizeChar(this.gte.name) ||
                         this.gte.aliases?.includes(str_)
                     const isLte =
-                        str_ === this._unifyLetterCase(this.lte.name) ||
+                        str_ === this._normalizeChar(this.lte.name) ||
                         this.lte.aliases?.includes(str_)
                     this.exp = this.exp.replace(consumee, '')
                     const op: Op = {
@@ -1913,9 +1932,9 @@ export class Parser {
                     }
                 }
                 if (check) {
-                    const str_ = this._unifyLetterCase(str)
+                    const str_ = this._normalizeChar(str)
                     const names = this.names.map(
-                        (v, i, names) => names[i] = this._unifyLetterCase(v)
+                        (v, i, names) => names[i] = this._normalizeChar(v)
                     )
                     if (names.includes(str_)) {
                         this.exp = this.exp.replace(consumee, '')
@@ -2086,7 +2105,8 @@ export class Parser {
      */
     private static _errorCheck(element: Node): boolean {
         if ('opcode' in element) {
-            if (element.error !== undefined) return false
+            if (element.error) return false
+            else if (isNaN(element.operand) || isNaN(element.output)) return false
             else {
                 for (let i = 0; i < element.parameters.length; i++) {
                     if (!this._errorCheck(element.parameters[i])) return false
@@ -2094,7 +2114,7 @@ export class Parser {
                 return true
             }
         }
-        else if ('error' in element) return false
+        else if (element.error) return false
         else return true
     }
 

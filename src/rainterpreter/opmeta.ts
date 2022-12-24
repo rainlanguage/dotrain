@@ -1507,7 +1507,7 @@ export const rainterpreterOpMeta: OpMeta[] = [
             encoder: (_args, _paramsLength) => _paramsLength,
             decoder: (_operand) => [_operand]
         },
-        aliases: ['MINUS'],
+        aliases: ['MINUS', '-'],
         data: {
             description: 'Subtracts N number of values',
             category: 'math',
