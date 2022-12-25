@@ -584,20 +584,29 @@ export class Parser {
                 while(script.includes('/*')) {
                     const startCm = script.indexOf('/*')
                     let endCm = script.length - 1
-                    let cm = ''
+                    let cm = script.slice(startCm)
+                    let _notEnded = true
                     if (script.includes('*/')) {
                         endCm = script.indexOf('*/')
                         cm = script.slice(startCm, endCm + 2)
+                        _notEnded = false
                     }
-                    for (let i = startCm; i < endCm + 2; i++) {
-                        if (script[i]) {
-                            script = script.slice(0, i) + ' ' + script.slice(i + 1)
-                        }
-                    }
-                    if (cm === '') {
+                    // for (let i = startCm; i < endCm + 2; i++) {
+                    //     if (script[i]) {
+                    //         script = script.slice(0, i) + ' ' + script.slice(i + 1)
+                    //     }
+                    // }
+                    script = _notEnded 
+                        ? script.slice(0, startCm) 
+                            + ' ' .repeat(cm.length) 
+                        : script.slice(0, startCm) 
+                            + ' ' .repeat(cm.length) 
+                            + script.slice(endCm + 2)
+                
+                    if (_notEnded) {
                         comments.push({
-                            error: 'expected "*/" to close the comment',
-                            position: [startCm]
+                            error: 'expected "*/" to end the comment',
+                            position: [startCm, endCm]
                         })
                     }
                     else {
