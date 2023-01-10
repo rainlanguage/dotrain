@@ -54,7 +54,7 @@ let stateConfig = Parser.compile(argument)
 
 |  Method | Description |
 |  --- | --- |
-|  [compile(parseTree, constants)](./parser.md#compile-method-static-1) | Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes |
+|  [compile(parseTree)](./parser.md#compile-method-static-1) | Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes |
 |  [get(expression, opmeta)](./parser.md#get-method-static-1) | Method to get parse tree object and StateConfig |
 |  [getParseTree(expression, opmeta)](./parser.md#getParseTree-method-static-1) | Method to get the parse tree object |
 |  [getStateConfig(expression, opmeta)](./parser.md#getStateConfig-method-static-1) | Method to get the StateConfig |
@@ -110,7 +110,7 @@ static sources: BytesLike[];
 
 <a id="compile-method-static-1"></a>
 
-### compile(parseTree, constants)
+### compile(parseTree)
 
 Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes
 
@@ -120,7 +120,7 @@ Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of
 static compile(parseTree: Node | Node[] | Record<number, Node[]> | Record<number, {
         tree: Node[];
         position: number[];
-    }>, constants?: BigNumberish[]): StateConfig;
+    }>): StateConfig;
 ```
 
 #### Parameters
@@ -128,13 +128,12 @@ static compile(parseTree: Node | Node[] | Record<number, Node[]> | Record<number
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  parseTree | <pre>Node \| Node[] \| Record<number, Node[]> \| Record<number, {&#010;    tree: Node[];&#010;    position: number[];&#010;}></pre> | Tree like object (Parse Tree object or a Node or array of Nodes) to get the StateConfig from |
-|  constants | `BigNumberish[]` | This argument is used internally and should be ignored when calling this method externally |
 
 <b>Returns:</b>
 
 `StateConfig`
 
-StateConfig, i.e. compiled bytes
+StateConfig, i.e. compiled bytes ready to be deployed
 
 <a id="get-method-static-1"></a>
 
