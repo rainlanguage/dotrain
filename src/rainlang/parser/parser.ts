@@ -1327,6 +1327,7 @@ export class Parser {
             ]
             if (typeof this.pushes[op] === "number") opNode.output = this.pushes[op] as number
             if (this.operandMetas[op] === 0) {
+                opNode.operand = 0
                 if (this.pops[op] === 0) {
                     if (opNode.parameters.length) 
                         opNode.error = "invalid number of inputs"

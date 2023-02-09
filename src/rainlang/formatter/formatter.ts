@@ -3,8 +3,8 @@ import { StateConfig, OpMeta, InputMeta, OutputMeta, OperandArgs } from '../../t
 import { arrayify, extractByBits, isBigNumberish, metaFromBytes, validateMeta } from '../../utils';
 import RainterpreterOpMeta from "../../rainterpreter/allStandardOpMeta.json";
 import { Config, PrettifyConfig } from './types';
-import { stringMath } from '../../string-math/stringMath';
 import OpMetaSchema from "../../schema/op.meta.schema.json";
+import { Equation, Expression, parse } from 'algebra.js';
 
 
 /**
@@ -295,21 +295,16 @@ export class Formatter {
         computation?: string
     }[]): number[] {
         const result = []
-        const _reserveCompute = (_val: number, _comp: string, range: number): number => {
-            const _exp = _comp
-            let _i = 0
-            for (_i; _i < range; _i++) {
-                _comp = _exp
-                while (_comp.includes("arg")) _comp = _comp.replace("arg", _i.toString())
-                if (stringMath(_comp) === _val) break
-            }
-            return _i
-        }
         for (let i = 0; i < args.length; i++) {
             let _val = extractByBits(value, args[i].bits)
-            const _range = 2 ** ((args[i].bits[1] - args[i].bits[0]) + 1)
             const _comp = args[i].computation
-            if (_comp) _val = _reserveCompute(_val, _comp, _range)
+            if (_comp) {
+                const _lhs = parse(_comp)
+                const _eq = new Equation(_lhs as Expression, _val)
+                const _res = _eq.solveFor("arg")?.toString()
+                if (_res) _val = Number(_res)
+                else throw new Error("something went wrong when deconstructing an operand")
+            }
             result.push(_val)
         }
         return result
