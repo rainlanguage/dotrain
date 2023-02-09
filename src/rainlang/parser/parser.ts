@@ -22,7 +22,8 @@ import {
     MemoryType,
     op,
     validateMeta,
-    metaFromBytes
+    metaFromBytes,
+    hexlify
 } from '../../utils';
 import {
     Notations,
@@ -140,7 +141,10 @@ export class Parser {
             } as (ParseTree & { 'comments': Comment[] })
             return [
                 ret,
-                { constants: this.constants, sources: this.sources }
+                { 
+                    constants: this.constants, 
+                    sources: this.sources.map(v => hexlify(v, { allowMissingPrefix: true })) 
+                }
             ]
         }
         catch(err) {
@@ -210,7 +214,7 @@ export class Parser {
             this._parse(expression, _opmeta)
             return {
                 constants: this.constants,
-                sources: this.sources
+                sources: this.sources.map(v => hexlify(v, { allowMissingPrefix: true }))
             }
         }
         catch(err) {
