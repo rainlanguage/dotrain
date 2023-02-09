@@ -1,9 +1,10 @@
 import { BytesLike, BigNumber, ethers } from 'ethers';
 import { StateConfig, OpMeta, InputMeta, OutputMeta, OperandArgs } from '../../types';
-import { arrayify, extractByBits } from '../../utils';
+import { arrayify, extractByBits, isBigNumberish, metaFromBytes, validateMeta } from '../../utils';
 import RainterpreterOpMeta from "../../rainterpreter/allStandardOpMeta.json";
 import { Config, PrettifyConfig } from './types';
 import { stringMath } from '../../string-math/stringMath';
+import OpMetaSchema from "../../schema/op.meta.schema.json";
 
 
 /**
@@ -40,16 +41,21 @@ export class Formatter {
      */
     public static get(
         _state: StateConfig,
+        _opmeta?: string | Uint8Array,
         _config: Config = {
             pretty: false,
             tags: undefined,
             enableTagging: false,
-            opmeta: undefined
         }
     ): string {
-        if (_config.opmeta) {
-            this.set(_config.opmeta)
-        }
+        if (_opmeta) {
+            if (typeof _opmeta === "string" && !isBigNumberish(_opmeta)) {
+                const _meta = JSON.parse(_opmeta)
+                if (validateMeta(_meta, OpMetaSchema)) this.opmeta = _meta as OpMeta[]
+                else throw new Error("invalid op meta")
+            }
+            else this.opmeta = metaFromBytes(_opmeta, OpMetaSchema) as OpMeta[]
+        }   
         this.pretty = _config.pretty ? true : false
         const _constants: string[] = []
 

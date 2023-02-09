@@ -11,6 +11,5 @@ type Config = {
     pretty?: boolean;
     tags?: string[];
     enableTagging?: boolean;
-    opmeta?: OpMeta[];
 };
 ```

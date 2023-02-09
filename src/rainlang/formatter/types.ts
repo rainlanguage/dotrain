@@ -1,5 +1,3 @@
-import { OpMeta } from "../../types"
-
 /**
  * @public
  *
@@ -18,10 +16,6 @@ export type Config = {
      * True if the result needs to be tagged and optimized for the RuleBuilder script generator
      */
     enableTagging?: boolean;
-    /**
-     * An opmeta object to be used for creating the human friendly read
-     */
-    opmeta?: OpMeta[];
 }
 
 /**

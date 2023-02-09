@@ -16,7 +16,7 @@ class Formatter
 
 |  Method | Description |
 |  --- | --- |
-|  [get(\_state, \_config)](./formatter.md#get-method-static-1) | Obtain the friendly output from an StateConfig/script. |
+|  [get(\_state, \_opmeta, \_config)](./formatter.md#get-method-static-1) | Obtain the friendly output from an StateConfig/script. |
 |  [prettify(\_text, \_config)](./formatter.md#prettify-method-static-1) | Make the output from the HumanFriendly Source more readable by adding indenting following the parenthesis |
 |  [set(opmeta\_)](./formatter.md#set-method-static-1) | Method to set the opmeta with more than AllStandardOps opcodes or with other name/aliases for this instance of the Formatter |
 
@@ -24,14 +24,14 @@ class Formatter
 
 <a id="get-method-static-1"></a>
 
-### get(\_state, \_config)
+### get(\_state, \_opmeta, \_config)
 
 Obtain the friendly output from an StateConfig/script.
 
 <b>Signature:</b>
 
 ```typescript
-static get(_state: StateConfig, _config?: Config): string;
+static get(_state: StateConfig, _opmeta?: string | Uint8Array, _config?: Config): string;
 ```
 
 #### Parameters
@@ -39,6 +39,7 @@ static get(_state: StateConfig, _config?: Config): string;
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  \_state | [StateConfig](../types/stateconfig.md) | The StateConfig/script to generate the friendly version |
+|  \_opmeta | `string \| Uint8Array` |  |
 |  \_config | [Config](../types/config.md) | The configuration that will run the generator |
 
 <b>Returns:</b>
