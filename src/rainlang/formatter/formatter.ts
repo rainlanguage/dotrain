@@ -183,7 +183,7 @@ export class Formatter {
 
                         // construct operand arguments
                         if (typeof this.opmeta[_index].operand !== "number") {
-                            const args = this._decomputeByBits(
+                            const args = this._deconstructByBits(
                                 _operand, 
                                 (this.opmeta[_index].operand as OperandArgs).map((v) => {
                                     return {
@@ -282,14 +282,14 @@ export class Formatter {
     }
 
     /**
-     * Method decompute operand to seperated argument values
+     * Method deconstruct operand to seperated arguments
      */
-    private static _decomputeByBits(value: number, args: {
+    private static _deconstructByBits(value: number, args: {
         bits: [number, number], 
         computation?: string
     }[]): number[] {
         const result = []
-        const _decomp = (_val: number, _comp: string, range: number): number => {
+        const _reserveCompute = (_val: number, _comp: string, range: number): number => {
             const _exp = _comp
             let _i = 0
             for (_i; _i < range; _i++) {
@@ -303,7 +303,7 @@ export class Formatter {
             let _val = extractByBits(value, args[i].bits)
             const _range = 2 ** ((args[i].bits[1] - args[i].bits[0]) + 1)
             const _comp = args[i].computation
-            if (_comp) _val = _decomp(_val, _comp, _range)
+            if (_comp) _val = _reserveCompute(_val, _comp, _range)
             result.push(_val)
         }
         return result
