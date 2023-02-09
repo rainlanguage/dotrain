@@ -131,22 +131,22 @@ export class Parser {
             }
             else _opmeta = metaFromBytes(opmeta, OpMetaSchema)
         }
-        // try {
-        this._parse(expression, _opmeta)
-        let ret: any = this.parseTree as ParseTree
-        if (this.comments.length > 0) ret = {
-            ...this.parseTree,
-            'comments': this.comments
-        } as (ParseTree & { 'comments': Comment[] })
-        return [
-            ret,
-            { constants: this.constants, sources: this.sources }
-        ]
-        // }
-        // catch(err) {
-        //     console.log(`an error occured duting parsing, please try again, reason: ${err}`)
-        //     return `an error occured duting parsing, please try again, reason: ${err}`
-        // }
+        try {
+            this._parse(expression, _opmeta)
+            let ret: any = this.parseTree as ParseTree
+            if (this.comments.length > 0) ret = {
+                ...this.parseTree,
+                'comments': this.comments
+            } as (ParseTree & { 'comments': Comment[] })
+            return [
+                ret,
+                { constants: this.constants, sources: this.sources }
+            ]
+        }
+        catch(err) {
+            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+            return `an error occured duting parsing, please try again, reason: ${err}`
+        }
     }
 
     /**
@@ -170,19 +170,19 @@ export class Parser {
             }
             else _opmeta = metaFromBytes(opmeta, OpMetaSchema)
         }
-        // try {
-        this._parse(expression, _opmeta)
-        let ret: any = this.parseTree as ParseTree
-        if (this.comments.length > 0) ret = {
-            ...this.parseTree,
-            'comments': this.comments
-        } as (ParseTree & { 'comments': Comment[] })
-        return ret
-        // }
-        // catch(err) {
-        //     console.log(`an error occured duting parsing, please try again, reason: ${err}`)
-        //     return `an error occured duting parsing, please try again, reason: ${err}`
-        // }
+        try {
+            this._parse(expression, _opmeta)
+            let ret: any = this.parseTree as ParseTree
+            if (this.comments.length > 0) ret = {
+                ...this.parseTree,
+                'comments': this.comments
+            } as (ParseTree & { 'comments': Comment[] })
+            return ret
+        }
+        catch(err) {
+            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+            return `an error occured duting parsing, please try again, reason: ${err}`
+        }
     }
 
     /**
@@ -206,17 +206,17 @@ export class Parser {
             }
             else _opmeta = metaFromBytes(opmeta, OpMetaSchema)
         }
-        //try {
-        this._parse(expression, _opmeta)
-        return {
-            constants: this.constants,
-            sources: this.sources
+        try {
+            this._parse(expression, _opmeta)
+            return {
+                constants: this.constants,
+                sources: this.sources
+            }
         }
-        // }
-        // catch(err) {
-        //     console.log(`an error occured duting parsing, please try again, reason: ${err}`)
-        //     return `an error occured duting parsing, please try again, reason: ${err}`
-        // }
+        catch(err) {
+            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+            return `an error occured duting parsing, please try again, reason: ${err}`
+        }
     }
 
     /**
@@ -1743,40 +1743,3 @@ export class Parser {
         return _count
     }
 }
-
-console.log((Parser.getStateConfig("_: add(1 2);")))
-// const x: OpMeta = {
-//     name: "do-while",
-//     desc: "Runs a while loop on number of items taken from a stack until a conditions is met",
-//     operand: [
-//         {
-//             name: "inputs",
-//             bits: [0, 3],
-//             validRange: [[0, 15]],
-//             computation: "arg - 1"
-//         },
-//         {
-//             name: "source-index",
-//             desc: "index of the source to run",
-//             bits: [8, 11]
-//         }
-//     ],
-//     inputs: {
-//         bits: [0, 3],
-//         computation: "bits + 1",
-//         parameters: [
-//             {
-//                 name: "input",
-//                 spread: true
-//             },
-//             {
-//                 name: "condition",
-//                 desc: "condition of while loop"
-//             }
-//         ]
-//     },
-//     outputs: {
-//         bits: [0, 3]
-//     },
-//     aliases: ["while"]
-// }
