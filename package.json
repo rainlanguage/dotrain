@@ -42,7 +42,6 @@
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
         "@princjef/api-documenter": "^1.0.2",
-        "@rainprotocol/rain-protocol": "git+https://github.com/rainprotocol/rain-protocol.git#ea99544d47c4f5b02c3e450b7a2965907f242581",
         "@types/chai": "^4.3.3",
         "@types/mocha": "^10.0.0",
         "@types/node": "^18.11.9",
@@ -58,7 +57,9 @@
         "typescript": "^4.8.4"
     },
     "dependencies": {
+        "@types/prettier": "^2.7.2",
+        "ajv": "^8.12.0",
         "ethers": "^5.7.2",
-        "prettier": "^2.7.1"
+        "prettier": "^2.8.3"
     }
 }

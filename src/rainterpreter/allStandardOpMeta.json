@@ -1,0 +1,1291 @@
+[
+  {
+    "name": "chainlink-price",
+    "desc": "Takes Feed and StaleAfter values from stack and gets the Chainlink Oracle Feed's price and stack the result based on StaleAfter",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "feed",
+          "desc": "address of the price feed"
+        },
+        {
+          "name": "stale-after",
+          "desc": "duration of time that price will be valid"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["price"]
+  },
+  {
+    "name": "call",
+    "desc": "Takes some items from the stack and runs a source with sub-stack and puts the results back to the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 3]
+      },
+      {
+        "name": "output-size",
+        "desc": "number of outputs",
+        "bits": [4, 7]
+      },
+      {
+        "name": "source-index",
+        "desc": "index of the source to run",
+        "bits": [8, 11]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 3],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": {
+      "bits": [4, 7]
+    },
+    "aliases": ["function", "fn"]
+  },
+  {
+    "name": "context",
+    "desc": "Inserts an context cell into the stack by reading column and row from operand",
+    "operand": [
+      {
+        "name": "column",
+        "bits": [0, 7]
+      },
+      {
+        "name": "row",
+        "bits": [8, 15]
+      }
+    ],
+    "inputs": 0,
+    "outputs": 1
+  },
+  {
+    "name": "context-row",
+    "desc": "Inserts a context cell into the stack by reading the column from operand and row from stack",
+    "operand": [
+      {
+        "name": "column",
+        "desc": "context column",
+        "bits": [0, 7]
+      }
+    ],
+    "inputs": {
+      "parameters": [
+        {
+          "name": "row"
+        }
+      ]
+    },
+    "outputs": 1
+  },
+  {
+    "name": "debug",
+    "desc": "ABI encodes the entire stack and logs it to the hardhat console",
+    "operand": [
+      {
+        "name": "mode",
+        "desc": "debugging mode",
+        "bits": [0, 0]
+      }
+    ],
+    "inputs": 0,
+    "outputs": 0,
+    "aliases": ["log", "console", "console-log"]
+  },
+  {
+    "name": "do-while",
+    "desc": "Runs a while loop on number of items taken from a stack until a conditions is met",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 3],
+        "validRange": [[0, 15]],
+        "computation": "arg - 1"
+      },
+      {
+        "name": "source-index",
+        "desc": "index of the source to run",
+        "bits": [8, 11]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 3],
+      "computation": "bits + 1",
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        },
+        {
+          "name": "condition",
+          "desc": "condition of while loop"
+        }
+      ]
+    },
+    "outputs": {
+      "bits": [0, 3]
+    },
+    "aliases": ["while"]
+  },
+  {
+    "name": "extern",
+    "desc": "",
+    "operand": 0,
+    "inputs": 0,
+    "outputs": 0
+  },
+  {
+    "name": "fold-context",
+    "desc": "Performs a looped call over some inputs and some context rows specified by folding a column as start column index and width in operand arguments as length of items in rows",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [12, 15]
+      },
+      {
+        "name": "width",
+        "desc": "number of columns to loop over",
+        "bits": [8, 11]
+      },
+      {
+        "name": "fold-column",
+        "desc": "column to base the loop on",
+        "bits": [4, 7]
+      },
+      {
+        "name": "source-index",
+        "desc": "index of the source to run",
+        "bits": [0, 3]
+      }
+    ],
+    "inputs": {
+      "bits": [12, 15],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": {
+      "bits": [12, 15]
+    },
+    "aliases": ["fold"]
+  },
+  {
+    "name": "get",
+    "desc": "Read a key/value pair from contract storage by providing the key and stack the value",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "key",
+          "desc": "the key of the key/value pair"
+        }
+      ]
+    },
+    "outputs": 1
+  },
+  {
+    "name": "loop-n",
+    "desc": "Loop a source n times by taking some items from stack and putting the results back into stack",
+    "operand": [
+      {
+        "name": "loop-size",
+        "desc": "number of loops",
+        "bits": [12, 15]
+      },
+      {
+        "name": "inputs",
+        "bits": [0, 3]
+      },
+      {
+        "name": "output-size",
+        "desc": "number of outputs",
+        "bits": [4, 7]
+      },
+      {
+        "name": "source-index",
+        "desc": "index of the source to run",
+        "bits": [8, 11]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 3],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": {
+      "bits": [4, 7]
+    },
+    "aliases": ["loop", "for"]
+  },
+  {
+    "name": "read-memory",
+    "desc": "Takes an item from constants array or from stack items and insert it into the stack",
+    "operand": [
+      {
+        "name": "type",
+        "desc": "type of the read, from constants or stack",
+        "bits": [0, 0]
+      },
+      {
+        "name": "index",
+        "desc": "index of the item to read",
+        "bits": [1, 15]
+      }
+    ],
+    "inputs": 0,
+    "outputs": 1,
+    "aliases": ["read"]
+  },
+  {
+    "name": "set",
+    "desc": "Write a key/value pair taken from stack and write into contract storage",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "key"
+        },
+        {
+          "name": "value"
+        }
+      ]
+    },
+    "outputs": 0,
+    "aliases": ["write"]
+  },
+  {
+    "name": "hash",
+    "desc": "Hash (solidity keccak256) value taken from stack and stack the result",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[1, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1
+  },
+  {
+    "name": "erc1155-balance-of",
+    "desc": "Get the balance of an ERC1155 token of an account and insert it into the stack",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "token-address"
+        },
+        {
+          "name": "account"
+        },
+        {
+          "name": "token-id"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["erc1155-balance"]
+  },
+  {
+    "name": "erc1155-balance-of-batch",
+    "desc": "Get the balances of an ERC1155 token for batches of accounts and token ids and insert it into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[1, 255]],
+        "computation": "(arg - 1) / 2"
+      }
+    ],
+    "outputs": {
+      "bits": [0, 7]
+    },
+    "inputs": {
+      "bits": [0, 7],
+      "computation": "(bits * 2) + 1",
+      "parameters": [
+        {
+          "name": "token-address"
+        },
+        {
+          "name": "account",
+          "spread": true
+        },
+        {
+          "name": "token-id",
+          "spread": true
+        }
+      ]
+    },
+    "aliases": ["erc1155-batch-balance"]
+  },
+  {
+    "name": "erc20-balance-of",
+    "desc": "Get the balance of an ERC20 token of an account and insert it into the stack",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "token-address"
+        },
+        {
+          "name": "account"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["erc20-balance"]
+  },
+  {
+    "name": "erc20-total-supply",
+    "desc": "Get the supply of an ERC20 token and insert it into the stack",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "token-sddress"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["erc20-supply"]
+  },
+  {
+    "name": "erc20-snapshot-balance-of-at",
+    "desc": "Get the snapshot balance of an ERC20 token of an account and insters it into the stack",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "token-address"
+        },
+        {
+          "name": "account"
+        },
+        {
+          "name": "snapshot-id"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["erc20-snapshot-balance"]
+  },
+  {
+    "name": "erc20-snapshot-total-supply-at",
+    "desc": "Get the snapshot supply of an ERC20 token and insert it into the stack",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "token-address"
+        },
+        {
+          "name": "snapshot-id"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["erc20-snapshot-supply"]
+  },
+  {
+    "name": "erc5313-owner",
+    "desc": "Stack the owner of an ERC5313 compliant contract.",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "contract-address"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["contract-owner"]
+  },
+  {
+    "name": "erc721-balance-of",
+    "desc": "Get the balance of an ERC721 token of an account and insert it into the stack",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "token-address"
+        },
+        {
+          "name": "account"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["erc721-balance"]
+  },
+  {
+    "name": "erc721-owner-of",
+    "desc": "Get the owner of an ERC20 token of an account and insert it into the stack",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "token-address"
+        },
+        {
+          "name": "token-id"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["erc721-owner"]
+  },
+  {
+    "name": "ensure",
+    "desc": "Require ietms(s) of the stack to be true, i.e. greater than zero, revert if not",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[1, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 0,
+    "aliases": ["require"]
+  },
+  {
+    "name": "block-number",
+    "desc": "Inserts the current block number into the stack",
+    "operand": 0,
+    "inputs": 0,
+    "outputs": 1,
+    "aliases": ["current-block"]
+  },
+  {
+    "name": "block-timestamp",
+    "desc": "Insert the current block timestamp into the stack",
+    "operand": 0,
+    "outputs": 1,
+    "inputs": 0,
+    "aliases": ["now", "current-time", "current-timestamp"]
+  },
+  {
+    "name": "explode32",
+    "desc": "Part an uint256 value into 8 seperate 1 byte size values.",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value"
+        }
+      ]
+    },
+    "outputs": 8,
+    "aliases": ["explode"]
+  },
+  {
+    "name": "add",
+    "desc": "Inserts the result of sum of N values taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sum"]
+  },
+  {
+    "name": "div",
+    "desc": "Inserts the result of divide of N values taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["divide"]
+  },
+  {
+    "name": "exp",
+    "desc": "Inserts the result of exponention of N values taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["pow", "power"]
+  },
+  {
+    "name": "max",
+    "desc": "Inserts the maximum of N values taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["maximum", "max-of"]
+  },
+  {
+    "name": "min",
+    "desc": "Inserts the minimum of N values taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["minimum", "min-of"]
+  },
+  {
+    "name": "mod",
+    "desc": "Inserts the mod of N values taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1
+  },
+  {
+    "name": "mul",
+    "desc": "Inserts the multiplication of N values taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1
+  },
+  {
+    "name": "sub",
+    "desc": "Inserts the subtraction of N values taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["minus"]
+  },
+  {
+    "name": "scale-18",
+    "desc": "Rescale a fixed point number of N decimals to 18 decimals where N is in the operand.",
+    "operand": [
+      {
+        "name": "rounding",
+        "desc": "Direction to round truncation errors when scaling down. 0 = Down, 1 = Up.",
+        "bits": [0, 0],
+        "validRange": [[0, 1]]
+      },
+      {
+        "name": "decimals",
+        "desc": "Decimals of the value being rescaled.",
+        "bits": [1, 15],
+        "validRange": [[0, 77]]
+      }
+    ],
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["scale18"]
+  },
+  {
+    "name": "scale18-div",
+    "desc": "Inserts the result of dividing the 2 items of the stack by keeping the 18 fixed point decimals into the stack",
+    "operand": [
+      {
+        "name": "decimals",
+        "desc": "decimals of the first value",
+        "bits": [0, 7],
+        "validRange": [[1, 255]]
+      }
+    ],
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value1",
+          "desc": "The first value"
+        },
+        {
+          "name": "value2",
+          "desc": "The second value"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["scale-18-div", "fp-div"]
+  },
+  {
+    "name": "scale-18-dynamic",
+    "desc": "Rescale a fixed point number of N decimals to 18 decimals where N is taken from the stack.",
+    "operand": [
+      {
+        "name": "rounding",
+        "desc": "Direction to round truncation errors when scaling down. 0 = Down, 1 = Up.",
+        "bits": [1, 1],
+        "validRange": [[0, 1]]
+      }
+    ],
+    "inputs": {
+      "parameters": [
+        {
+          "name": "current-decimals"
+        },
+        {
+          "name": "value"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["scale-18-dynamic"]
+  },
+  {
+    "name": "scale-18-mul",
+    "desc": "Inserts the result of multiplying the 2 items of the stack by keeping the 18 fixed point decimals into the stack",
+    "operand": [
+      {
+        "name": "decimals",
+        "desc": "decimals of the first value",
+        "bits": [0, 7],
+        "validRange": [[1, 255]]
+      }
+    ],
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value1",
+          "desc": "The first value"
+        },
+        {
+          "name": "value2",
+          "desc": "The second value"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["scale18-mul", "fp-mul"]
+  },
+  {
+    "name": "scale-by",
+    "desc": "Scale a fixed point up or down by operand.",
+    "operand": [
+      {
+        "name": "scale",
+        "desc": "determines the up/down scale as 2s complement",
+        "bits": [0, 7]
+      }
+    ],
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value",
+          "desc": "The value to scale by"
+        }
+      ]
+    },
+    "outputs": 1
+  },
+  {
+    "name": "scale-n",
+    "desc": "Rescale an 18 OOMs fixed point number to scale N.",
+    "operand": [
+      {
+        "name": "target-decimals",
+        "desc": "the target decimals to scale to",
+        "bits": [0, 7],
+        "validRange": [[1, 255]]
+      }
+    ],
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value",
+          "desc": "The value to scale to N"
+        }
+      ]
+    },
+    "outputs": 1
+  },
+  {
+    "name": "any",
+    "desc": "Inserts the first non-zero value of all the values it checks if there exists one, else inserts zero into the stack.",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["or"]
+  },
+  {
+    "name": "eager-if",
+    "desc": "Takes 3 items from the stack and check if the first item is non-zero the inserts the second item into the stack, else inserts the 3rd item",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "condition",
+          "desc": "The condition to evaluate"
+        },
+        {
+          "name": "pass-statement",
+          "desc": "The value to stack if the condition is non-zero/true"
+        },
+        {
+          "name": "fail-statement",
+          "desc": "The value to stack if the condition is zero/false"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["if"]
+  },
+  {
+    "name": "equal-to",
+    "desc": "Compares the last 2 items of the stack together and inserts true/1 into stack if they are euqal, else inserts false/0",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value1"
+        },
+        {
+          "name": "value2"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["eq"]
+  },
+  {
+    "name": "every",
+    "desc": "Inserts the first value of all the values it checks if all of them are non-zero, else inserts zero into the stack.",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["and"]
+  },
+  {
+    "name": "greater-than",
+    "desc": "Takes last 2 values from stack and puts true/1 into the stack if the first value is greater than the second value and false/0 if not.",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value1"
+        },
+        {
+          "name": "value2"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["gt"]
+  },
+  {
+    "name": "is-zero",
+    "desc": "Checks if the value is zero and inserts true/1 into the stack if it is, else inserts false/0",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["is-false"]
+  },
+  {
+    "name": "less-than",
+    "desc": "Takes last 2 values from stack and puts true/1 into the stack if the first value is less than the second value and false/0 if not.",
+    "operand": 0,
+    "outputs": 1,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value1"
+        },
+        {
+          "name": "value2"
+        }
+      ]
+    },
+    "aliases": ["lt"]
+  },
+  {
+    "name": "saturating-add",
+    "desc": "Inserts sum of the specified items from the stack and if prevernts reverts if the result goes above max 256 bit size",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sat-add", "saturating-sum", "sat-sum"]
+  },
+  {
+    "name": "saturating-mul",
+    "desc": "Inserts multiplied result of the specified items from the stack and if prevernts reverts if the result goes above max 256 bit size",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sat-mul"]
+  },
+  {
+    "name": "saturating-sub",
+    "desc": "Inserts subtraction of the specified items from the stack and if prevernts reverts if the result goes blow zero",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "input",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sat-sub"]
+  },
+  {
+    "name": "iorderbook-v1-vault-balance",
+    "desc": "The balance of an orderbook vault",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "orderbook-address",
+          "desc": "The address of the IOrderbookV2"
+        },
+        {
+          "name": "owner-address",
+          "desc": "The address of the Owner of the vault"
+        },
+        {
+          "name": "token-address",
+          "desc": "The address of the Token"
+        },
+        {
+          "name": "vault-id"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["vault-balance", "orderbook-vault-balance"]
+  },
+  {
+    "name": "isale-v2-remaining-token-inventory",
+    "desc": "The remaining rTKNs left to to be sold",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "isale-address"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sale-remaining-token-inventory"]
+  },
+  {
+    "name": "isale-v2-reserve",
+    "desc": "The reserve token address",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "isale-address"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sale-reserve"]
+  },
+  {
+    "name": "isale-v2-sale-status",
+    "desc": "Insert the status of a Sale contract into the stack by taking its address from the stack",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "isale-address"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sale-status"]
+  },
+  {
+    "name": "isale-v2-token",
+    "desc": "The rTKN address",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "isale-address"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sale-token"]
+  },
+  {
+    "name": "isale-v2-total-reserve-received",
+    "desc": "The total amount of reserve tokens received by the sale",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "isale-address"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sale-total-reserve-received"]
+  },
+  {
+    "name": "iverify-v1-account-status-at-time",
+    "desc": "Read and put the status of an account from the verify v1 contract into the stack",
+    "operand": 0,
+    "outputs": 1,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "iverifyv1-address"
+        },
+        {
+          "name": "account-address"
+        }
+      ]
+    },
+    "aliases": ["verify-status"]
+  },
+  {
+    "name": "itier-v2-report",
+    "desc": "Inserts the report of an account of a tier contract and optionally contexts which are taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[2], [3], [10]],
+        "computation": "arg - 2"
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "itier-address"
+        },
+        {
+          "name": "account"
+        },
+        {
+          "name": "context",
+          "desc": "The contextual values",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["tier-report"]
+  },
+  {
+    "name": "itier-v2-report-time-for-tier",
+    "desc": "Inserts the specified tier level report of an account of a tier contract and optionally contexts which are taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[3], [4], [11]],
+        "computation": "arg - 3"
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "itierv2-address"
+        },
+        {
+          "name": "account"
+        },
+        {
+          "name": "tier"
+        },
+        {
+          "name": "context",
+          "desc": "The contextual values",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["tier-report-time-for-tier"]
+  },
+  {
+    "name": "saturating-diff",
+    "desc": "Inserts the saturating difference of 2 reports taken from the stack into the stack and prevents reverts if the result below zero",
+    "operand": 0,
+    "inputs": {
+      "parameters": [
+        {
+          "name": "value1"
+        },
+        {
+          "name": "value2"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["sat-diff"]
+  },
+  {
+    "name": "select-lte",
+    "desc": "Inserts the result of selecting the less than equal to specified value taken from stack among number of reports by a logic and mode into the stack",
+    "operand": [
+      {
+        "name": "logic",
+        "desc": "select lte logic: every or any logic",
+        "bits": [13, 13]
+      },
+      {
+        "name": "mode",
+        "desc": "select lte mode: min, max or first",
+        "bits": [8, 9],
+        "validRange": [[0, 2]]
+      },
+      {
+        "name": "inputs",
+        "bits": [0, 7],
+        "validRange": [[1, 255]]
+      }
+    ],
+    "inputs": {
+      "bits": [0, 7],
+      "parameters": [
+        {
+          "name": "referrence-timestamp",
+          "desc": "The timestamp to check the tier reports against"
+        },
+        {
+          "name": "report",
+          "desc": "The report to selectLte from",
+          "spread": true
+        }
+      ]
+    },
+    "outputs": 1
+  },
+  {
+    "name": "update-times-for-tier-range",
+    "desc": "Inserts the result of updating the range of tiers of a report taken from stack by a value taken from the stack into the stack",
+    "operand": [
+      {
+        "name": "start-tier",
+        "desc": "the starting tier to update",
+        "bits": [0, 3],
+        "validRange": [[0, 8]]
+      },
+      {
+        "name": "end-tier",
+        "desc": "the ending tier to update",
+        "bits": [4, 7],
+        "validRange": [[0, 8]]
+      }
+    ],
+    "inputs": {
+      "parameters": [
+        {
+          "name": "update-timestamp",
+          "desc": "the timestamp to update tier range to"
+        },
+        {
+          "name": "report",
+          "desc": "the report to update its tier range"
+        }
+      ]
+    },
+    "outputs": 1,
+    "aliases": ["update-tiers", "update-tier-range"]
+  }
+]

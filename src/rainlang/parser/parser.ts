@@ -1,20 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { AllStandardOps } from '../../rainterpreter/allStandardOps';
-import { rainterpreterOpMeta } from '../../rainterpreter/opmeta';
 import { BigNumberish, BytesLike, ethers } from 'ethers';
-import { OperandMeta, OpIO, OpMeta, ParamsValidRange, StateConfig } from '../../types';
+import RainterpreterOpMeta from "../../rainterpreter/allStandardOpMeta.json";
+import OpMetaSchema from "../../schema/op.meta.schema.json";
+import { 
+    OperandArgs, 
+    InputMeta, 
+    OutputMeta, 
+    OpMeta, 
+    StateConfig, 
+    InputArgs, 
+    OperandMeta, 
+    ComputedOutput 
+} from '../../types';
 import {
     concat,
+    constructByBits,
+    extractByBits,
     isBigNumberish,
     memoryOperand,
     MemoryType,
-    op
+    op,
+    validateMeta,
+    metaFromBytes
 } from '../../utils';
 import {
-    virtualGte,
-    virtualInEq,
-    virtualLte,
     Notations,
     ParseTree,
     State,
@@ -44,10 +54,6 @@ import {
  * // to set the custom opmeta
  * Parser.set(opmeta)
  *
- * // to set the custom details of GTE and LTE opcodes
- * Parser.setGteMeta(name?, description?, data?, description?)
- * Parser.setLteMeta(name?, description?, data?, description?)
- *
  * // to execute the parsing and get parse tree object and StateConfig
  * let parseTree;
  * let stateConfig
@@ -75,16 +81,13 @@ export class Parser {
     private static placeholder = '_'
     private static comments: Comment[] = []
     private static treeArray: Record<number, Node[]> = {}
-    private static data: any[] = rainterpreterOpMeta.map(v => v.data)
-    private static enums: number[] = rainterpreterOpMeta.map(v => v.enum)
-    private static names: string[] = rainterpreterOpMeta.map(v => v.name)
-    private static pops: OpIO[] = rainterpreterOpMeta.map(v => v.inputs)
-    private static pushes: OpIO[] = rainterpreterOpMeta.map(v => v.outputs)
-    private static operandMetas: OperandMeta[] = rainterpreterOpMeta.map(v => v.operand)
-    private static aliases: (string[] | undefined)[] = rainterpreterOpMeta.map(v => v.aliases)
-    private static paramsValidRange: ParamsValidRange[] = rainterpreterOpMeta.map(
-        v => v.paramsValidRange
-    )
+    private static data: any[] = []
+    private static names: string[] = []
+    private static pops: InputMeta[] = []
+    private static pushes: OutputMeta[] = []
+    private static operandMetas: OperandMeta[] = []
+    private static aliases: (string[] | undefined)[] = []
+    // private static paramsValidRange: ParamsValidRange[] = []
     private static state: State = {
         parse: {
             tree: [],
@@ -107,102 +110,43 @@ export class Parser {
         ambiguity: false,
     }
 
-    // special literals for gte and lte
-    private static gte = virtualGte
-    private static lte = virtualLte
-    private static ineq = virtualInEq
-
-    /**
-     * @public
-     * Method to set the details of the GTE opcode
-     *
-     * @param name - (optional) name of the GTE opcode
-     * @param aliases - (optional) The aliases of GTE opcode
-     * @param description - (optional) The description
-     * @param data - (optional) data
-     */
-    public static setGteMeta(name?: string, description?: string, data?: any, aliases?: string[]) {
-        if (name) this.gte.name = name
-        if (data) this.gte.data = data
-        if (description) this.gte.aliases = aliases
-        if (aliases) this.gte.description = description
-        if (this.gte.aliases) {
-            this.gte.aliases.forEach(
-                (v, i, array) => array[i] = this._normalizeChar(v)
-            )
-        }
-    }
-
-    /**
-     * @public
-     * Method to set the details of the LTE opcode
-     *
-     * @param name - (optional) name of the LTE opcode
-     * @param aliases - (optional) The aliases of LTE opcode
-     * @param description - (optional) The description
-     * @param data - (optional) data
-     */
-    public static setLteMeta(name?: string, description?: string, data?: any, aliases?: string[]) {
-        if (name) this.lte.name = name
-        if (data) this.lte.data = data
-        if (description) this.lte.aliases = aliases
-        if (aliases) this.lte.description = description
-        if (this.lte.aliases) {
-            this.lte.aliases.forEach(
-                (v, i, array) => array[i] = this._normalizeChar(v)
-            )
-        }
-    }
-
-    /**
-     * @public
-     * Method to set the details of the INEQ opcode
-     *
-     * @param name - (optional) name of the INEQ opcode
-     * @param aliases - (optional) The aliases of INEQ opcode
-     * @param description - (optional) The description
-     * @param data - (optional) data
-     */
-    public static setInEqMeta(name?: string, description?: string, data?: any, aliases?: string[]) {
-        if (name) this.ineq.name = name
-        if (data) this.ineq.data = data
-        if (description) this.ineq.aliases = aliases
-        if (aliases) this.ineq.description = description
-        if (this.ineq.aliases) {
-            this.ineq.aliases.forEach(
-                (v, i, array) => array[i] = this._normalizeChar(v)
-            )
-        }
-    }
-
     /**
      * @public
      * Method to get parse tree object and StateConfig
      *
      * @param expression - the text expression
-     * @param opmeta - (optional) custom opmeta
+     * @param opmeta - (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string
      * @returns Array of parse tree object and StateConfig
      */
     public static get(
         expression: string,
-        opmeta?: OpMeta[],
+        opmeta?: Uint8Array | string
     ): [ParseTree | (ParseTree & { 'comments': Comment[] }), StateConfig] | string {
-        try {
-            this._parse(expression, opmeta)
-            let ret: any = this.parseTree as ParseTree
-            if (this.comments.length > 0) ret = {
-                ...this.parseTree,
-                'comments': this.comments
-            } as (ParseTree & { 'comments': Comment[] })
-            return [
-                ret,
-                { constants: this.constants, sources: this.sources }
-            ]
+        let _opmeta = RainterpreterOpMeta as OpMeta[]
+        if (opmeta) {
+            if (typeof opmeta === "string" && !isBigNumberish(opmeta)) {
+                const _meta = JSON.parse(opmeta)
+                if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta
+                else throw new Error("invalid op meta")
+            }
+            else _opmeta = metaFromBytes(opmeta, OpMetaSchema)
         }
-        catch(err) {
-            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
-            return `an error occured duting parsing, please try again, reason: ${err}`
-        }
+        // try {
+        this._parse(expression, _opmeta)
+        let ret: any = this.parseTree as ParseTree
+        if (this.comments.length > 0) ret = {
+            ...this.parseTree,
+            'comments': this.comments
+        } as (ParseTree & { 'comments': Comment[] })
+        return [
+            ret,
+            { constants: this.constants, sources: this.sources }
+        ]
+        // }
+        // catch(err) {
+        //     console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+        //     return `an error occured duting parsing, please try again, reason: ${err}`
+        // }
     }
 
     /**
@@ -210,26 +154,35 @@ export class Parser {
      * Method to get the parse tree object
      *
      * @param expression - the text expression
-     * @param opmeta - (optional) custom opmeta
+     * @param opmeta - (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string
      * @returns A parse tree object
      */
     public static getParseTree(
         expression: string,
-        opmeta?: OpMeta[],
+        opmeta?: Uint8Array | string
     ): ParseTree | (ParseTree & { 'comments': Comment[] }) | string {
-        try {
-            this._parse(expression, opmeta)
-            let ret: any = this.parseTree as ParseTree
-            if (this.comments.length > 0) ret = {
-                ...this.parseTree,
-                'comments': this.comments
-            } as (ParseTree & { 'comments': Comment[] })
-            return ret
+        let _opmeta = RainterpreterOpMeta as OpMeta[]
+        if (opmeta) {
+            if (typeof opmeta === "string" && !isBigNumberish(opmeta)) {
+                const _meta = JSON.parse(opmeta)
+                if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta
+                else throw new Error("invalid op meta")
+            }
+            else _opmeta = metaFromBytes(opmeta, OpMetaSchema)
         }
-        catch(err) {
-            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
-            return `an error occured duting parsing, please try again, reason: ${err}`
-        }
+        // try {
+        this._parse(expression, _opmeta)
+        let ret: any = this.parseTree as ParseTree
+        if (this.comments.length > 0) ret = {
+            ...this.parseTree,
+            'comments': this.comments
+        } as (ParseTree & { 'comments': Comment[] })
+        return ret
+        // }
+        // catch(err) {
+        //     console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+        //     return `an error occured duting parsing, please try again, reason: ${err}`
+        // }
     }
 
     /**
@@ -237,24 +190,33 @@ export class Parser {
      * Method to get the StateConfig
      *
      * @param expression - the text expression
-     * @param opmeta - (optional) custom opmeta
+     * @param opmeta - (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string
      * @returns A StateConfig
      */
     public static getStateConfig(
         expression: string,
-        opmeta?: OpMeta[],
+        opmeta?: Uint8Array | string
     ): StateConfig | string {
-        try {
-            this._parse(expression, opmeta)
-            return {
-                constants: this.constants,
-                sources: this.sources
+        let _opmeta = RainterpreterOpMeta as OpMeta[]
+        if (opmeta) {
+            if (typeof opmeta === "string" && !isBigNumberish(opmeta)) {
+                const _meta = JSON.parse(opmeta)
+                if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta
+                else throw new Error("invalid op meta")
             }
+            else _opmeta = metaFromBytes(opmeta, OpMetaSchema)
         }
-        catch(err) {
-            console.log(`an error occured duting parsing, please try again, reason: ${err}`)
-            return `an error occured duting parsing, please try again, reason: ${err}`
+        //try {
+        this._parse(expression, _opmeta)
+        return {
+            constants: this.constants,
+            sources: this.sources
         }
+        // }
+        // catch(err) {
+        //     console.log(`an error occured duting parsing, please try again, reason: ${err}`)
+        //     return `an error occured duting parsing, please try again, reason: ${err}`
+        // }
     }
 
     /**
@@ -311,10 +273,6 @@ export class Parser {
                         array[i] = array[i].tree
                     }
                 }
-                // argOffset = this._countArgs(
-                //     parseTree as Record<number, Node[]>
-                // )
-                // isRecord = true
                 nodes = [array as Node[]]
             }
         }
@@ -330,11 +288,6 @@ export class Parser {
             }
         }
 
-        // argOffset = isRecord
-        //     ? this._countArgs(parseTree as Record<number, Node[]>)
-        //     : [0, 0]
-        // const argCount = isRecord ? argOffset.unshift()! : 0
-
         for (let i = 0; i < nodes.length; i++) {
             if (nodes[i].length === 0) sourcesCache = []
             for (let j = 0; j < nodes[i].length; j++) {
@@ -343,9 +296,10 @@ export class Parser {
                 if ('value' in node) {
                     if (isBigNumberish(node.value)) {
                         if (constants.includes(node.value)) {
+                            console.log(this.names.indexOf("read-memory"),)
                             sourcesCache.push(
                                 op(
-                                    AllStandardOps.READ_MEMORY,
+                                    this.names.indexOf("read-memory"),
                                     memoryOperand(
                                         MemoryType.Constant,
                                         constants.indexOf(node.value)
@@ -356,33 +310,21 @@ export class Parser {
                         else {
                             sourcesCache.push(
                                 op(
-                                    AllStandardOps.READ_MEMORY,
+                                    this.names.indexOf("read-memory"),
                                     memoryOperand(MemoryType.Constant, constants.length)
                                 )
                             )
                             constants.push(node.value)
                         }
                     }
-                    // else if ((node.value as string).includes('arg')) {
-                    //     const index = Number(
-                    //         (node.value as string).replace('arg(', '').slice(0, -1)
-                    //     )
-                    //     sourcesCache.push(
-                    //         op(
-                    //             this.names.length, isRecord
-                    //                 ? argOffset[i] + index
-                    //                 : offset ? offset + index : index
-                    //         )
-                    //     )
-                    // }
-                    else if (node.value === 'MaxUint256' || node.value === 'Infinity') {
+                    else if (node.value === 'max-uint256' || node.value === 'infinity') {
                         const _i = constants.findIndex(
                             v => ethers.constants.MaxUint256.eq(v)
                         )
                         if (_i > -1) {
                             sourcesCache.push(
                                 op(
-                                    AllStandardOps.READ_MEMORY,
+                                    this.names.indexOf("read-memory"),
                                     memoryOperand(MemoryType.Constant, _i)
                                 )
                             )
@@ -390,7 +332,7 @@ export class Parser {
                         else {
                             sourcesCache.push(
                                 op(
-                                    AllStandardOps.READ_MEMORY,
+                                    this.names.indexOf("read-memory"),
                                     memoryOperand(MemoryType.Constant, constants.length)
                                 )
                             )
@@ -406,7 +348,7 @@ export class Parser {
                     )
                     if (_i > -1) sourcesCache.push(
                         op(
-                            AllStandardOps.READ_MEMORY,
+                            this.names.indexOf("read-memory"),
                             memoryOperand(MemoryType.Stack, _i)
                         )
                     )
@@ -421,27 +363,9 @@ export class Parser {
                             // isRecord ? argOffset[i] : offset ? offset : 0,
                         )
                         sourcesCache.push(...tmp.sources)
-                    }
-                    if (
-                        (node as Op).opcode.name === this.gte.name ||
-                        (node as Op).opcode.name === this.lte.name ||
-                        (node as Op).opcode.name === this.ineq.name
-                    ) {
-                        sourcesCache.push(
-                            op(
-                                (node as Op).opcode.name === this.gte.name
-                                    ? AllStandardOps.LESS_THAN
-                                    : (node as Op).opcode.name === this.lte.name
-                                        ? AllStandardOps.GREATER_THAN
-                                        : AllStandardOps.EQUAL_TO
-                            ),
-                            op(AllStandardOps.ISZERO)
-                        )
-                    }
-                    else sourcesCache.push(op(
-                        this.enums[
-                            this.names.indexOf((node as Op).opcode.name)
-                        ],
+                    } 
+                    sourcesCache.push(op(
+                        this.names.indexOf((node as Op).opcode.name),
                         (node as Op).operand
                     ))
                 }
@@ -449,9 +373,6 @@ export class Parser {
             sources.push(concat(sourcesCache))
             sourcesCache = []
         }
-        // if (isRecord && argCount > 0) {
-        //     ({ constants, sources } = this._updateArgs({constants, sources}))
-        // }
         return {
             constants,
             sources
@@ -466,20 +387,14 @@ export class Parser {
      * to compile an expression
      */
     private static set(opmeta: OpMeta[]) {
-        this.data = opmeta.map(v => v.data)
+        this.data = [...opmeta]
         this.names = opmeta.map(v => v.name)
         this.aliases = opmeta.map(v => v.aliases)
         this.pops = opmeta.map(v => v.inputs)
         this.pushes = opmeta.map(v => v.outputs)
         this.operandMetas = opmeta.map(v => v.operand)
-        this.paramsValidRange = opmeta.map(v => v.paramsValidRange)
-        for (let i = 0; i < this.aliases.length; i++) {
-            if (this.aliases[i]) {
-                this.aliases[i]!.forEach(
-                    (v, i, array) => array[i] = this._normalizeChar(v)
-                )
-            }
-        }
+        this.aliases = opmeta.map(v => v.aliases)
+        // this.paramsValidRange = opmeta.map(v => v.paramsValidRange)
     }
 
     /**
@@ -543,26 +458,16 @@ export class Parser {
     }
 
     /**
-     * Method to handle letter case senivity
-     */
-    private static _normalizeChar = (str: string): string => {
-        if (str !== '-') 
-            while (str.includes('-')) 
-                str = str.replace('-', '_')
-        return str.toUpperCase()
-    }
-
-    /**
      * The main workhorse of Rain Parser which parses the words used in an
      * expression and is responsible for building the Parse Tree and Bytes
      */
-    private static _parse(script: string, opmeta?: OpMeta[], placeholder?: string) {
+    private static _parse(script: string, opmeta: OpMeta[], placeholder?: string) {
         this._reset()
         this.sources = []
         this.constants = []
         this.treeArray = []
         this.parseTree = {}
-        opmeta ? this.set(opmeta) : this.set(rainterpreterOpMeta)
+        this.set(opmeta)
         this.placeholder = placeholder ? placeholder : '_'
         this.state.parse.tags = []
         const comments: Comment[] = []
@@ -572,9 +477,6 @@ export class Parser {
 
             // ----------- remove indents -----------
             script = script.replace(/\n/g, '')
-
-            // ----------- remove extra whitespaces -----------
-            //script = script.replace(/\s\s/g, '')
 
             // ----------- convert html &nbps to standard whitespace -----------
             script = script.replace(/&nbsp/g, '')
@@ -591,11 +493,6 @@ export class Parser {
                         cm = script.slice(startCm, endCm + 2)
                         _notEnded = false
                     }
-                    // for (let i = startCm; i < endCm + 2; i++) {
-                    //     if (script[i]) {
-                    //         script = script.slice(0, i) + ' ' + script.slice(i + 1)
-                    //     }
-                    // }
                     script = _notEnded 
                         ? script.slice(0, startCm) 
                             + ' ' .repeat(cm.length) 
@@ -620,11 +517,9 @@ export class Parser {
 
             // ----------- begin caching expression sentences -----------
             const originalExp = script
-            //let offset = 0
             const expressions: string[] = []
             const positions: number[][] = []
             while (script.length) {
-                //[script, offset] = this._trimLeft(script)
                 if (script.includes(';')) {
                     const tmp = script.slice(0, script.indexOf(';'))
                     positions.push([
@@ -685,17 +580,6 @@ export class Parser {
                         lhs = this.input.slice(0, this.input.indexOf(':'))
                         const _lhs = lhs
                         this.exp = this.input.slice(this.input.indexOf(':') + 1)
-                        // if (this.exp.includes(':')) {
-                        //     this._updateTree({
-                        //         error: 'invalid sub-expression',
-                        //         position: [
-                        //             entry + subExpEntry[j],
-                        //             entry + subExpEntry[j] + this.input.length - 1
-                        //         ]
-                        //     })
-                        //     break
-                        // }
-                        // if (_break) break
 
                         // ----------- check for invalid RHS comments -----------
                         for (let k = 0; k < comments.length; k++) {
@@ -716,12 +600,7 @@ export class Parser {
                                 _break = true
                             }
                         }
-                        if (_break) {
-                            // for (let k = 0; k < _errRhsComments.length; k++) {
-                            //     comments.splice(_errRhsComments[k], 1)
-                            // }
-                            break
-                        }
+                        if (_break) break
 
                         // ----------- begin parsing lhs -----------
                         while (lhs.length > 0) {
@@ -920,16 +799,6 @@ export class Parser {
                                         break
                                     }
                                 }
-                                // else if (this.exp.startsWith('<')) {
-                                //     const tmp = this._resolveOperand()
-                                //     if (tmp) {
-                                //         (tmp as Error).position = [
-                                //             currentPosition,
-                                //             currentPosition + (tmp as Error).position[0] - 1
-                                //         ]
-                                //         this._updateTree(tmp)
-                                //     }
-                                // }
                                 else this._consume(currentPosition)
                             }
                         }
@@ -1030,7 +899,6 @@ export class Parser {
                 }
 
                 // ----------- constructing final parse tree -----------
-                // if (this.state.parse.tree.length) {
                 this.parseTree[i] = {
                     position: positions[i],
                     tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
@@ -1082,129 +950,14 @@ export class Parser {
             offset++
         }
         if (str[0] === ' ' || str[0] === '(' || str[0] === ')') return undefined
-        const _str = this._normalizeChar(str)
-        if (_str.startsWith(this._normalizeChar(this.gte.name))) {
-            const tmp = [
-                this.gte.name,
-                offset.toString(),
-                (offset + this.gte.name.length - 1).toString(),
-            ]
-            if (_str.replace(this._normalizeChar(this.gte.name), '').startsWith('(')) {
-                tmp.push(
-                    'ambiguous expression/opcode'
-                )
-                this.state.ambiguity = true
-            }
-            else if (offset) tmp.push(
-                'illigal characters between opcode and parenthesis'
-            )
-            return tmp
-        }
-        if (_str.startsWith(this._normalizeChar(this.lte.name))) {
-            const tmp = [
-                this.lte.name,
-                offset.toString(),
-                (offset + this.lte.name.length - 1).toString(),
-            ]
-            if (_str.replace(this._normalizeChar(this.lte.name), '').startsWith('(')) {
-                tmp.push(
-                    'ambiguous expression/opcode'
-                )
-                this.state.ambiguity = true
-            }
-            else if (offset) tmp.push(
-                'illigal characters between opcode and parenthesis'
-            )
-            return tmp
-        }
-        if (_str.startsWith(this._normalizeChar(this.ineq.name))) {
-            const tmp = [
-                this.ineq.name,
-                offset.toString(),
-                (offset + this.ineq.name.length - 1).toString(),
-            ]
-            if (_str.replace(this._normalizeChar(this.ineq.name), '').startsWith('(')) {
-                tmp.push(
-                    'ambiguous expression/opcode'
-                )
-                this.state.ambiguity = true
-            }
-            else if (offset) tmp.push(
-                'illigal characters between opcode and parenthesis'
-            )
-            return tmp
-        }
-        if (this.gte.aliases) {
-            for (let i = 0; i < this.gte.aliases.length; i++) {
-                if (_str.startsWith(this.gte.aliases[i])) {
-                    const tmp = [
-                        this.gte.name,
-                        offset.toString(),
-                        (offset + this.gte.aliases[i].length - 1).toString(),
-                    ]
-                    if (_str.replace(this.gte.aliases[i], '').startsWith('(')) {
-                        tmp.push(
-                            'ambiguous expression/opcode'
-                        )
-                        this.state.ambiguity = true
-                    }
-                    else if (offset) tmp.push(
-                        'illigal characters between opcode and parenthesis'
-                    )
-                    return tmp
-                }
-            }
-        }
-        if (this.lte.aliases) {
-            for (let i = 0; i < this.lte.aliases?.length; i++) {
-                if (_str.startsWith(this.lte.aliases[i])) {
-                    const tmp = [
-                        this.lte.name,
-                        offset.toString(),
-                        (offset + this.lte.aliases[i].length - 1).toString(),
-                    ]
-                    if (_str.replace(this.lte.aliases[i], '').startsWith('(')) {
-                        tmp.push(
-                            'ambiguous expression/opcode'
-                        )
-                        this.state.ambiguity = true
-                    }
-                    else if (offset) tmp.push(
-                        'illigal characters between opcode and parenthesis'
-                    )
-                    return tmp
-                }
-            }
-        }
-        if (this.ineq.aliases) {
-            for (let i = 0; i < this.ineq.aliases?.length; i++) {
-                if (_str.startsWith(this.ineq.aliases[i])) {
-                    const tmp = [
-                        this.ineq.name,
-                        offset.toString(),
-                        (offset + this.ineq.aliases[i].length - 1).toString(),
-                    ]
-                    if (_str.replace(this.ineq.aliases[i], '').startsWith('(')) {
-                        tmp.push(
-                            'ambiguous expression/opcode'
-                        )
-                        this.state.ambiguity = true
-                    }
-                    else if (offset) tmp.push(
-                        'illigal characters between opcode and parenthesis'
-                    )
-                    return tmp
-                }
-            }
-        }
         for (let i = 0; i < this.names.length; i++) {
-            if (_str.startsWith(this._normalizeChar(this.names[i]))) {
+            if (str.startsWith(this.names[i])) {
                 const tmp = [
                     this.names[i],
                     offset.toString(),
                     (offset + this.names[i].length - 1).toString(),
                 ]
-                if (_str.replace(this._normalizeChar(this.names[i]), '').startsWith('(')) {
+                if (str.replace(this.names[i], '').startsWith('(')) {
                     this.state.ambiguity = true
                     tmp.push('ambiguous expression/opcode')
                 }
@@ -1217,13 +970,13 @@ export class Parser {
         for (let i = 0; i < this.aliases.length; i++) {
             if (this.aliases[i]) {
                 for (let j = 0; j < this.aliases[i]!.length; j++) {
-                    if (_str.startsWith(this.aliases[i]![j])) {
+                    if (str.startsWith(this.aliases[i]![j])) {
                         const tmp = [
                             this.names[i],
                             offset.toString(),
                             (offset + this.aliases[i]![j].length - 1).toString(),
                         ]
-                        if (_str.replace(this.aliases[i]![j], '').startsWith('(')) {
+                        if (str.replace(this.aliases[i]![j], '').startsWith('(')) {
                             this.state.ambiguity = true
                             tmp.push('ambiguous expression/opcode')
                         }
@@ -1256,44 +1009,12 @@ export class Parser {
     private static _updateTree(item: Node, replace?: boolean) {
         let tmp: Node[] = this.state.parse.tree
         if (replace) {
-            // const tmp: Node[][] = []
-            // tmp.push(this.state.parse.tree)
-            // for (let i = 0; i < this.state.depthLevel - 1; i++) {
-            //     tmp.push(
-            //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-            //     )
-            // }
-            // tmp[tmp.length - 1].pop()
-            // tmp[tmp.length - 1].push(item)
-            // while (tmp.length > 1) {
-            //     const updatedParams = tmp.pop()!;
-            //     (tmp[tmp.length - 1][
-            //         tmp[tmp.length - 1].length - 1
-            //     ] as Op).parameters = updatedParams
-            // }
-            // this.state.parse.tree = tmp[0]
-            
             for (let i = 0; i < this.state.depthLevel - 1; i++) {
                 tmp = (tmp[tmp.length - 1] as Op).parameters
             }
             tmp.pop()
         }
         else {
-            // const tmp: Node[][] = []
-            // tmp.push(this.state.parse.tree)
-            // for (let i = 0; i < this.state.depthLevel; i++) {
-            //     tmp.push(
-            //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-            //     )
-            // }
-            // tmp[tmp.length - 1].push(item)
-            // while (tmp.length > 1) {
-            //     const updatedParams = tmp.pop()!;
-            //     (tmp[tmp.length - 1][
-            //         tmp[tmp.length - 1].length - 1
-            //     ] as Op).parameters = updatedParams
-            // }
-            // this.state.parse.tree = tmp[0]
             for (let i = 0; i < this.state.depthLevel; i++) {
                 tmp = (tmp[tmp.length - 1] as Op).parameters
             }
@@ -1370,30 +1091,6 @@ export class Parser {
     private static _resolvePrefix() {
         this.state.track.parens.open.pop()
         const endPosition = this.state.track.parens.close.pop()!
-        // const tmp: Node[][] = []
-        // tmp.push(this.state.parse.tree)
-        // for (let i = 0; i < this.state.depthLevel - 1; i++) {
-        //     tmp.push(
-        //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-        //     )
-        // }
-        // const node = tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op
-        // node.position.push(endPosition)
-        // node.parens.push(endPosition)
-        // if (node.error === 'no closing parenthesis') {
-        //     if (node.opcode.name.includes('unknown')) node.error = 'unknown opcode'
-        //     else node.error = undefined
-        // }
-        // if (!node.error) {
-        //     tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] = this._resolveOp(node)
-        // }
-        // while (tmp.length > 1) {
-        //     const resolvedExp = tmp.pop()!;
-        //     (tmp[tmp.length - 1][
-        //         tmp[tmp.length - 1].length - 1
-        //     ] as Op).parameters = resolvedExp
-        // }
-        // this.state.parse.tree = tmp[0]
         let tmp: Node[] = this.state.parse.tree
         for (let i = 0; i < this.state.depthLevel - 1; i++) {
             tmp = (tmp[tmp.length - 1] as Op).parameters
@@ -1420,15 +1117,6 @@ export class Parser {
     ) {
         this.exp = this.input.slice(endPosition + 1 - entry)
         this.state.track.parens.open.pop()
-        // const tmp: Node[][] = []
-        // tmp.push(this.state.parse.tree)
-        // for (let i = 0; i < this.state.depthLevel - 1; i++) {
-        //     tmp.push(
-        //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op)
-        //             .parameters
-        //     )
-        // }
-        // const node = tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op
         let tmp: Node[] = this.state.parse.tree
         for (let i = 0; i < this.state.depthLevel - 1; i++) {
             tmp = (tmp[tmp.length - 1] as Op).parameters
@@ -1439,49 +1127,23 @@ export class Parser {
                 name: opcode,
                 position: [startPosition, endPosition],
             },
-            operand: 
-                opcode === this.gte.name || opcode === this.lte.name || opcode === this.ineq.name
-                    ? 0
-                    : NaN,
-            output:
-                opcode === this.gte.name || opcode === this.lte.name || opcode === this.ineq.name
-                    ? 1
-                    : NaN,
+            operand: NaN,
+            output: NaN,
             position: [node.position[0], endPosition],
             parens: [node.position[0], this.state.track.parens.close.pop()!],
             parameters: node.parameters,
-            data: opcode === this.gte.name
-                ? this.gte.data
-                : opcode === this.lte.name
-                    ? this.lte.data
-                    : opcode === this.ineq.name
-                        ? this.ineq.data
-                        : this.data[this.names.indexOf(opcode)],
+            data: this.data[this.names.indexOf(opcode)],
             error,
             tag: node.tag
         } as Op
         if (this.exp.startsWith('<')) op = this._resolveOperand(op, true) as Op
         tmp[tmp.length - 1] = this._resolveOp(op)
-        // while (tmp.length > 1) {
-        //     const resolvedExp = tmp.pop()!;
-        //     (tmp[tmp.length - 1][
-        //         tmp[tmp.length - 1].length - 1
-        //     ] as Op).parameters = resolvedExp
-        // }
-        // this.state.parse.tree = tmp[0]
     }
 
     /**
      * Method to resolve infix notations at current state of parsing
      */
     private static _resolveInfix(isParameter: boolean) {
-        // const tmp: Node[][] = []
-        // tmp.push(this.state.parse.tree)
-        // for (let i = 0; i < this.state.depthLevel; i++) {
-        //     tmp.push(
-        //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-        //     )
-        // } 
         let tmp: Node[] = this.state.parse.tree
         let node: Op = tmp[tmp.length - 1] as Op
         for (let i = 0; i < this.state.depthLevel; i++) {
@@ -1490,11 +1152,8 @@ export class Parser {
                 node = tmp[tmp.length - 1] as Op
         }
         const elements = tmp
-        //const node = tmp[tmp.length -1] as Op
         let err = false
         let op: Node
-        //const elements: Node[] = tmp[tmp.length - 1]
-        //const node = tmp[tmp.length - 2][tmp[tmp.length - 2].length - 1] as Op
         const closeParenPosition =
             this.state.track.parens.close[this.state.track.parens.close.length - 1]
 
@@ -1599,47 +1258,6 @@ export class Parser {
             return ('value' in element && element.value === this.placeholder)
         }
         let count = 0
-        // const tmp: Node[][] = []
-        // tmp.push(this.state.parse.tree)
-        // for (let i = 0; i < depthLevel; i++) {
-        //     tmp.push(
-        //         (tmp[tmp.length - 1][tmp[tmp.length - 1].length - 1] as Op).parameters
-        //     )
-        // }
-        // for (let i = tmp[tmp.length - 1].length - 2; i > -1; i--) {
-        //     if (count !== totalCount) {
-        //         if (!isOutput(tmp[tmp.length - 1][i])) {
-        //             (tmp[tmp.length - 2][tmp[tmp.length - 2].length - 1] as Op).error =
-        //                 `illigal placement of outputs, parameter ${i - 1} cannot be accessed by this opcode`
-        //             break
-        //         }
-        //         else {
-        //             count++
-        //             tmp[tmp.length - 1][i] = {
-        //                 value: (this.state.parse.multiOutputCache[
-        //                     this.state.parse.multiOutputCache.length - 1
-        //                 ].pop()! as Value).value,
-        //                 position: tmp[tmp.length - 1][i].position
-        //             }
-        //         }
-        //     }
-        //     else break
-        // }
-        // while (tmp.length > 1) {
-        //     const resolvedExp = tmp.pop()!;
-        //     (tmp[tmp.length - 1][
-        //         tmp[tmp.length - 1].length - 1
-        //     ] as Op).parameters = resolvedExp
-        // }
-        // this.state.parse.tree = tmp[0]
-        // if (count !== totalCount) {
-        //     const item = tmp[0].pop()!
-        //     tmp[0].push(...this.state.parse.multiOutputCache[
-        //         this.state.parse.multiOutputCache.length - 1
-        //     ])
-        //     this.state.parse.multiOutputCache.pop()
-        //     tmp[0].push(item)
-        // }
         let _childeNodes: Node[] = this.state.parse.tree
         const _parentNodes: Node[] = [_childeNodes[_childeNodes.length - 1]]
         for (let i = 0; i < depthLevel; i++) {
@@ -1664,11 +1282,6 @@ export class Parser {
                                 i - 1
                             } cannot be accessed by this opcode`
                     }
-                    // else {
-                    //     _childeNodes[i].error = 'invalid placement'
-                    //     // if (i > 0) _childeNodes[i - 1].error = 
-                    //     //     'invalid placement'
-                    // }
                     break
                 }
             }
@@ -1707,78 +1320,151 @@ export class Parser {
         let check = true
         let result: Op | Error = opNode
         const op = this.names.indexOf(opNode.opcode.name)
-        if (
-            opNode.opcode.name === this.gte.name || 
-            opNode.opcode.name === this.lte.name || 
-            opNode.opcode.name === this.ineq.name
-        ) {
-            opNode.operand = 0
-            opNode.output = 1
-            if (opNode.parameters.length !== 2) {
-                opNode.error = "invalid number of parameters, need 2 items to compare"
-                opNode.operand = NaN
+
+        if (op !== -1) {
+            const _operandArgs = this.state.track.operandArgs.cache[
+                this.state.track.operandArgs.cache.length - 1
+            ]
+            if (typeof this.pushes[op] === "number") opNode.output = this.pushes[op] as number
+            if (this.operandMetas[op] === 0) {
+                if (this.pops[op] === 0) {
+                    if (opNode.parameters.length) 
+                        opNode.error = "invalid number of inputs"
+                }
+                else {
+                    if (
+                        "bits" in (this.pops[op] as InputArgs) || 
+                        "computation" in (this.pops[op] as InputArgs)
+                    ) opNode.error = "invalid input meta format"
+                    else {
+                        if (
+                            opNode.parameters.length !== 
+                            (this.pops[op] as InputArgs).parameters.length
+                        ) opNode.error = "invalid number of inputs"
+                    }
+                }
+                if (typeof this.pushes[op] !== "number") {
+                    opNode.output = NaN
+                    opNode.error = "invalid output meta format"
+                }
             }
-        }
-        else {
-            if (op !== -1) {
-                const _operandArgs = this.state.track.operandArgs.cache[
-                    this.state.track.operandArgs.cache.length - 1
-                ]
-                if (this.paramsValidRange[op](opNode.parameters.length)) {
-                    if (this.operandMetas[op].argsConstraints.length) {
-                        this.state.track.operandArgs.cache.pop()
-                        if (this.operandMetas[op].argsConstraints.length === _operandArgs.length) {
-                            let _err = false
-                            for (let i = 0; i < this.operandMetas[op].argsConstraints.length; i++) {
-                                if (!this.operandMetas[op].argsConstraints[i](
-                                    _operandArgs[i],
-                                    opNode.parameters.length
-                                )) {
-                                    _err = true
-                                    opNode.error = `out-of-bound operand argument at index ${i}`
-                                    this.pops
-                                }
-                            }
-                            if (!_err) {
-                                opNode.operand = this.operandMetas[op].encoder(
-                                    _operandArgs,
-                                    opNode.parameters.length
-                                )
-                                opNode.output = this.pushes[op](opNode.operand)
-                            }
+            else {
+                if ((this.operandMetas[op] as OperandArgs).findIndex(v => v.name === "inputs") > -1) {
+                    if ((this.operandMetas[op] as OperandArgs).length - 1 === 0) {
+                        const _operand = constructByBits([{
+                            value: opNode.parameters.length,
+                            bits: (this.operandMetas[op] as OperandArgs)[0].bits,
+                            computation: (this.operandMetas[op] as OperandArgs)[0].computation,
+                            validRange: (this.operandMetas[op] as OperandArgs)[0].validRange
+                        }])
+                        if (typeof _operand === "number") {
+                            opNode.operand = _operand
+                            if (typeof this.pushes[op] !== "number") opNode.output = extractByBits(
+                                _operand, 
+                                (this.pushes[op] as ComputedOutput).bits, 
+                                (this.pushes[op] as ComputedOutput).computation
+                            )
                         }
                         else {
-                            opNode.error = `invalid operand arguments`
-                            opNode.output = NaN
+                            opNode.error = `invalid number of inputs`
+                            opNode.operand = NaN
+                            if (typeof this.pushes[op] !== "number") opNode.output = NaN
                         }
                     }
                     else {
-                        opNode.operand = this.operandMetas[op].encoder([], opNode.parameters.length)
-                        opNode.output = this.pushes[op](opNode.operand)
-                        if (opNode.output === 0 && this.state.depthLevel > 1) {
-                            check = false
-                            result = {
-                                error: 'zero output opcodes cannot be nested',
-                                position: opNode.position
+                        this.state.track.operandArgs.cache.pop()
+                        if (
+                            (this.operandMetas[op] as OperandArgs).length - 1 === 
+                            _operandArgs?.length
+                        ) {
+                            const _operand = constructByBits(
+                                (this.operandMetas[op] as OperandArgs).map((v, i) => {
+                                    if (v.name === "inputs") return {
+                                        value: opNode.parameters.length,
+                                        bits: v.bits,
+                                        computation: v.computation,
+                                        validRange: v.validRange
+                                    }
+                                    else return {
+                                        value: _operandArgs[i],
+                                        bits: v.bits,
+                                        computation: v.computation,
+                                        validRange: v.validRange
+                                    }
+                                })
+                            )
+                            if (typeof _operand === "number") {
+                                opNode.operand = _operand
+                                if (typeof this.pushes[op] !== "number") opNode.output = extractByBits(
+                                    _operand, 
+                                    (this.pushes[op] as ComputedOutput).bits, 
+                                    (this.pushes[op] as ComputedOutput).computation
+                                )
                             }
+                            else {
+                                opNode.error = `invalid operand args value at indexes: ${_operand.join(", ")}`
+                                opNode.operand = NaN
+                                if (typeof this.pushes[op] !== "number") opNode.output = NaN
+                            }
+                        }
+                        else {
+                            opNode.error = "invalid number of operand args"
+                            opNode.operand = NaN
+                            if (typeof this.pushes[op] !== "number") opNode.output = NaN
                         }
                     }
                 }
                 else {
-                    opNode.error = `invalid number of parameteres`
-                    opNode.output = NaN
+                    this.state.track.operandArgs.cache.pop()
+                    if ((this.operandMetas[op] as OperandArgs).length === _operandArgs?.length) {
+                        const _operand = constructByBits(
+                            (this.operandMetas[op] as OperandArgs).map((v, i) => {
+                                return {
+                                    value: _operandArgs[i],
+                                    bits: v.bits,
+                                    computation: v.computation,
+                                    validRange: v.validRange
+                                }
+                            })
+                        )
+                        if (typeof _operand === "number") {
+                            opNode.operand = _operand
+                            if (typeof this.pushes[op] !== "number") opNode.output = extractByBits(
+                                _operand, 
+                                (this.pushes[op] as ComputedOutput).bits, 
+                                (this.pushes[op] as ComputedOutput).computation
+                            )
+                        }
+                        else {
+                            opNode.error = `invalid operand args value at indexes: ${_operand.join(", ")}`
+                            opNode.operand = NaN
+                            if (typeof this.pushes[op] !== "number") opNode.output = NaN 
+                        }
+                    }
+                    else {
+                        opNode.error = "invalid number of operand args"
+                        opNode.operand = NaN
+                        if (typeof this.pushes[op] !== "number") opNode.output = NaN
+                    }
                 }
             }
-            if (opNode.output > 1) {
-                this.state.parse.multiOutputCache.push([])
-                for (let i = 0; i < opNode.output - 1; i++) {
-                    this.state.parse.multiOutputCache[
-                        this.state.parse.multiOutputCache.length - 1
-                    ].push({
-                        value: `${opNode.opcode.name} output ${i + 1} placeholder`,
-                        position: [],
-                    })
-                }
+        }
+        if (opNode.output === 0 && this.state.depthLevel > 1) {
+            check = false
+            result = {
+                error: 'zero output opcodes cannot be nested',
+                position: opNode.position
+            }
+        }
+        if (opNode.output > 1) {
+            this.state.parse.multiOutputCache.push([])
+            for (let i = 0; i < opNode.output - 1; i++) {
+                this.state.parse.multiOutputCache[
+                    this.state.parse.multiOutputCache.length - 1
+                ].push({
+                    value: `${opNode.opcode.name} output ${i + 1} placeholder`,
+                    position: [],
+                })
             }
         }
         if (check) result = opNode
@@ -1810,148 +1496,76 @@ export class Parser {
                 this.exp = this.exp.replace(consumee, '')
             }
             else {
-                const str_ = this._normalizeChar(str)
-                if (                        
-                    str_ === this._normalizeChar(this.gte.name) ||
-                    this.gte.aliases?.includes(str_) ||
-                    str_ === this._normalizeChar(this.lte.name) ||
-                    this.lte.aliases?.includes(str_) ||
-                    str_ === this._normalizeChar(this.ineq.name) ||
-                    this.ineq.aliases?.includes(str_)
-                ) {
-                    check = false
-                    const isGte =
-                        str_ === this._normalizeChar(this.gte.name) ||
-                        this.gte.aliases?.includes(str_)
-                    const isLte =
-                        str_ === this._normalizeChar(this.lte.name) ||
-                        this.lte.aliases?.includes(str_)
-                    this.exp = this.exp.replace(consumee, '')
-                    const op: Op = {
-                        opcode: {
-                            name: isGte ? this.gte.name : isLte ? this.lte.name : this.ineq.name,
-                            position: [startPosition, startPosition + str_.length - 1],
-                        },
-                        operand: 0,
-                        output: 1,
-                        position: [startPosition],
-                        parens: [],
-                        parameters: [],
-                        data: isGte ? this.gte.data : isLte ? this.lte.data : this.ineq.data,
-                    }
-                    if (this.exp.startsWith('(')) {
-                        this.state.track.notation.push(
-                            this.state.depthLevel,
-                            Notations.prefix
-                        )
-                        if (consumee.endsWith(str)) {
-                            op.error = this.state.ambiguity
-                                ? 'ambiguous expression/opcode'
-                                : 'no closing parenthesis'
-                            this._updateTree(op)
-                            if (this.state.ambiguity) this.state.ambiguity = false
+                for (let i = 0; i < this.aliases.length; i++) {
+                    if (this.aliases[i] && this.aliases[i]!.includes(str)) {
+                        this.exp = this.exp.replace(consumee, '')
+                        const op: Op = {
+                            opcode: {
+                                name: this.names[i],
+                                position: [startPosition, startPosition + str.length - 1],
+                            },
+                            operand: NaN,
+                            output: NaN,
+                            position: [startPosition],
+                            parens: [],
+                            parameters: [],
+                            data: this.data[i],
                         }
-                        else {
-                            op.error = this.state.ambiguity
-                                ? 'ambiguous expression/opcode'
-                                : 'illigal characters between opcode and parenthesis'
-                            this._updateTree(op)
-                            if (this.state.ambiguity) this.state.ambiguity = false
-                        }
-                    }
-                    else {
-                        if (!this._isInfix() && this.state.depthLevel > 0) {
+                        if (this.exp.startsWith('<')) this._resolveOperand(op)
+                        if (this.exp.startsWith('(')) {
                             this.state.track.notation.push(
                                 this.state.depthLevel,
-                                Notations.infix
+                                Notations.prefix
                             )
-                        }
-                        else {
-                            op.error = 
-                                'opcodes with no parens is only allowed if wrapped by parens'
-                        }
-                        op.infixOp = true
-                        op.position = []
-                        this._updateTree(op)
-                        if (this.state.ambiguity) this.state.ambiguity = false
-                    }
-                }
-                else {
-                    for (let i = 0; i < this.aliases.length; i++) {
-                        if (this.aliases[i] && this.aliases[i]!.includes(str_)) {
-                            this.exp = this.exp.replace(consumee, '')
-                            const op: Op = {
-                                opcode: {
-                                    name: this.names[i],
-                                    position: [startPosition, startPosition + str_.length - 1],
-                                },
-                                operand: NaN,
-                                output: NaN,
-                                position: [startPosition],
-                                parens: [],
-                                parameters: [],
-                                data: this.data[i],
-                            }
-                            if (this.exp.startsWith('<')) this._resolveOperand(op)
-                            if (this.exp.startsWith('(')) {
-                                this.state.track.notation.push(
-                                    this.state.depthLevel,
-                                    Notations.prefix
-                                )
-                                if (consumee.endsWith(str)) {
-                                    if (!this.argErr) {
-                                        op.error = this.state.ambiguity 
-                                            ? 'ambiguous expression/opcode'
-                                            : 'no closing parenthesis'
-                                    }
-                                    this._updateTree(op)
-                                    if (this.state.ambiguity) this.state.ambiguity = false
+                            if (consumee.endsWith(str)) {
+                                if (!this.argErr) {
+                                    op.error = this.state.ambiguity 
+                                        ? 'ambiguous expression/opcode'
+                                        : 'no closing parenthesis'
                                 }
-                                else {
-                                    if (!this.argErr) {
-                                        op.error = this.state.ambiguity
-                                            ? 'ambiguous expression/opcode'
-                                            : 'illigal characters between opcode and parenthesis'
-                                    }
-                                    this._updateTree(op)
-                                    if (this.state.ambiguity) this.state.ambiguity = false
-                                }
-                            }
-                            else {
-                                if (!this._isInfix() && this.state.depthLevel > 0) {
-                                    this.state.track.notation.push(
-                                        this.state.depthLevel,
-                                        Notations.infix
-                                    )
-                                }
-                                else {
-                                    if (!this.argErr) {
-                                        op.error = 
-                                            'opcodes with no parens is only allowed if wrapped by parens'
-                                    }
-                                }
-                                op.infixOp = true
-                                op.position = []
                                 this._updateTree(op)
                                 if (this.state.ambiguity) this.state.ambiguity = false
                             }
-                            check = false
-                            break
+                            else {
+                                if (!this.argErr) {
+                                    op.error = this.state.ambiguity
+                                        ? 'ambiguous expression/opcode'
+                                        : 'illigal characters between opcode and parenthesis'
+                                }
+                                this._updateTree(op)
+                                if (this.state.ambiguity) this.state.ambiguity = false
+                            }
                         }
+                        else {
+                            if (!this._isInfix() && this.state.depthLevel > 0) {
+                                this.state.track.notation.push(
+                                    this.state.depthLevel,
+                                    Notations.infix
+                                )
+                            }
+                            else {
+                                if (!this.argErr) {
+                                    op.error = 
+                                        'opcodes with no parens is only allowed if wrapped by parens'
+                                }
+                            }
+                            op.infixOp = true
+                            op.position = []
+                            this._updateTree(op)
+                            if (this.state.ambiguity) this.state.ambiguity = false
+                        }
+                        check = false
+                        break
                     }
                 }
                 if (check) {
-                    const str_ = this._normalizeChar(str)
-                    const names = this.names.map(
-                        (v, i, names) => names[i] = this._normalizeChar(v)
-                    )
-                    if (names.includes(str_)) {
+                    if (this.names.includes(str)) {
                         this.exp = this.exp.replace(consumee, '')
-                        const enum_ = names.indexOf(str_)
+                        const enum_ = this.names.indexOf(str)
                         const op: Op = {
                             opcode: {
                                 name: this.names[enum_],
-                                position: [startPosition, startPosition + str_.length - 1],
+                                position: [startPosition, startPosition + str.length - 1],
                             },
                             operand: NaN,
                             output: NaN,
@@ -2004,17 +1618,6 @@ export class Parser {
                             if (this.state.ambiguity) this.state.ambiguity = false
                         }
                     }
-                    // else if (str_ === 'ARG') {
-                    //     str = 'arg'
-                    //     this.exp = this.exp.replace(consumee, '')
-                    //     const i_ = this.exp.indexOf(')') + 1
-                    //     str = str + this.exp.slice(0, i_)
-                    //     this.exp = this.exp.slice(i_, this.exp.length)
-                    //     this._updateTree({
-                    //         value: str,
-                    //         position: [startPosition, startPosition + str.length - 1],
-                    //     })
-                    // }
                     else if (str === this.placeholder) {
                         this._updateTree({
                             value: this.placeholder,
@@ -2029,9 +1632,9 @@ export class Parser {
                         })
                         this.exp = this.exp.replace(consumee, '')
                     }
-                    else if (str_ === 'MAXUINT256' || str_ === 'INFINITY') {
+                    else if (str === 'max-uint256' || str === 'infinity') {
                         this._updateTree({
-                            value: str_ === 'MAXUINT256' ? 'MaxUint256' : 'Infinity',
+                            value: str,
                             position: [startPosition, startPosition + str.length - 1],
                         })
                         this.exp = this.exp.replace(consumee, '')
@@ -2139,62 +1742,41 @@ export class Parser {
         }
         return _count
     }
-
-    // /**
-    //  * Count stackless errors, stackless error are those that do not represent an actual Node
-    //  */
-    // private static countStacklessErrors(nodes: Node[]): number {
-    //     let count = 0
-    //     for (let i = 0; i < nodes.length; i++) {
-    //         if ('stackless' in nodes[i]) count++
-    //     }
-    //     return count
-    // }
-
-    // /**
-    //  * Method to update the arguments of zipmaps after full bytes compilation (if any present)
-    //  */
-    // public static _updateArgs(config: StateConfig): StateConfig {
-    //     for (let i = 0; i < config.sources.length; i++) {
-    //         for (let j = 0; j < config.sources[i].length; j += 4) {
-    //             if (config.sources[i][j + 1] === this.names.length) {
-    //                 (config.sources[i] as Uint8Array)[j + 1] = 0;
-    //                 (config.sources[i] as Uint8Array)[j + 3] += config.constants.length
-    //             }
-    //         }
-    //     }
-    //     return config
-    // }
-
-    // /**
-    //  * Method to count all arguments of all zipmaps (if any present)
-    //  */
-    // private static _countArgs(tree: Record<number, Node[]>): number[] {
-    //     let count = 0
-    //     const argCache: number[] = []
-    //     const elements = Object.values(tree)
-    //     const counter = (element: Node): number[] => {
-    //         const c_: number[] = []
-    //         if ('opcode' in element) {
-    //             if (element.opcode.name === 'ZIPMAP') {
-    //                 c_.push(element.parameters.length)
-    //             }
-    //             for (let i = 0; i < element.parameters.length; i++) {
-    //                 c_.push(...counter(element.parameters[i]))
-    //             }
-    //         }
-    //         return c_
-    //     }
-    //     for (let i = 0; i < elements.length; i++) {
-    //         for (let j = 0; j < elements[i].length; j++) {
-    //             argCache.push(...counter(elements[i][j]))
-    //         }
-    //     }
-    //     for (let i = 0; i < argCache.length; i++) {
-    //         count += argCache[i]
-    //     }
-    //     argCache.unshift(0, 0)
-    //     argCache.unshift(count)
-    //     return argCache
-    // }
 }
+
+console.log((Parser.getStateConfig("_: add(1 2);")))
+// const x: OpMeta = {
+//     name: "do-while",
+//     desc: "Runs a while loop on number of items taken from a stack until a conditions is met",
+//     operand: [
+//         {
+//             name: "inputs",
+//             bits: [0, 3],
+//             validRange: [[0, 15]],
+//             computation: "arg - 1"
+//         },
+//         {
+//             name: "source-index",
+//             desc: "index of the source to run",
+//             bits: [8, 11]
+//         }
+//     ],
+//     inputs: {
+//         bits: [0, 3],
+//         computation: "bits + 1",
+//         parameters: [
+//             {
+//                 name: "input",
+//                 spread: true
+//             },
+//             {
+//                 name: "condition",
+//                 desc: "condition of while loop"
+//             }
+//         ]
+//     },
+//     outputs: {
+//         bits: [0, 3]
+//     },
+//     aliases: ["while"]
+// }

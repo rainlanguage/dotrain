@@ -11,14 +11,6 @@ export type Config = {
      */
     pretty?: boolean;
     /**
-     * Providing the names for STORAGE opcodes
-     */
-    storageEnums?: string[];
-    /**
-     * Providing the names for CONTEXT opcodes
-     */
-    contextEnums?: string[];
-    /**
      * Tags/Names/Aliases for each individual item on the final stack such as Price and Quantity of a sale script (should be passed in order)
      */
     tags?: string[];

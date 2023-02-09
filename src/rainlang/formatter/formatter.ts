@@ -1,9 +1,10 @@
 import { BytesLike, BigNumber, ethers } from 'ethers';
-import { StateConfig, OpMeta } from '../../types';
-import { arrayify } from '../../utils';
-import { rainterpreterOpMeta } from '../../rainterpreter/opmeta';
+import { StateConfig, OpMeta, InputMeta, OutputMeta, OperandArgs } from '../../types';
+import { arrayify, extractByBits } from '../../utils';
+import RainterpreterOpMeta from "../../rainterpreter/allStandardOpMeta.json";
 import { Config, PrettifyConfig } from './types';
-import { AllStandardOps } from '../../rainterpreter/allStandardOps';
+import { stringMath } from '../../string-math/stringMath';
+
 
 /**
  * @public
@@ -17,7 +18,7 @@ import { AllStandardOps } from '../../rainterpreter/allStandardOps';
 export class Formatter {
 
     private static pretty: boolean
-    private static opmeta: OpMeta[] = rainterpreterOpMeta
+    private static opmeta: OpMeta[] = RainterpreterOpMeta as OpMeta[]
 
     /**
      * @public
@@ -30,7 +31,9 @@ export class Formatter {
     }
 
     /**
+     * @public
      * Obtain the friendly output from an StateConfig/script.
+     * 
      * @param _state - The StateConfig/script to generate the friendly version
      * @param _config - The configuration that will run the generator
      * @returns
@@ -39,8 +42,6 @@ export class Formatter {
         _state: StateConfig,
         _config: Config = {
             pretty: false,
-            storageEnums: undefined,
-            contextEnums: undefined,
             tags: undefined,
             enableTagging: false,
             opmeta: undefined
@@ -59,8 +60,6 @@ export class Formatter {
         const _result = this._format(
             _state.sources,
             _constants,
-            //_config.storageEnums,
-            //_config.contextEnums,
             _config.tags,
             _config.enableTagging
         )
@@ -68,6 +67,7 @@ export class Formatter {
     }
 
     /**
+     * @public
      * Make the output from the HumanFriendly Source more readable by adding indenting following the parenthesis
      *
      * @remarks
@@ -141,8 +141,6 @@ export class Formatter {
     private static _format = (
         sources: BytesLike[],
         constants: string[],
-        //storageEnums?: string[],
-        //contextEnums?: string[],
         tags?: string[],
         enableTagging = false,
     ): string => {
@@ -160,48 +158,48 @@ export class Formatter {
             for (let j = 0; j < src.length; j += 4) {
                 const _op = (src[j] << 8) + src[j + 1]
                 const _operand = (src[j + 2] << 8) + src[j + 3]
-                const _index = this.opmeta.findIndex(v => v.enum === _op)
+                const _index = _op
 
                 // error if an opcode not found in opmeta
-                if (_index < 0) throw new Error(
+                if (_index > this.opmeta.length) throw new Error(
                     `opcode with enum "${_op}" does not exist on OpMeta`
                 )
                 else {
-                    if (_op === AllStandardOps.READ_MEMORY && (_operand & 1) === 1) {
+                    if (_op === this.opmeta.findIndex(v => v.name === "read-memory") && (_operand & 1) === 1) {
                         _stack.push(
                             BigNumber.from(constants[_operand >> 1]).eq(ethers.constants.MaxUint256)
-                                ? 'MaxUint256'
+                                ? 'max-uint256'
                                 : constants[_operand >> 1]
                         )
                     }
                     else {
                         let operandArgs = ''
                         const _multiOutputs: string[] = []
-                        const inputs = this.opmeta[_index].inputs(_operand)
-                        const outputs = this.opmeta[_index].outputs(_operand)
+                        const inputs = this._calcInputs(this.opmeta[_index].inputs, _operand)
+                        const outputs = this._calcOutputs(this.opmeta[_index].outputs, _operand)
 
                         // count zero output ops
                         if (outputs === 0) zeroOpCounter++
 
                         // construct operand arguments
-                        if (this.opmeta[_index].operand.argsConstraints.length) {
-                            const args = this.opmeta[_index].operand.decoder(_operand)
+                        if (typeof this.opmeta[_index].operand !== "number") {
+                            const args = this._decomputeByBits(
+                                _operand, 
+                                (this.opmeta[_index].operand as OperandArgs).map((v) => {
+                                    return {
+                                        bits: v.bits,
+                                        computation: v.computation
+                                    }
+                                })
+                            )
                             if (
-                                args.length === this.opmeta[_index].operand.argsConstraints.length
+                                args.length === (this.opmeta[_index].operand as OperandArgs).length
                             ) {
-                                operandArgs = '<'
-                                for (
-                                    let k = 0;
-                                    k < this.opmeta[_index].operand.argsConstraints.length;
-                                    k++
-                                ) {
-                                    operandArgs += 
-                                        k === this.opmeta[_index].operand.argsConstraints.length - 1
-                                            ? args[k].toString()
-                                            : args[k].toString() + ' '
-
-                                }
-                                operandArgs += '>'
+                                const _i = (this.opmeta[_index].operand as OperandArgs).findIndex(
+                                    v => v.name === "inputs"
+                                )
+                                if (_i > -1) args.splice(_i, 1)
+                                if (args.length) operandArgs = '<' + args.join(" ") + ">"
                             }
                             else throw new Error(
                                 `decoder of opcode with enum "${
@@ -227,24 +225,6 @@ export class Formatter {
                             ')'
                         )
                     }
-                }
-
-                // handle GTE virtual opcode
-                if (_stack[_stack.length - 1].slice(0, 20) === 'ISZERO(GREATER_THAN(') {
-                    _stack[_stack.length - 1] = 'LESS_THAN_EQUAL(' +
-                        _stack[_stack.length - 1].slice(20, _stack[_stack.length - 1].length - 1)
-                }
-
-                // handle LTE virtual opcode
-                if (_stack[_stack.length - 1].slice(0, 17) === 'ISZERO(LESS_THAN(') {
-                    _stack[_stack.length - 1] = 'GREATER_THAN_EQUAL(' +
-                        _stack[_stack.length - 1].slice(17, _stack[_stack.length - 1].length - 1)
-                }
-
-                // handle INEQ virtual opcode
-                if (_stack[_stack.length - 1].slice(0, 16) === 'ISZERO(EQUAL_TO(') {
-                    _stack[_stack.length - 1] = 'GREATER_THAN_EQUAL(' +
-                        _stack[_stack.length - 1].slice(16, _stack[_stack.length - 1].length - 1)
                 }
             }
 
@@ -274,5 +254,58 @@ export class Formatter {
         // join all sources expressions by seperating them 
         // by new line and return the result
         return _finalStack.join('\n')
+    }
+
+    /**
+     * Method to calculate number of inputs
+     */
+    private static _calcInputs(inputMeta: InputMeta, operand: number): number {
+        if (inputMeta === 0) return 0
+        else {
+            if ("bits" in inputMeta) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                return extractByBits(operand, inputMeta.bits!, inputMeta.computation)
+            }
+            else return inputMeta.parameters.length
+        }
+    }
+
+    /**
+     * Method to calculate number of outputs
+     */
+    private static _calcOutputs(outputMeta: OutputMeta, operand: number): number {
+        if (typeof outputMeta === "number") return outputMeta
+        else {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return extractByBits(operand, outputMeta.bits!, outputMeta.computation)
+        }
+    }
+
+    /**
+     * Method decompute operand to seperated argument values
+     */
+    private static _decomputeByBits(value: number, args: {
+        bits: [number, number], 
+        computation?: string
+    }[]): number[] {
+        const result = []
+        const _decomp = (_val: number, _comp: string, range: number): number => {
+            const _exp = _comp
+            let _i = 0
+            for (_i; _i < range; _i++) {
+                _comp = _exp
+                while (_comp.includes("arg")) _comp = _comp.replace("arg", _i.toString())
+                if (stringMath(_comp) === _val) break
+            }
+            return _i
+        }
+        for (let i = 0; i < args.length; i++) {
+            let _val = extractByBits(value, args[i].bits)
+            const _range = 2 ** ((args[i].bits[1] - args[i].bits[0]) + 1)
+            const _comp = args[i].computation
+            if (_comp) _val = _decomp(_val, _comp, _range)
+            result.push(_val)
+        }
+        return result
     }
 }

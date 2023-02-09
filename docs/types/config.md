@@ -9,8 +9,6 @@ Specific the configuration of the generation method
 ```typescript
 type Config = {
     pretty?: boolean;
-    storageEnums?: string[];
-    contextEnums?: string[];
     tags?: string[];
     enableTagging?: boolean;
     opmeta?: OpMeta[];

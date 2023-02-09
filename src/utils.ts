@@ -1,8 +1,18 @@
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import Ajv from "ajv";
+import fs from "fs";
 import type { BytesLike } from 'ethers';
 import { isBytes, isHexString } from 'ethers/lib/utils';
 import { BigNumber, BigNumberish, ethers, utils } from 'ethers';
 import { StateConfig } from './types';
+import { stringMath } from './string-math/stringMath';
+import { resolve } from "path";
+import { format } from "prettier";
+import { deflateSync, inflateSync } from "zlib";
+
 
 export const {
     /**
@@ -398,7 +408,7 @@ export const paddedUInt160 = (address: BigNumberish): string => {
 
 /**
  * @public
- * function to check if the a value is of type BigNumberish
+ * function to check if the a value is of type BigNumberish, from EthersJS library
  *
  * @param value - the value to check
  * @returns boolean
@@ -583,4 +593,221 @@ export function deepFreeze(object: any) {
         }
         return Object.freeze(object)
     }
+}
+
+/**
+ * @public
+ * Method to extract value from operand by specified bits indexes
+ * 
+ * @param value - Operand value
+ * @param bits - Bits indexes to extract
+ * @param computation - Any arethmetical operation to apply to extracted value
+ * @returns Extracted value
+ */
+export function extractByBits(
+    value: number, 
+    bits: [number, number], 
+    computation?: string
+): number {
+    const _binary = Array.from(value.toString(2))
+        .reverse()
+        .join("")
+        .padEnd(16, "0")
+    const _extractedVal = Number("0b" + Array.from(_binary.slice(bits[0], bits[1]))
+        .reverse()
+        .join("")
+    )
+    if (computation) {
+        while (computation.includes("bits")) {
+            computation = computation.replace("bits", _extractedVal.toString())
+        }
+        return stringMath(computation)
+    }
+    else return _extractedVal
+}
+
+/**
+ * @public
+ * Method to construct the operand from operand args
+ * 
+ * @param args - Operand arguments
+ * @returns operand value
+ */
+export function constructByBits(args: {
+    value: number, 
+    bits: [number, number], 
+    computation?: string,
+    validRange?: ([number] | [number, number])[] 
+}[]): number | number[] {
+    let result = 0
+    const error = []
+    // const _expandBits = (bits: [number, number]) => {
+    //     const _len = bits[1] - bits[0] + 1
+    //     const _result = []
+    //     for (let i = 0; i < _len; i++) {
+    //         _result.push(bits[0] + i)
+    //     }
+    //     return _result
+    // }
+    // for (let i = 0; i < args.length; i++) {
+    //     const _range1 = _expandBits(args[i].bits)
+    //     for (let j = i + 1; j < args.length; j++) {
+    //         const _range2 = _expandBits(args[j].bits)
+    //         _range1.forEach((v1) => {
+    //             if (_range2.includes(v1)) return "error"
+    //         })
+    //     }
+    // }
+    for (let i = 0; i < args.length; i++) {
+        let _val = args[i].value
+        const _defaultRange = 2 ** ((args[i].bits[1] - args[i].bits[0]) + 1)
+        const _offset = args[i].bits[0] - 0
+        let _eq = args[i].computation
+        if (_eq) {
+            while (_eq.includes("arg")) {
+                _eq = _eq.replace("arg", _val.toString())
+            }
+            _val = stringMath(_eq)
+        }
+        if (_val < _defaultRange) {
+            const _validRanges = args[i].validRange
+            if (_validRanges) {
+                for (let j = 0; j < _validRanges.length; j++) {
+                    if (_validRanges[j].length === 1) {
+                        if (_val === _validRanges[j][0]) {
+                            result = 
+                                result + 
+                                Number("0b" + _val.toString(2) + "0".repeat(_offset))
+                            break
+                        }
+                    }
+                    else {
+                        if (_validRanges[j][0] <= _val && _val <= _validRanges[j][1]!) {
+                            result = 
+                                result + 
+                                Number("0b" + _val.toString(2) + "0".repeat(_offset))
+                            break
+                        }
+                    }
+                }
+            }
+            else {
+                result = result + Number("0b" + _val.toString(2) + "0".repeat(_offset))
+                break
+            }
+        }
+        else error.push(i)
+    }
+    if (error.length) return error
+    else return result
+}
+
+/**
+ * @public
+ * Validate a meta or array of metas against a schema
+ *
+ * @param meta - A meta object or array of meta objects (JSON.parsed from meta json file)
+ * @param schema - Json schema as object (JSON.parsed) to validate
+ * @returns boolean
+ */
+export const validateMeta = (meta: any, schema: any): boolean => {
+    const ajv = new Ajv();
+    const validate = ajv.compile(schema);
+    if (meta.length) {
+        for (let i = 0; i < meta.length; i++) {
+            if (!validate(meta[i])) return false;
+        }
+    }
+    else {
+        if (!validate(meta)) return false;
+    }
+    return true;
+};
+
+/**
+ * @public
+ * Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment
+ *
+ * @param meta - A meta object or array of meta objects (JSON.parsed from meta json file)
+ * @param schema - (optional) Json schema as object (JSON.parsed) to validate
+ * @param path - (optional) The path to write the file to if generating an output json file is desired, example: path/to/name.json
+ * @returns Bytes as HexString
+ */
+export const bytesFromMeta = (
+    meta: any,
+    schema?: any,
+    path?: string
+): string => {
+    const _write = (_meta: any) => {
+        if (path) {
+            let _path = resolve(path);
+            if (!_path.endsWith(".json")) _path = _path + "Meta.json"
+            try {
+                fs.writeFileSync(_path, _meta);
+            } catch (error) {
+                console.log(error);
+            }
+        }
+    }
+
+    const formatted = format(
+        JSON.stringify(meta, null, 4), { parser: "json" }
+    );
+    const bytes = Uint8Array.from(deflateSync(formatted));
+    let hex = "0x";
+    for (let i = 0; i < bytes.length; i++) {
+        hex =
+      hex + bytes[i].toString(16).padStart(2, "0");
+    }
+    if (schema) {
+        if (!validateMeta(meta, schema)) throw new Error("provided meta object is not valid")
+    }
+    if (path && path.length) _write(formatted)
+    return hex;
+};
+
+/**
+ * @public
+ * Decompress and convert bytes to meta
+ * 
+ * @param bytes - Bytes to decompress and convert to json
+ * @param schema - (optional) Json schema as object (JSON.parsed) to validate
+ * @param path - (optional) The path to write the file to if generating an output json file is desired, example: path/to/name.json
+ * @returns meta content as object
+ */
+export const metaFromBytes = (
+    bytes: string | Uint8Array,
+    schema?: any,
+    path?: string
+) => {
+    const _write = (_meta: any) => {
+        if (path) {
+            let _path = resolve(path);
+            if (!_path.endsWith(".json")) _path = _path + "Meta.json"
+            try {
+                fs.writeFileSync(_path, _meta);
+            } catch (error) {
+                console.log(error);
+            }
+        }
+    }
+
+    let _uint8Arr: Uint8Array;
+    if (typeof bytes === "string") {
+        if (bytes.startsWith("0x")) bytes = bytes.slice(2)
+        const _bytesArr = []
+        for (let i = 0; i < bytes.length; i+=2) {
+            _bytesArr.push(Number(bytes.slice(i, i + 2)))
+        }
+        _uint8Arr = Uint8Array.from(_bytesArr)
+    } else {
+        _uint8Arr = bytes
+    }
+    const _meta = format(inflateSync(_uint8Arr).toString(), { parser: "json" })
+
+    if (schema) {
+        if (!validateMeta(JSON.parse(_meta), schema)) throw new Error ("invalid meta")
+    }
+    if (path && path.length) _write(_meta)
+    return JSON.parse(_meta);
 }

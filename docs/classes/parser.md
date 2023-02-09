@@ -20,10 +20,6 @@ import { Parser } from 'rain-sdk';
 // to set the custom opmeta
 Parser.set(opmeta)
 
-// to set the custom details of GTE and LTE opcodes
-Parser.setGteMeta(name?, description?, data?, description?)
-Parser.setLteMeta(name?, description?, data?, description?)
-
 // to execute the parsing and get parse tree object and StateConfig
 let parseTree;
 let stateConfig
@@ -58,9 +54,6 @@ let stateConfig = Parser.compile(argument)
 |  [get(expression, opmeta)](./parser.md#get-method-static-1) | Method to get parse tree object and StateConfig |
 |  [getParseTree(expression, opmeta)](./parser.md#getParseTree-method-static-1) | Method to get the parse tree object |
 |  [getStateConfig(expression, opmeta)](./parser.md#getStateConfig-method-static-1) | Method to get the StateConfig |
-|  [setGteMeta(name, description, data, aliases)](./parser.md#setGteMeta-method-static-1) | Method to set the details of the GTE opcode |
-|  [setInEqMeta(name, description, data, aliases)](./parser.md#setInEqMeta-method-static-1) | Method to set the details of the INEQ opcode |
-|  [setLteMeta(name, description, data, aliases)](./parser.md#setLteMeta-method-static-1) | Method to set the details of the LTE opcode |
 
 ## Static Property Details
 
@@ -144,7 +137,7 @@ Method to get parse tree object and StateConfig
 <b>Signature:</b>
 
 ```typescript
-static get(expression: string, opmeta?: OpMeta[]): [ParseTree | (ParseTree & {
+static get(expression: string, opmeta?: Uint8Array | string): [ParseTree | (ParseTree & {
         'comments': Comment[];
     }), StateConfig] | string;
 ```
@@ -154,7 +147,7 @@ static get(expression: string, opmeta?: OpMeta[]): [ParseTree | (ParseTree & {
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `OpMeta[]` | (optional) custom opmeta |
+|  opmeta | `Uint8Array \| string` | (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string |
 
 <b>Returns:</b>
 
@@ -173,7 +166,7 @@ Method to get the parse tree object
 <b>Signature:</b>
 
 ```typescript
-static getParseTree(expression: string, opmeta?: OpMeta[]): ParseTree | (ParseTree & {
+static getParseTree(expression: string, opmeta?: Uint8Array | string): ParseTree | (ParseTree & {
         'comments': Comment[];
     }) | string;
 ```
@@ -183,7 +176,7 @@ static getParseTree(expression: string, opmeta?: OpMeta[]): ParseTree | (ParseTr
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `OpMeta[]` | (optional) custom opmeta |
+|  opmeta | `Uint8Array \| string` | (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string |
 
 <b>Returns:</b>
 
@@ -202,7 +195,7 @@ Method to get the StateConfig
 <b>Signature:</b>
 
 ```typescript
-static getStateConfig(expression: string, opmeta?: OpMeta[]): StateConfig | string;
+static getStateConfig(expression: string, opmeta?: Uint8Array | string): StateConfig | string;
 ```
 
 #### Parameters
@@ -210,86 +203,11 @@ static getStateConfig(expression: string, opmeta?: OpMeta[]): StateConfig | stri
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `OpMeta[]` | (optional) custom opmeta |
+|  opmeta | `Uint8Array \| string` | (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string |
 
 <b>Returns:</b>
 
 `StateConfig | string`
 
 A StateConfig
-
-<a id="setGteMeta-method-static-1"></a>
-
-### setGteMeta(name, description, data, aliases)
-
-Method to set the details of the GTE opcode
-
-<b>Signature:</b>
-
-```typescript
-static setGteMeta(name?: string, description?: string, data?: any, aliases?: string[]): void;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  name | `string` | (optional) name of the GTE opcode |
-|  description | `string` | (optional) The description |
-|  data | `any` | (optional) data |
-|  aliases | `string[]` | (optional) The aliases of GTE opcode |
-
-<b>Returns:</b>
-
-`void`
-
-<a id="setInEqMeta-method-static-1"></a>
-
-### setInEqMeta(name, description, data, aliases)
-
-Method to set the details of the INEQ opcode
-
-<b>Signature:</b>
-
-```typescript
-static setInEqMeta(name?: string, description?: string, data?: any, aliases?: string[]): void;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  name | `string` | (optional) name of the INEQ opcode |
-|  description | `string` | (optional) The description |
-|  data | `any` | (optional) data |
-|  aliases | `string[]` | (optional) The aliases of INEQ opcode |
-
-<b>Returns:</b>
-
-`void`
-
-<a id="setLteMeta-method-static-1"></a>
-
-### setLteMeta(name, description, data, aliases)
-
-Method to set the details of the LTE opcode
-
-<b>Signature:</b>
-
-```typescript
-static setLteMeta(name?: string, description?: string, data?: any, aliases?: string[]): void;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  name | `string` | (optional) name of the LTE opcode |
-|  description | `string` | (optional) The description |
-|  data | `any` | (optional) data |
-|  aliases | `string[]` | (optional) The aliases of LTE opcode |
-
-<b>Returns:</b>
-
-`void`
 
