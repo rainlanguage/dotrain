@@ -1,5 +1,3 @@
-/* eslint-disable prefer-const */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Ajv from "ajv";
@@ -8,7 +6,7 @@ import type { BytesLike } from 'ethers';
 import { isBytes, isHexString } from 'ethers/lib/utils';
 import { BigNumber, BigNumberish, ethers, utils } from 'ethers';
 import { StateConfig } from './types';
-import { stringMath } from './string-math/stringMath';
+import stringMath from "string-math";
 import { resolve } from "path";
 import { format } from "prettier";
 import { deflateSync, inflateSync } from "zlib";
@@ -602,13 +600,16 @@ export function deepFreeze(object: any) {
  * @param value - Operand value
  * @param bits - Bits indexes to extract
  * @param computation - Any arethmetical operation to apply to extracted value
+ * @param computationVar - The variavle in compuation to solve for, default is "bits"
  * @returns Extracted value
  */
 export function extractByBits(
     value: number, 
     bits: [number, number], 
-    computation?: string
+    computation?: string,
+    computationVar?: string
 ): number {
+    const _var = computationVar ? computationVar : "bits"
     const _binary = Array.from(value.toString(2))
         .reverse()
         .join("")
@@ -618,10 +619,11 @@ export function extractByBits(
         .join("")
     )
     if (computation) {
-        while (computation.includes("bits")) {
-            computation = computation.replace("bits", _extractedVal.toString())
+        while (computation.includes(_var)) {
+            computation = computation.replace(_var, _extractedVal.toString())
         }
-        return stringMath(computation)
+        const _result = stringMath(computation, (_err, _res) => _res)
+        return _result !== null ? _result : NaN;
     }
     else return _extractedVal
 }
@@ -634,10 +636,26 @@ export function extractByBits(
  * @returns operand value
  */
 export function constructByBits(args: {
-    value: number, 
-    bits: [number, number], 
+    /**
+     * The value of argument
+     */
+    value: number,
+    /**
+     * The start/end bits indexes
+     */
+    bits: [number, number],
+    /**
+     * The arithmetical equation
+     */
     computation?: string,
-    validRange?: ([number] | [number, number])[] 
+    /**
+     * The valid range the value can have after computation applied if computation is specified
+     */
+    validRange?: ([number] | [number, number])[],
+    /**
+     * The variavle in compuation to solve for, default is "arg"
+     */
+    computationVar?: string
 }[]): number | number[] {
     let result = 0
     const error = []
@@ -664,10 +682,16 @@ export function constructByBits(args: {
         const _offset = args[i].bits[0] - 0
         let _eq = args[i].computation
         if (_eq) {
-            while (_eq.includes("arg")) {
-                _eq = _eq.replace("arg", _val.toString())
+            const _var = args[i].computationVar ? args[i].computationVar : "arg"
+            while (_eq.includes(_var!)) {
+                _eq = _eq.replace(_var!, _val.toString())
             }
-            _val = stringMath(_eq)
+            const _res = stringMath(_eq, (_err, _res) => _res)
+            if (_res !== null) _val = _res
+            else  {
+                error.push(i)
+                break
+            }
         }
         if (_val < _defaultRange) {
             const _validRanges = args[i].validRange
@@ -809,4 +833,3 @@ export const metaFromBytes = (
     if (path && path.length) _write(_meta);
     return JSON.parse(_meta);
 };
-  

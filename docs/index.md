@@ -29,7 +29,7 @@
 |  [constructByBits(args)](./variables/constructbybits_1.md) | Method to construct the operand from operand args |
 |  [deepFreeze(object)](./variables/deepfreeze_1.md) | Deeply freezes an object, all of the properties of propterties gets frozen |
 |  [doWhileOperand(inputSize, sourceIndex)](./variables/dowhileoperand_1.md) | Builds the operand for RainInterpreter's `DO_WHILE` opcode by packing 3 numbers into a single byte. |
-|  [extractByBits(value, bits, computation)](./variables/extractbybits_1.md) | Method to extract value from operand by specified bits indexes |
+|  [extractByBits(value, bits, computation, computationVar)](./variables/extractbybits_1.md) | Method to extract value from operand by specified bits indexes |
 |  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properites from a Map as a new Map with same keys. |
 |  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
 |  [foldContextOperand(inputs, width, foldColumn, sourceIndex)](./variables/foldcontextoperand_1.md) | Builds the operand for RainInterpreter's `FOLD_CONTEXT` opcode by packing 4 numbers into 2 bytes. |
@@ -39,7 +39,6 @@
 |  [memoryOperand(type, offset)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
 |  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [selectLteOperand(logic, mode, inputSize)](./variables/selectlteoperand_1.md) | function to set up the operand for a SELECT\_LTE opcode |
-|  [stringMath(equation)](./variables/stringmath_1.md) | Function to resolve string arethmetical expressions (equation). This code is taken from \[string-math\](https://github.com/devrafalko/string-math) library by \[devrafalko\](https://github.com/devrafalko) and configured to be used in a typescript module. For more details please visit: \[here\](https://github.com/devrafalko/string-math) |
 |  [tierRange(startTier, endTier)](./variables/tierrange_1.md) | function to pack start/end tier range into a byte size number for the UPDATE\_BLOCKS\_FOR\_TIER\_RANGE opcode |
 
 ## Variables

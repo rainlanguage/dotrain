@@ -12,6 +12,7 @@ function constructByBits(args: {
     bits: [number, number];
     computation?: string;
     validRange?: ([number] | [number, number])[];
+    computationVar?: string;
 }[]): number | number[];
 ```
 
@@ -19,7 +20,7 @@ function constructByBits(args: {
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  args | <pre>{&#010;    value: number;&#010;    bits: [number, number];&#010;    computation?: string;&#010;    validRange?: ([number] \| [number, number])[];&#010;}[]</pre> | Operand arguments |
+|  args | <pre>{&#010;    value: number;&#010;    bits: [number, number];&#010;    computation?: string;&#010;    validRange?: ([number] \| [number, number])[];&#010;    computationVar?: string;&#010;}[]</pre> | Operand arguments |
 
 <b>Returns:</b>
 

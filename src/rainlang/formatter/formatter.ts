@@ -189,15 +189,21 @@ export class Formatter {
 
                         // construct operand arguments
                         if (typeof this.opmeta[_index].operand !== "number") {
-                            const args = this._deconstructByBits(
-                                _operand, 
-                                (this.opmeta[_index].operand as OperandArgs).map((v) => {
-                                    return {
-                                        bits: v.bits,
-                                        computation: v.computation
-                                    }
-                                })
-                            )
+                            let args
+                            try {
+                                args = this._deconstructByBits(
+                                    _operand, 
+                                    (this.opmeta[_index].operand as OperandArgs).map((v) => {
+                                        return {
+                                            bits: v.bits,
+                                            computation: v.computation
+                                        }
+                                    })
+                                )
+                            }
+                            catch (err) {
+                                throw new Error(`${err} of opcode ${this.opmeta[_index].name}`)
+                            }   
                             if (
                                 args.length === (this.opmeta[_index].operand as OperandArgs).length
                             ) {
@@ -302,8 +308,8 @@ export class Formatter {
                 const _lhs = parse(_comp)
                 const _eq = new Equation(_lhs as Expression, _val)
                 const _res = _eq.solveFor("arg")?.toString()
-                if (_res) _val = Number(_res)
-                else throw new Error("something went wrong when deconstructing an operand")
+                if (_res !== undefined) _val = Number(_res)
+                else throw new Error("invalid/corrupt operand or operand arguments in opmeta")
             }
             result.push(_val)
         }
