@@ -26,6 +26,5 @@ type State = {
         };
     };
     depthLevel: number;
-    ambiguity: boolean;
 };
 ```

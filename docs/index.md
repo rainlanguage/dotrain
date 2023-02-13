@@ -34,7 +34,7 @@
 
 |  Variable | Description |
 |  --- | --- |
-|  [areEqualStateConfigs](./variables/areequalstateconfigs.md) | Checks 2 StateConfig objects to see if they are equal or not |
+|  [areEqualStateConfigs](./variables/areequalstateconfigs.md) | Checks 2 ExpressionConfig objects to see if they are equal or not |
 |  [arrayify](./variables/arrayify.md) | ethers arrayify |
 |  [bytesFromMeta](./variables/bytesfrommeta.md) | Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment |
 |  [bytify](./variables/bytify.md) | Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte, unless a desired `bytesLength` is specified. |
@@ -60,6 +60,7 @@
 |  [ComputedOutput](./types/computedoutput.md) | Data type for computed output |
 |  [Config](./types/config.md) | Specific the configuration of the generation method |
 |  [Error\_2](./types/error_2.md) | Type of Parser's Error node |
+|  [ExpressionConfig](./types/expressionconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
 |  [InputArgs](./types/inputargs.md) | Data type for input argguments |
 |  [InputMeta](./types/inputmeta.md) | Data type of opcode's inputs that determines the number of inputs an opcode has and provide information about them |
 |  [Node\_2](./types/node_2.md) | Type of Parser's Node |
@@ -71,7 +72,6 @@
 |  [ParseTree](./types/parsetree.md) | Type of a parse tree object |
 |  [PrettifyConfig](./types/prettifyconfig.md) | Specifies the configuration of the Prettify method. |
 |  [State](./types/state.md) | Type of Parser's State |
-|  [StateConfig](./types/stateconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
 |  [Tag](./types/tag.md) |  |
 |  [Value](./types/value.md) | Type of Parser's Value node |
 

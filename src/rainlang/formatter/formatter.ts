@@ -1,5 +1,5 @@
 import { BytesLike, BigNumber, ethers } from 'ethers';
-import { StateConfig, OpMeta, InputMeta, OutputMeta, OperandArgs } from '../../types';
+import { ExpressionConfig, OpMeta, InputMeta, OutputMeta, OperandArgs } from '../../types';
 import { arrayify, extractByBits, isBigNumberish, metaFromBytes, validateMeta } from '../../utils';
 import { Config, PrettifyConfig } from './types';
 import OpMetaSchema from "../../schema/op.meta.schema.json";
@@ -11,7 +11,7 @@ import { Equation, Expression, parse } from 'algebra.js';
  * The generator of human friendly readable source.
  *
  * @remarks
- * Parse an StateConfig/Script to a more human readable form, making easier to understand. This form allows users read exactly
+ * Parse an ExpressionConfig to a more human readable form, making easier to understand. This form allows users read exactly
  * what the Script will do, like the conditions, values used, etc. Also, anyone can learn to write their own scripts
  * if use the Human Form to see the output for each combination that they made.
  */
@@ -20,7 +20,7 @@ export class Formatter {
 
     /**
      * @public
-     * Method to set the opmeta with more than AllStandardOps opcodes or with other name/aliases for this instance of the Formatter
+     * Method to set the op meta
      *
      * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
      */
@@ -37,15 +37,15 @@ export class Formatter {
 
     /**
      * @public
-     * Obtain the friendly output from an StateConfig/script.
+     * Obtain the friendly output from an ExpressionConfig
      * 
-     * @param _state - The StateConfig/script to generate the friendly version
+     * @param _state - The ExpressionConfig to generate the friendly version
      * @param _opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
      * @param _config - The configuration that will run the generator
      * @returns
      */
     public static get(
-        _state: StateConfig,
+        _state: ExpressionConfig,
         _opmeta: string | Uint8Array | object[],
         _config: Config = {
             pretty: false,
@@ -134,10 +134,10 @@ export class Formatter {
     // * @param enableTagging - True if the result needs to be tagged and optimized for the RuleBuilder script generator
 
     /**
-     * The main workhorse of the Human Friendly Readable source that builds the whole text
+     * The main workhorse of the Formatter source that builds the whole text
      *
-     * @param sources - The StateConfig sources
-     * @param constants - The StateConfig constants all in hex string format
+     * @param sources - The ExpressionConfig sources
+     * @param constants - The ExpressionConfig constants all in hex string format
      * @returns A human friendly readable text of the passed script
      */
     private static _format = (

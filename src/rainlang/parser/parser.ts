@@ -6,7 +6,7 @@ import {
     InputMeta, 
     OutputMeta, 
     OpMeta, 
-    StateConfig, 
+    ExpressionConfig, 
     InputArgs, 
     OperandMeta, 
     ComputedOutput 
@@ -50,18 +50,18 @@ import {
  * // to import
  * import { Parser } from 'rainlang';
  *
- * // to execute the parsing and get parse tree object and StateConfig
+ * // to execute the parsing and get parse tree object and ExpressionConfig
  * let parseTree;
  * let stateConfig
- * [ parseTree, stateConfig ] = Parser.get(textScript, customOpMeta, customMultiOutputPlaceholderChar);
+ * [ parseTree, stateConfig ] = Parser.get(textScript, opMeta);
  *
  * // to get parse tree object only
- * let parseTree = Parser.getParseTree(textScript, customOpMeta, customMultiOutputPlaceholderChar);
+ * let parseTree = Parser.getParseTree(textScript, opMeta);
  *
- * // to get StateConfig only
- * let stateConfig = Parser.getStateConfig(textScript, customOpMeta, customMultiOutputPlaceholderChar);
+ * // to get ExpressionConfig only
+ * let stateConfig = Parser.getExpressionConfig(textScript, opMeta);
  *
- * // to build StateConfig (compile) from ParseTree object or a Node or array of Node
+ * // to build ExpressionConfig (compile) from ParseTree object or a Node or array of Node
  * let argument: Node || Node[] || ParseTree
  * let stateConfig = Parser.compile(argument)
  * ```
@@ -74,6 +74,7 @@ export class Parser {
     private static exp: string
     private static input: string
     private static argErr = false
+    private static attachedNodesErr = false
     private static placeholder = '_'
     private static comments: Comment[] = []
     private static treeArray: Record<number, Node[]> = {}
@@ -101,22 +102,21 @@ export class Parser {
                 lenCache: []
             },
         },
-        depthLevel: 0,
-        ambiguity: false,
+        depthLevel: 0
     }
 
     /**
      * @public
-     * Method to get parse tree object and StateConfig
+     * Method to get parse tree object and ExpressionConfig
      *
      * @param expression - the text expression
      * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
-     * @returns Array of parse tree object and StateConfig
+     * @returns Array of parse tree object and ExpressionConfig
      */
     public static get(
         expression: string,
         opmeta: Uint8Array | string | object[]
-    ): [ParseTree & { comments?: Comment[] }, StateConfig] | string {
+    ): [ParseTree & { comments?: Comment[] }, ExpressionConfig] | string {
         let _opmeta: OpMeta[]
         if (isBigNumberish(opmeta)) {
             _opmeta = metaFromBytes(opmeta as BytesLike, OpMetaSchema) as OpMeta[]
@@ -185,16 +185,16 @@ export class Parser {
 
     /**
      * @public
-     * Method to get the StateConfig
+     * Method to get the ExpressionConfig
      *
      * @param expression - the text expression
      * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
-     * @returns A StateConfig
+     * @returns A ExpressionConfig
      */
-    public static getStateConfig(
+    public static getExpressionConfig(
         expression: string,
         opmeta: Uint8Array | string | object[]
-    ): StateConfig | string {
+    ): ExpressionConfig | string {
         let _opmeta: OpMeta[]
         if (isBigNumberish(opmeta)) {
             _opmeta = metaFromBytes(opmeta as BytesLike, OpMetaSchema) as OpMeta[]
@@ -219,10 +219,10 @@ export class Parser {
 
     /**
      * @public
-     * Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes
+     * Method to get ExpressionConfig (bytes) from a Parse Tree object or a Node or array of Nodes
      *
-     * @param parseTree - Tree like object (Parse Tree object or a Node or array of Nodes) to get the StateConfig from
-     * @returns StateConfig, i.e. compiled bytes ready to be deployed
+     * @param parseTree - Tree like object (Parse Tree object or a Node or array of Nodes) to get the ExpressionConfig from
+     * @returns ExpressionConfig, i.e. compiled bytes ready to be deployed
      */
     public static compile(
         parseTree:
@@ -230,17 +230,17 @@ export class Parser {
             | Node[]
             | Record<number, Node[]>
             | Record<number, { tree: Node[], position: number[] }>
-    ): StateConfig {
+    ): ExpressionConfig {
         return this._compile(parseTree)
     }
 
     /**
-     * Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes
+     * Method to get ExpressionConfig (bytes) from a Parse Tree object or a Node or array of Nodes
      *
-     * @param parseTree - Tree like object (Parse Tree object or a Node or array of Nodes) to get the StateConfig from
+     * @param parseTree - Tree like object (Parse Tree object or a Node or array of Nodes) to get the ExpressionConfig from
      * @param constants - (internal) Used to keep the constants across recursions
      * @param sourceIndex - (internal) Used to keep the original source index across recursions
-     * @returns StateConfig
+     * @returns ExpressionConfig
      */
     private static _compile(
         parseTree:
@@ -250,7 +250,7 @@ export class Parser {
             | Record<number, { tree: Node[], position: number[] }>,
         constants: BigNumberish[] = [],
         sourceIndex = 0
-    ): StateConfig {
+    ): ExpressionConfig {
         const sources: BytesLike[] = []
         let sourcesCache: BytesLike[] = []
         let nodes : Node[][]
@@ -398,7 +398,6 @@ export class Parser {
     private static _reset = () => {
         this.state.parse.tree = []
         this.state.depthLevel = 0
-        this.state.ambiguity = false
         this.state.track.parens.open = []
         this.state.track.parens.close = []
         this.state.track.operandArgs.cache = []
@@ -408,6 +407,7 @@ export class Parser {
         this.state.parse.multiOutputCache = []
         this.argErr = false
         this.comments = []
+        this.attachedNodesErr = false
     }
 
     /**
@@ -456,14 +456,13 @@ export class Parser {
      * The main workhorse of Rain Parser which parses the words used in an
      * expression and is responsible for building the Parse Tree and Bytes
      */
-    private static _parse(script: string, opmeta: OpMeta[], placeholder?: string) {
+    private static _parse(script: string, opmeta: OpMeta[]) {
         this._reset()
         this.sources = []
         this.constants = []
         this.treeArray = []
         this.parseTree = {}
         this.set(opmeta)
-        this.placeholder = placeholder ? placeholder : '_'
         this.state.parse.tags = []
         const comments: Comment[] = []
 
@@ -558,14 +557,13 @@ export class Parser {
                 // ----------- begin parsing sub-expressions -----------
                 for (let j = 0; j < subExp.length; j++) {
                     this.state.depthLevel = 0
-                    this.state.ambiguity = false
                     this.state.track.notation = []
                     this.state.track.parens.open = []
                     this.state.track.parens.close = []
                     let _break = false
-                    // const _errRhsComments: number[] = []
                     this.input = subExp[j]
                     this.argErr = false
+                    this.attachedNodesErr = false
                     const tagsOffset = this.state.parse.tags[i].length
                     const treeOffset = this.state.parse.tree.length
 
@@ -716,46 +714,10 @@ export class Parser {
                                 }
                                 else if (this.exp.startsWith(')')) {
                                     if (this.state.track.parens.open.length > 0) {
-                                        let multiOutputResolvingDepth = this.state.depthLevel - 1
-                                        this.exp = this.exp.replace(')', '')
-                                        const postfix = this._isPostfix(this.exp)
+                                        const multiOutputResolvingDepth = this.state.depthLevel - 1
                                         this.state.track.parens.close.push(currentPosition)
-                                        if (this._isInfix()) {
-                                            this.state.track.notation.pop()
-                                            this.state.track.notation.pop()
-                                            if (postfix || this._isPrefix()) {
-                                                this._resolveInfix(true)
-                                                multiOutputResolvingDepth++
-                                            }
-                                            else this._resolveInfix(false)
-                                        }
-                                        if (postfix && this._isPrefix()) {
-                                            const op = this._getLastTreeElementAtDepth(
-                                                this.state.depthLevel - 1
-                                            ) as Op
-                                            this._updateTree(
-                                                {
-                                                    error: 'invalid notation',
-                                                    position: [
-                                                        op.position[0],
-                                                        Number(postfix[2]) + currentPosition + 1,
-                                                    ],
-                                                },
-                                                true
-                                            )
-                                            this.state.track.notation.pop()
-                                            this.state.track.notation.pop()
-                                        }
-                                        else if (postfix) {
-                                            this._resolvePostfix(
-                                                postfix[0],
-                                                Number(postfix[1]) + currentPosition + 1,
-                                                Number(postfix[2]) + currentPosition + 1,
-                                                entry,
-                                                postfix[3]
-                                            )
-                                        }
-                                        else if (this._isPrefix()) {
+                                        this.exp = this.exp.replace(')', '')
+                                        if (this._isPrefix()) {
                                             this._resolvePrefix()
                                             this.state.track.notation.pop()
                                             this.state.track.notation.pop()
@@ -788,8 +750,15 @@ export class Parser {
                                             ]
                                         })
                                         this.exp = this.exp.replace(')', '')
-                                        break
+                                        // break
                                     }
+                                    if (
+                                        this.exp.length &&
+                                        !this.exp.startsWith(" ") && 
+                                        !this.exp.startsWith(")") && 
+                                        !this.exp.startsWith(";") && 
+                                        !this.exp.startsWith(",")
+                                    ) this.attachedNodesErr = true
                                 }
                                 else this._consume(currentPosition)
                             }
@@ -918,68 +887,27 @@ export class Parser {
     }
 
     /**
-     * * Method to check if the current state of parsing of a node is infix or not
+     * Method to resolve prefix notations at current state of parsing
      */
-    private static _isInfix(): boolean {
-        return (
-            this.state.track.notation[this.state.track.notation.length - 1] ===
-                Notations.infix &&
-            this.state.track.notation[this.state.track.notation.length - 2] ===
-                this.state.depthLevel
-        )
-    }
-
-    /**
-     * Method to check if the current state of parsing of a node is postfix or not
-     */
-    private static _isPostfix(str: string): string[] | undefined {
-        let offset = 0
-        if (!str.length) return undefined
-        if (str[0] === ' ' || str[0] === '(' || str[0] === ')') return undefined
-        while (str.startsWith(',')) {
-            str = str.replace(',', '')
-            offset++
+    private static _resolvePrefix() {
+        this.state.track.parens.open.pop()
+        const endPosition = this.state.track.parens.close.pop()!
+        let tmp: Node[] = this.state.parse.tree
+        for (let i = 0; i < this.state.depthLevel - 1; i++) {
+            tmp = (tmp[tmp.length - 1] as Op).parameters
         }
-        if (str[0] === ' ' || str[0] === '(' || str[0] === ')') return undefined
-        for (let i = 0; i < this.names.length; i++) {
-            if (str.startsWith(this.names[i])) {
-                const tmp = [
-                    this.names[i],
-                    offset.toString(),
-                    (offset + this.names[i].length - 1).toString(),
-                ]
-                if (str.replace(this.names[i], '').startsWith('(')) {
-                    this.state.ambiguity = true
-                    tmp.push('ambiguous expression/opcode')
-                }
-                else if (offset) tmp.push(
-                    'illigal characters between opcode and parenthesis'
-                )
-                return tmp
+        const node = tmp[tmp.length - 1] as Op
+        node.position.push(endPosition)
+        node.parens.push(endPosition)
+        if (node.error === 'no closing parenthesis') {
+            if (this.attachedNodesErr) {
+                node.error = "expected space between opcodes"
+                this.attachedNodesErr = false
             }
+            else if (node.opcode.name.includes('unknown')) node.error = 'unknown opcode'
+            else delete node.error
         }
-        for (let i = 0; i < this.aliases.length; i++) {
-            if (this.aliases[i]) {
-                for (let j = 0; j < this.aliases[i]!.length; j++) {
-                    if (str.startsWith(this.aliases[i]![j])) {
-                        const tmp = [
-                            this.names[i],
-                            offset.toString(),
-                            (offset + this.aliases[i]![j].length - 1).toString(),
-                        ]
-                        if (str.replace(this.aliases[i]![j], '').startsWith('(')) {
-                            this.state.ambiguity = true
-                            tmp.push('ambiguous expression/opcode')
-                        }
-                        else if (offset) tmp.push(
-                            'illigal characters between opcode and parenthesis'
-                        )
-                        return tmp
-                    }
-                }
-            }
-        }
-        return undefined
+        tmp[tmp.length - 1] = this._resolveOp(node)
     }
 
     /**
@@ -1074,171 +1002,6 @@ export class Parser {
                 position: [_len]
             } as Error
         }
-    }
-
-    /**
-     * Method to resolve prefix notations at current state of parsing
-     */
-    private static _resolvePrefix() {
-        this.state.track.parens.open.pop()
-        const endPosition = this.state.track.parens.close.pop()!
-        let tmp: Node[] = this.state.parse.tree
-        for (let i = 0; i < this.state.depthLevel - 1; i++) {
-            tmp = (tmp[tmp.length - 1] as Op).parameters
-        }
-        const node = tmp[tmp.length - 1] as Op
-        node.position.push(endPosition)
-        node.parens.push(endPosition)
-        if (node.error === 'no closing parenthesis') {
-            if (node.opcode.name.includes('unknown')) node.error = 'unknown opcode'
-            else delete node.error
-        }
-        tmp[tmp.length - 1] = this._resolveOp(node)
-    }
-
-    /**
-     * Method to resolve postfix notations at current state of parsing
-     */
-    private static _resolvePostfix(
-        opcode: string,
-        startPosition: number,
-        endPosition: number,
-        entry: number,
-        error?: string,
-    ) {
-        this.exp = this.input.slice(endPosition + 1 - entry)
-        this.state.track.parens.open.pop()
-        let tmp: Node[] = this.state.parse.tree
-        for (let i = 0; i < this.state.depthLevel - 1; i++) {
-            tmp = (tmp[tmp.length - 1] as Op).parameters
-        }
-        const node = tmp[tmp.length - 1] as Op
-        let op = {
-            opcode: {
-                name: opcode,
-                position: [startPosition, endPosition],
-            },
-            operand: NaN,
-            output: NaN,
-            position: [node.position[0], endPosition],
-            parens: [node.position[0], this.state.track.parens.close.pop()!],
-            parameters: node.parameters,
-            data: this.data[this.names.indexOf(opcode)],
-            error,
-            tag: node.tag
-        } as Op
-        if (this.exp.startsWith('<')) op = this._resolveOperand(op, true) as Op
-        tmp[tmp.length - 1] = this._resolveOp(op)
-    }
-
-    /**
-     * Method to resolve infix notations at current state of parsing
-     */
-    private static _resolveInfix(isParameter: boolean) {
-        let tmp: Node[] = this.state.parse.tree
-        let node: Op = tmp[tmp.length - 1] as Op
-        for (let i = 0; i < this.state.depthLevel; i++) {
-            tmp = (tmp[tmp.length - 1] as Op).parameters
-            if (this.state.depthLevel - 1 !== i) 
-                node = tmp[tmp.length - 1] as Op
-        }
-        const elements = tmp
-        let err = false
-        let op: Node
-        const closeParenPosition =
-            this.state.track.parens.close[this.state.track.parens.close.length - 1]
-
-        // if prefix-infix
-        if ('opcode' in elements[0] && elements[0].infixOp) {
-            op = elements[0]
-            op.position.push(...node.parens)
-            op.parens.push(...node.parens)
-            for (let i = 1; i < elements.length; i++) {
-                const item = elements[i]
-                if ('opcode' in item && item.infixOp) {
-                    err = true
-                    op.error = 'invalid infix expression'
-                    break
-                }
-            }
-            if (!err) op.parameters = elements.slice(1, elements.length)
-            op.position.push(closeParenPosition)
-            op.parens.push(closeParenPosition)
-        }
-        // if postfix-infix
-        else if (
-            'opcode' in elements[elements.length - 1] &&
-            (elements[elements.length - 1] as Op).infixOp
-        ) {
-            op = elements[elements.length - 1] as Op
-            op.position.push(...node.parens)
-            op.parens.push(...node.parens)
-            for (let i = 0; i < elements.length - 1; i++) {
-                const item = elements[i]
-                if ('opcode' in item && item.infixOp) {
-                    err = true
-                    op.error = 'invalid infix expression'
-                    break
-                }
-            }
-            if (!err) op.parameters = elements.slice(0, -1)
-            op.position.push(closeParenPosition)
-            op.parens.push(closeParenPosition)
-        }
-
-        // if infix-infix
-        else {
-            const params: Node[] = [elements[0]]
-            if ('opcode' in elements[1] && elements[1].infixOp) {
-                op = elements[1]
-                op.position.push(...node.parens)
-                op.parens.push(...node.parens)
-                for (let i = 2; i < elements.length; i++) {
-                    if (i % 2 === 0) params.push(elements[i])
-                    else {
-                        const item = elements[i]
-                        if ('opcode' in item && item.infixOp && op.opcode.name === item.opcode.name) {
-                            op.opcode.position.push(...item.opcode.position)
-                        }
-                        else {
-                            if ('opcode' in item) {
-                                op.error = `invalid opcode format at position ${item.opcode.position}`
-                            }
-                            else {
-                                op.error = `expected opcode but got value at position ${item.position}`
-                            }
-                            err = true
-                            break
-                        }
-                    }
-                }
-                if (!err) op.parameters = params
-                op.position.push(closeParenPosition)
-                op.parens.push(closeParenPosition)
-            }
-            else {
-                op = {
-                    error: 'invalid infix expression',
-                    position: [
-                        node.parens[0],
-                        closeParenPosition,
-                    ],
-                }
-                err = true
-            }
-        }
-        delete (op as Op).infixOp
-        if (!err) op = this._resolveOp(op as Op)
-        if (isParameter) {
-            const item = this._getLastTreeElementAtDepth(this.state.depthLevel - 1) as Op
-            item.parameters = [op]
-            op = item
-        }
-        else {
-            this.state.track.parens.open.pop()
-            this.state.track.parens.close.pop()
-        }
-        this._updateTree(op, true)
     }
 
     /**
@@ -1511,40 +1274,25 @@ export class Parser {
                             )
                             if (consumee.endsWith(str)) {
                                 if (!this.argErr) {
-                                    op.error = this.state.ambiguity 
-                                        ? 'ambiguous expression/opcode'
-                                        : 'no closing parenthesis'
+                                    op.error = 'no closing parenthesis'
                                 }
                                 this._updateTree(op)
-                                if (this.state.ambiguity) this.state.ambiguity = false
                             }
                             else {
                                 if (!this.argErr) {
-                                    op.error = this.state.ambiguity
-                                        ? 'ambiguous expression/opcode'
-                                        : 'illigal characters between opcode and parenthesis'
+                                    op.error = 'illigal characters between opcode and parenthesis'
                                 }
                                 this._updateTree(op)
-                                if (this.state.ambiguity) this.state.ambiguity = false
                             }
                         }
                         else {
-                            if (!this._isInfix() && this.state.depthLevel > 0) {
-                                this.state.track.notation.push(
-                                    this.state.depthLevel,
-                                    Notations.infix
-                                )
-                            }
-                            else {
-                                if (!this.argErr) {
-                                    op.error = 
-                                        'opcodes with no parens is only allowed if wrapped by parens'
-                                }
+                            if (!this.argErr) {
+                                op.error = 
+                                    'expected parens "("'
                             }
                             op.infixOp = true
                             op.position = []
                             this._updateTree(op)
-                            if (this.state.ambiguity) this.state.ambiguity = false
                         }
                         check = false
                         break
@@ -1574,40 +1322,25 @@ export class Parser {
                             )
                             if (consumee.endsWith(str)) {
                                 if (!this.argErr) {
-                                    op.error = this.state.ambiguity 
-                                        ? 'ambiguous expression/opcode'
-                                        : 'no closing parenthesis'
+                                    op.error = 'no closing parenthesis'
                                 }
                                 this._updateTree(op)
-                                if (this.state.ambiguity) this.state.ambiguity = false
                             }
                             else {
                                 if (!this.argErr) {
-                                    op.error = this.state.ambiguity
-                                        ? 'ambiguous expression/opcode'
-                                        : 'illigal characters between opcode and parenthesis'
+                                    op.error = 'illigal characters between opcode and parenthesis'
                                 }
                                 this._updateTree(op)
-                                if (this.state.ambiguity) this.state.ambiguity = false
                             }
                         }
                         else {
-                            if (!this._isInfix() && this.state.depthLevel > 0) {
-                                this.state.track.notation.push(
-                                    this.state.depthLevel,
-                                    Notations.infix
-                                )
-                            }
-                            else {
-                                if (!this.argErr) {
-                                    op.error = 
-                                        'opcodes with no parens is only allowed if wrapped by parens'
-                                }
+                            if (!this.argErr) {
+                                op.error = 
+                                    'expected parens "("'
                             }
                             op.infixOp = true
                             op.position = []
                             this._updateTree(op)
-                            if (this.state.ambiguity) this.state.ambiguity = false
                         }
                     }
                     else if (str === this.placeholder) {
@@ -1685,12 +1418,9 @@ export class Parser {
                                 Notations.prefix
                             )
                             if (!this.argErr) {
-                                op.error = this.state.ambiguity 
-                                    ? 'ambiguous expression/opcode'
-                                    : 'no closing parenthesis'
+                                op.error = 'no closing parenthesis'
                             }
                             this._updateTree(op)
-                            if (this.state.ambiguity) this.state.ambiguity = false
                         }
                         else {
                             this._updateTree({

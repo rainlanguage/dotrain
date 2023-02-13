@@ -4,7 +4,7 @@ import fs from "fs";
 import type { BytesLike } from 'ethers';
 import { isBytes, isHexString } from 'ethers/lib/utils';
 import { BigNumber, BigNumberish, ethers, utils } from 'ethers';
-import { StateConfig } from './types';
+import { ExpressionConfig } from './types';
 import stringMath from "string-math";
 import { resolve } from "path";
 import { format } from "prettier";
@@ -306,15 +306,15 @@ export function recordToMap<K extends string | number | symbol>(
 
 /**
  * @public
- * Checks 2 StateConfig objects to see if they are equal or not
+ * Checks 2 ExpressionConfig objects to see if they are equal or not
  *
- * @param config1 - first StateConfig
- * @param config2 - second StateConfig
+ * @param config1 - first ExpressionConfig
+ * @param config2 - second ExpressionConfig
  * @returns boolean
  */
 export const areEqualStateConfigs = (
-    config1: StateConfig,
-    config2: StateConfig
+    config1: ExpressionConfig,
+    config2: ExpressionConfig
 ): boolean => {
     if (config1.constants.length !== config2.constants.length) return false
     if (config1.sources.length !== config2.sources.length) return false

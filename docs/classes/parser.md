@@ -17,18 +17,18 @@ class Parser
 // to import
 import { Parser } from 'rainlang';
 
-// to execute the parsing and get parse tree object and StateConfig
+// to execute the parsing and get parse tree object and ExpressionConfig
 let parseTree;
 let stateConfig
-[ parseTree, stateConfig ] = Parser.get(textScript, customOpMeta, customMultiOutputPlaceholderChar);
+[ parseTree, stateConfig ] = Parser.get(textScript, opMeta);
 
 // to get parse tree object only
-let parseTree = Parser.getParseTree(textScript, customOpMeta, customMultiOutputPlaceholderChar);
+let parseTree = Parser.getParseTree(textScript, opMeta);
 
-// to get StateConfig only
-let stateConfig = Parser.getStateConfig(textScript, customOpMeta, customMultiOutputPlaceholderChar);
+// to get ExpressionConfig only
+let stateConfig = Parser.getExpressionConfig(textScript, opMeta);
 
-// to build StateConfig (compile) from ParseTree object or a Node or array of Node
+// to build ExpressionConfig (compile) from ParseTree object or a Node or array of Node
 let argument: Node || Node[] || ParseTree
 let stateConfig = Parser.compile(argument)
 
@@ -47,10 +47,10 @@ let stateConfig = Parser.compile(argument)
 
 |  Method | Description |
 |  --- | --- |
-|  [compile(parseTree)](./parser.md#compile-method-static-1) | Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes |
-|  [get(expression, opmeta)](./parser.md#get-method-static-1) | Method to get parse tree object and StateConfig |
+|  [compile(parseTree)](./parser.md#compile-method-static-1) | Method to get ExpressionConfig (bytes) from a Parse Tree object or a Node or array of Nodes |
+|  [get(expression, opmeta)](./parser.md#get-method-static-1) | Method to get parse tree object and ExpressionConfig |
+|  [getExpressionConfig(expression, opmeta)](./parser.md#getExpressionConfig-method-static-1) | Method to get the ExpressionConfig |
 |  [getParseTree(expression, opmeta)](./parser.md#getParseTree-method-static-1) | Method to get the parse tree object |
-|  [getStateConfig(expression, opmeta)](./parser.md#getStateConfig-method-static-1) | Method to get the StateConfig |
 
 ## Static Property Details
 
@@ -102,7 +102,7 @@ static sources: BytesLike[];
 
 ### compile(parseTree)
 
-Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes
+Method to get ExpressionConfig (bytes) from a Parse Tree object or a Node or array of Nodes
 
 <b>Signature:</b>
 
@@ -110,33 +110,33 @@ Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of
 static compile(parseTree: Node | Node[] | Record<number, Node[]> | Record<number, {
         tree: Node[];
         position: number[];
-    }>): StateConfig;
+    }>): ExpressionConfig;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  parseTree | <pre>Node \| Node[] \| Record<number, Node[]> \| Record<number, {&#010;    tree: Node[];&#010;    position: number[];&#010;}></pre> | Tree like object (Parse Tree object or a Node or array of Nodes) to get the StateConfig from |
+|  parseTree | <pre>Node \| Node[] \| Record<number, Node[]> \| Record<number, {&#010;    tree: Node[];&#010;    position: number[];&#010;}></pre> | Tree like object (Parse Tree object or a Node or array of Nodes) to get the ExpressionConfig from |
 
 <b>Returns:</b>
 
-`StateConfig`
+`ExpressionConfig`
 
-StateConfig, i.e. compiled bytes ready to be deployed
+ExpressionConfig, i.e. compiled bytes ready to be deployed
 
 <a id="get-method-static-1"></a>
 
 ### get(expression, opmeta)
 
-Method to get parse tree object and StateConfig
+Method to get parse tree object and ExpressionConfig
 
 <b>Signature:</b>
 
 ```typescript
 static get(expression: string, opmeta: Uint8Array | string | object[]): [ParseTree & {
         comments?: Comment[];
-    }, StateConfig] | string;
+    }, ExpressionConfig] | string;
 ```
 
 #### Parameters
@@ -150,9 +150,34 @@ static get(expression: string, opmeta: Uint8Array | string | object[]): [ParseTr
 
 `[ParseTree & {
         comments?: Comment[];
-    }, StateConfig] | string`
+    }, ExpressionConfig] | string`
 
-Array of parse tree object and StateConfig
+Array of parse tree object and ExpressionConfig
+
+<a id="getExpressionConfig-method-static-1"></a>
+
+### getExpressionConfig(expression, opmeta)
+
+Method to get the ExpressionConfig
+
+<b>Signature:</b>
+
+```typescript
+static getExpressionConfig(expression: string, opmeta: Uint8Array | string | object[]): ExpressionConfig | string;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  expression | `string` | the text expression |
+|  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
+
+<b>Returns:</b>
+
+`ExpressionConfig | string`
+
+A ExpressionConfig
 
 <a id="getParseTree-method-static-1"></a>
 
@@ -182,29 +207,4 @@ static getParseTree(expression: string, opmeta: Uint8Array | string | object[]):
     } | string`
 
 A parse tree object
-
-<a id="getStateConfig-method-static-1"></a>
-
-### getStateConfig(expression, opmeta)
-
-Method to get the StateConfig
-
-<b>Signature:</b>
-
-```typescript
-static getStateConfig(expression: string, opmeta: Uint8Array | string | object[]): StateConfig | string;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  expression | `string` | the text expression |
-|  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
-
-<b>Returns:</b>
-
-`StateConfig | string`
-
-A StateConfig
 

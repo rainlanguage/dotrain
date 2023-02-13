@@ -19,23 +19,23 @@ npm install --save-dev https://github.com/rouzwelt/rainlang.git
 
 
 ### **Parser**
-Parser is a compiler to generate a valid StateConfig (deployable bytes) from rain expressions.
+Parser is a compiler to generate a valid ExpressionConfig (deployable bytes) from rain expressions.
 ```typescript
 // to import
 import { Parser } from "@beehiveinnovation/rainlang";
 
-// to execute the parsing and get parse tree object and StateConfig
+// to execute the parsing and get parse tree object and ExpressionConfig
 let parseTree;
 let stateConfig;
-[ parseTree, stateConfig ] = Parser.get(expression [, customOpMeta]);
+[ parseTree, stateConfig ] = Parser.get(expression opMeta);
 
 // to get parse tree object only
-let parseTree = Parser.getParseTree(expression, [, customOpMeta]);
+let parseTree = Parser.getParseTree(expression, opMeta);
 
-// to get StateConfig only
-let stateConfig = Parser.getStateConfig(expression, [, customOpMeta]);
+// to get ExpressionConfig only
+let stateConfig = Parser.getExpressionConfig(expression, opMeta);
 
-// to build(compile) StateConfig from ParseTree object or a Node or array of Node
+// to build(compile) ExpressionConfig from ParseTree object or a Node or array of Node
 let argument: Node || Node[] || ParseTree = objectInstanceOfSpecifiedType;
 let stateConfig = Parser.compile(argument)
 ```
@@ -43,7 +43,7 @@ let stateConfig = Parser.compile(argument)
 
 ### **Formatter**
 The generator of human friendly readable source.
-Format an StateConfig/Script to a more human readable form, making easier to understand. This form allows users read exactly
+Format an ExpressionConfig to a more human readable form, making easier to understand. This form allows users read exactly
 what the Script will do, like the conditions, values used, etc. Also, anyone can learn to write their own scripts
 if use the Human Form to see the output for each combination that they made.
 
