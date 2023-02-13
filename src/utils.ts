@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Ajv from "ajv";
 import fs from "fs";
 import type { BytesLike } from 'ethers';
@@ -196,7 +195,7 @@ export function isBigNumberish(value: any): boolean {
  *
  * @param map - the map to extract from
  * @param properties - name of the properties in second item of the map elements
- * @returns a new Map
+ * @returns a new Map with extracted properties
  */
 export function extractFromMap(
     map: Map<any, any>,
@@ -226,7 +225,7 @@ export function extractFromMap(
  *
  * @param record - the record to extract from.
  * @param properties - name of the properties in value item of the key/va;ue pair of a Record object
- * @returns a new Record i.e. a new key/value pair object
+ * @returns a new Record with extracted key/value pairs
  */
 export function extractFromRecord<T extends string | number | symbol>(
     record: Record<T, any>,
@@ -255,12 +254,12 @@ export function extractFromRecord<T extends string | number | symbol>(
 
 /**
  * @public
- * Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor,
- * which are string, number or symbol.
+ * Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type 
+ * acceptable by Record constructor, which are string, number or symbol.
  *
  * @param map - The Map to conver to Record
  * @param properties - (optional) properties to pick from the second item of the Map's elements.
- * @returns a new Record (a key/value pait object)
+ * @returns a new Record from Map
  */
 export function mapToRecord<K extends string | number | symbol>(
     map: Map<K, any>,
@@ -286,12 +285,13 @@ export function mapToRecord<K extends string | number | symbol>(
 
 /**
  * @public
- * Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor,
- * which are string, number or symbol.
+ * Conver a Record (a key/value pair object) to a equivelant Map. Map keys will 
+ * be of type acceptable by Record constructor, which are string, number or symbol.
  *
  * @param record - The Record to convert to a Map
- * @param properties - (optional) properties to pick from the values of key/value pair items of the Record object.
- * @returns
+ * @param properties - (optional) properties to pick from the values of key/value 
+ * pair items of the Record object.
+ * @returns Map Object from Record
  */
 export function recordToMap<K extends string | number | symbol>(
     record: Record<K, any>,
@@ -418,7 +418,7 @@ export function constructByBits(args: {
     /**
      * The valid range the value can have after computation applied if computation is specified
      */
-    validRange?: ([number] | [number, number])[],
+    validRange?: number[][],
     /**
      * The variavle in compuation to solve for, default is "arg"
      */
@@ -426,23 +426,6 @@ export function constructByBits(args: {
 }[]): number | number[] {
     let result = 0
     const error = []
-    // const _expandBits = (bits: [number, number]) => {
-    //     const _len = bits[1] - bits[0] + 1
-    //     const _result = []
-    //     for (let i = 0; i < _len; i++) {
-    //         _result.push(bits[0] + i)
-    //     }
-    //     return _result
-    // }
-    // for (let i = 0; i < args.length; i++) {
-    //     const _range1 = _expandBits(args[i].bits)
-    //     for (let j = i + 1; j < args.length; j++) {
-    //         const _range2 = _expandBits(args[j].bits)
-    //         _range1.forEach((v1) => {
-    //             if (_range2.includes(v1)) return "error"
-    //         })
-    //     }
-    // }
     for (let i = 0; i < args.length; i++) {
         let _val = args[i].value
         const _defaultRange = 2 ** ((args[i].bits[1] - args[i].bits[0]) + 1)
@@ -473,7 +456,7 @@ export function constructByBits(args: {
                         }
                     }
                     else {
-                        if (_validRanges[j][0] <= _val && _val <= _validRanges[j][1]!) {
+                        if (_validRanges[j][0] <= _val && _val <= _validRanges[j][1]) {
                             result = 
                                 result + 
                                 Number("0b" + _val.toString(2) + "0".repeat(_offset))
@@ -497,19 +480,106 @@ export function constructByBits(args: {
  * @public
  * Validate a meta or array of metas against a schema
  *
- * @param meta - A meta object or array of meta objects (JSON.parsed from meta json file)
- * @param schema - Json schema as object (JSON.parsed) to validate
+ * @param meta - A meta object or array of meta objects or stringified format of them
+ * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
  * @returns boolean
  */
-export const validateMeta = (meta: any, schema: any): boolean => {
-    const ajv = new Ajv();
-    const validate = ajv.compile(schema);
-    if (meta.length) {
-        for (let i = 0; i < meta.length; i++) {
-            if (!validate(meta[i])) return false;
+export const validateMeta = (
+    meta: object | object[] | string,
+    schema: object | string
+): boolean => {
+    const _expandBits = (bits: [number, number]) => {
+        const _len = bits[1] - bits[0] + 1
+        const _result = []
+        for (let i = 0; i < _len; i++) {
+            _result.push(bits[0] + i)
         }
-    } else {
-        if (!validate(meta)) return false;
+        return _result
+    }
+    let _meta
+    let _schema
+    if (typeof meta === "string") _meta = JSON.parse(meta)
+    else _meta = meta
+    if (typeof schema === "string") _schema = JSON.parse(schema)
+    else _schema = schema
+    const ajv = new Ajv();
+    const validate = ajv.compile(_schema);
+    if (!Array.isArray(_meta)) _meta = [_meta]
+
+    const _allAliases = []
+    for (let i = 0; i < _meta.length; i++) {
+
+        // validate by schema
+        if (!validate(_meta[i])) return false;
+
+        // in-depth validation for op meta
+        if ("operand" in _meta[i] && "inputs" in _meta[i] && "outputs" in _meta[i]) {
+
+            // cache all aliases for check across all ops
+            _allAliases.push(_meta[i].name)
+            if (_meta[i].aliases) _allAliases.push(..._meta[i].aliases)
+
+            // check for operand args validity
+            if (typeof _meta[i].operand !== "number") {
+                let check = true
+                for (let j = 0; j < _meta[i].operand.length; j++) {
+                    // check computation validity
+                    if ("computation" in _meta[i].operand[j]) {
+                        let _comp = _meta[i].operand[j].computation
+                        while (_comp.includes("arg")) _comp = _comp.replace("arg", "30")
+                        try { stringMath(_comp) }
+                        catch { return false }
+                    }
+                    // bits range validity
+                    if (_meta[i].operand[j].bits[0] > _meta[i].operand[j].bits[1]) return false
+                    // check bits overlap
+                    const _range1 = _expandBits(_meta[i].operand[j].bits)
+                    for (let k = j + 1; k < _meta[i].operand.length; k++) {
+                        const _range2 = _expandBits(_meta[i].operand[k].bits)
+                        _range1.forEach(v => {
+                            if (_range2.includes(v)) check = false
+                        })
+                        if (!check) return false
+                    }
+                }
+            }
+
+            // check for inputs bits and computation validity
+            if (typeof _meta[i].inputs !== "number") {
+                // check bits range validity
+                if ("bits" in _meta[i].inputs) {
+                    if (_meta[i].inputs.bits[0] > _meta[i].inputs.bits[1]) return false
+                }
+                // check computation validity
+                if ("computation" in _meta[i].inputs) {
+                    let _comp = _meta[i].inputs.computation
+                    while (_comp.includes("bits")) _comp = _comp.replace("bits", "30")
+                    try { stringMath(_comp) }
+                    catch { return false }
+                }
+            }
+
+            // check for outputs bits and computation validity
+            if (typeof _meta[i].outputs !== "number") {
+                // check bits range validity
+                if (_meta[i].outputs.bits[0] > _meta[i].outputs.bits[1]) return false
+                // check computation validity
+                if ("computation" in _meta[i].outputs) {
+                    let _comp = _meta[i].outputs.computation
+                    while (_comp.includes("bits")) _comp = _comp.replace("bits", "30")
+                    try { stringMath(_comp) }
+                    catch { return false }
+                }
+            }
+        }
+    }
+
+    // check for overlap among all aliases
+    if (_allAliases.length) {
+        while (_allAliases.length) {
+            const _item = _allAliases.splice(0, 1)[0]
+            if (_allAliases.includes(_item)) return false;
+        }
     }
     return true;
 };
@@ -518,15 +588,16 @@ export const validateMeta = (meta: any, schema: any): boolean => {
    * @public
    * Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment
    *
-   * @param meta - A meta object or array of meta objects (JSON.parsed from meta json file)
-   * @param schema - (optional) Json schema as object (JSON.parsed) to validate
-   * @param path - (optional) The path to write the file to if generating an output json file is desired, example: path/to/name.json
+   * @param meta - A meta object or array of meta objects or stringified format of them
+   * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
+   * @param path - (optional) The path to write the file to if generating an output 
+   * json file is desired, example: path/to/name.json
    * @returns Bytes as HexString
    */
 export const bytesFromMeta = (
-    meta: any,
-    schema?: any,
-    path?: string
+    meta: object | object[] | string,
+    schema: object | string,
+    path = ""
 ): string => {
     const _write = (_meta: any) => {
         if (path) {
@@ -539,34 +610,37 @@ export const bytesFromMeta = (
             }
         }
     };
-  
-    const formatted = format(JSON.stringify(meta, null, 4), { parser: "json" });
-    const bytes = Uint8Array.from(deflateSync(formatted));
-    let hex = "0x";
-    for (let i = 0; i < bytes.length; i++) {
-        hex = hex + bytes[i].toString(16).padStart(2, "0");
-    }
-    if (schema) {
-        if (!validateMeta(meta, schema))
+    let _meta
+    let _schema
+    if (typeof meta === "string") _meta = JSON.parse(meta)
+    else _meta = meta
+    if (typeof schema === "string") _schema = JSON.parse(schema)
+    else _schema = schema
+    if (_schema) {
+        if (!validateMeta(_meta, _schema))
             throw new Error("provided meta object is not valid");
     }
-    if (path && path.length) _write(formatted);
+    const formatted = format(JSON.stringify(_meta, null, 4), { parser: "json" });
+    const bytes = Uint8Array.from(deflateSync(formatted));
+    const hex = hexlify(bytes, { allowMissingPrefix: true })
+    if (path.length) _write(formatted);
     return hex;
 };
-  
+
 /**
    * @public
    * Decompress and convert bytes to meta
    *
    * @param bytes - Bytes to decompress and convert to json
-   * @param schema - (optional) Json schema as object (JSON.parsed) to validate
-   * @param path - (optional) The path to write the file to if generating an output json file is desired, example: path/to/name.json
+   * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
+   * @param path - (optional) The path to write the file to if generating an output 
+   * json file is desired, example: path/to/name.json
    * @returns meta content as object
    */
 export const metaFromBytes = (
-    bytes: string | Uint8Array,
-    schema?: any,
-    path?: string
+    bytes: BytesLike,
+    schema: object | string,
+    path = ""
 ) => {
     const _write = (_meta: any) => {
         if (path) {
@@ -579,24 +653,15 @@ export const metaFromBytes = (
             }
         }
     };
-  
-    let _uint8Arr: Uint8Array;
-    if (typeof bytes === "string") {
-        if (bytes.startsWith("0x")) bytes = bytes.slice(2);
-        const _bytesArr = [];
-        for (let i = 0; i < bytes.length; i += 2) {
-            _bytesArr.push(Number("0x" + bytes.slice(i, i + 2)));
-        }
-        _uint8Arr = Uint8Array.from(_bytesArr);
-    } else {
-        _uint8Arr = bytes;
-    }
-    const _meta = format(inflateSync(_uint8Arr).toString(), { parser: "json" });
-  
-    if (schema) {
-        if (!validateMeta(JSON.parse(_meta), schema))
+    let _schema
+    if (typeof schema === "string") _schema = JSON.parse(schema)
+    else _schema = schema
+    const _bytesArr = arrayify(bytes, { allowMissingPrefix: true })
+    const _meta = format(inflateSync(_bytesArr).toString(), { parser: "json" });
+    if (_schema) {
+        if (!validateMeta(JSON.parse(_meta), _schema))
             throw new Error("invalid meta");
     }
-    if (path && path.length) _write(_meta);
+    if (path.length) _write(_meta);
     return JSON.parse(_meta);
 };

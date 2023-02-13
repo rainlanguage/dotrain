@@ -15,10 +15,7 @@ class Parser
 
 ```typescript
 // to import
-import { Parser } from 'rain-sdk';
-
-// to set the custom opmeta
-Parser.set(opmeta)
+import { Parser } from 'rainlang';
 
 // to execute the parsing and get parse tree object and StateConfig
 let parseTree;
@@ -137,9 +134,9 @@ Method to get parse tree object and StateConfig
 <b>Signature:</b>
 
 ```typescript
-static get(expression: string, opmeta?: Uint8Array | string): [ParseTree | (ParseTree & {
-        'comments': Comment[];
-    }), StateConfig] | string;
+static get(expression: string, opmeta: Uint8Array | string | object[]): [ParseTree & {
+        comments?: Comment[];
+    }, StateConfig] | string;
 ```
 
 #### Parameters
@@ -147,13 +144,13 @@ static get(expression: string, opmeta?: Uint8Array | string): [ParseTree | (Pars
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `Uint8Array \| string` | (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string |
+|  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
 
 <b>Returns:</b>
 
-`[ParseTree | (ParseTree & {
-        'comments': Comment[];
-    }), StateConfig] | string`
+`[ParseTree & {
+        comments?: Comment[];
+    }, StateConfig] | string`
 
 Array of parse tree object and StateConfig
 
@@ -166,9 +163,9 @@ Method to get the parse tree object
 <b>Signature:</b>
 
 ```typescript
-static getParseTree(expression: string, opmeta?: Uint8Array | string): ParseTree | (ParseTree & {
-        'comments': Comment[];
-    }) | string;
+static getParseTree(expression: string, opmeta: Uint8Array | string | object[]): ParseTree & {
+        comments?: Comment[];
+    } | string;
 ```
 
 #### Parameters
@@ -176,13 +173,13 @@ static getParseTree(expression: string, opmeta?: Uint8Array | string): ParseTree
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `Uint8Array \| string` | (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string |
+|  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
 
 <b>Returns:</b>
 
-`ParseTree | (ParseTree & {
-        'comments': Comment[];
-    }) | string`
+`ParseTree & {
+        comments?: Comment[];
+    } | string`
 
 A parse tree object
 
@@ -195,7 +192,7 @@ Method to get the StateConfig
 <b>Signature:</b>
 
 ```typescript
-static getStateConfig(expression: string, opmeta?: Uint8Array | string): StateConfig | string;
+static getStateConfig(expression: string, opmeta: Uint8Array | string | object[]): StateConfig | string;
 ```
 
 #### Parameters
@@ -203,7 +200,7 @@ static getStateConfig(expression: string, opmeta?: Uint8Array | string): StateCo
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `Uint8Array \| string` | (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string |
+|  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
 
 <b>Returns:</b>
 

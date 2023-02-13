@@ -9,7 +9,5 @@ Specific the configuration of the generation method
 ```typescript
 type Config = {
     pretty?: boolean;
-    tags?: string[];
-    enableTagging?: boolean;
 };
 ```

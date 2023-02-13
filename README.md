@@ -24,18 +24,6 @@ Parser is a compiler to generate a valid StateConfig (deployable bytes) from rai
 // to import
 import { Parser } from "@beehiveinnovation/rainlang";
 
-// to set the custom opmeta, if not set the default standard rain
-// OpMeta will be used
-Parser.set(opmeta);
-
-// to set the custom details of GTE, LTE and INEQ opcodes.
-// NOTE: LTE,  GTE and INEQ are not native Rain Standard opcodes, so
-// are provided virtually by Parser itself and their properties such as
-// the name, description, etc can be modified by the user
-Parser.setGteMeta([, name [, description [, data [, description]);
-Parser.setLteMeta([, name [, description [, data [, description]);
-Parser.setIneqMeta([, name [, description [, data [, description]);
-
 // to execute the parsing and get parse tree object and StateConfig
 let parseTree;
 let stateConfig;

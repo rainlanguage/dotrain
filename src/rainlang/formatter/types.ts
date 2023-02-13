@@ -11,11 +11,11 @@ export type Config = {
     /**
      * Tags/Names/Aliases for each individual item on the final stack such as Price and Quantity of a sale script (should be passed in order)
      */
-    tags?: string[];
+    // tags?: string[];
     /**
      * True if the result needs to be tagged and optimized for the RuleBuilder script generator
      */
-    enableTagging?: boolean;
+    // enableTagging?: boolean;
 }
 
 /**

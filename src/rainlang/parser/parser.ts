@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { BigNumberish, BytesLike, ethers } from 'ethers';
-import RainterpreterOpMeta from "../../rainterpreter/allStandardOpMeta.json";
 import OpMetaSchema from "../../schema/op.meta.schema.json";
 import { 
     OperandArgs, 
@@ -50,10 +48,7 @@ import {
  * @example
  * ```typescript
  * // to import
- * import { Parser } from 'rain-sdk';
- *
- * // to set the custom opmeta
- * Parser.set(opmeta)
+ * import { Parser } from 'rainlang';
  *
  * // to execute the parsing and get parse tree object and StateConfig
  * let parseTree;
@@ -88,7 +83,6 @@ export class Parser {
     private static pushes: OutputMeta[] = []
     private static operandMetas: OperandMeta[] = []
     private static aliases: (string[] | undefined)[] = []
-    // private static paramsValidRange: ParamsValidRange[] = []
     private static state: State = {
         parse: {
             tree: [],
@@ -116,21 +110,21 @@ export class Parser {
      * Method to get parse tree object and StateConfig
      *
      * @param expression - the text expression
-     * @param opmeta - (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string
+     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
      * @returns Array of parse tree object and StateConfig
      */
     public static get(
         expression: string,
-        opmeta?: Uint8Array | string
-    ): [ParseTree | (ParseTree & { 'comments': Comment[] }), StateConfig] | string {
-        let _opmeta = RainterpreterOpMeta as OpMeta[]
-        if (opmeta) {
-            if (typeof opmeta === "string" && !isBigNumberish(opmeta)) {
-                const _meta = JSON.parse(opmeta)
-                if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta
-                else throw new Error("invalid op meta")
-            }
-            else _opmeta = metaFromBytes(opmeta, OpMetaSchema)
+        opmeta: Uint8Array | string | object[]
+    ): [ParseTree & { comments?: Comment[] }, StateConfig] | string {
+        let _opmeta: OpMeta[]
+        if (isBigNumberish(opmeta)) {
+            _opmeta = metaFromBytes(opmeta as BytesLike, OpMetaSchema) as OpMeta[]
+        }
+        else {
+            const _meta = typeof opmeta === "string" ? JSON.parse(opmeta) : opmeta
+            if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta as OpMeta[]
+            else throw new Error("invalid op meta")
         }
         try {
             this._parse(expression, _opmeta)
@@ -158,21 +152,21 @@ export class Parser {
      * Method to get the parse tree object
      *
      * @param expression - the text expression
-     * @param opmeta - (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string
+     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
      * @returns A parse tree object
      */
     public static getParseTree(
         expression: string,
-        opmeta?: Uint8Array | string
-    ): ParseTree | (ParseTree & { 'comments': Comment[] }) | string {
-        let _opmeta = RainterpreterOpMeta as OpMeta[]
-        if (opmeta) {
-            if (typeof opmeta === "string" && !isBigNumberish(opmeta)) {
-                const _meta = JSON.parse(opmeta)
-                if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta
-                else throw new Error("invalid op meta")
-            }
-            else _opmeta = metaFromBytes(opmeta, OpMetaSchema)
+        opmeta: Uint8Array | string | object[]
+    ): ParseTree & { comments?: Comment[] } | string {
+        let _opmeta: OpMeta[]
+        if (isBigNumberish(opmeta)) {
+            _opmeta = metaFromBytes(opmeta as BytesLike, OpMetaSchema) as OpMeta[]
+        }
+        else {
+            const _meta = typeof opmeta === "string" ? JSON.parse(opmeta) : opmeta
+            if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta as OpMeta[]
+            else throw new Error("invalid op meta")
         }
         try {
             this._parse(expression, _opmeta)
@@ -194,21 +188,21 @@ export class Parser {
      * Method to get the StateConfig
      *
      * @param expression - the text expression
-     * @param opmeta - (optional) Ops Meta as bytes ie hex string or Uint8Array or json content as string
+     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
      * @returns A StateConfig
      */
     public static getStateConfig(
         expression: string,
-        opmeta?: Uint8Array | string
+        opmeta: Uint8Array | string | object[]
     ): StateConfig | string {
-        let _opmeta = RainterpreterOpMeta as OpMeta[]
-        if (opmeta) {
-            if (typeof opmeta === "string" && !isBigNumberish(opmeta)) {
-                const _meta = JSON.parse(opmeta)
-                if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta
-                else throw new Error("invalid op meta")
-            }
-            else _opmeta = metaFromBytes(opmeta, OpMetaSchema)
+        let _opmeta: OpMeta[]
+        if (isBigNumberish(opmeta)) {
+            _opmeta = metaFromBytes(opmeta as BytesLike, OpMetaSchema) as OpMeta[]
+        }
+        else {
+            const _meta = typeof opmeta === "string" ? JSON.parse(opmeta) : opmeta
+            if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta as OpMeta[]
+            else throw new Error("invalid op meta")
         }
         try {
             this._parse(expression, _opmeta)
@@ -260,8 +254,6 @@ export class Parser {
         const sources: BytesLike[] = []
         let sourcesCache: BytesLike[] = []
         let nodes : Node[][]
-        // let argOffset: number[] = []
-        // let isRecord = false
 
         // convertion to a standard format
         if ('splice' in parseTree) {
@@ -292,6 +284,7 @@ export class Parser {
             }
         }
 
+        // compile from parsed tree
         for (let i = 0; i < nodes.length; i++) {
             if (nodes[i].length === 0) sourcesCache = []
             for (let j = 0; j < nodes[i].length; j++) {
@@ -398,7 +391,6 @@ export class Parser {
         this.pushes = opmeta.map(v => v.outputs)
         this.operandMetas = opmeta.map(v => v.operand)
         this.aliases = opmeta.map(v => v.aliases)
-        // this.paramsValidRange = opmeta.map(v => v.paramsValidRange)
     }
 
     /**
@@ -713,10 +705,7 @@ export class Parser {
                                             ],
                                             parens: [],
                                             parameters: [],
-                                            error: 
-                                            // this.state.track.operandArgs.errorCache.length > 0
-                                            //     ? this.state.track.operandArgs.errorCache.pop() 
-                                                'unknown opcode',
+                                            error: 'unknown opcode',
                                         })
                                     }
                                     this.state.depthLevel++
@@ -898,7 +887,6 @@ export class Parser {
                                 ]
                             })
                         }
-                        // break
                     }
                 }
 

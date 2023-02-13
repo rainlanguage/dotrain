@@ -7,5 +7,5 @@ Validate a meta or array of metas against a schema
 <b>Signature:</b>
 
 ```typescript
-validateMeta: (meta: any, schema: any) => boolean
+validateMeta: (meta: object | object[] | string, schema: object | string) => boolean
 ```

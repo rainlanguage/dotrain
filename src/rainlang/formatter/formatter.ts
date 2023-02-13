@@ -1,7 +1,6 @@
 import { BytesLike, BigNumber, ethers } from 'ethers';
 import { StateConfig, OpMeta, InputMeta, OutputMeta, OperandArgs } from '../../types';
 import { arrayify, extractByBits, isBigNumberish, metaFromBytes, validateMeta } from '../../utils';
-import RainterpreterOpMeta from "../../rainterpreter/allStandardOpMeta.json";
 import { Config, PrettifyConfig } from './types';
 import OpMetaSchema from "../../schema/op.meta.schema.json";
 import { Equation, Expression, parse } from 'algebra.js';
@@ -17,18 +16,23 @@ import { Equation, Expression, parse } from 'algebra.js';
  * if use the Human Form to see the output for each combination that they made.
  */
 export class Formatter {
-
-    private static pretty: boolean
-    private static opmeta: OpMeta[] = RainterpreterOpMeta as OpMeta[]
+    private static opmeta: OpMeta[]
 
     /**
      * @public
      * Method to set the opmeta with more than AllStandardOps opcodes or with other name/aliases for this instance of the Formatter
      *
-     * @param opmeta_ - The OpMeta array
+     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
      */
-    public static set(opmeta_: OpMeta[]) {
-        this.opmeta = opmeta_
+    public static set(opmeta: string | Uint8Array | object[]) {
+        if (isBigNumberish(opmeta)) {
+            this.opmeta = metaFromBytes(opmeta as BytesLike, OpMetaSchema) as OpMeta[]
+        }
+        else {
+            const _meta = typeof opmeta === "string" ? JSON.parse(opmeta) : opmeta
+            if (validateMeta(_meta, OpMetaSchema)) this.opmeta = _meta as OpMeta[]
+            else throw new Error("invalid op meta")
+        }
     }
 
     /**
@@ -36,40 +40,31 @@ export class Formatter {
      * Obtain the friendly output from an StateConfig/script.
      * 
      * @param _state - The StateConfig/script to generate the friendly version
+     * @param _opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
      * @param _config - The configuration that will run the generator
      * @returns
      */
     public static get(
         _state: StateConfig,
-        _opmeta?: string | Uint8Array,
+        _opmeta: string | Uint8Array | object[],
         _config: Config = {
             pretty: false,
-            tags: undefined,
-            enableTagging: false,
+            // tags: undefined,
+            // enableTagging: false,
         }
     ): string {
-        if (_opmeta) {
-            if (typeof _opmeta === "string" && !isBigNumberish(_opmeta)) {
-                const _meta = JSON.parse(_opmeta)
-                if (validateMeta(_meta, OpMetaSchema)) this.opmeta = _meta as OpMeta[]
-                else throw new Error("invalid op meta")
-            }
-            else this.opmeta = metaFromBytes(_opmeta, OpMetaSchema) as OpMeta[]
-        }   
-        this.pretty = _config.pretty ? true : false
+        this.set(_opmeta)
         const _constants: string[] = []
-
         for (const item of _state.constants) {
             _constants.push(BigNumber.from(item).toHexString())
         }
-
         const _result = this._format(
             _state.sources,
             _constants,
-            _config.tags,
-            _config.enableTagging
+            // _config.tags,
+            // _config.enableTagging
         )
-        return this.pretty ? this.prettify(_result) : _result
+        return _config.pretty ? this.prettify(_result) : _result
     }
 
     /**
@@ -135,26 +130,26 @@ export class Formatter {
         return _expressions.join('\n')
     }
 
+    // * @param tags - (optional) Tags/names/aliases for individual items in final results (should be passed in order)
+    // * @param enableTagging - True if the result needs to be tagged and optimized for the RuleBuilder script generator
+
     /**
      * The main workhorse of the Human Friendly Readable source that builds the whole text
      *
      * @param sources - The StateConfig sources
      * @param constants - The StateConfig constants all in hex string format
-     * @param tags - (optional) Tags/names/aliases for individual items in final results (should be passed in order)
-     * @param enableTagging - True if the result needs to be tagged and optimized for the RuleBuilder script generator
      * @returns A human friendly readable text of the passed script
      */
     private static _format = (
         sources: BytesLike[],
         constants: string[],
-        tags?: string[],
-        enableTagging = false,
+        // tags?: string[],
+        // enableTagging = false,
     ): string => {
         let _stack: string[] = []
         const _finalStack: string[] = []
-        const _zipmapStack: { [key: number]: string } = {}
-        const useableTags = tags
-        let counter = 0
+        //const useableTags = tags
+        //let counter = 0
 
         // start formatting
         for (let i = 0; i < sources.length; i++) {
@@ -241,16 +236,16 @@ export class Formatter {
             }
 
             // handle sources taggings if enabled by caller
-            if (enableTagging && !Object.keys(_zipmapStack).includes(i.toString())) {
-                for (let j = 0; j < _stack.length; j++) {
-                    const tempTag = useableTags?.shift()
-                    _stack[j] = tempTag
-                        ? `${tempTag}: {${_stack[j]}}`
-                        : `Item${counter}: {${_stack[j]}}`
+            // if (enableTagging) {
+            //     for (let j = 0; j < _stack.length; j++) {
+            //         const tempTag = useableTags?.shift()
+            //         _stack[j] = tempTag
+            //             ? `${tempTag}: {${_stack[j]}}`
+            //             : `Item${counter}: {${_stack[j]}}`
 
-                    counter++
-                }
-            }
+            //         counter++
+            //     }
+            // }
 
             // cache the LHS elements
             for (let j = 0; j < _stack.length - zeroOpCounter; j++) lhs.push('_')

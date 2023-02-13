@@ -21,5 +21,5 @@ function extractFromRecord<T extends string | number | symbol>(record: Record<T,
 
 `Record<T, any>`
 
-a new Record i.e. a new key/value pair object
+a new Record with extracted key/value pairs
 
