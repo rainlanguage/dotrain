@@ -293,7 +293,6 @@ export class Parser {
                 if ('value' in node) {
                     if (isBigNumberish(node.value)) {
                         if (constants.includes(node.value)) {
-                            console.log(this.names.indexOf("read-memory"),)
                             sourcesCache.push(
                                 op(
                                     this.names.indexOf("read-memory"),
