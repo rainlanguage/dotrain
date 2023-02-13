@@ -386,9 +386,7 @@ export function extractByBits(
         .join("")
     )
     if (computation) {
-        while (computation.includes(_var)) {
-            computation = computation.replace(_var, _extractedVal.toString())
-        }
+        computation = computation.replace(new RegExp(_var, "g"), _extractedVal.toString())
         const _result = stringMath(computation, (_err, _res) => _res)
         return _result !== null ? _result : NaN;
     }
@@ -432,10 +430,9 @@ export function constructByBits(args: {
         const _offset = args[i].bits[0] - 0
         let _eq = args[i].computation
         if (_eq) {
-            const _var = args[i].computationVar ? args[i].computationVar : "arg"
-            while (_eq.includes(_var!)) {
-                _eq = _eq.replace(_var!, _val.toString())
-            }
+            let _var = "arg"
+            if (args[i].computationVar) _var = args[i].computationVar as string
+            _eq = _eq.replace(new RegExp(_var, "g"), _val.toString())
             const _res = stringMath(_eq, (_err, _res) => _res)
             if (_res !== null) _val = _res
             else  {
@@ -526,7 +523,7 @@ export const validateMeta = (
                     // check computation validity
                     if ("computation" in _meta[i].operand[j]) {
                         let _comp = _meta[i].operand[j].computation
-                        while (_comp.includes("arg")) _comp = _comp.replace("arg", "30")
+                        _comp = _comp.replace(/arg/g, "30")
                         try { stringMath(_comp) }
                         catch { return false }
                     }
@@ -553,7 +550,7 @@ export const validateMeta = (
                 // check computation validity
                 if ("computation" in _meta[i].inputs) {
                     let _comp = _meta[i].inputs.computation
-                    while (_comp.includes("bits")) _comp = _comp.replace("bits", "30")
+                    _comp = _comp.replace(/bits/g, "30")
                     try { stringMath(_comp) }
                     catch { return false }
                 }
@@ -566,7 +563,7 @@ export const validateMeta = (
                 // check computation validity
                 if ("computation" in _meta[i].outputs) {
                     let _comp = _meta[i].outputs.computation
-                    while (_comp.includes("bits")) _comp = _comp.replace("bits", "30")
+                    _comp = _comp.replace(/bits/g, "30")
                     try { stringMath(_comp) }
                     catch { return false }
                 }

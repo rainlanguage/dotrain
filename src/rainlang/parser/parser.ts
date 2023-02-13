@@ -472,10 +472,10 @@ export class Parser {
         if (script.length) {
 
             // ----------- remove indents -----------
-            script = script.replace(/\n/g, '')
+            script = script.replace(/\n/g, ' ')
 
             // ----------- convert html &nbps to standard whitespace -----------
-            script = script.replace(/&nbsp/g, '')
+            script = script.replace(/&nbsp/g, ' ')
 
             // ----------- extract comments if any exists -----------
             if(script.includes('/*')) {
