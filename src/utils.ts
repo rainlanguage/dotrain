@@ -435,37 +435,36 @@ export function constructByBits(args: {
             _eq = _eq.replace(new RegExp(_var, "g"), _val.toString())
             const _res = stringMath(_eq, (_err, _res) => _res)
             if (_res !== null) _val = _res
-            else  {
-                error.push(i)
-                break
-            }
+            else error.push(i)
         }
         if (_val < _defaultRange) {
             const _validRanges = args[i].validRange
             if (_validRanges) {
+                let check1 = true
+                let check2 = true
                 for (let j = 0; j < _validRanges.length; j++) {
                     if (_validRanges[j].length === 1) {
-                        if (_val === _validRanges[j][0]) {
+                        if (check2 && _val === _validRanges[j][0]) {
+                            check1 = false
+                            check2 = false
                             result = 
                                 result + 
                                 Number("0b" + _val.toString(2) + "0".repeat(_offset))
-                            break
                         }
                     }
                     else {
-                        if (_validRanges[j][0] <= _val && _val <= _validRanges[j][1]) {
+                        if (check2 && _validRanges[j][0] <= _val && _val <= _validRanges[j][1]) {
+                            check1 = false
+                            check2 = false
                             result = 
                                 result + 
                                 Number("0b" + _val.toString(2) + "0".repeat(_offset))
-                            break
                         }
                     }
                 }
+                if (check1) error.push(i)
             }
-            else {
-                result = result + Number("0b" + _val.toString(2) + "0".repeat(_offset))
-                break
-            }
+            else result = result + Number("0b" + _val.toString(2) + "0".repeat(_offset))
         }
         else error.push(i)
     }
