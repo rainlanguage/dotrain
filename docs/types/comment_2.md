@@ -6,9 +6,8 @@
 <b>Signature:</b>
 
 ```typescript
-type Comment = Error | {
+type Comment = {
     comment: string;
     position: number[];
-    error?: string;
 };
 ```

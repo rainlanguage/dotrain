@@ -14,7 +14,6 @@
 |  Enumeration | Description |
 |  --- | --- |
 |  [MemoryType](./enums/memorytype.md) |  |
-|  [Notations](./enums/notations.md) | Expression Notations |
 
 ## Functions
 
@@ -59,7 +58,7 @@
 |  [Comment\_2](./types/comment_2.md) |  |
 |  [ComputedOutput](./types/computedoutput.md) | Data type for computed output |
 |  [Config](./types/config.md) | Specific the configuration of the generation method |
-|  [Error\_2](./types/error_2.md) | Type of Parser's Error node |
+|  [Diagnostic](./types/diagnostic.md) | Type of Parser's Diagnostic (error) |
 |  [ExpressionConfig](./types/expressionconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
 |  [InputArgs](./types/inputargs.md) | Data type for input argguments |
 |  [InputMeta](./types/inputmeta.md) | Data type of opcode's inputs that determines the number of inputs an opcode has and provide information about them |

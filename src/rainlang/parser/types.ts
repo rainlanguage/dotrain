@@ -1,23 +1,13 @@
 import { BigNumberish } from "ethers"
 
-/**
- * @public
- * Expression Notations
- */
-export enum Notations {
-    prefix,
-    postfix,
-    infix,
-}
 
 /**
  * @public
- * Type of Parser's Error node
+ * Type of Parser's Diagnostic (error)
  */
-export type Error = {
-    error: string;
+export type Diagnostic = {
+    msg: string;
     position: number[];
-    tag?: Tag;
 };
 
 /**
@@ -27,7 +17,6 @@ export type Error = {
 export type Value = {
     value: BigNumberish;
     position: number[];
-    error?: string;
     tag?: Tag;
 };
 
@@ -38,6 +27,7 @@ export type Value = {
 export type Op = {
     opcode: {
         name: string;
+        description: string;
         position: number[];
     };
     operand: number;
@@ -45,10 +35,16 @@ export type Op = {
     position: number[];
     parens: number[];
     parameters: Node[];
-    data?: any;
-    error?: string;
-    infixOp?: boolean;
-    tag?: Tag;
+    operandArgs?: {
+        position: number[];
+        args: {
+            value: number;
+            name: string;
+            position: number[];
+            description?: string;
+        }[];
+    };
+    tags?: Tag[];
 };
 
 /**
@@ -57,24 +53,22 @@ export type Op = {
 export type Tag = {
     name: string;
     position: number[];
-    error?: string;
     tag?: Tag;
 }
 
 /**
  * @public
  */
-export type Comment = Error | {
+export type Comment = {
     comment: string;
     position: number[];
-    error?: string;
 }
 
 /**
  * @public
  * Type of Parser's Node
  */
-export type Node = Error | Value | Op | Tag;
+export type Node = Value | Op | Tag;
 
 /**
  * @public
@@ -84,18 +78,11 @@ export type State = {
     parse: {
         tree: Node[];
         tags: Tag[][];
-        multiOutputCache: (Op | Value)[][];
     };
     track: {
-        notation: number[];
         parens: {
             open: number[];
             close: number[];
-        };
-        operandArgs: {
-            cache: number[][];
-            errorCache: string[];
-            lenCache: number[];
         };
     };
     depthLevel: number;
@@ -107,5 +94,5 @@ export type State = {
 */
 export type ParseTree = Record<
     string,
-    { tree: Node[]; position: number[] }
+    { tree: Node[]; position: number[]; }
 >;

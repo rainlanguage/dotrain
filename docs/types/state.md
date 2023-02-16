@@ -11,18 +11,11 @@ type State = {
     parse: {
         tree: Node[];
         tags: Tag[][];
-        multiOutputCache: (Op | Value)[][];
     };
     track: {
-        notation: number[];
         parens: {
             open: number[];
             close: number[];
-        };
-        operandArgs: {
-            cache: number[][];
-            errorCache: string[];
-            lenCache: number[];
         };
     };
     depthLevel: number;
