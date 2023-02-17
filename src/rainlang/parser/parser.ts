@@ -1067,7 +1067,6 @@ export class Parser {
      * Method that consumes the words from the expression and updates the parse tree with their Node type
      */
     private static _consume(entry: number): void {
-        //if (this.exp.length > 0) {
         const _tmp = this._findIndex(this.exp)
         const _index = _tmp < 0 ? this.exp.length : _tmp
         const _word = this.exp.slice(0, _index)
@@ -1113,7 +1112,7 @@ export class Parser {
             }
             if (ethers.constants.MaxUint256.lt(_val)) {
                 this.diagnostics.push({
-                    msg: "value greater than 32 bits in size",
+                    msg: "value greater than 32 bytes in size",
                     position: [..._wordPos]
                 })
             }
