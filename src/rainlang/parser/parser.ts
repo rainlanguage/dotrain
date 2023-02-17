@@ -690,7 +690,7 @@ export class Parser {
 
                         // ----------- validating RHS against LHS -----------
                         const _outputCount = this._countOutputs(
-                            this.state.parse.tree, 
+                            [...this.state.parse.tree], 
                             _treeOffset
                         )
                         if (!isNaN(_outputCount)) {
