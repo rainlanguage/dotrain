@@ -51,13 +51,13 @@ import {
  * // to execute the parsing and get parse tree object and ExpressionConfig
  * let parseTree;
  * let expressionConfig
- * [ parseTree, expressionConfig ] = Parser.get(textScript, opMeta);
+ * [ parseTree, expressionConfig ] = Parser.get(textScript, opMeta, callback);
  *
  * // to get parse tree object only
- * let parseTree = Parser.getParseTree(textScript, opMeta);
+ * let parseTree = Parser.getParseTree(textScript, opMeta, callback);
  *
  * // to get ExpressionConfig only
- * let expressionConfig = Parser.getExpressionConfig(textScript, opMeta);
+ * let expressionConfig = Parser.getExpressionConfig(textScript, opMeta, callback);
  *
  * // to build ExpressionConfig (compile) from ParseTree object or a Node or array of Node
  * let argument: Node || Node[] || ParseTree
@@ -103,13 +103,13 @@ export class Parser {
      *
      * @param expression - the text expression
      * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
-     * @param callback - (optional) A callback fn to handle runtime errors
+     * @param callback - (optional) A callback fn to handle diagnotics and runtime errors
      * @returns Array of parse tree object and ExpressionConfig
      */
     public static get(
         expression: string,
         opmeta: Uint8Array | string | object[],
-        callback?: (error: Error) => void
+        callback?: (diagnostics: Diagnostic[], error?: Error) => void
     ): [
         ParseTree & { diagnostics: Diagnostic[], comments: Comment[] }, 
         (ExpressionConfig | undefined)
@@ -125,6 +125,7 @@ export class Parser {
         }
         try {
             this._parse(expression, _opmeta)
+            if (callback) callback(this.diagnostics)
             return [
                 {
                     ... this.parseTree as ParseTree,
@@ -135,7 +136,7 @@ export class Parser {
             ]
         }
         catch (err) {
-            if (callback) callback(err as Error)
+            if (callback) callback(this.diagnostics, err as Error)
             else console.log(err)
             return undefined
         }
@@ -147,13 +148,13 @@ export class Parser {
      *
      * @param expression - the text expression
      * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
-     * @param callback - (optional) A callback fn to handle runtime errors
+     * @param callback - (optional) A callback fn to handle diagnotics and runtime errors
      * @returns A parse tree object
      */
     public static getParseTree(
         expression: string,
         opmeta: Uint8Array | string | object[],
-        callback?: (error: Error) => void
+        callback?: (diagnostics: Diagnostic[], error?: Error) => void
     ): ParseTree & { diagnostics: Diagnostic[], comments: Comment[] } | undefined {
         let _opmeta: OpMeta[]
         if (isBigNumberish(opmeta)) {
@@ -167,6 +168,7 @@ export class Parser {
         
         try {
             this._parse(expression, _opmeta)
+            if (callback) callback(this.diagnostics)
             return {
                 ...this.parseTree as ParseTree,
                 comments: this.comments,
@@ -174,7 +176,7 @@ export class Parser {
             } as any
         }
         catch (err) {
-            if (callback) callback(err as Error)
+            if (callback) callback(this.diagnostics, err as Error)
             else console.log(err)
             return undefined
         }
@@ -186,13 +188,13 @@ export class Parser {
      *
      * @param expression - the text expression
      * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
-     * @param callback - (optional) A callback fn to handle runtime errors
+     * @param callback - (optional) A callback fn to handle diagnotics and runtime errors
      * @returns A ExpressionConfig
      */
     public static getExpressionConfig(
         expression: string,
         opmeta: Uint8Array | string | object[],
-        callback?: (error: Error) => void
+        callback?: (diagnostics: Diagnostic[], error?: Error) => void
     ): ExpressionConfig | undefined {
         let _opmeta: OpMeta[]
         if (isBigNumberish(opmeta)) {
@@ -205,10 +207,11 @@ export class Parser {
         }
         try {
             this._parse(expression, _opmeta)
+            if (callback) callback(this.diagnostics)
             return this.expConf
         }
         catch(err) {
-            if (callback) callback(err as Error)
+            if (callback) callback(this.diagnostics, err as Error)
             else console.log(err)
             return undefined
         }

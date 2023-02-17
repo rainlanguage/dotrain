@@ -20,13 +20,13 @@ import { Parser } from 'rainlang';
 // to execute the parsing and get parse tree object and ExpressionConfig
 let parseTree;
 let expressionConfig
-[ parseTree, expressionConfig ] = Parser.get(textScript, opMeta);
+[ parseTree, expressionConfig ] = Parser.get(textScript, opMeta, callback);
 
 // to get parse tree object only
-let parseTree = Parser.getParseTree(textScript, opMeta);
+let parseTree = Parser.getParseTree(textScript, opMeta, callback);
 
 // to get ExpressionConfig only
-let expressionConfig = Parser.getExpressionConfig(textScript, opMeta);
+let expressionConfig = Parser.getExpressionConfig(textScript, opMeta, callback);
 
 // to build ExpressionConfig (compile) from ParseTree object or a Node or array of Node
 let argument: Node || Node[] || ParseTree
@@ -143,7 +143,7 @@ Method to get parse tree object and ExpressionConfig
 <b>Signature:</b>
 
 ```typescript
-static get(expression: string, opmeta: Uint8Array | string | object[], callback?: (error: Error) => void): [
+static get(expression: string, opmeta: Uint8Array | string | object[], callback?: (diagnostics: Diagnostic[], error?: Error) => void): [
         ParseTree & {
             diagnostics: Diagnostic[];
             comments: Comment[];
@@ -158,7 +158,7 @@ static get(expression: string, opmeta: Uint8Array | string | object[], callback?
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
 |  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
-|  callback | `(error: Error) => void` | (optional) A callback fn to handle runtime errors |
+|  callback | `(diagnostics: Diagnostic[], error?: Error) => void` | (optional) A callback fn to handle diagnotics and runtime errors |
 
 <b>Returns:</b>
 
@@ -181,7 +181,7 @@ Method to get the ExpressionConfig
 <b>Signature:</b>
 
 ```typescript
-static getExpressionConfig(expression: string, opmeta: Uint8Array | string | object[], callback?: (error: Error) => void): ExpressionConfig | undefined;
+static getExpressionConfig(expression: string, opmeta: Uint8Array | string | object[], callback?: (diagnostics: Diagnostic[], error?: Error) => void): ExpressionConfig | undefined;
 ```
 
 #### Parameters
@@ -190,7 +190,7 @@ static getExpressionConfig(expression: string, opmeta: Uint8Array | string | obj
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
 |  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
-|  callback | `(error: Error) => void` | (optional) A callback fn to handle runtime errors |
+|  callback | `(diagnostics: Diagnostic[], error?: Error) => void` | (optional) A callback fn to handle diagnotics and runtime errors |
 
 <b>Returns:</b>
 
@@ -207,7 +207,7 @@ Method to get the parse tree object
 <b>Signature:</b>
 
 ```typescript
-static getParseTree(expression: string, opmeta: Uint8Array | string | object[], callback?: (error: Error) => void): ParseTree & {
+static getParseTree(expression: string, opmeta: Uint8Array | string | object[], callback?: (diagnostics: Diagnostic[], error?: Error) => void): ParseTree & {
         diagnostics: Diagnostic[];
         comments: Comment[];
     } | undefined;
@@ -219,7 +219,7 @@ static getParseTree(expression: string, opmeta: Uint8Array | string | object[], 
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
 |  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
-|  callback | `(error: Error) => void` | (optional) A callback fn to handle runtime errors |
+|  callback | `(diagnostics: Diagnostic[], error?: Error) => void` | (optional) A callback fn to handle diagnotics and runtime errors |
 
 <b>Returns:</b>
 
