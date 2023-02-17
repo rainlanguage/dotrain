@@ -1193,7 +1193,7 @@ export class Parser {
                     })
                     else {
                         this.diagnostics.push({
-                            msg: `expected opcode to be followed by ${
+                            msg: `expected "${_word}" opcode to be followed by ${
                                 count > 0 ? "operand args and parens" : "parens"
                             }`,
                             position: [..._wordPos]
