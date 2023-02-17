@@ -1107,17 +1107,15 @@ export class Parser {
         }
         else if (_word.match(this.numericPattern)) {
             let _val = _word
-            if (isBigNumberish(_word)) {
-                if (ethers.constants.MaxUint256.lt(_word)) {
-                    this.diagnostics.push({
-                        msg: "value greater than 32 bits in size",
-                        position: [..._wordPos]
-                    })
-                }
-            }
-            else {
+            if (!isBigNumberish(_word)) {
                 const _nums = _word.match(/\d+/g)!
                 _val = _nums[0] + "0".repeat(Number(_nums[1]))
+            }
+            if (ethers.constants.MaxUint256.lt(_val)) {
+                this.diagnostics.push({
+                    msg: "value greater than 32 bits in size",
+                    position: [..._wordPos]
+                })
             }
             this._updateTree({
                 value: _val,
