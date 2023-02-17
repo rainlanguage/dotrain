@@ -127,8 +127,7 @@ export class Parser {
             this._parse(expression, _opmeta)
             if (callback) callback(this.diagnostics)
             return [
-                {
-                    ... this.parseTree as ParseTree,
+                {   ... this.parseTree,
                     comments: this.comments,
                     diagnostics: this.diagnostics
                 } as any,
@@ -170,7 +169,7 @@ export class Parser {
             this._parse(expression, _opmeta)
             if (callback) callback(this.diagnostics)
             return {
-                ...this.parseTree as ParseTree,
+                ...this.parseTree,
                 comments: this.comments,
                 diagnostics: this.diagnostics
             } as any
