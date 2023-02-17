@@ -2,12 +2,17 @@ import { BigNumberish } from "ethers"
 
 
 /**
+ * @public Type of position start and end indexes, inclusive at both ends
+ */
+export type Position = [number, number];
+
+/**
  * @public
  * Type of Parser's Diagnostic (error)
  */
 export type Diagnostic = {
     msg: string;
-    position: number[];
+    position: Position;
 };
 
 /**
@@ -16,7 +21,7 @@ export type Diagnostic = {
  */
 export type Value = {
     value: BigNumberish;
-    position: number[];
+    position: Position;
     tag?: Tag;
 };
 
@@ -28,19 +33,19 @@ export type Op = {
     opcode: {
         name: string;
         description: string;
-        position: number[];
+        position: Position;
     };
     operand: number;
     output: number;
-    position: number[];
-    parens: number[];
+    position: Position;
+    parens: Position;
     parameters: Node[];
     operandArgs?: {
-        position: number[];
+        position: Position;
         args: {
             value: number;
             name: string;
-            position: number[];
+            position: Position;
             description?: string;
         }[];
     };
@@ -52,7 +57,7 @@ export type Op = {
  */
 export type Tag = {
     name: string;
-    position: number[];
+    position: Position;
     tag?: Tag;
 }
 
@@ -61,7 +66,7 @@ export type Tag = {
  */
 export type Comment = {
     comment: string;
-    position: number[];
+    position: Position;
 }
 
 /**
@@ -94,5 +99,5 @@ export type State = {
 */
 export type ParseTree = Record<
     string,
-    { tree: Node[]; position: number[]; }
+    { tree: Node[]; position: Position; }
 >;

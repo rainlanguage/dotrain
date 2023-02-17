@@ -9,6 +9,6 @@ Type of Parser's Diagnostic (error)
 ```typescript
 type Diagnostic = {
     msg: string;
-    position: number[];
+    position: Position;
 };
 ```

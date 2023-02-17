@@ -9,6 +9,6 @@ Type of a parse tree object
 ```typescript
 type ParseTree = Record<string, {
     tree: Node[];
-    position: number[];
+    position: Position;
 }>;
 ```

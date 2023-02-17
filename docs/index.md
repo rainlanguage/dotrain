@@ -69,6 +69,7 @@
 |  [OpMeta](./types/opmeta.md) | Type Definitions for opcodes metadata used by RainLang. |
 |  [OutputMeta](./types/outputmeta.md) | Data type of opcode's outputs that determines the number of outputs an opcode has and provide information about them |
 |  [ParseTree](./types/parsetree.md) | Type of a parse tree object |
+|  [Position](./types/position.md) | Type of position start and end indexes, inclusive at both ends |
 |  [PrettifyConfig](./types/prettifyconfig.md) | Specifies the configuration of the Prettify method. |
 |  [State](./types/state.md) | Type of Parser's State |
 |  [Tag](./types/tag.md) |  |

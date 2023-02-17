@@ -9,7 +9,7 @@ Type of Parser's Value node
 ```typescript
 type Value = {
     value: BigNumberish;
-    position: number[];
+    position: Position;
     tag?: Tag;
 };
 ```

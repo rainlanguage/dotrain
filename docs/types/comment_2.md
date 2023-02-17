@@ -8,6 +8,6 @@
 ```typescript
 type Comment = {
     comment: string;
-    position: number[];
+    position: Position;
 };
 ```

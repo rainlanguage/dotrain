@@ -11,19 +11,19 @@ type Op = {
     opcode: {
         name: string;
         description: string;
-        position: number[];
+        position: Position;
     };
     operand: number;
     output: number;
-    position: number[];
-    parens: number[];
+    position: Position;
+    parens: Position;
     parameters: Node[];
     operandArgs?: {
-        position: number[];
+        position: Position;
         args: {
             value: number;
             name: string;
-            position: number[];
+            position: Position;
             description?: string;
         }[];
     };

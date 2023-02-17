@@ -504,7 +504,7 @@ export class Parser {
             // ----------- begin caching expression sentences -----------
             const _doc = document
             const _expressions: string[] = []
-            const _positions: number[][] = []
+            const _positions: [number, number][] = []
             while (document.length) {
                 if (document.includes(';')) {
                     const tmp = document.slice(0, document.indexOf(';'))
@@ -584,7 +584,7 @@ export class Parser {
                         // ----------- begin parsing LHS -----------
                         if (_lhs.length > 0) {
                             const _aliases: string[] = []
-                            const _aliasesPos: number[][] = []
+                            const _aliasesPos: [number, number][] = []
                             let counter = 0
                             while(_lhs.length) {
                                 if (_lhs.startsWith(" ")) {
@@ -596,11 +596,13 @@ export class Parser {
                                         ? _lhs.indexOf(" ")
                                         : _lhs.length
                                     _aliases.push(_lhs.slice(0, _i))
-                                    _aliasesPos.push([_positionOffset + counter])
+                                    _aliasesPos.push([_positionOffset + counter, NaN])
                                     counter = counter + _aliases[_aliases.length - 1].length
-                                    _aliasesPos[_aliasesPos.length - 1].push(
-                                        _positionOffset + counter - 1
-                                    )
+                                    _aliasesPos[_aliasesPos.length - 1].pop()
+                                    _aliasesPos[
+                                        _aliasesPos.length - 1
+                                    ][1] = _positionOffset + counter - 1
+                                    
                                     _lhs = _lhs.slice(_i)
                                 }
                             }
@@ -803,8 +805,8 @@ export class Parser {
             _nodes = (_nodes[_nodes.length - 1] as Op).parameters
         }
         const _node = _nodes[_nodes.length - 1] as Op
-        _node.position.push(_endPosition)
-        _node.parens.push(_endPosition)
+        _node.position[1] = _endPosition
+        _node.parens[1] = _endPosition
         const _i = this.diagnostics.findIndex(
             v => v.msg === 'expected ")"' && 
             v.position[0] === _node.parens[0] &&
@@ -896,7 +898,7 @@ export class Parser {
                     }
                     else {
                         const _parsedArgs = _operandArgs.match(/[0-9]+/g)!
-                        const _argsPos: number[][] = []
+                        const _argsPos: [number, number][] = []
                         let _tmp = _operandArgs
                         for (let i = 0; i < _parsedArgs.length; i++) {
                             _argsPos.push([
@@ -1067,7 +1069,7 @@ export class Parser {
         const _tmp = this._findIndex(this.exp)
         const _index = _tmp < 0 ? this.exp.length : _tmp
         const _word = this.exp.slice(0, _index)
-        const _wordPos = [entry, entry + _word.length - 1]
+        const _wordPos: [number, number] = [entry, entry + _word.length - 1]
         this.exp = this.exp.replace(_word, '')
         const _aliasIndex = this.state.parse.tags[
             this.state.parse.tags.length - 1
@@ -1075,26 +1077,7 @@ export class Parser {
             v => v.name === _word
         )
 
-        if (_word.match(this.numericPattern)) {
-            let _val = _word
-            if (isBigNumberish(_word)) {
-                if (ethers.constants.MaxUint256.lt(_word)) {
-                    this.diagnostics.push({
-                        msg: "value greater than 32 bits in size",
-                        position: [..._wordPos]
-                    })
-                }
-            }
-            else {
-                const _nums = _word.match(/\d+/g)!
-                _val = _nums[0] + "0".repeat(Number(_nums[1]))
-            }
-            this._updateTree({
-                value: _val,
-                position: [..._wordPos],
-            })
-        }
-        else if (_aliasIndex > -1) {
+        if (_aliasIndex > -1) {
             if (!_word.match(this.wordPattern)) this.diagnostics.push({
                 msg: `invalid pattern for alias: ${_word}`,
                 position: [..._wordPos]
@@ -1119,6 +1102,25 @@ export class Parser {
                     position: [..._wordPos],
                 })
             }
+        }
+        else if (_word.match(this.numericPattern)) {
+            let _val = _word
+            if (isBigNumberish(_word)) {
+                if (ethers.constants.MaxUint256.lt(_word)) {
+                    this.diagnostics.push({
+                        msg: "value greater than 32 bits in size",
+                        position: [..._wordPos]
+                    })
+                }
+            }
+            else {
+                const _nums = _word.match(/\d+/g)!
+                _val = _nums[0] + "0".repeat(Number(_nums[1]))
+            }
+            this._updateTree({
+                value: _val,
+                position: [..._wordPos],
+            })
         }
         else if (_word.match(this.wordPattern)) {
             if (_word === 'max-uint-256' || _word === 'max-uint256' || _word === 'infinity') {
@@ -1152,8 +1154,8 @@ export class Parser {
                         },
                         operand: NaN,
                         output: NaN,
-                        position: [[..._wordPos][0]],
-                        parens: [],
+                        position: [[..._wordPos][0], NaN],
+                        parens: [NaN, NaN],
                         parameters: []
                     }
                     if (this.exp.startsWith("<")) _op = 
@@ -1168,7 +1170,7 @@ export class Parser {
                             : [..._wordPos][1] + 1
                         this.exp = this.exp.replace('(', '')
                         this.state.track.parens.open.push(__pos)
-                        _op.parens.push(__pos)
+                        _op.parens[0] = __pos
                         this._updateTree(_op)
                         this.state.depthLevel++
                         this.diagnostics.push({
