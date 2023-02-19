@@ -1,36 +1,29 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { BigNumberish, BytesLike, ethers } from 'ethers';
 import OpMetaSchema from "../../schema/op.meta.schema.json";
+import { ParseTree, State, Node, Diagnostic, Op, Comment } from './types';
 import { 
-    OperandArgs, 
-    InputMeta, 
-    OutputMeta, 
-    OpMeta, 
-    ExpressionConfig, 
-    InputArgs, 
-    OperandMeta, 
-    ComputedOutput 
+    OpMeta,
+    InputMeta,
+    InputArgs,
+    OutputMeta,
+    OperandArgs,
+    OperandMeta,
+    ComputedOutput,
+    ExpressionConfig
 } from '../../types';
 import {
-    concat,
-    constructByBits,
-    extractByBits,
-    isBigNumberish,
-    memoryOperand,
-    MemoryType,
     op,
+    concat,
+    hexlify,
+    MemoryType,
     validateMeta,
+    extractByBits,
+    memoryOperand,
     metaFromBytes,
-    hexlify
+    isBigNumberish,
+    constructByBits,
 } from '../../utils';
-import {
-    ParseTree,
-    State,
-    Node,
-    Diagnostic,
-    Op,
-    Comment,
-} from './types';
 
 
 /**
@@ -366,9 +359,11 @@ export class Parser {
         }
         return {
             constants,
-            sources: _sources.map(
-                v => hexlify(v, { allowMissingPrefix: true })
-            )
+            sources: _sources.length 
+                ? _sources.map(
+                    v => hexlify(v, { allowMissingPrefix: true })
+                ) 
+                : []
         }
     }
 
@@ -518,11 +513,13 @@ export class Parser {
                     _expressions.push(tmp)
                 }
                 else {
-                    _positions.push([
-                        _doc.length - document.length,
-                        _doc.length - 1,
-                    ])
-                    _expressions.push(document)
+                    if (document.match(/[^\s+]/)) {
+                        _positions.push([
+                            _doc.length - document.length,
+                            _doc.length - 1,
+                        ])
+                        _expressions.push(document)
+                    }
                     document = ''
                 }
             }
@@ -1035,17 +1032,23 @@ export class Parser {
                         node.operand = NaN
                         if (typeof this.pushes[op] !== "number") node.output = NaN
                         for (let i = 0; i < _operand.length; i++) {
-                            if (i === _inputsIndex) this.diagnostics.push({
-                                msg: `out-of-range operand args`,
-                                position: [...node.parens]
-                            })
-                            else if (i < _inputsIndex) this.diagnostics.push({
-                                msg: `out-of-range operand args`,
-                                position: [...node.operandArgs!.args[i].position]
-                            })
+                            if (_inputsIndex > -1) {
+                                if (i === _inputsIndex) this.diagnostics.push({
+                                    msg: `out-of-range operand args`,
+                                    position: [...node.parens]
+                                })
+                                else if (i < _inputsIndex) this.diagnostics.push({
+                                    msg: `out-of-range operand args`,
+                                    position: [...node.operandArgs!.args[i].position]
+                                })
+                                else this.diagnostics.push({
+                                    msg: `out-of-range operand args`,
+                                    position: [...node.operandArgs!.args[i + 1].position]
+                                })
+                            }
                             else this.diagnostics.push({
                                 msg: `out-of-range operand args`,
-                                position: [...node.operandArgs!.args[i + 1].position]
+                                position: [...node.operandArgs!.args[i].position]
                             })
                         }
                     }
