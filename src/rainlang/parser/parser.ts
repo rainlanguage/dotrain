@@ -1033,22 +1033,22 @@ export class Parser {
                         if (typeof this.pushes[op] !== "number") node.output = NaN
                         for (let i = 0; i < _operand.length; i++) {
                             if (_inputsIndex > -1) {
-                                if (i === _inputsIndex) this.diagnostics.push({
+                                if (_operand[i] === _inputsIndex) this.diagnostics.push({
                                     msg: `out-of-range operand args`,
                                     position: [...node.parens]
                                 })
-                                else if (i < _inputsIndex) this.diagnostics.push({
+                                else if (_operand[i] < _inputsIndex) this.diagnostics.push({
                                     msg: `out-of-range operand args`,
-                                    position: [...node.operandArgs!.args[i].position]
+                                    position: [...node.operandArgs!.args[_operand[i]].position]
                                 })
                                 else this.diagnostics.push({
                                     msg: `out-of-range operand args`,
-                                    position: [...node.operandArgs!.args[i + 1].position]
+                                    position: [...node.operandArgs!.args[_operand[i] - 1].position]
                                 })
                             }
                             else this.diagnostics.push({
                                 msg: `out-of-range operand args`,
-                                position: [...node.operandArgs!.args[i].position]
+                                position: [...node.operandArgs!.args[_operand[i]].position]
                             })
                         }
                     }
