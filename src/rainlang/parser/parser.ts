@@ -585,7 +585,7 @@ export class Parser {
                             const _aliases: string[] = []
                             const _aliasesPos: [number, number][] = []
                             let counter = 0
-                            while(_lhs.length) {
+                            while (_lhs.length) {
                                 if (_lhs.startsWith(" ")) {
                                     _lhs = _lhs.slice(1)
                                     counter++
@@ -985,7 +985,7 @@ export class Parser {
                                 node.parameters.length !== 
                                 (this.pops[op] as InputArgs).parameters.length
                             ) this.diagnostics.push({
-                                msg: "invalid number of inputs",
+                                msg: "out-of-range inputs",
                                 position: [...node.position]
                             })
                         }
@@ -1034,20 +1034,20 @@ export class Parser {
                         for (let i = 0; i < _operand.length; i++) {
                             if (_inputsIndex > -1) {
                                 if (_operand[i] === _inputsIndex) this.diagnostics.push({
-                                    msg: `out-of-range operand args`,
+                                    msg: "out-of-range inputs",
                                     position: [...node.parens]
                                 })
                                 else if (_operand[i] < _inputsIndex) this.diagnostics.push({
-                                    msg: `out-of-range operand args`,
+                                    msg: "out-of-range operand argument",
                                     position: [...node.operandArgs!.args[_operand[i]].position]
                                 })
                                 else this.diagnostics.push({
-                                    msg: `out-of-range operand args`,
+                                    msg: "out-of-range operand argument",
                                     position: [...node.operandArgs!.args[_operand[i] - 1].position]
                                 })
                             }
                             else this.diagnostics.push({
-                                msg: `out-of-range operand args`,
+                                msg: "out-of-range operand argument",
                                 position: [...node.operandArgs!.args[_operand[i]].position]
                             })
                         }
