@@ -7,7 +7,7 @@ Type of a parse tree object
 <b>Signature:</b>
 
 ```typescript
-type ParseTree = Record<string, {
+type ParseTree = Record<number, {
     tree: Node[];
     position: Position;
 }>;

@@ -99,6 +99,6 @@ export type State = {
 * Type of a parse tree object
 */
 export type ParseTree = Record<
-    string,
+    number,
     { tree: Node[]; position: Position; }
 >;

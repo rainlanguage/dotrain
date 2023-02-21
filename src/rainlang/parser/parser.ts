@@ -221,8 +221,9 @@ export class Parser {
         parseTree:
             | Node
             | Node[]
+            | Node[][]
+            | ParseTree
             | Record<number, Node[]>
-            | Record<number, { tree: Node[], position: number[] }>
     ): ExpressionConfig | undefined {
         return this._compile(parseTree)
     }
@@ -239,8 +240,9 @@ export class Parser {
         parseTree:
             | Node
             | Node[]
-            | Record<number, Node[]>
-            | Record<number, { tree: Node[], position: number[] }>,
+            | Node[][]
+            | ParseTree
+            | Record<number, Node[]>,
         constants: BigNumberish[] = [],
         sourceIndex = 0
     ): ExpressionConfig | undefined {
@@ -249,23 +251,27 @@ export class Parser {
         let _nodes : Node[][]
 
         // convertion to a standard format
-        if ('splice' in parseTree) {
-            if ('splice' in parseTree[0]) _nodes = parseTree as any as Node[][]
-            else _nodes = [parseTree]
+        if ("position" in parseTree) _nodes = [[parseTree]]
+        else if (Array.isArray(parseTree)) {
+            if (parseTree[0]) {
+                if (Array.isArray(parseTree[0])) _nodes = parseTree as Node[][]
+                else _nodes = [parseTree as Node[]]
+            }
+            else _nodes = []
         }   
-        else if('0' in parseTree) {
+        else {
             const array: any = Object.values(parseTree)
-            if ('splice' in array[0]) _nodes = [array as Node[]]
-            else {
-                if ('tree' in array[0]) {
+            if (array[0]) {
+                if (Array.isArray(array[0])) _nodes = array
+                else {
                     for (let i = 0; i < array.length; i++) {
                         array[i] = array[i].tree
                     }
+                    _nodes = array
                 }
-                _nodes = [array as Node[]]
             }
+            else _nodes = []
         }
-        else _nodes = [[parseTree as Node]]
 
         // check for errors
         for (let i = 0; i < _nodes.length; i++) {
@@ -441,7 +447,7 @@ export class Parser {
         this._reset()
         this.sources = []
         this.constants = []
-        this.treeArray = []
+        this.treeArray = {}
         this.parseTree = {}
         this.set(opmeta)
         this.diagnostics = []
@@ -579,27 +585,6 @@ export class Parser {
                         if (_lhs.length > 0) {
                             const _aliases: string[] = []
                             const _aliasesPos: [number, number][] = []
-                            // let counter = 0
-                            // while (_lhs.length) {
-                            //     if (_lhs.startsWith(" ")) {
-                            //         _lhs = _lhs.slice(1)
-                            //         counter++
-                            //     }
-                            //     else {
-                            //         const _i = _lhs.indexOf(" ") > -1 
-                            //             ? _lhs.indexOf(" ")
-                            //             : _lhs.length
-                            //         _aliases.push(_lhs.slice(0, _i))
-                            //         _aliasesPos.push([_positionOffset + counter, NaN])
-                            //         counter = counter + _aliases[_aliases.length - 1].length
-                            //         _aliasesPos[_aliasesPos.length - 1].pop()
-                            //         _aliasesPos[
-                            //             _aliasesPos.length - 1
-                            //         ][1] = _positionOffset + counter - 1
-                                    
-                            //         _lhs = _lhs.slice(_i)
-                            //     }
-                            // }
                             const _parsed = this._simpleParse(_lhs, _positionOffset)
                             _aliases.push(..._parsed.words)
                             _aliasesPos.push(..._parsed.positions)

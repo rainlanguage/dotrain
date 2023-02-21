@@ -116,17 +116,14 @@ Method to get ExpressionConfig (bytes) from a Parse Tree object or a Node or arr
 <b>Signature:</b>
 
 ```typescript
-static compile(parseTree: Node | Node[] | Record<number, Node[]> | Record<number, {
-        tree: Node[];
-        position: number[];
-    }>): ExpressionConfig | undefined;
+static compile(parseTree: Node | Node[] | Node[][] | ParseTree | Record<number, Node[]>): ExpressionConfig | undefined;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  parseTree | <pre>Node \| Node[] \| Record<number, Node[]> \| Record<number, {&#010;    tree: Node[];&#010;    position: number[];&#010;}></pre> | Tree like object (Parse Tree object or a Node or array of Nodes) to get the ExpressionConfig from |
+|  parseTree | `Node \| Node[] \| Node[][] \| ParseTree \| Record<number, Node[]>` | Tree like object (Parse Tree object or a Node or array of Nodes) to get the ExpressionConfig from |
 
 <b>Returns:</b>
 
