@@ -58,8 +58,8 @@ import {
  * ```
  */
 export class Parser {
-    public static wordPattern = /^[a-z][0-9a-z-]*$/
-    public static numericPattern = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/
+    public static readonly wordPattern = /^[a-z][0-9a-z-]*$/
+    public static readonly numericPattern = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/
     public static constants: BigNumberish[] = []
     public static sources: BytesLike[] = []
     public static parseTree: ParseTree = {}
@@ -79,7 +79,8 @@ export class Parser {
     private static state: State = {
         parse: {
             tree: [],
-            tags: []
+            aliases: [],
+            subTreeAliases: []
         },
         track: {
             parens: {
@@ -328,7 +329,7 @@ export class Parser {
                     }
                 }
                 else if ('name' in _node && !('opcode' in _node)) {
-                    const _i = this.state.parse.tags[sourceIndex].findIndex(
+                    const _i = this.state.parse.aliases[sourceIndex].findIndex(
                         v => v.name === _node.name
                     )
                     if (_i > -1) _sourcesCache.push(
@@ -402,41 +403,6 @@ export class Parser {
         return str.search(/[()<> ]/g)
     }
 
-    // /**
-    //  * Method to trim the text expression from whitespaces and commas from both ends
-    //  */
-    // private static _trim = (str: string): [string, number, number] => {
-    //     let leadingOffset = 0
-    //     let trailingOffset = 0;
-    //     [str, trailingOffset] = this._trimRight(str);
-    //     [str, leadingOffset] = this._trimLeft(str)
-    //     return [str, leadingOffset, trailingOffset]
-    // }
-
-    // /**
-    //  * Method to trim the right side of the text expression from whitespaces and commas
-    //  */
-    // private static _trimRight = (str: string): [string, number] => {
-    //     let trailingOffset = 0
-    //     while (str.endsWith(' ')) {
-    //         str = str.slice(0, -1)
-    //         trailingOffset++
-    //     }
-    //     return [str, trailingOffset]
-    // }
-
-    // /**
-    //  * Method to trim the left side of the text expression from whitespaces and commas
-    //  */
-    // private static _trimLeft = (str: string): [string, number] => {
-    //     let leadingOffset = 0
-    //     while (str.startsWith(' ')) {
-    //         str = str.slice(1, str.length)
-    //         leadingOffset++
-    //     }
-    //     return [str, leadingOffset]
-    // }
-
     /**
      * The main workhorse of Rain Parser which parses the words used in an
      * expression and is responsible for building the Parse Tree and Bytes
@@ -448,7 +414,7 @@ export class Parser {
         this.treeArray = []
         this.parseTree = {}
         this.set(opmeta)
-        this.state.parse.tags = []
+        this.state.parse.aliases = []
         this.expConf = undefined
         const _comments: Comment[] = []
 
@@ -468,8 +434,8 @@ export class Parser {
                     let _endCmPos = document.length - 1
                     let _cm = document.slice(_startCmPos)
                     let _notEnded = true
-                    if (document.includes('*/')) {
-                        _endCmPos = document.indexOf('*/')
+                    if (_cm.includes('*/')) {
+                        _endCmPos = _cm.indexOf('*/') + _startCmPos
                         _cm = document.slice(_startCmPos, _endCmPos + 2)
                         _notEnded = false
                     }
@@ -527,10 +493,11 @@ export class Parser {
             // ----------- begin parsing expression sentences -----------
             for (let i = 0; i < _expressions.length; i++) {
                 this._reset()
-                this.state.parse.tags.push([])
+                this.state.parse.aliases.push([])
                 const _entry = _positions[i][0]
                 const _subExp: string[] = []
                 const _subExpEntry: number[] = []
+                const _sourceTree: Node[] = []
                 let _exp = _expressions[i]
                 let _lhs: string
 
@@ -551,10 +518,9 @@ export class Parser {
                     this.state.track.parens.open = []
                     this.state.track.parens.close = []
                     this.operandArgsErr = false
+                    this.state.parse.subTreeAliases = []
                     const _orgSubExp = _subExp[j]
                     const _positionOffset = _entry + _subExpEntry[j]
-                    const _tagsOffset = this.state.parse.tags[i].length
-                    const _treeOffset = this.state.parse.tree.length
 
                     // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
                     // no or more than one delimitter was found, else start parsing LHS and RHS
@@ -606,9 +572,7 @@ export class Parser {
                                 }
                             }
                             for (let k = 0; k < _aliases.length; k++) {
-                                this.state.parse.tags[
-                                    this.state.parse.tags.length - 1
-                                ].push({
+                                this.state.parse.subTreeAliases.push({
                                     name: _aliases[k],
                                     position: _aliasesPos[k]
                                 })
@@ -687,83 +651,82 @@ export class Parser {
 
                         // ----------- validating RHS against LHS -----------
                         const _outputCount = this._countOutputs(
-                            [...this.state.parse.tree], 
-                            _treeOffset
+                            [...this.state.parse.tree]
                         )
                         if (!isNaN(_outputCount)) {
-                            const _tagsCount = this.state.parse.tags[i].length - _tagsOffset
-                            const _treeCount = this.state.parse.tree.length - _treeOffset
+                            const _tagsCount = this.state.parse.subTreeAliases.length
+                            const _treeCount = this.state.parse.tree.length
                             const _diff = _tagsCount - _outputCount
-                            const _tags = [...this.state.parse.tags[
-                                this.state.parse.tags.length - 1
-                            ]]
-                            if (_diff === 0) {
-                                for (let k = 0; k < _treeCount; k++) {
-                                    const _node = this.state.parse.tree[
-                                        this.state.parse.tree.length - 1 - k
-                                    ]
-                                    if ("opcode" in _node) {
-                                        if (_node.output > 0) {
-                                            _node.tags = []
-                                            _tags.splice(-_node.output).forEach(v => {
-                                                if (v.name !== "_") _node.tags?.push(v)
-                                            })
+                            const _tags = [...this.state.parse.subTreeAliases]
+                            if (j !== 0 || (j === 0 && _treeCount !== 0)) {
+                                if (_diff === 0) {
+                                    for (let k = 0; k < _treeCount; k++) {
+                                        const _node = this.state.parse.tree[
+                                            this.state.parse.tree.length - 1 - k
+                                        ]
+                                        if ("opcode" in _node) {
+                                            if (_node.output > 0) {
+                                                _node.tags = []
+                                                _tags.splice(-_node.output).forEach(v => {
+                                                    if (v.name !== "_") _node.tags?.push(v)
+                                                })
+                                            }
                                         }
+                                        else _tags.splice(-1).forEach(v => {
+                                            if (v.name !== "_") _node.tag = v
+                                        })
                                     }
-                                    else _tags.splice(-1).forEach(v => {
-                                        if (v.name !== "_") _node.tag = v
-                                    })
                                 }
-                            }
-                            else if (_diff > 0) {
-                                for (let k = 0; k < _diff; k++) {
-                                    const _tag = _tags.pop()!
-                                    this.diagnostics.push({
-                                        msg: `no RHS item exists to match this LHS item: ${_tag.name}`,
-                                        position: _tag.position
-                                    })
-                                }
-                                for (let k = 0; k < _treeCount; k++) {
-                                    const _node = this.state.parse.tree[
-                                        this.state.parse.tree.length - 1 - k
-                                    ]
-                                    if ("opcode" in _node) {
-                                        if (_node.output > 0) {
-                                            _node.tags = []
-                                            _tags.splice(-_node.output).forEach(v => {
-                                                if (v.name !== "_") _node.tags?.push(v)
-                                            }) 
+                                else if (_diff > 0) {
+                                    for (let k = 0; k < _diff; k++) {
+                                        const _tag = _tags.pop()!
+                                        this.diagnostics.push({
+                                            msg: `no RHS item exists to match this LHS item: ${_tag.name}`,
+                                            position: _tag.position
+                                        })
+                                    }
+                                    for (let k = 0; k < _treeCount; k++) {
+                                        const _node = this.state.parse.tree[
+                                            this.state.parse.tree.length - 1 - k
+                                        ]
+                                        if ("opcode" in _node) {
+                                            if (_node.output > 0) {
+                                                _node.tags = []
+                                                _tags.splice(-_node.output).forEach(v => {
+                                                    if (v.name !== "_") _node.tags?.push(v)
+                                                }) 
+                                            }
                                         }
+                                        else _tags.splice(-1).forEach(v => {
+                                            if (v.name !== "_") _node.tag = v
+                                        })
                                     }
-                                    else _tags.splice(-1).forEach(v => {
-                                        if (v.name !== "_") _node.tag = v
-                                    })
                                 }
-                            }
-                            else {
-                                const _nodes = [...this.state.parse.tree]
-                                for (let k = 0; k < -_diff; k++) {
-                                    const _node = _nodes.pop()!
-                                    this.diagnostics.push({
-                                        msg: `no LHS item exists to match this RHS item`,
-                                        position: _node.position
-                                    })
-                                }
-                                for (let k = 0; k < _treeCount; k++) {
-                                    const _node = this.state.parse.tree[
-                                        this.state.parse.tree.length - 1 - k + _diff
-                                    ]
-                                    if ("opcode" in _node) {
-                                        if (_node.output > 0) {
-                                            _node.tags = []
-                                            _tags.slice(-_node.output).forEach(v => {
-                                                if (v.name !== "_") _node.tags?.push(v)
-                                            })
+                                else {
+                                    const _nodes = [...this.state.parse.tree]
+                                    for (let k = 0; k < -_diff; k++) {
+                                        const _node = _nodes.pop()!
+                                        this.diagnostics.push({
+                                            msg: `no LHS item exists to match this RHS item`,
+                                            position: _node.position
+                                        })
+                                    }
+                                    for (let k = 0; k < _treeCount; k++) {
+                                        const _node = this.state.parse.tree[
+                                            this.state.parse.tree.length - 1 - k + _diff
+                                        ]
+                                        if ("opcode" in _node) {
+                                            if (_node.output > 0) {
+                                                _node.tags = []
+                                                _tags.slice(-_node.output).forEach(v => {
+                                                    if (v.name !== "_") _node.tags?.push(v)
+                                                })
+                                            }
                                         }
+                                        else _tags.slice(-1).forEach(v => {
+                                            if (v.name !== "_") _node.tag = v
+                                        })
                                     }
-                                    else _tags.slice(-1).forEach(v => {
-                                        if (v.name !== "_") _node.tag = v
-                                    })
                                 }
                             }
                         }
@@ -777,12 +740,24 @@ export class Parser {
                             ]
                         })
                     }
+                    _sourceTree.push(
+                        ...this.state.parse.tree.splice(
+                            -this.state.parse.tree.length
+                        )
+                    )
+                    this.state.parse.aliases[
+                        this.state.parse.aliases.length - 1
+                    ].push(
+                        ...[...this.state.parse.subTreeAliases.splice(
+                            -this.state.parse.subTreeAliases.length
+                        )]
+                    )
                 }
 
                 // ----------- constructing final parse tree -----------
                 this.parseTree[i] = {
                     position: _positions[i],
-                    tree: this.state.parse.tree.splice(-this.state.parse.tree.length)
+                    tree: _sourceTree.splice(-_sourceTree.length)
                 }
                 this.treeArray[i] = this.parseTree[i].tree
             }
@@ -814,18 +789,6 @@ export class Parser {
         if (_i > -1) this.diagnostics.splice(_i, 1)
         _nodes[_nodes.length - 1] = this._resolveOp(_node)
     }
-
-    // /**
-    //  * Method to get the last item of a Node at a specified depth level of parse tree
-    //  */
-    // private static _getLastTreeElementAtDepth(depthLevel: number): Node {
-    //     let tmp: Node
-    //     tmp = this.state.parse.tree[this.state.parse.tree.length - 1]
-    //     for (let i = 0; i < depthLevel; i++) {
-    //         tmp = (tmp as Op).parameters[(tmp as Op).parameters.length - 1]
-    //     }
-    //     return tmp
-    // }
 
     /**
      * Method to update the elements of a Node
@@ -1075,8 +1038,8 @@ export class Parser {
         const _word = this.exp.slice(0, _index)
         const _wordPos: [number, number] = [entry, entry + _word.length - 1]
         this.exp = this.exp.replace(_word, '')
-        const _aliasIndex = this.state.parse.tags[
-            this.state.parse.tags.length - 1
+        const _aliasIndex = this.state.parse.aliases[
+            this.state.parse.aliases.length - 1
         ].findIndex(
             v => v.name === _word
         )
@@ -1086,26 +1049,16 @@ export class Parser {
                 msg: `invalid pattern for alias: ${_word}`,
                 position: [..._wordPos]
             })
-            if (this.state.depthLevel === 0) {
-                if (_aliasIndex === this.state.parse.tree.length) this.diagnostics.push({
-                    msg: `cannot reference self`,
-                    position: [..._wordPos]
-                })
-                else this._updateTree({
-                    name: _word,
-                    position: [..._wordPos],
-                })
-            }
-            else {
-                if (_aliasIndex === this.state.parse.tree.length - 1) this.diagnostics.push({
-                    msg: `cannot reference self`,
-                    position: [..._wordPos]
-                })
-                else this._updateTree({
-                    name: _word,
-                    position: [..._wordPos],
-                })
-            }
+            if (this.state.parse.subTreeAliases.find(
+                v => v.name === _word
+            )) this.diagnostics.push({
+                msg: `cannot reference self`,
+                position: [..._wordPos]
+            })
+            else this._updateTree({
+                name: _word,
+                position: [..._wordPos],
+            })
         }
         else if (_word.match(this.numericPattern)) {
             let _val = _word
@@ -1209,7 +1162,6 @@ export class Parser {
             msg: `"${_word}" is not a valid rainlang word`,
             position: [..._wordPos]
         })
-        // }
     }
 
     /**

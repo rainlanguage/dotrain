@@ -82,7 +82,8 @@ export type Node = Value | Op | Tag;
 export type State = {
     parse: {
         tree: Node[];
-        tags: Tag[][];
+        aliases: Tag[][];
+        subTreeAliases: Tag[];
     };
     track: {
         parens: {

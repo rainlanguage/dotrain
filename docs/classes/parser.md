@@ -72,7 +72,7 @@ static constants: BigNumberish[];
 <b>Signature:</b>
 
 ```typescript
-static numericPattern: RegExp;
+static readonly numericPattern: RegExp;
 ```
 
 <a id="parseTree-property-static"></a>
@@ -102,7 +102,7 @@ static sources: BytesLike[];
 <b>Signature:</b>
 
 ```typescript
-static wordPattern: RegExp;
+static readonly wordPattern: RegExp;
 ```
 
 ## Static Method Details

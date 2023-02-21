@@ -10,7 +10,8 @@ Type of Parser's State
 type State = {
     parse: {
         tree: Node[];
-        tags: Tag[][];
+        aliases: Tag[][];
+        subTreeAliases: Tag[];
     };
     track: {
         parens: {
