@@ -80,7 +80,7 @@ export class Parser {
         parse: {
             tree: [],
             aliases: [],
-            subTreeAliases: []
+            subExpAliases: []
         },
         track: {
             parens: {
@@ -404,6 +404,36 @@ export class Parser {
     }
 
     /**
+     * Parse and extract words from a string
+     */
+    private static _simpleParse = (str: string, offset: number) => {
+        const _words: string[] = []
+        const _wordsPos: [number, number][] = []
+        let counter = 0
+        while (str.length) {
+            if (str.startsWith(" ")) {
+                str = str.slice(1)
+                counter++
+            }
+            else {
+                const _i = str.indexOf(" ") > -1 
+                    ? str.indexOf(" ")
+                    : str.length
+                _words.push(str.slice(0, _i))
+                _wordsPos.push([offset + counter, NaN])
+                counter = counter + _words[_words.length - 1].length
+                _wordsPos[_wordsPos.length - 1].pop()
+                _wordsPos[_wordsPos.length - 1][1] = offset + counter - 1
+                str = str.slice(_i)
+            }
+        }
+        return {
+            words: _words, 
+            positions: _wordsPos
+        }
+    }
+
+    /**
      * The main workhorse of Rain Parser which parses the words used in an
      * expression and is responsible for building the Parse Tree and Bytes
      */
@@ -466,50 +496,49 @@ export class Parser {
 
             // ----------- begin caching expression sentences -----------
             const _doc = document
-            const _expressions: string[] = []
-            const _positions: [number, number][] = []
+            const _sourceExp: string[] = []
+            const _sourceExpPos: [number, number][] = []
             while (document.length) {
                 if (document.includes(';')) {
                     const tmp = document.slice(0, document.indexOf(';'))
-                    _positions.push([
+                    _sourceExpPos.push([
                         _doc.length - document.length,
                         _doc.length - document.length + document.indexOf(';'),
                     ])
                     document = document.slice(document.indexOf(';') + 1)
-                    _expressions.push(tmp)
+                    _sourceExp.push(tmp)
                 }
                 else {
                     if (document.match(/[^\s+]/)) {
-                        _positions.push([
+                        _sourceExpPos.push([
                             _doc.length - document.length,
                             _doc.length - 1,
                         ])
-                        _expressions.push(document)
+                        _sourceExp.push(document)
                     }
                     document = ''
                 }
             }
 
             // ----------- begin parsing expression sentences -----------
-            for (let i = 0; i < _expressions.length; i++) {
+            for (let i = 0; i < _sourceExp.length; i++) {
                 this._reset()
                 this.state.parse.aliases.push([])
-                const _entry = _positions[i][0]
                 const _subExp: string[] = []
                 const _subExpEntry: number[] = []
-                const _sourceTree: Node[] = []
-                let _exp = _expressions[i]
+                const _currentSourceTree: Node[] = []
+                let _exp = _sourceExp[i]
                 let _lhs: string
 
                 // ----------- cache the sub-expressions -----------
                 while (_exp.includes(',')) {
                     _subExp.push(_exp.slice(0, _exp.indexOf(',')))
-                    _subExpEntry.push(_expressions[i].length - _exp.length)
+                    _subExpEntry.push(_sourceExp[i].length - _exp.length)
                     _exp = _exp.slice(_exp.indexOf(',') + 1)
                 }
                 if (_exp.length) {
                     _subExp.push(_exp)
-                    _subExpEntry.push(_expressions[i].length - _exp.length)
+                    _subExpEntry.push(_sourceExp[i].length - _exp.length)
                 }
 
                 // ----------- begin parsing sub-expressions -----------
@@ -518,29 +547,28 @@ export class Parser {
                     this.state.track.parens.open = []
                     this.state.track.parens.close = []
                     this.operandArgsErr = false
-                    this.state.parse.subTreeAliases = []
-                    const _orgSubExp = _subExp[j]
-                    const _positionOffset = _entry + _subExpEntry[j]
+                    this.state.parse.subExpAliases = []
+                    const _positionOffset = _sourceExpPos[i][0] + _subExpEntry[j]
 
                     // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
                     // no or more than one delimitter was found, else start parsing LHS and RHS
-                    if (_orgSubExp.match(/:/g)?.length === 1) {
-                        _lhs = _orgSubExp.slice(0, _orgSubExp.indexOf(':'))
-                        this.exp = _orgSubExp.slice(_orgSubExp.indexOf(':') + 1)
+                    if (_subExp[j].match(/:/g)?.length === 1) {
+                        _lhs = _subExp[j].slice(0, _subExp[j].indexOf(':'))
+                        this.exp = _subExp[j].slice(_subExp[j].indexOf(':') + 1)
 
                         // ----------- check for invalid RHS comments -----------
                         for (let k = 0; k < _comments.length; k++) {
                             if (
                                 _comments[k].position[0] > _positionOffset + 
-                                    _orgSubExp.indexOf(':') &&
+                                    _subExp[j].indexOf(':') &&
                                 _comments[k].position[0] < _positionOffset + 
-                                    _orgSubExp.length
+                                    _subExp[j].length
                             ) {
                                 this.diagnostics.push({
                                     msg: 'invalid RHS, comments are not allowed',
                                     position: [
-                                        _positionOffset + _orgSubExp.indexOf(':') + 1,
-                                        _positionOffset + _orgSubExp.length - 1
+                                        _positionOffset + _subExp[j].indexOf(':') + 1,
+                                        _positionOffset + _subExp[j].length - 1
                                     ]
                                 })
                             }
@@ -550,29 +578,32 @@ export class Parser {
                         if (_lhs.length > 0) {
                             const _aliases: string[] = []
                             const _aliasesPos: [number, number][] = []
-                            let counter = 0
-                            while (_lhs.length) {
-                                if (_lhs.startsWith(" ")) {
-                                    _lhs = _lhs.slice(1)
-                                    counter++
-                                }
-                                else {
-                                    const _i = _lhs.indexOf(" ") > -1 
-                                        ? _lhs.indexOf(" ")
-                                        : _lhs.length
-                                    _aliases.push(_lhs.slice(0, _i))
-                                    _aliasesPos.push([_positionOffset + counter, NaN])
-                                    counter = counter + _aliases[_aliases.length - 1].length
-                                    _aliasesPos[_aliasesPos.length - 1].pop()
-                                    _aliasesPos[
-                                        _aliasesPos.length - 1
-                                    ][1] = _positionOffset + counter - 1
+                            // let counter = 0
+                            // while (_lhs.length) {
+                            //     if (_lhs.startsWith(" ")) {
+                            //         _lhs = _lhs.slice(1)
+                            //         counter++
+                            //     }
+                            //     else {
+                            //         const _i = _lhs.indexOf(" ") > -1 
+                            //             ? _lhs.indexOf(" ")
+                            //             : _lhs.length
+                            //         _aliases.push(_lhs.slice(0, _i))
+                            //         _aliasesPos.push([_positionOffset + counter, NaN])
+                            //         counter = counter + _aliases[_aliases.length - 1].length
+                            //         _aliasesPos[_aliasesPos.length - 1].pop()
+                            //         _aliasesPos[
+                            //             _aliasesPos.length - 1
+                            //         ][1] = _positionOffset + counter - 1
                                     
-                                    _lhs = _lhs.slice(_i)
-                                }
-                            }
+                            //         _lhs = _lhs.slice(_i)
+                            //     }
+                            // }
+                            const _parsed = this._simpleParse(_lhs, _positionOffset)
+                            _aliases.push(..._parsed.words)
+                            _aliasesPos.push(..._parsed.positions)
                             for (let k = 0; k < _aliases.length; k++) {
-                                this.state.parse.subTreeAliases.push({
+                                this.state.parse.subExpAliases.push({
                                     name: _aliases[k],
                                     position: _aliasesPos[k]
                                 })
@@ -589,7 +620,7 @@ export class Parser {
                         while (this.exp.length > 0) {
                             const _currentPosition = 
                                 _positionOffset + 
-                                _orgSubExp.length - 
+                                _subExp[j].length - 
                                 this.exp.length
 
                             if (this.exp.startsWith(" ")) this.exp = this.exp.slice(1)
@@ -654,10 +685,10 @@ export class Parser {
                             [...this.state.parse.tree]
                         )
                         if (!isNaN(_outputCount)) {
-                            const _tagsCount = this.state.parse.subTreeAliases.length
+                            const _tagsCount = this.state.parse.subExpAliases.length
                             const _treeCount = this.state.parse.tree.length
                             const _diff = _tagsCount - _outputCount
-                            const _tags = [...this.state.parse.subTreeAliases]
+                            const _tags = [...this.state.parse.subExpAliases]
                             if (j !== 0 || (j === 0 && _treeCount !== 0)) {
                                 if (_diff === 0) {
                                     for (let k = 0; k < _treeCount; k++) {
@@ -736,11 +767,11 @@ export class Parser {
                             msg: 'invalid sub-expression',
                             position: [
                                 _positionOffset,
-                                _positionOffset + _orgSubExp.length - 1
+                                _positionOffset + _subExp[j].length - 1
                             ]
                         })
                     }
-                    _sourceTree.push(
+                    _currentSourceTree.push(
                         ...this.state.parse.tree.splice(
                             -this.state.parse.tree.length
                         )
@@ -748,16 +779,16 @@ export class Parser {
                     this.state.parse.aliases[
                         this.state.parse.aliases.length - 1
                     ].push(
-                        ...[...this.state.parse.subTreeAliases.splice(
-                            -this.state.parse.subTreeAliases.length
+                        ...[...this.state.parse.subExpAliases.splice(
+                            -this.state.parse.subExpAliases.length
                         )]
                     )
                 }
 
                 // ----------- constructing final parse tree -----------
                 this.parseTree[i] = {
-                    position: _positions[i],
-                    tree: _sourceTree.splice(-_sourceTree.length)
+                    position: _sourceExpPos[i],
+                    tree: _currentSourceTree.splice(-_currentSourceTree.length)
                 }
                 this.treeArray[i] = this.parseTree[i].tree
             }
@@ -783,7 +814,7 @@ export class Parser {
         _node.parens[1] = _endPosition
         const _i = this.diagnostics.findIndex(
             v => v.msg === 'expected ")"' && 
-            v.position[0] === _node.parens[0] &&
+            v.position[0] === _node.opcode.position[0] &&
             v.position[1] === _node.parens[0]
         )
         if (_i > -1) this.diagnostics.splice(_i, 1)
@@ -859,18 +890,11 @@ export class Parser {
                         })
                     }
                     else {
-                        const _parsedArgs = _operandArgs.match(/[0-9]+/g)!
-                        const _argsPos: [number, number][] = []
-                        let _tmp = _operandArgs
-                        for (let i = 0; i < _parsedArgs.length; i++) {
-                            _argsPos.push([
-                                pos + _tmp.indexOf(_parsedArgs[i]) + 1,
-                                pos + _tmp.indexOf(_parsedArgs[i]) + _parsedArgs[i].length 
-                            ])
-                            _tmp = _tmp.replace(_parsedArgs[i], " ".repeat(_parsedArgs[i].length))
-                        }
+                        const _parsed = this._simpleParse(_operandArgs, pos + 1)
+                        const _args = _parsed.words
+                        const _argsPos: [number, number][] = _parsed.positions
                         if (op.opcode.name === "unknown opcode") {
-                            _parsedArgs.forEach((v, i) => op.operandArgs?.args.push({
+                            _args.forEach((v, i) => op.operandArgs?.args.push({
                                 value: Number(v),
                                 name: "unknown",
                                 position: _argsPos[i]
@@ -882,10 +906,10 @@ export class Parser {
                             ] as OperandArgs)]
                             const _i = _opMetaOperandArgs.findIndex(v => v.name === "inputs")
                             if (_i > -1) _opMetaOperandArgs.splice(_i, 1)
-                            const _diff = _parsedArgs.length - _opMetaOperandArgs.length
+                            const _diff = _args.length - _opMetaOperandArgs.length
                             if (_diff === 0) _opMetaOperandArgs.forEach(
                                 (v, i) => op.operandArgs?.args.push({
-                                    value: Number(_parsedArgs[i]),
+                                    value: Number(_args[i]),
                                     name: v.name,
                                     description: v?.desc,
                                     position: _argsPos[i]
@@ -919,17 +943,17 @@ export class Parser {
      * Method that resolves the opcode Node once its respective closing paren has consumed
      */
     private static _resolveOp = (node: Op): Op => {
-        const op = this.names.indexOf(node.opcode.name)
-        if (op !== -1) {
-            if (typeof this.pushes[op] === "number") node.output = this.pushes[op] as number
+        const _index = this.names.indexOf(node.opcode.name)
+        if (_index !== -1) {
+            if (typeof this.pushes[_index] === "number") node.output = this.pushes[_index] as number
             if (this.operandArgsErr) {
                 this.operandArgsErr = false
                 node.operand = NaN
             } 
             else {
-                if (this.operand[op] === 0) {
+                if (this.operand[_index] === 0) {
                     node.operand = 0
-                    if (this.pops[op] === 0) {
+                    if (this.pops[_index] === 0) {
                         if (node.parameters.length) this.diagnostics.push({
                             msg: "invalid number of inputs",
                             position: [...node.position]
@@ -937,8 +961,8 @@ export class Parser {
                     }
                     else {
                         if (
-                            "bits" in (this.pops[op] as InputArgs) || 
-                            "computation" in (this.pops[op] as InputArgs)
+                            "bits" in (this.pops[_index] as InputArgs) || 
+                            "computation" in (this.pops[_index] as InputArgs)
                         ) this.diagnostics.push({
                             msg: "invalid input meta format",
                             position: [...node.position]
@@ -946,14 +970,14 @@ export class Parser {
                         else {
                             if (
                                 node.parameters.length !== 
-                                (this.pops[op] as InputArgs).parameters.length
+                                (this.pops[_index] as InputArgs).parameters.length
                             ) this.diagnostics.push({
                                 msg: "out-of-range inputs",
                                 position: [...node.position]
                             })
                         }
                     }
-                    if (typeof this.pushes[op] !== "number") {
+                    if (typeof this.pushes[_index] !== "number") {
                         node.output = NaN
                         this.diagnostics.push({
                             msg: "invalid output meta format",
@@ -965,7 +989,7 @@ export class Parser {
                     let _argIndex = 0
                     let _inputsIndex = -1
                     const _operand = constructByBits(
-                        (this.operand[op] as OperandArgs).map((v, i) => {
+                        (this.operand[_index] as OperandArgs).map((v, i) => {
                             if (v.name === "inputs") {
                                 _inputsIndex = i
                                 return {
@@ -985,15 +1009,15 @@ export class Parser {
                     )
                     if (typeof _operand === "number") {
                         node.operand = _operand
-                        if (typeof this.pushes[op] !== "number") node.output = extractByBits(
+                        if (typeof this.pushes[_index] !== "number") node.output = extractByBits(
                             _operand, 
-                            (this.pushes[op] as ComputedOutput).bits, 
-                            (this.pushes[op] as ComputedOutput).computation
+                            (this.pushes[_index] as ComputedOutput).bits, 
+                            (this.pushes[_index] as ComputedOutput).computation
                         )
                     }
                     else {
                         node.operand = NaN
-                        if (typeof this.pushes[op] !== "number") node.output = NaN
+                        if (typeof this.pushes[_index] !== "number") node.output = NaN
                         for (let i = 0; i < _operand.length; i++) {
                             if (_inputsIndex > -1) {
                                 if (_operand[i] === _inputsIndex) this.diagnostics.push({
@@ -1049,7 +1073,7 @@ export class Parser {
                 msg: `invalid pattern for alias: ${_word}`,
                 position: [..._wordPos]
             })
-            if (this.state.parse.subTreeAliases.find(
+            if (this.state.parse.subExpAliases.find(
                 v => v.name === _word
             )) this.diagnostics.push({
                 msg: `cannot reference self`,
@@ -1120,17 +1144,17 @@ export class Parser {
                         position: [..._wordPos]
                     })
                     if (this.exp.startsWith("(")) {
-                        const __pos = _op.operandArgs 
+                        const _pos = _op.operandArgs 
                             ? [..._op.operandArgs!.position][1] + 1 
                             : [..._wordPos][1] + 1
                         this.exp = this.exp.replace('(', '')
-                        this.state.track.parens.open.push(__pos)
-                        _op.parens[0] = __pos
+                        this.state.track.parens.open.push(_pos)
+                        _op.parens[0] = _pos
                         this._updateTree(_op)
                         this.state.depthLevel++
                         this.diagnostics.push({
                             msg: 'expected ")"',
-                            position: [__pos, __pos]
+                            position: [[..._wordPos][0], _pos]
                         })
                     }
                     else {
@@ -1167,13 +1191,13 @@ export class Parser {
     /**
      * Method to check for errors in parse tree once an expression is fully parsed
      */
-    private static _errorCheck(element: Node): boolean {
+    private static _errorCheck(node: Node): boolean {
         if (this.diagnostics.length) return false
-        if ('opcode' in element) {
-            if (isNaN(element.operand) || isNaN(element.output)) return false
+        if ('opcode' in node) {
+            if (isNaN(node.operand) || isNaN(node.output)) return false
             else {
-                for (let i = 0; i < element.parameters.length; i++) {
-                    if (!this._errorCheck(element.parameters[i])) return false
+                for (let i = 0; i < node.parameters.length; i++) {
+                    if (!this._errorCheck(node.parameters[i])) return false
                 }
                 return true
             }

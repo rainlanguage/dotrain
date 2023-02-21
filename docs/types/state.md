@@ -11,7 +11,7 @@ type State = {
     parse: {
         tree: Node[];
         aliases: Tag[][];
-        subTreeAliases: Tag[];
+        subExpAliases: Tag[];
     };
     track: {
         parens: {
