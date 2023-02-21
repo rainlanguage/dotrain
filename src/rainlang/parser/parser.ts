@@ -75,7 +75,7 @@ export class Parser {
     private static pops: InputMeta[] = []
     private static pushes: OutputMeta[] = []
     private static operand: OperandMeta[] = []
-    private static aliases: (string[] | undefined)[] = []
+    private static opAliases: (string[] | undefined)[] = []
     private static state: State = {
         parse: {
             tree: [],
@@ -378,11 +378,11 @@ export class Parser {
     private static set(opmeta: OpMeta[]) {
         this.opmeta = opmeta
         this.names = opmeta.map(v => v.name)
-        this.aliases = opmeta.map(v => v.aliases)
+        this.opAliases = opmeta.map(v => v.aliases)
         this.pops = opmeta.map(v => v.inputs)
         this.pushes = opmeta.map(v => v.outputs)
         this.operand = opmeta.map(v => v.operand)
-        this.aliases = opmeta.map(v => v.aliases)
+        this.opAliases = opmeta.map(v => v.aliases)
     }
 
     /**
@@ -444,6 +444,7 @@ export class Parser {
         this.treeArray = []
         this.parseTree = {}
         this.set(opmeta)
+        this.diagnostics = []
         this.state.parse.aliases = []
         this.expConf = undefined
         const _comments: Comment[] = []
@@ -1110,7 +1111,7 @@ export class Parser {
             }
             else {
                 let _enum = this.names.indexOf(_word)
-                if (_enum === -1) _enum = this.aliases.findIndex(v => v?.includes(_word))
+                if (_enum === -1) _enum = this.opAliases.findIndex(v => v?.includes(_word))
                 let count = 0
                 if (_enum > -1 && typeof this.operand[_enum] !== "number") {
                     (this.operand[_enum] as OperandArgs).forEach(v => {
