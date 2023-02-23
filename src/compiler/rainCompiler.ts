@@ -1,5 +1,5 @@
-import { ExpressionConfig } from "../types";
 import { RainDocument } from "../parser/rainParser";
+import { ExpressionConfig } from "./expressionConfigTypes";
 
 
 /**

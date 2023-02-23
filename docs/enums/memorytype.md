@@ -2,6 +2,7 @@
 
 # Enum MemoryType
 
+Type for read-memory opcode
 
 <b>Signature:</b>
 

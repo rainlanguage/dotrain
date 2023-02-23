@@ -2,32 +2,32 @@ import { format } from 'prettier';
 import { deflateSync } from 'zlib';
 import { BigNumberish, BytesLike, ethers } from 'ethers';
 import OpMetaSchema from "../schema/op.meta.schema.json";
+import { ExpressionConfig } from '../compiler/expressionConfigTypes';
 import { 
-    RDParseTree, 
-    RainParseState, 
     RDNode, 
-    RDProblem, 
     RDOpNode, 
+    RDProblem, 
     RDComment, 
-    RainDocumentResult,
-    RDAliasNode
+    RDParseTree,
+    RDAliasNode,
+    RainParseState, 
+    RainDocumentResult
 } from './rainParserTypes';
 import { 
     OpMeta,
     InputMeta,
     InputArgs,
+    MemoryType,
     OutputMeta,
     OperandArgs,
     OperandMeta,
-    ComputedOutput,
-    ExpressionConfig
-} from '../types';
+    ComputedOutput
+} from './opMetaTypes';
 import {
     op,
     concat,
     hexlify,
     deepCopy,
-    MemoryType,
     extractByBits,
     metaFromBytes,
     memoryOperand,

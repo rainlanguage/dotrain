@@ -12,7 +12,7 @@
 
 |  Enumeration | Description |
 |  --- | --- |
-|  [MemoryType](./enums/memorytype.md) |  |
+|  [MemoryType](./enums/memorytype.md) | Type for read-memory opcode |
 
 ## Functions
 

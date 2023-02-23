@@ -1,14 +1,13 @@
-import Ajv from "ajv";
 import fs from "fs";
-import type { BytesLike } from 'ethers';
-import { isBytes, isHexString } from 'ethers/lib/utils';
-import { BigNumber, BigNumberish, ethers, utils } from 'ethers';
-import { ExpressionConfig } from './types';
-import stringMath from "string-math";
+import Ajv from "ajv";
 import { resolve } from "path";
 import { format } from "prettier";
+import stringMath from "string-math";
+import type { BytesLike } from 'ethers';
 import { deflateSync, inflateSync } from "zlib";
-
+import { isBytes, isHexString } from 'ethers/lib/utils';
+import { ExpressionConfig } from "./compiler/expressionConfigTypes";
+import { BigNumber, BigNumberish, ethers, utils } from 'ethers';
 
 export const {
     /**
@@ -43,13 +42,6 @@ export const {
     parseUnits,
 } = utils;
 
-/**
- * @public
- */
-export enum MemoryType {
-    Stack,
-    Constant,
-}
 
 /**
  * @public

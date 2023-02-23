@@ -1,10 +1,10 @@
 import { RainDocument } from '../parser/rainParser';
+import { ExpressionConfig } from './expressionConfigTypes';
 import { BytesLike, BigNumber, ethers } from 'ethers';
 import OpMetaSchema from "../schema/op.meta.schema.json";
 import { Equation, Expression, parse } from 'algebra.js';
-import { ExpressionConfig, OpMeta, InputMeta, OutputMeta, OperandArgs } from '../types';
+import { OpMeta, InputMeta, OutputMeta, OperandArgs } from '../parser/opMetaTypes';
 import { arrayify, extractByBits, isBigNumberish, metaFromBytes, validateMeta } from '../utils';
-
 
 
 /**
