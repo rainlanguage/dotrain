@@ -6,8 +6,7 @@
 
 |  Class | Description |
 |  --- | --- |
-|  [Formatter](./classes/formatter.md) | The generator of human friendly readable source. |
-|  [Parser](./classes/parser.md) | Rain Parser is a compiler written in TypeScript in order to parse, compile and output Rain Expressions into deployable bytes for Rain Protocol's smart contracts and also a parse tree object which contains all the parsed data and info of the opcode, values, errors and ... that can be used by the caller, for example to be make an enriched Rain in-bowser text editor. Rain Parser uses an standard opcode metadata callled OpMeta in order to parse opcodes into deployable bytes of an Rain Interpreter. |
+|  [RainDocument](./classes/raindocument.md) | RainDocument is a wrapper for RainParser that provides the main functionalities and data types in order to be used later on to provide Rain Language Services or in Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes)<br><br>\* |
 
 ## Enumerations
 
@@ -20,6 +19,7 @@
 |  Function | Description |
 |  --- | --- |
 |  [constructByBits(args)](./variables/constructbybits_1.md) | Method to construct the operand from operand args |
+|  [deepCopy(variable)](./variables/deepcopy_1.md) | Deep copy an item in a way that all of its properties get new reference |
 |  [deepFreeze(object)](./variables/deepfreeze_1.md) | Deeply freezes an object, all of the properties of propterties gets frozen |
 |  [extractByBits(value, bits, computation, computationVar)](./variables/extractbybits_1.md) | Method to extract value from operand by specified bits indexes |
 |  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properites from a Map as a new Map with same keys. |
@@ -28,6 +28,8 @@
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [memoryOperand(type, offset)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
 |  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
+|  [rlc(document, opmeta)](./variables/rlc_1.md) | Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes) |
+|  [rld(expressionConfig, opmeta, prettyFormat)](./variables/rld_1.md) | Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document |
 
 ## Variables
 
@@ -55,23 +57,22 @@
 
 |  Type Alias | Description |
 |  --- | --- |
-|  [Comment\_2](./types/comment_2.md) |  |
 |  [ComputedOutput](./types/computedoutput.md) | Data type for computed output |
-|  [Config](./types/config.md) | Specific the configuration of the generation method |
-|  [Diagnostic](./types/diagnostic.md) | Type of Parser's Diagnostic (error) |
 |  [ExpressionConfig](./types/expressionconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
 |  [InputArgs](./types/inputargs.md) | Data type for input argguments |
 |  [InputMeta](./types/inputmeta.md) | Data type of opcode's inputs that determines the number of inputs an opcode has and provide information about them |
-|  [Node\_2](./types/node_2.md) | Type of Parser's Node |
-|  [Op](./types/op.md) | Type of Parser's Opcode node |
 |  [OperandArgs](./types/operandargs.md) | Data type for computed operand that consists of some arguments |
 |  [OperandMeta](./types/operandmeta.md) | Data type of operand arguments, used only for non-constant operands |
 |  [OpMeta](./types/opmeta.md) | Type Definitions for opcodes metadata used by RainLang. |
 |  [OutputMeta](./types/outputmeta.md) | Data type of opcode's outputs that determines the number of outputs an opcode has and provide information about them |
-|  [ParseTree](./types/parsetree.md) | Type of a parse tree object |
-|  [Position](./types/position.md) | Type of position start and end indexes, inclusive at both ends |
-|  [PrettifyConfig](./types/prettifyconfig.md) | Specifies the configuration of the Prettify method. |
-|  [State](./types/state.md) | Type of Parser's State |
-|  [Tag](./types/tag.md) |  |
-|  [Value](./types/value.md) | Type of Parser's Value node |
+|  [RainDocumentResult](./types/raindocumentresult.md) | Type of RainDocument's parse result |
+|  [RainParseState](./types/rainparsestate.md) | Type of Parser's State |
+|  [RDAliasNode](./types/rdaliasnode.md) | Type of RainDocument's lhs aliases |
+|  [RDComment](./types/rdcomment.md) | Type of RainDocument's comments |
+|  [RDNode](./types/rdnode.md) | Type of RainDocument's prase node |
+|  [RDOpNode](./types/rdopnode.md) | Type of RainDocument's Opcode node |
+|  [RDParseTree](./types/rdparsetree.md) | Type of a RainDocument parse tree object |
+|  [RDPosition](./types/rdposition.md) | Type of position start and end indexes for RainDocument, inclusive at both ends |
+|  [RDProblem](./types/rdproblem.md) | Type of RainDocument's problem (error) |
+|  [RDValueNode](./types/rdvaluenode.md) | Type of RainDocument's Value node |
 

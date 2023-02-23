@@ -1,8 +1,8 @@
-export * from './rainlang/formatter/formatter';
-export * from './rainlang/formatter/types';
+export * from './compiler/rainDecompiler';
+export * from './compiler/rainCompiler';
 
-export * from './rainlang/parser/parser';
-export * from './rainlang/parser/types';
+export * from './parser/rainParser';
+export * from './parser/rainParserTypes';
 
 export * from './types';
 export * from './utils';

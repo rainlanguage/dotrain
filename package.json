@@ -31,14 +31,6 @@
         "lint": "eslint \"src/**\" \"test/**\"",
         "docgen": "rm -rf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs"
     },
-    "prettier": {
-        "printWidth": 100,
-        "singleQuote": true,
-        "semi": false,
-        "tabWidth": 4,
-        "useTabs": false,
-        "trailingComma": "es5"
-    },
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
         "@princjef/api-documenter": "^1.0.2",
@@ -52,8 +44,6 @@
         "@typescript-eslint/parser": "^5.42.0",
         "chai": "^4.3.6",
         "eslint": "^8.26.0",
-        "eslint-config-prettier": "^8.5.0",
-        "eslint-plugin-prettier": "^4.2.1",
         "mocha": "^10.1.0",
         "ts-node": "^10.9.1",
         "tslib": "^2.4.1",
