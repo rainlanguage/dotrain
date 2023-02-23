@@ -35,7 +35,9 @@ const newResult = myRainDocument.update(newText, newOpmeta)
 |  Method | Description |
 |  --- | --- |
 |  [getComments()](./raindocument.md#getComments-method-1) | Get the current comments inside of the text of this RainDocument instance |
+|  [getCurrentLHSAliases()](./raindocument.md#getCurrentLHSAliases-method-1) | Get the current sub-exp aliases of this RainParser instance |
 |  [getExpressionConfig(item)](./raindocument.md#getExpressionConfig-method-1) | Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used. |
+|  [getLHSAliases()](./raindocument.md#getLHSAliases-method-1) | Get the parsed exp aliases of this RainParser instance |
 |  [getOpMeta()](./raindocument.md#getOpMeta-method-1) | Get the current raw op meta of this RainDocument instance in hex string |
 |  [getParseTree()](./raindocument.md#getParseTree-method-1) | Get the current parse tree of this RainDocument instance |
 |  [getProblems()](./raindocument.md#getProblems-method-1) | Get the current problems of this RainDocument instance |
@@ -61,6 +63,21 @@ getComments(): RDComment[];
 
 `RDComment[]`
 
+<a id="getCurrentLHSAliases-method-1"></a>
+
+### getCurrentLHSAliases()
+
+Get the current sub-exp aliases of this RainParser instance
+
+<b>Signature:</b>
+
+```typescript
+getCurrentLHSAliases(): RDAliasNode[];
+```
+<b>Returns:</b>
+
+`RDAliasNode[]`
+
 <a id="getExpressionConfig-method-1"></a>
 
 ### getExpressionConfig(item)
@@ -82,6 +99,21 @@ getExpressionConfig(item?: RDNode | RDNode[][] | RDParseTree): ExpressionConfig 
 <b>Returns:</b>
 
 `ExpressionConfig | undefined`
+
+<a id="getLHSAliases-method-1"></a>
+
+### getLHSAliases()
+
+Get the parsed exp aliases of this RainParser instance
+
+<b>Signature:</b>
+
+```typescript
+getLHSAliases(): RDAliasNode[][];
+```
+<b>Returns:</b>
+
+`RDAliasNode[][]`
 
 <a id="getOpMeta-method-1"></a>
 

@@ -9,7 +9,8 @@ import {
     RDProblem, 
     RDOpNode, 
     RDComment, 
-    RainDocumentResult
+    RainDocumentResult,
+    RDAliasNode
 } from './rainParserTypes';
 import { 
     OpMeta,
@@ -131,6 +132,20 @@ export class RainDocument {
      */
     public getRuntimeError(): Error | undefined {
         return this._rp.getRuntimeError();
+    }
+
+    /**
+     * @public Get the parsed exp aliases of this RainParser instance
+     */
+    public getLHSAliases(): RDAliasNode[][] {
+        return deepCopy(this._rp.getLHSAliases());
+    }
+    
+    /**
+     * @public Get the current sub-exp aliases of this RainParser instance
+     */
+    public getCurrentLHSAliases(): RDAliasNode[] {
+        return deepCopy(this._rp.getCurrentLHSAliases());
     }
 
     /**
@@ -309,6 +324,20 @@ class RainParser {
      */
     public getRuntimeError(): Error | undefined {
         return deepCopy(this.state.runtimeError);
+    }
+
+    /**
+     * @public Get the parsed exp aliases of this RainParser instance
+     */
+    public getLHSAliases(): RDAliasNode[][] {
+        return deepCopy(this.state.parse.expAliases);
+    }
+
+    /**
+     * @public Get the current sub-exp aliases of this RainParser instance
+     */
+    public getCurrentLHSAliases(): RDAliasNode[] {
+        return deepCopy(this.state.parse.subExpAliases);
     }
 
     /**

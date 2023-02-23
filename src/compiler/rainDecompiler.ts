@@ -158,113 +158,109 @@ export function rld(
     const _finalStack: string[] = [];
 
     // start formatting
-    try {
-        for (let i = 0; i < expressionConfig.sources.length; i++) {
-            const lhs: string[] = [];
-            const src = arrayify(expressionConfig.sources[i], { allowMissingPrefix: true });
-            let zeroOpCounter = 0;
-            for (let j = 0; j < src.length; j += 4) {
-                const _op = (src[j] << 8) + src[j + 1];
-                const _operand = (src[j + 2] << 8) + src[j + 3];
-                const _index = _op;
 
-                // error if an opcode not found in opmeta
-                if (_index > _opmeta.length) throw new Error(
-                    `opcode with enum "${_op}" does not exist on OpMeta`
-                );
+    for (let i = 0; i < expressionConfig.sources.length; i++) {
+        const lhs: string[] = [];
+        const src = arrayify(expressionConfig.sources[i], { allowMissingPrefix: true });
+        let zeroOpCounter = 0;
+        for (let j = 0; j < src.length; j += 4) {
+            const _op = (src[j] << 8) + src[j + 1];
+            const _operand = (src[j + 2] << 8) + src[j + 3];
+            const _index = _op;
+
+            // error if an opcode not found in opmeta
+            if (_index > _opmeta.length) return Promise.reject(
+                `opcode with enum "${_op}" does not exist on OpMeta`
+            );
+            else {
+                if (
+                    _op === _opmeta.findIndex(v => v.name === "read-memory") && 
+                    (_operand & 1) === 1
+                ) {
+                    _stack.push(
+                        BigNumber.from(
+                            _constants[_operand >> 1]
+                        ).eq(ethers.constants.MaxUint256)
+                            ? 'max-uint256'
+                            : _constants[_operand >> 1]
+                    );
+                }
                 else {
-                    if (
-                        _op === _opmeta.findIndex(v => v.name === "read-memory") && 
-                        (_operand & 1) === 1
-                    ) {
-                        _stack.push(
-                            BigNumber.from(
-                                _constants[_operand >> 1]
-                            ).eq(ethers.constants.MaxUint256)
-                                ? 'max-uint256'
-                                : _constants[_operand >> 1]
-                        );
-                    }
-                    else {
-                        let operandArgs = '';
-                        const _multiOutputs: string[] = [];
-                        const inputs = calcInputs(_opmeta[_index].inputs, _operand);
-                        const outputs = calcOutputs(_opmeta[_index].outputs, _operand);
+                    let operandArgs = '';
+                    const _multiOutputs: string[] = [];
+                    const inputs = calcInputs(_opmeta[_index].inputs, _operand);
+                    const outputs = calcOutputs(_opmeta[_index].outputs, _operand);
 
-                        // count zero output ops
-                        if (outputs === 0) zeroOpCounter++;
+                    // count zero output ops
+                    if (outputs === 0) zeroOpCounter++;
 
-                        // construct operand arguments
-                        if (typeof _opmeta[_index].operand !== "number") {
-                            let args;
-                            try {
-                                args = deconstructByBits(
-                                    _operand, 
-                                    (_opmeta[_index].operand as OperandArgs).map((v) => {
-                                        return {
-                                            bits: v.bits,
-                                            computation: v.computation
-                                        };
-                                    })
-                                );
-                            }
-                            catch (err) {
-                                throw new Error(`${err} of opcode ${_opmeta[_index].name}`);
-                            }   
-                            if (
-                                args.length === (_opmeta[_index].operand as OperandArgs).length
-                            ) {
-                                const _i = (_opmeta[_index].operand as OperandArgs).findIndex(
-                                    v => v.name === "inputs"
-                                );
-                                if (_i > -1) args.splice(_i, 1);
-                                if (args.length) operandArgs = '<' + args.join(" ") + ">";
-                            }
-                            else throw new Error(
-                                `decoder of opcode with enum "${
-                                    _opmeta[_index].name
-                                }" does not match with its operand arguments`
+                    // construct operand arguments
+                    if (typeof _opmeta[_index].operand !== "number") {
+                        let args;
+                        try {
+                            args = deconstructByBits(
+                                _operand, 
+                                (_opmeta[_index].operand as OperandArgs).map((v) => {
+                                    return {
+                                        bits: v.bits,
+                                        computation: v.computation
+                                    };
+                                })
                             );
                         }
-
-                        // cache multi outputs to use when updating the formatter stack
-                        if (outputs > 1) {
-                            for (let k = 0; k < outputs - 1; k++) _multiOutputs.push('_');
+                        catch (err) {
+                            return Promise.reject(`${err} of opcode ${_opmeta[_index].name}`);
+                        }   
+                        if (
+                            args.length === (_opmeta[_index].operand as OperandArgs).length
+                        ) {
+                            const _i = (_opmeta[_index].operand as OperandArgs).findIndex(
+                                v => v.name === "inputs"
+                            );
+                            if (_i > -1) args.splice(_i, 1);
+                            if (args.length) operandArgs = '<' + args.join(" ") + ">";
                         }
-
-                        // update formatter stack with new formatted opcode i.e.
-                        // take some items based on the formatted opcode and then
-                        // push the appended string with the opcode back into the stack
-                        _stack.push(
-                            ..._multiOutputs,
-                            _opmeta[_index].name +
-                            operandArgs +
-                            '(' +
-                            (inputs > 0 ? _stack.splice(-inputs).join(' ') : '') +
-                            ')'
+                        else return Promise.reject(
+                            `decoder of opcode with enum "${
+                                _opmeta[_index].name
+                            }" does not match with its operand arguments`
                         );
                     }
+
+                    // cache multi outputs to use when updating the formatter stack
+                    if (outputs > 1) {
+                        for (let k = 0; k < outputs - 1; k++) _multiOutputs.push('_');
+                    }
+
+                    // update formatter stack with new formatted opcode i.e.
+                    // take some items based on the formatted opcode and then
+                    // push the appended string with the opcode back into the stack
+                    _stack.push(
+                        ..._multiOutputs,
+                        _opmeta[_index].name +
+                        operandArgs +
+                        '(' +
+                        (inputs > 0 ? _stack.splice(-inputs).join(' ') : '') +
+                        ')'
+                    );
                 }
             }
-            
-            // cache the LHS elements
-            for (let j = 0; j < _stack.length - zeroOpCounter; j++) lhs.push('_');
-
-            // construct the source expression at current index, both LHS and RHS
-            _finalStack.push(
-                lhs.join(' ').concat(': ') + 
-                _stack.join(' ').concat(';')
-            );
-            _stack = [];
         }
+        
+        // cache the LHS elements
+        for (let j = 0; j < _stack.length - zeroOpCounter; j++) lhs.push('_');
 
-        return Promise.resolve(prettyFormat 
-            ? new RainDocument(rainFormat(_finalStack.join('\n')), opmeta) 
-            : new RainDocument(_finalStack.join('\n'), opmeta)
+        // construct the source expression at current index, both LHS and RHS
+        _finalStack.push(
+            lhs.join(' ').concat(': ') + 
+            _stack.join(' ').concat(';')
         );
+        _stack = [];
     }
-    catch (err) {
-        return Promise.reject(err);
-    }
+
+    return Promise.resolve(prettyFormat 
+        ? new RainDocument(rainFormat(_finalStack.join('\n')), opmeta) 
+        : new RainDocument(_finalStack.join('\n'), opmeta)
+    );
 }
 
