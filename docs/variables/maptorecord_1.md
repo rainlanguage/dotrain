@@ -21,5 +21,5 @@ function mapToRecord<K extends string | number | symbol>(map: Map<K, any>, prope
 
 `Record<K, any>`
 
-a new Record (a key/value pait object)
+a new Record from Map
 

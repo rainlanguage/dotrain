@@ -2,19 +2,17 @@
 
 # Type OpMeta
 
+Type Definitions for opcodes metadata used by RainLang.
 
 <b>Signature:</b>
 
 ```typescript
 type OpMeta = {
-    enum: number;
     name: string;
-    outputs: OpIO;
-    inputs: OpIO;
+    desc: string;
     operand: OperandMeta;
-    paramsValidRange: ParamsValidRange;
-    description?: string;
+    inputs: InputMeta;
+    outputs: OutputMeta;
     aliases?: string[];
-    data?: any;
 };
 ```

@@ -1,73 +1,74 @@
 import { BytesLike, BigNumber, ethers } from 'ethers';
-import { StateConfig, OpMeta } from '../../types';
-import { arrayify } from '../../utils';
-import { rainterpreterOpMeta } from '../../rainterpreter/opmeta';
+import { ExpressionConfig, OpMeta, InputMeta, OutputMeta, OperandArgs } from '../../types';
+import { arrayify, extractByBits, isBigNumberish, metaFromBytes, validateMeta } from '../../utils';
 import { Config, PrettifyConfig } from './types';
-import { AllStandardOps } from '../../rainterpreter/allStandardOps';
+import OpMetaSchema from "../../schema/op.meta.schema.json";
+import { Equation, Expression, parse } from 'algebra.js';
+
 
 /**
  * @public
  * The generator of human friendly readable source.
  *
  * @remarks
- * Parse an StateConfig/Script to a more human readable form, making easier to understand. This form allows users read exactly
+ * Parse an ExpressionConfig to a more human readable form, making easier to understand. This form allows users read exactly
  * what the Script will do, like the conditions, values used, etc. Also, anyone can learn to write their own scripts
  * if use the Human Form to see the output for each combination that they made.
  */
 export class Formatter {
-
-    private static pretty: boolean
-    private static opmeta: OpMeta[] = rainterpreterOpMeta
+    private static opmeta: OpMeta[]
 
     /**
      * @public
-     * Method to set the opmeta with more than AllStandardOps opcodes or with other name/aliases for this instance of the Formatter
+     * Method to set the op meta
      *
-     * @param opmeta_ - The OpMeta array
+     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
      */
-    public static set(opmeta_: OpMeta[]) {
-        this.opmeta = opmeta_
+    public static set(opmeta: string | Uint8Array | object[]) {
+        if (isBigNumberish(opmeta)) {
+            this.opmeta = metaFromBytes(opmeta as BytesLike, OpMetaSchema) as OpMeta[]
+        }
+        else {
+            const _meta = typeof opmeta === "string" ? JSON.parse(opmeta) : opmeta
+            if (validateMeta(_meta, OpMetaSchema)) this.opmeta = _meta as OpMeta[]
+            else throw new Error("invalid op meta")
+        }
     }
 
     /**
-     * Obtain the friendly output from an StateConfig/script.
-     * @param _state - The StateConfig/script to generate the friendly version
+     * @public
+     * Obtain the friendly output from an ExpressionConfig
+     * 
+     * @param _state - The ExpressionConfig to generate the friendly version
+     * @param _opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed)
      * @param _config - The configuration that will run the generator
      * @returns
      */
     public static get(
-        _state: StateConfig,
+        _state: ExpressionConfig,
+        _opmeta: string | Uint8Array | object[],
         _config: Config = {
             pretty: false,
-            storageEnums: undefined,
-            contextEnums: undefined,
-            tags: undefined,
-            enableTagging: false,
-            opmeta: undefined
+            // tags: undefined,
+            // enableTagging: false,
         }
     ): string {
-        if (_config.opmeta) {
-            this.set(_config.opmeta)
-        }
-        this.pretty = _config.pretty ? true : false
+        this.set(_opmeta)
         const _constants: string[] = []
-
         for (const item of _state.constants) {
             _constants.push(BigNumber.from(item).toHexString())
         }
-
         const _result = this._format(
             _state.sources,
             _constants,
-            //_config.storageEnums,
-            //_config.contextEnums,
-            _config.tags,
-            _config.enableTagging
+            // _config.tags,
+            // _config.enableTagging
         )
-        return this.pretty ? this.prettify(_result) : _result
+        return _config.pretty ? this.prettify(_result) : _result
     }
 
     /**
+     * @public
      * Make the output from the HumanFriendly Source more readable by adding indenting following the parenthesis
      *
      * @remarks
@@ -129,28 +130,26 @@ export class Formatter {
         return _expressions.join('\n')
     }
 
+    // * @param tags - (optional) Tags/names/aliases for individual items in final results (should be passed in order)
+    // * @param enableTagging - True if the result needs to be tagged and optimized for the RuleBuilder script generator
+
     /**
-     * The main workhorse of the Human Friendly Readable source that builds the whole text
+     * The main workhorse of the Formatter source that builds the whole text
      *
-     * @param sources - The StateConfig sources
-     * @param constants - The StateConfig constants all in hex string format
-     * @param tags - (optional) Tags/names/aliases for individual items in final results (should be passed in order)
-     * @param enableTagging - True if the result needs to be tagged and optimized for the RuleBuilder script generator
+     * @param sources - The ExpressionConfig sources
+     * @param constants - The ExpressionConfig constants all in hex string format
      * @returns A human friendly readable text of the passed script
      */
     private static _format = (
         sources: BytesLike[],
         constants: string[],
-        //storageEnums?: string[],
-        //contextEnums?: string[],
-        tags?: string[],
-        enableTagging = false,
+        // tags?: string[],
+        // enableTagging = false,
     ): string => {
         let _stack: string[] = []
         const _finalStack: string[] = []
-        const _zipmapStack: { [key: number]: string } = {}
-        const useableTags = tags
-        let counter = 0
+        //const useableTags = tags
+        //let counter = 0
 
         // start formatting
         for (let i = 0; i < sources.length; i++) {
@@ -160,48 +159,54 @@ export class Formatter {
             for (let j = 0; j < src.length; j += 4) {
                 const _op = (src[j] << 8) + src[j + 1]
                 const _operand = (src[j + 2] << 8) + src[j + 3]
-                const _index = this.opmeta.findIndex(v => v.enum === _op)
+                const _index = _op
 
                 // error if an opcode not found in opmeta
-                if (_index < 0) throw new Error(
+                if (_index > this.opmeta.length) throw new Error(
                     `opcode with enum "${_op}" does not exist on OpMeta`
                 )
                 else {
-                    if (_op === AllStandardOps.READ_MEMORY && (_operand & 1) === 1) {
+                    if (_op === this.opmeta.findIndex(v => v.name === "read-memory") && (_operand & 1) === 1) {
                         _stack.push(
                             BigNumber.from(constants[_operand >> 1]).eq(ethers.constants.MaxUint256)
-                                ? 'MaxUint256'
+                                ? 'max-uint256'
                                 : constants[_operand >> 1]
                         )
                     }
                     else {
                         let operandArgs = ''
                         const _multiOutputs: string[] = []
-                        const inputs = this.opmeta[_index].inputs(_operand)
-                        const outputs = this.opmeta[_index].outputs(_operand)
+                        const inputs = this._calcInputs(this.opmeta[_index].inputs, _operand)
+                        const outputs = this._calcOutputs(this.opmeta[_index].outputs, _operand)
 
                         // count zero output ops
                         if (outputs === 0) zeroOpCounter++
 
                         // construct operand arguments
-                        if (this.opmeta[_index].operand.argsConstraints.length) {
-                            const args = this.opmeta[_index].operand.decoder(_operand)
+                        if (typeof this.opmeta[_index].operand !== "number") {
+                            let args
+                            try {
+                                args = this._deconstructByBits(
+                                    _operand, 
+                                    (this.opmeta[_index].operand as OperandArgs).map((v) => {
+                                        return {
+                                            bits: v.bits,
+                                            computation: v.computation
+                                        }
+                                    })
+                                )
+                            }
+                            catch (err) {
+                                throw new Error(`${err} of opcode ${this.opmeta[_index].name}`)
+                            }   
                             if (
-                                args.length === this.opmeta[_index].operand.argsConstraints.length
+                                args.length === (this.opmeta[_index].operand as OperandArgs).length
                             ) {
-                                operandArgs = '<'
-                                for (
-                                    let k = 0;
-                                    k < this.opmeta[_index].operand.argsConstraints.length;
-                                    k++
-                                ) {
-                                    operandArgs += 
-                                        k === this.opmeta[_index].operand.argsConstraints.length - 1
-                                            ? args[k].toString()
-                                            : args[k].toString() + ' '
-
-                                }
-                                operandArgs += '>'
+                                const _i = (this.opmeta[_index].operand as OperandArgs).findIndex(
+                                    v => v.name === "inputs"
+                                )
+                                if (_i > -1) args.splice(_i, 1)
+                                if (args.length) operandArgs = '<' + args.join(" ") + ">"
                             }
                             else throw new Error(
                                 `decoder of opcode with enum "${
@@ -228,37 +233,19 @@ export class Formatter {
                         )
                     }
                 }
-
-                // handle GTE virtual opcode
-                if (_stack[_stack.length - 1].slice(0, 20) === 'ISZERO(GREATER_THAN(') {
-                    _stack[_stack.length - 1] = 'LESS_THAN_EQUAL(' +
-                        _stack[_stack.length - 1].slice(20, _stack[_stack.length - 1].length - 1)
-                }
-
-                // handle LTE virtual opcode
-                if (_stack[_stack.length - 1].slice(0, 17) === 'ISZERO(LESS_THAN(') {
-                    _stack[_stack.length - 1] = 'GREATER_THAN_EQUAL(' +
-                        _stack[_stack.length - 1].slice(17, _stack[_stack.length - 1].length - 1)
-                }
-
-                // handle INEQ virtual opcode
-                if (_stack[_stack.length - 1].slice(0, 16) === 'ISZERO(EQUAL_TO(') {
-                    _stack[_stack.length - 1] = 'GREATER_THAN_EQUAL(' +
-                        _stack[_stack.length - 1].slice(16, _stack[_stack.length - 1].length - 1)
-                }
             }
 
             // handle sources taggings if enabled by caller
-            if (enableTagging && !Object.keys(_zipmapStack).includes(i.toString())) {
-                for (let j = 0; j < _stack.length; j++) {
-                    const tempTag = useableTags?.shift()
-                    _stack[j] = tempTag
-                        ? `${tempTag}: {${_stack[j]}}`
-                        : `Item${counter}: {${_stack[j]}}`
+            // if (enableTagging) {
+            //     for (let j = 0; j < _stack.length; j++) {
+            //         const tempTag = useableTags?.shift()
+            //         _stack[j] = tempTag
+            //             ? `${tempTag}: {${_stack[j]}}`
+            //             : `Item${counter}: {${_stack[j]}}`
 
-                    counter++
-                }
-            }
+            //         counter++
+            //     }
+            // }
 
             // cache the LHS elements
             for (let j = 0; j < _stack.length - zeroOpCounter; j++) lhs.push('_')
@@ -274,5 +261,53 @@ export class Formatter {
         // join all sources expressions by seperating them 
         // by new line and return the result
         return _finalStack.join('\n')
+    }
+
+    /**
+     * Method to calculate number of inputs
+     */
+    private static _calcInputs(inputMeta: InputMeta, operand: number): number {
+        if (inputMeta === 0) return 0
+        else {
+            if ("bits" in inputMeta) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                return extractByBits(operand, inputMeta.bits!, inputMeta.computation)
+            }
+            else return inputMeta.parameters.length
+        }
+    }
+
+    /**
+     * Method to calculate number of outputs
+     */
+    private static _calcOutputs(outputMeta: OutputMeta, operand: number): number {
+        if (typeof outputMeta === "number") return outputMeta
+        else {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return extractByBits(operand, outputMeta.bits!, outputMeta.computation)
+        }
+    }
+
+    /**
+     * Method deconstruct operand to seperated arguments
+     */
+    private static _deconstructByBits(value: number, args: {
+        bits: [number, number], 
+        computation?: string
+    }[]): number[] {
+        const result = []
+        for (let i = 0; i < args.length; i++) {
+            let _val = extractByBits(value, args[i].bits)
+            const _comp = args[i].computation
+            if (_comp) {
+                const _lhs = parse(_comp)
+                const _eq = new Equation(_lhs as Expression, _val)
+                const _res = _eq.solveFor("arg")?.toString()
+                if (_res !== undefined) _val = Number(_res)
+                else throw new Error("invalid/corrupt operand or operand arguments in opmeta")
+            }
+            result.push(_val)
+        }
+        return result
     }
 }

@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [StateConfig](./stateconfig.md)
+[Home](../index.md) &gt; [ExpressionConfig](./expressionconfig.md)
 
-# Type StateConfig
+# Type ExpressionConfig
 
 Type of valid parsed expression, i.e. compiled bytes
 
 <b>Signature:</b>
 
 ```typescript
-type StateConfig = {
+type ExpressionConfig = {
     sources: BytesLike[];
     constants: BigNumberish[];
 };

@@ -21,5 +21,5 @@ function extractFromMap(map: Map<any, any>, properties: string[]): Map<any, any>
 
 `Map<any, any>`
 
-a new Map
+a new Map with extracted properties
 

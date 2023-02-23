@@ -1,24 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BigNumberish } from "ethers"
 
+
 /**
- * @public
- * Expression Notations
+ * @public Type of position start and end indexes, inclusive at both ends
  */
-export enum Notations {
-    prefix,
-    postfix,
-    infix,
-}
+export type Position = [number, number];
 
 /**
  * @public
- * Type of Parser's Error node
+ * Type of Parser's Diagnostic (error)
  */
-export type Error = {
-    error: string;
-    position: number[];
-    tag?: Tag;
+export type Diagnostic = {
+    msg: string;
+    position: Position;
 };
 
 /**
@@ -27,8 +21,7 @@ export type Error = {
  */
 export type Value = {
     value: BigNumberish;
-    position: number[];
-    error?: string;
+    position: Position;
     tag?: Tag;
 };
 
@@ -39,17 +32,24 @@ export type Value = {
 export type Op = {
     opcode: {
         name: string;
-        position: number[];
+        description: string;
+        position: Position;
     };
     operand: number;
     output: number;
-    position: number[];
-    parens: number[];
+    position: Position;
+    parens: Position;
     parameters: Node[];
-    data?: any;
-    error?: string;
-    infixOp?: boolean;
-    tag?: Tag;
+    operandArgs?: {
+        position: Position;
+        args: {
+            value: number;
+            name: string;
+            position: Position;
+            description?: string;
+        }[];
+    };
+    tags?: Tag[];
 };
 
 /**
@@ -57,25 +57,23 @@ export type Op = {
  */
 export type Tag = {
     name: string;
-    position: number[];
-    error?: string;
+    position: Position;
     tag?: Tag;
 }
 
 /**
  * @public
  */
-export type Comment = Error | {
+export type Comment = {
     comment: string;
-    position: number[];
-    error?: string;
+    position: Position;
 }
 
 /**
  * @public
  * Type of Parser's Node
  */
-export type Node = Error | Value | Op | Tag;
+export type Node = Value | Op | Tag;
 
 /**
  * @public
@@ -84,23 +82,16 @@ export type Node = Error | Value | Op | Tag;
 export type State = {
     parse: {
         tree: Node[];
-        tags: Tag[][];
-        multiOutputCache: (Op | Value)[][];
+        aliases: Tag[][];
+        subExpAliases: Tag[];
     };
     track: {
-        notation: number[];
         parens: {
             open: number[];
             close: number[];
         };
-        operandArgs: {
-            cache: number[][];
-            errorCache: string[];
-            lenCache: number[];
-        };
     };
     depthLevel: number;
-    ambiguity: boolean;
 };
 
 /**
@@ -108,106 +99,6 @@ export type State = {
 * Type of a parse tree object
 */
 export type ParseTree = Record<
-    string,
-    { tree: Node[]; position: number[] }
+    number,
+    { tree: Node[]; position: Position; }
 >;
-
-/**
- * @public
- * OpMeta-like type
- */
-export type virtualOpMeta = {
-    name: string,
-    outputs: (opcode: number, operand: number) => number,
-    inputs: (opcode: number, operand: number) => number,
-    description?: string,
-    aliases?: string[],
-    data?: any
-}
-
-/**
- * @public
- * Special opemta-like object for providing GTE in parser
- */
-export const virtualGte: virtualOpMeta = {
-    name: 'GREATER_THAN_EQUAL',
-    description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is greater than equal the second value and false/0 if not.',
-    outputs: (_operand) => 1,
-    inputs: (_operand) => 2,
-    aliases: ['GTE', 'GREATERTHANEQUAL', 'BIGGERTHANEQUAL', 'BIGGER_THAN_EQUAL', ">=", "≥"],
-    data: {
-        description: "Returns true if value X is greater than value Y.",
-        category: "logic",
-        example: "greater_than_equal(X, Y)",
-        parameters: [
-            {
-                spread: false,
-                name: "value",
-                description: "The first value."
-            },
-            {
-                spread: false,
-                name: "value",
-                description: "The second value."
-            }
-        ]
-    }
-}
-
-/**
- * @public
- * Special opmeta-like object for providing GTE in parser
- */
-export const virtualLte: virtualOpMeta = {
-    name: 'LESS_THAN_EQUAL',
-    description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is less than equal the second value and false/0 if not.',
-    outputs: (_operand) => 1,
-    inputs: (_operand) => 2,
-    aliases: ["LTE", "LESSTHANEQUAL", "LITTLE_THAN_EQUAL", "LITTLETHANEQUAL", "<=", "≤"],
-    data: {
-        description: "Returns true if value X is less than value Y.",
-        category: "logic",
-        example: "less_than_equal(X, Y)",
-        parameters: [
-            {
-                spread: false,
-                name: "value",
-                description: "The first value."
-            },
-            {
-                spread: false,
-                name: "value",
-                description: "The second value."
-            }
-        ]
-    }
-}
-
-/**
- * @public
- * Special opmeta-like object for providing inequality check in parser
- */
-export const virtualInEq: virtualOpMeta = {
-    name: 'INEQUAL_TO',
-    description: 'Takes last 2 values from stack and puts true/1 into the stack if the first value is not equal to the second value and false/0 if not.',
-    outputs: (_operand) => 1,
-    inputs: (_operand) => 2,
-    aliases: ['INEQ', 'INEQUALTO', 'NOTEQUAL', 'NOT_EQUAL', "NOTEQ", "NOT_EQUAL_TO", "NOTEQUALTO","!=", "!=="],
-    data: {
-        description: "Returns true if value X is not equal to value Y.",
-        category: "logic",
-        example: "inequal_to(X, Y)",
-        parameters: [
-            {
-                spread: false,
-                name: "value",
-                description: "The first value."
-            },
-            {
-                spread: false,
-                name: "value",
-                description: "The second value."
-            }
-        ]
-    }
-}

@@ -15,29 +15,22 @@ class Parser
 
 ```typescript
 // to import
-import { Parser } from 'rain-sdk';
+import { Parser } from 'rainlang';
 
-// to set the custom opmeta
-Parser.set(opmeta)
-
-// to set the custom details of GTE and LTE opcodes
-Parser.setGteMeta(name?, description?, data?, description?)
-Parser.setLteMeta(name?, description?, data?, description?)
-
-// to execute the parsing and get parse tree object and StateConfig
+// to execute the parsing and get parse tree object and ExpressionConfig
 let parseTree;
-let stateConfig
-[ parseTree, stateConfig ] = Parser.get(textScript, customOpMeta, customMultiOutputPlaceholderChar);
+let expressionConfig
+[ parseTree, expressionConfig ] = Parser.get(textScript, opMeta, callback);
 
 // to get parse tree object only
-let parseTree = Parser.getParseTree(textScript, customOpMeta, customMultiOutputPlaceholderChar);
+let parseTree = Parser.getParseTree(textScript, opMeta, callback);
 
-// to get StateConfig only
-let stateConfig = Parser.getStateConfig(textScript, customOpMeta, customMultiOutputPlaceholderChar);
+// to get ExpressionConfig only
+let expressionConfig = Parser.getExpressionConfig(textScript, opMeta, callback);
 
-// to build StateConfig (compile) from ParseTree object or a Node or array of Node
+// to build ExpressionConfig (compile) from ParseTree object or a Node or array of Node
 let argument: Node || Node[] || ParseTree
-let stateConfig = Parser.compile(argument)
+let expressionConfig = Parser.compile(argument)
 
 ```
 
@@ -45,36 +38,22 @@ let stateConfig = Parser.compile(argument)
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [\_resolveMultiOutput](./parser.md#_resolveMultiOutput-property-static) | `(totalCount: number, depthLevel: number) => void` | Method to resolve multi output nodes at current state of parsing |
 |  [constants](./parser.md#constants-property-static) | `BigNumberish[]` |  |
+|  [numericPattern](./parser.md#numericPattern-property-static) | `RegExp` |  |
 |  [parseTree](./parser.md#parseTree-property-static) | [ParseTree](../types/parsetree.md) |  |
 |  [sources](./parser.md#sources-property-static) | `BytesLike[]` |  |
+|  [wordPattern](./parser.md#wordPattern-property-static) | `RegExp` |  |
 
 ## Static Methods
 
 |  Method | Description |
 |  --- | --- |
-|  [compile(parseTree)](./parser.md#compile-method-static-1) | Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes |
-|  [get(expression, opmeta)](./parser.md#get-method-static-1) | Method to get parse tree object and StateConfig |
-|  [getParseTree(expression, opmeta)](./parser.md#getParseTree-method-static-1) | Method to get the parse tree object |
-|  [getStateConfig(expression, opmeta)](./parser.md#getStateConfig-method-static-1) | Method to get the StateConfig |
-|  [setGteMeta(name, description, data, aliases)](./parser.md#setGteMeta-method-static-1) | Method to set the details of the GTE opcode |
-|  [setInEqMeta(name, description, data, aliases)](./parser.md#setInEqMeta-method-static-1) | Method to set the details of the INEQ opcode |
-|  [setLteMeta(name, description, data, aliases)](./parser.md#setLteMeta-method-static-1) | Method to set the details of the LTE opcode |
+|  [compile(parseTree)](./parser.md#compile-method-static-1) | Method to get ExpressionConfig (bytes) from a Parse Tree object or a Node or array of Nodes |
+|  [get(expression, opmeta, callback)](./parser.md#get-method-static-1) | Method to get parse tree object and ExpressionConfig |
+|  [getExpressionConfig(expression, opmeta, callback)](./parser.md#getExpressionConfig-method-static-1) | Method to get the ExpressionConfig |
+|  [getParseTree(expression, opmeta, callback)](./parser.md#getParseTree-method-static-1) | Method to get the parse tree object |
 
 ## Static Property Details
-
-<a id="_resolveMultiOutput-property-static"></a>
-
-### \_resolveMultiOutput
-
-Method to resolve multi output nodes at current state of parsing
-
-<b>Signature:</b>
-
-```typescript
-static _resolveMultiOutput: (totalCount: number, depthLevel: number) => void;
-```
 
 <a id="constants-property-static"></a>
 
@@ -84,6 +63,16 @@ static _resolveMultiOutput: (totalCount: number, depthLevel: number) => void;
 
 ```typescript
 static constants: BigNumberish[];
+```
+
+<a id="numericPattern-property-static"></a>
+
+### numericPattern
+
+<b>Signature:</b>
+
+```typescript
+static readonly numericPattern: RegExp;
 ```
 
 <a id="parseTree-property-static"></a>
@@ -106,47 +95,58 @@ static parseTree: ParseTree;
 static sources: BytesLike[];
 ```
 
+<a id="wordPattern-property-static"></a>
+
+### wordPattern
+
+<b>Signature:</b>
+
+```typescript
+static readonly wordPattern: RegExp;
+```
+
 ## Static Method Details
 
 <a id="compile-method-static-1"></a>
 
 ### compile(parseTree)
 
-Method to get StateConfig (bytes) from a Parse Tree object or a Node or array of Nodes
+Method to get ExpressionConfig (bytes) from a Parse Tree object or a Node or array of Nodes
 
 <b>Signature:</b>
 
 ```typescript
-static compile(parseTree: Node | Node[] | Record<number, Node[]> | Record<number, {
-        tree: Node[];
-        position: number[];
-    }>): StateConfig;
+static compile(parseTree: Node | Node[] | Node[][] | ParseTree | Record<number, Node[]>): ExpressionConfig | undefined;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  parseTree | <pre>Node \| Node[] \| Record<number, Node[]> \| Record<number, {&#010;    tree: Node[];&#010;    position: number[];&#010;}></pre> | Tree like object (Parse Tree object or a Node or array of Nodes) to get the StateConfig from |
+|  parseTree | `Node \| Node[] \| Node[][] \| ParseTree \| Record<number, Node[]>` | Tree like object (Parse Tree object or a Node or array of Nodes) to get the ExpressionConfig from |
 
 <b>Returns:</b>
 
-`StateConfig`
+`ExpressionConfig | undefined`
 
-StateConfig, i.e. compiled bytes ready to be deployed
+ExpressionConfig, i.e. compiled bytes ready to be deployed
 
 <a id="get-method-static-1"></a>
 
-### get(expression, opmeta)
+### get(expression, opmeta, callback)
 
-Method to get parse tree object and StateConfig
+Method to get parse tree object and ExpressionConfig
 
 <b>Signature:</b>
 
 ```typescript
-static get(expression: string, opmeta?: OpMeta[]): [ParseTree | (ParseTree & {
-        'comments': Comment[];
-    }), StateConfig] | string;
+static get(expression: string, opmeta: Uint8Array | string | object[], callback?: (diagnostics: Diagnostic[], error?: Error) => void): [
+        ParseTree & {
+            diagnostics: Diagnostic[];
+            comments: Comment[];
+        },
+        (ExpressionConfig | undefined)
+    ] | undefined;
 ```
 
 #### Parameters
@@ -154,28 +154,60 @@ static get(expression: string, opmeta?: OpMeta[]): [ParseTree | (ParseTree & {
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `OpMeta[]` | (optional) custom opmeta |
+|  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
+|  callback | `(diagnostics: Diagnostic[], error?: Error) => void` | (optional) A callback fn to handle diagnotics and runtime errors |
 
 <b>Returns:</b>
 
-`[ParseTree | (ParseTree & {
-        'comments': Comment[];
-    }), StateConfig] | string`
+`[
+        ParseTree & {
+            diagnostics: Diagnostic[];
+            comments: Comment[];
+        },
+        (ExpressionConfig | undefined)
+    ] | undefined`
 
-Array of parse tree object and StateConfig
+Array of parse tree object and ExpressionConfig
+
+<a id="getExpressionConfig-method-static-1"></a>
+
+### getExpressionConfig(expression, opmeta, callback)
+
+Method to get the ExpressionConfig
+
+<b>Signature:</b>
+
+```typescript
+static getExpressionConfig(expression: string, opmeta: Uint8Array | string | object[], callback?: (diagnostics: Diagnostic[], error?: Error) => void): ExpressionConfig | undefined;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  expression | `string` | the text expression |
+|  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
+|  callback | `(diagnostics: Diagnostic[], error?: Error) => void` | (optional) A callback fn to handle diagnotics and runtime errors |
+
+<b>Returns:</b>
+
+`ExpressionConfig | undefined`
+
+A ExpressionConfig
 
 <a id="getParseTree-method-static-1"></a>
 
-### getParseTree(expression, opmeta)
+### getParseTree(expression, opmeta, callback)
 
 Method to get the parse tree object
 
 <b>Signature:</b>
 
 ```typescript
-static getParseTree(expression: string, opmeta?: OpMeta[]): ParseTree | (ParseTree & {
-        'comments': Comment[];
-    }) | string;
+static getParseTree(expression: string, opmeta: Uint8Array | string | object[], callback?: (diagnostics: Diagnostic[], error?: Error) => void): ParseTree & {
+        diagnostics: Diagnostic[];
+        comments: Comment[];
+    } | undefined;
 ```
 
 #### Parameters
@@ -183,113 +215,15 @@ static getParseTree(expression: string, opmeta?: OpMeta[]): ParseTree | (ParseTr
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expression | `string` | the text expression |
-|  opmeta | `OpMeta[]` | (optional) custom opmeta |
+|  opmeta | `Uint8Array \| string \| object[]` | Ops meta as bytes ie hex string or Uint8Array or json content as string or array of object (json parsed) |
+|  callback | `(diagnostics: Diagnostic[], error?: Error) => void` | (optional) A callback fn to handle diagnotics and runtime errors |
 
 <b>Returns:</b>
 
-`ParseTree | (ParseTree & {
-        'comments': Comment[];
-    }) | string`
+`ParseTree & {
+        diagnostics: Diagnostic[];
+        comments: Comment[];
+    } | undefined`
 
 A parse tree object
-
-<a id="getStateConfig-method-static-1"></a>
-
-### getStateConfig(expression, opmeta)
-
-Method to get the StateConfig
-
-<b>Signature:</b>
-
-```typescript
-static getStateConfig(expression: string, opmeta?: OpMeta[]): StateConfig | string;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  expression | `string` | the text expression |
-|  opmeta | `OpMeta[]` | (optional) custom opmeta |
-
-<b>Returns:</b>
-
-`StateConfig | string`
-
-A StateConfig
-
-<a id="setGteMeta-method-static-1"></a>
-
-### setGteMeta(name, description, data, aliases)
-
-Method to set the details of the GTE opcode
-
-<b>Signature:</b>
-
-```typescript
-static setGteMeta(name?: string, description?: string, data?: any, aliases?: string[]): void;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  name | `string` | (optional) name of the GTE opcode |
-|  description | `string` | (optional) The description |
-|  data | `any` | (optional) data |
-|  aliases | `string[]` | (optional) The aliases of GTE opcode |
-
-<b>Returns:</b>
-
-`void`
-
-<a id="setInEqMeta-method-static-1"></a>
-
-### setInEqMeta(name, description, data, aliases)
-
-Method to set the details of the INEQ opcode
-
-<b>Signature:</b>
-
-```typescript
-static setInEqMeta(name?: string, description?: string, data?: any, aliases?: string[]): void;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  name | `string` | (optional) name of the INEQ opcode |
-|  description | `string` | (optional) The description |
-|  data | `any` | (optional) data |
-|  aliases | `string[]` | (optional) The aliases of INEQ opcode |
-
-<b>Returns:</b>
-
-`void`
-
-<a id="setLteMeta-method-static-1"></a>
-
-### setLteMeta(name, description, data, aliases)
-
-Method to set the details of the LTE opcode
-
-<b>Signature:</b>
-
-```typescript
-static setLteMeta(name?: string, description?: string, data?: any, aliases?: string[]): void;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  name | `string` | (optional) name of the LTE opcode |
-|  description | `string` | (optional) The description |
-|  data | `any` | (optional) data |
-|  aliases | `string[]` | (optional) The aliases of LTE opcode |
-
-<b>Returns:</b>
-
-`void`
 

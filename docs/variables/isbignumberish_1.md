@@ -2,7 +2,7 @@
 
 # Function isBigNumberish()
 
-function to check if the a value is of type BigNumberish
+function to check if the a value is of type BigNumberish, from EthersJS library
 
 <b>Signature:</b>
 

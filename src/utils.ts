@@ -1,8 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import Ajv from "ajv";
+import fs from "fs";
 import type { BytesLike } from 'ethers';
 import { isBytes, isHexString } from 'ethers/lib/utils';
 import { BigNumber, BigNumberish, ethers, utils } from 'ethers';
-import { StateConfig } from './types';
+import { ExpressionConfig } from './types';
+import stringMath from "string-math";
+import { resolve } from "path";
+import { format } from "prettier";
+import { deflateSync, inflateSync } from "zlib";
+
 
 export const {
     /**
@@ -39,93 +46,11 @@ export const {
 
 /**
  * @public
- * A native type for ethers Hexable
- */
-export type Hexable = utils.Hexable;
-
-/**
- * @public
- * An enum for selectLte logic
- */
-export enum selectLteLogic {
-    every,
-    any,
-}
-
-/**
- * @public
- * An enum for selectLte mode
- */
-export enum selectLteMode {
-    min,
-    max,
-    first,
-}
-
-/**
- * @public
  */
 export enum MemoryType {
     Stack,
     Constant,
 }
-
-/**
- * @public
- */
-export enum Debug {
-    StatePacked,
-    Stack,
-}
-
-/**
- * @public
- * All the contract tier levels availables in all ITier contracts.
- */
-export enum Tier {
-    /**
-     * Contract tier level 0. This represent that the uset never has been
-     * interacted with the Tier contract.
-     */
-    ZERO,
-    /**
-     * Contract tier level 1.
-     */
-    ONE,
-    /**
-     * Contract tier level 2.
-     */
-    TWO,
-    /**
-     * Contract tier level 3.
-     */
-    THREE,
-    /**
-     * Contract tier level 4.
-     */
-    FOUR,
-    /**
-     * Contract tier level 5.
-     */
-    FIVE,
-    /**
-     * Contract tier level 6.
-     */
-    SIX,
-    /**
-     * Contract tier level 7.
-     */
-    SEVEN,
-    /**
-     * Contract tier level 8.
-     */
-    EIGHT,
-}
-
-/**
- * @public
- */
-export const eighteenZeros = '1000000000000000000';
 
 /**
  * @public
@@ -168,157 +93,6 @@ export const op = (
  */
 export function memoryOperand(type: number, offset: number): number {
     return (offset << 1) + type
-}
-
-/**
- * @public
- * Builds the operand for RainInterpreter's `CALL` opcode by packing 3 numbers into a single byte.
- *
- * @param inputSize - number of inputs being passed to the source
- * @param outputSize - number of outputs returned by the source
- * @param sourceIndex - index of function source
- */
-export function callOperand(
-    inputSize: number,
-    outputSize: number,
-    sourceIndex: number
-): number {
-    const operand = (sourceIndex << 8) + (outputSize << 4) + inputSize;
-    return operand;
-}
-  
-/**
- * @public
- * Builds the operand for RainInterpreter's `LOOP_N` opcode by packing 4 numbers into a single byte.
- *
- * @param n - loop the source for n times
- * @param inputSize - number of inputs being passed to the source
- * @param outputSize - number of outputs returned by the source
- * @param sourceIndex - index of function source
- */
-export function loopNOperand(
-    n: number,
-    inputSize: number,
-    outputSize: number,
-    sourceIndex: number
-): number {
-    const operand = (n << 12) + callOperand(inputSize, outputSize, sourceIndex);
-    return operand;
-}
-  
-/**
- * @public
- * Builds the operand for RainInterpreter's `DO_WHILE` opcode by packing 3 numbers into a single byte.
- *
- * @param inputSize - number of inputs being passed to the source
- * @param sourceIndex - index of function source
- */
-export function doWhileOperand(
-    inputSize: number,
-    sourceIndex: number
-): number {
-    const operand = (sourceIndex << 8) + inputSize;
-    return operand;
-}
-
-/**
- * @public
- * function to pack start/end tier range into a byte size number for the UPDATE_BLOCKS_FOR_TIER_RANGE opcode
- *
- * @param startTier - the start tier of the updating which ranges between 0 to 8 (exclusive)
- * @param endTier - the end tier of the updating which ranges between 0 to 8 (inclusive)
- * @returns a byte size number
- */
-export function tierRange(startTier: number, endTier: number): number {
-    //   op_.val & 0x0f, //     00001111
-    //   op_.val & 0xf0, //     11110000
-
-    if (startTier < 0 || startTier > 8) {
-        throw new Error(`Invalid startTier ${startTier}`)
-    } else if (endTier < 0 || endTier > 8) {
-        throw new Error(`Invalid endTier ${endTier}`)
-    }
-    let range = endTier
-    range <<= 4
-    range += startTier
-    return range
-}
-
-/**
- * @public
- * Constructs the operand for RainVM's `zipmap` opcode by packing 3 numbers into a single byte.
- * All parameters use zero-based counting i.e. an `fnSize` of 0 means to allocate one element (32 bytes)
- * on the stack to define your functions, while an `fnSize` of 3 means to allocate all four elements
- * (4 * 32 bytes) on the stack.
- *
- * @param sourceIndex - index of function source in `immutableSourceConfig.sources`
- * @param loopSize - number of times to subdivide vals, reduces uint size but allows for more vals (range 0-7)
- * @param valSize - number of vals in outer stack (range 0-7)
- */
-export function callSize(
-    sourceIndex: number,
-    loopSize: number,
-    valSize: number
-): number {
-    // CallSize(
-    //   op_.val & 0x07,      // 00000111
-    //   op_.val >> 3 & 0x03, // 00011000
-    //   op_.val >> 5 & 0x07  // 11100000
-    // )
-
-    if (sourceIndex < 0 || sourceIndex > 7) {
-        throw new Error('Invalid fnIndex')
-    }
-    else if (loopSize < 0 || loopSize > 3) {
-        throw new Error('Invalid loopSize')
-    }
-    else if (valSize < 0 || valSize > 7) {
-        throw new Error('Invalid valSize')
-    }
-    let callSize = valSize
-    callSize <<= 2
-    callSize += loopSize
-    callSize <<= 3
-    callSize += sourceIndex
-
-    return callSize
-}
-
-/**
- * @public
- * function to set up the operand for a SELECT_LTE opcode
- *
- * @param logic - 0 = every, 1 = any, acts like a logical and/or for the check against BLOCK_NUMBER
- * @param mode - 0 = min, 1 = max, 2 = first, the way to select the reports that pass the check against BLOCK_NUMBER
- * @param inputSize - the number of reports to stack for SELECT_LTE opcode
- * @returns a byte size number
- */
-export function selectLteOperand(
-    logic: number,
-    mode: number,
-    inputSize: number
-): number {
-    const operand = (logic << 13) + (mode << 8) + inputSize;
-    return operand;
-}
-
-/**
- * @public
- * Builds the operand for RainInterpreter's `FOLD_CONTEXT` opcode by packing 4 numbers into 2 bytes.
- *
- * @param inputs - accumulator input count
- * @param width - width of the column 
- * @param foldColumn - column to start from
- * @param sourceIndex - index of function source
- * @returns a 2 bytes size number
- */
-export function foldContextOperand(
-    inputs: number,
-    width: number,
-    foldColumn: number,
-    sourceIndex: number
-): number {
-    return (inputs << 12) + (width << 8) + (foldColumn << 4) + sourceIndex
 }
 
 /**
@@ -398,7 +172,7 @@ export const paddedUInt160 = (address: BigNumberish): string => {
 
 /**
  * @public
- * function to check if the a value is of type BigNumberish
+ * function to check if the a value is of type BigNumberish, from EthersJS library
  *
  * @param value - the value to check
  * @returns boolean
@@ -421,7 +195,7 @@ export function isBigNumberish(value: any): boolean {
  *
  * @param map - the map to extract from
  * @param properties - name of the properties in second item of the map elements
- * @returns a new Map
+ * @returns a new Map with extracted properties
  */
 export function extractFromMap(
     map: Map<any, any>,
@@ -451,7 +225,7 @@ export function extractFromMap(
  *
  * @param record - the record to extract from.
  * @param properties - name of the properties in value item of the key/va;ue pair of a Record object
- * @returns a new Record i.e. a new key/value pair object
+ * @returns a new Record with extracted key/value pairs
  */
 export function extractFromRecord<T extends string | number | symbol>(
     record: Record<T, any>,
@@ -480,12 +254,12 @@ export function extractFromRecord<T extends string | number | symbol>(
 
 /**
  * @public
- * Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor,
- * which are string, number or symbol.
+ * Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type 
+ * acceptable by Record constructor, which are string, number or symbol.
  *
  * @param map - The Map to conver to Record
  * @param properties - (optional) properties to pick from the second item of the Map's elements.
- * @returns a new Record (a key/value pait object)
+ * @returns a new Record from Map
  */
 export function mapToRecord<K extends string | number | symbol>(
     map: Map<K, any>,
@@ -511,12 +285,13 @@ export function mapToRecord<K extends string | number | symbol>(
 
 /**
  * @public
- * Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor,
- * which are string, number or symbol.
+ * Conver a Record (a key/value pair object) to a equivelant Map. Map keys will 
+ * be of type acceptable by Record constructor, which are string, number or symbol.
  *
  * @param record - The Record to convert to a Map
- * @param properties - (optional) properties to pick from the values of key/value pair items of the Record object.
- * @returns
+ * @param properties - (optional) properties to pick from the values of key/value 
+ * pair items of the Record object.
+ * @returns Map Object from Record
  */
 export function recordToMap<K extends string | number | symbol>(
     record: Record<K, any>,
@@ -531,15 +306,15 @@ export function recordToMap<K extends string | number | symbol>(
 
 /**
  * @public
- * Checks 2 StateConfig objects to see if they are equal or not
+ * Checks 2 ExpressionConfig objects to see if they are equal or not
  *
- * @param config1 - first StateConfig
- * @param config2 - second StateConfig
+ * @param config1 - first ExpressionConfig
+ * @param config2 - second ExpressionConfig
  * @returns boolean
  */
 export const areEqualStateConfigs = (
-    config1: StateConfig,
-    config2: StateConfig
+    config1: ExpressionConfig,
+    config2: ExpressionConfig
 ): boolean => {
     if (config1.constants.length !== config2.constants.length) return false
     if (config1.sources.length !== config2.sources.length) return false
@@ -584,3 +359,305 @@ export function deepFreeze(object: any) {
         return Object.freeze(object)
     }
 }
+
+/**
+ * @public
+ * Method to extract value from operand by specified bits indexes
+ * 
+ * @param value - Operand value
+ * @param bits - Bits indexes to extract
+ * @param computation - Any arethmetical operation to apply to extracted value
+ * @param computationVar - The variavle in compuation to solve for, default is "bits"
+ * @returns Extracted value
+ */
+export function extractByBits(
+    value: number, 
+    bits: [number, number], 
+    computation?: string,
+    computationVar?: string
+): number {
+    const _var = computationVar ? computationVar : "bits"
+    const _binary = Array.from(value.toString(2))
+        .reverse()
+        .join("")
+        .padEnd(16, "0")
+    const _extractedVal = Number("0b" + Array.from(_binary.slice(bits[0], bits[1]))
+        .reverse()
+        .join("")
+    )
+    if (computation) {
+        computation = computation.replace(new RegExp(_var, "g"), _extractedVal.toString())
+        const _result = stringMath(computation, (_err, _res) => _res)
+        return _result !== null ? _result : NaN;
+    }
+    else return _extractedVal
+}
+
+/**
+ * @public
+ * Method to construct the operand from operand args
+ * 
+ * @param args - Operand arguments
+ * @returns operand value
+ */
+export function constructByBits(args: {
+    /**
+     * The value of argument
+     */
+    value: number,
+    /**
+     * The start/end bits indexes
+     */
+    bits: [number, number],
+    /**
+     * The arithmetical equation
+     */
+    computation?: string,
+    /**
+     * The valid range the value can have after computation applied if computation is specified
+     */
+    validRange?: number[][],
+    /**
+     * The variavle in compuation to solve for, default is "arg"
+     */
+    computationVar?: string
+}[]): number | number[] {
+    let result = 0
+    const error = []
+    for (let i = 0; i < args.length; i++) {
+        let _val = args[i].value
+        const _defaultRange = 2 ** ((args[i].bits[1] - args[i].bits[0]) + 1)
+        const _offset = args[i].bits[0] - 0
+        let _eq = args[i].computation
+        if (_eq) {
+            let _var = "arg"
+            if (args[i].computationVar) _var = args[i].computationVar as string
+            _eq = _eq.replace(new RegExp(_var, "g"), _val.toString())
+            const _res = stringMath(_eq, (_err, _res) => _res)
+            if (_res !== null) _val = _res
+            else error.push(i)
+        }
+        if (_val < _defaultRange) {
+            const _validRanges = args[i].validRange
+            if (_validRanges) {
+                let check1 = true
+                let check2 = true
+                for (let j = 0; j < _validRanges.length; j++) {
+                    if (_validRanges[j].length === 1) {
+                        if (check2 && _val === _validRanges[j][0]) {
+                            check1 = false
+                            check2 = false
+                            result = 
+                                result + 
+                                Number("0b" + _val.toString(2) + "0".repeat(_offset))
+                        }
+                    }
+                    else {
+                        if (check2 && _validRanges[j][0] <= _val && _val <= _validRanges[j][1]) {
+                            check1 = false
+                            check2 = false
+                            result = 
+                                result + 
+                                Number("0b" + _val.toString(2) + "0".repeat(_offset))
+                        }
+                    }
+                }
+                if (check1) error.push(i)
+            }
+            else result = result + Number("0b" + _val.toString(2) + "0".repeat(_offset))
+        }
+        else error.push(i)
+    }
+    if (error.length) return error
+    else return result
+}
+
+/**
+ * @public
+ * Validate a meta or array of metas against a schema
+ *
+ * @param meta - A meta object or array of meta objects or stringified format of them
+ * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
+ * @returns boolean
+ */
+export const validateMeta = (
+    meta: object | object[] | string,
+    schema: object | string
+): boolean => {
+    const _expandBits = (bits: [number, number]) => {
+        const _len = bits[1] - bits[0] + 1
+        const _result = []
+        for (let i = 0; i < _len; i++) {
+            _result.push(bits[0] + i)
+        }
+        return _result
+    }
+    let _meta
+    let _schema
+    if (typeof meta === "string") _meta = JSON.parse(meta)
+    else _meta = meta
+    if (typeof schema === "string") _schema = JSON.parse(schema)
+    else _schema = schema
+    const ajv = new Ajv();
+    const validate = ajv.compile(_schema);
+    if (!Array.isArray(_meta)) _meta = [_meta]
+
+    const _allAliases = []
+    for (let i = 0; i < _meta.length; i++) {
+
+        // validate by schema
+        if (!validate(_meta[i])) return false;
+
+        // in-depth validation for op meta
+        if ("operand" in _meta[i] && "inputs" in _meta[i] && "outputs" in _meta[i]) {
+
+            // cache all aliases for check across all ops
+            _allAliases.push(_meta[i].name)
+            if (_meta[i].aliases) _allAliases.push(..._meta[i].aliases)
+
+            // check for operand args validity
+            if (typeof _meta[i].operand !== "number") {
+                let check = true
+                for (let j = 0; j < _meta[i].operand.length; j++) {
+                    // check computation validity
+                    if ("computation" in _meta[i].operand[j]) {
+                        let _comp = _meta[i].operand[j].computation
+                        _comp = _comp.replace(/arg/g, "30")
+                        try { stringMath(_comp) }
+                        catch { return false }
+                    }
+                    // bits range validity
+                    if (_meta[i].operand[j].bits[0] > _meta[i].operand[j].bits[1]) return false
+                    // check bits overlap
+                    const _range1 = _expandBits(_meta[i].operand[j].bits)
+                    for (let k = j + 1; k < _meta[i].operand.length; k++) {
+                        const _range2 = _expandBits(_meta[i].operand[k].bits)
+                        _range1.forEach(v => {
+                            if (_range2.includes(v)) check = false
+                        })
+                        if (!check) return false
+                    }
+                }
+            }
+
+            // check for inputs bits and computation validity
+            if (typeof _meta[i].inputs !== "number") {
+                // check bits range validity
+                if ("bits" in _meta[i].inputs) {
+                    if (_meta[i].inputs.bits[0] > _meta[i].inputs.bits[1]) return false
+                }
+                // check computation validity
+                if ("computation" in _meta[i].inputs) {
+                    let _comp = _meta[i].inputs.computation
+                    _comp = _comp.replace(/bits/g, "30")
+                    try { stringMath(_comp) }
+                    catch { return false }
+                }
+            }
+
+            // check for outputs bits and computation validity
+            if (typeof _meta[i].outputs !== "number") {
+                // check bits range validity
+                if (_meta[i].outputs.bits[0] > _meta[i].outputs.bits[1]) return false
+                // check computation validity
+                if ("computation" in _meta[i].outputs) {
+                    let _comp = _meta[i].outputs.computation
+                    _comp = _comp.replace(/bits/g, "30")
+                    try { stringMath(_comp) }
+                    catch { return false }
+                }
+            }
+        }
+    }
+
+    // check for overlap among all aliases
+    if (_allAliases.length) {
+        while (_allAliases.length) {
+            const _item = _allAliases.splice(0, 1)[0]
+            if (_allAliases.includes(_item)) return false;
+        }
+    }
+    return true;
+};
+  
+/**
+   * @public
+   * Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment
+   *
+   * @param meta - A meta object or array of meta objects or stringified format of them
+   * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
+   * @param path - (optional) The path to write the file to if generating an output 
+   * json file is desired, example: path/to/name.json
+   * @returns Bytes as HexString
+   */
+export const bytesFromMeta = (
+    meta: object | object[] | string,
+    schema: object | string,
+    path = ""
+): string => {
+    const _write = (_meta: any) => {
+        if (path) {
+            let _path = resolve(path);
+            if (!_path.endsWith(".json")) _path = _path + "Meta.json";
+            try {
+                fs.writeFileSync(_path, _meta);
+            } catch (error) {
+                console.log(error);
+            }
+        }
+    };
+    let _meta
+    let _schema
+    if (typeof meta === "string") _meta = JSON.parse(meta)
+    else _meta = meta
+    if (typeof schema === "string") _schema = JSON.parse(schema)
+    else _schema = schema
+    if (_schema) {
+        if (!validateMeta(_meta, _schema))
+            throw new Error("provided meta object is not valid");
+    }
+    const formatted = format(JSON.stringify(_meta, null, 4), { parser: "json" });
+    const bytes = Uint8Array.from(deflateSync(formatted));
+    const hex = hexlify(bytes, { allowMissingPrefix: true })
+    if (path.length) _write(formatted);
+    return hex;
+};
+
+/**
+   * @public
+   * Decompress and convert bytes to meta
+   *
+   * @param bytes - Bytes to decompress and convert to json
+   * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
+   * @param path - (optional) The path to write the file to if generating an output 
+   * json file is desired, example: path/to/name.json
+   * @returns meta content as object
+   */
+export const metaFromBytes = (
+    bytes: BytesLike,
+    schema: object | string,
+    path = ""
+) => {
+    const _write = (_meta: any) => {
+        if (path) {
+            let _path = resolve(path);
+            if (!_path.endsWith(".json")) _path = _path + "Meta.json";
+            try {
+                fs.writeFileSync(_path, _meta);
+            } catch (error) {
+                console.log(error);
+            }
+        }
+    };
+    let _schema
+    if (typeof schema === "string") _schema = JSON.parse(schema)
+    else _schema = schema
+    const _bytesArr = arrayify(bytes, { allowMissingPrefix: true })
+    const _meta = format(inflateSync(_bytesArr).toString(), { parser: "json" });
+    if (_schema) {
+        if (!validateMeta(JSON.parse(_meta), _schema))
+            throw new Error("invalid meta");
+    }
+    if (path.length) _write(_meta);
+    return JSON.parse(_meta);
+};

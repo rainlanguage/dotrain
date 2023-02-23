@@ -8,8 +8,7 @@
 ```typescript
 type Tag = {
     name: string;
-    position: number[];
-    error?: string;
+    position: Position;
     tag?: Tag;
 };
 ```

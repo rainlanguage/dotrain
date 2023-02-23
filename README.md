@@ -19,43 +19,31 @@ npm install --save-dev https://github.com/rouzwelt/rainlang.git
 
 
 ### **Parser**
-Parser is a compiler to generate a valid StateConfig (deployable bytes) from rain expressions.
+Parser is a compiler to generate a valid ExpressionConfig (deployable bytes) from rain expressions.
 ```typescript
 // to import
 import { Parser } from "@beehiveinnovation/rainlang";
 
-// to set the custom opmeta, if not set the default standard rain
-// OpMeta will be used
-Parser.set(opmeta);
-
-// to set the custom details of GTE, LTE and INEQ opcodes.
-// NOTE: LTE,  GTE and INEQ are not native Rain Standard opcodes, so
-// are provided virtually by Parser itself and their properties such as
-// the name, description, etc can be modified by the user
-Parser.setGteMeta([, name [, description [, data [, description]);
-Parser.setLteMeta([, name [, description [, data [, description]);
-Parser.setIneqMeta([, name [, description [, data [, description]);
-
-// to execute the parsing and get parse tree object and StateConfig
+// to execute the parsing and get parse tree object and ExpressionConfig
 let parseTree;
-let stateConfig;
-[ parseTree, stateConfig ] = Parser.get(expression [, customOpMeta]);
+let expressionConfig;
+[ parseTree, expressionConfig ] = Parser.get(expression opMeta, callback);
 
 // to get parse tree object only
-let parseTree = Parser.getParseTree(expression, [, customOpMeta]);
+let parseTree = Parser.getParseTree(expression, opMeta, callback);
 
-// to get StateConfig only
-let stateConfig = Parser.getStateConfig(expression, [, customOpMeta]);
+// to get ExpressionConfig only
+let expressionConfig = Parser.getExpressionConfig(expression, opMeta, callback);
 
-// to build(compile) StateConfig from ParseTree object or a Node or array of Node
+// to build(compile) ExpressionConfig from ParseTree object or a Node or array of Node
 let argument: Node || Node[] || ParseTree = objectInstanceOfSpecifiedType;
-let stateConfig = Parser.compile(argument)
+let expressionConfig = Parser.compile(argument)
 ```
 
 
 ### **Formatter**
 The generator of human friendly readable source.
-Format an StateConfig/Script to a more human readable form, making easier to understand. This form allows users read exactly
+Format an ExpressionConfig to a more human readable form, making easier to understand. This form allows users read exactly
 what the Script will do, like the conditions, values used, etc. Also, anyone can learn to write their own scripts
 if use the Human Form to see the output for each combination that they made.
 

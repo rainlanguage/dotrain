@@ -21,4 +21,5 @@ function recordToMap<K extends string | number | symbol>(record: Record<K, any>,
 
 `Map<K, any>`
 
+Map Object from Record
 

@@ -4,3 +4,7 @@ node_modules
 dist
 .env
 docs
+.DS_Store
+op.meta.schema.json
+allStandardOpMeta.json
+LICENSE

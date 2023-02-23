@@ -1,5 +1,3 @@
-import { OpMeta } from "../../types"
-
 /**
  * @public
  *
@@ -11,25 +9,13 @@ export type Config = {
      */
     pretty?: boolean;
     /**
-     * Providing the names for STORAGE opcodes
-     */
-    storageEnums?: string[];
-    /**
-     * Providing the names for CONTEXT opcodes
-     */
-    contextEnums?: string[];
-    /**
      * Tags/Names/Aliases for each individual item on the final stack such as Price and Quantity of a sale script (should be passed in order)
      */
-    tags?: string[];
+    // tags?: string[];
     /**
      * True if the result needs to be tagged and optimized for the RuleBuilder script generator
      */
-    enableTagging?: boolean;
-    /**
-     * An opmeta object to be used for creating the human friendly read
-     */
-    opmeta?: OpMeta[];
+    // enableTagging?: boolean;
 }
 
 /**

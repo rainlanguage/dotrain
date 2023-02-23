@@ -7,5 +7,5 @@ Type of Parser's Node
 <b>Signature:</b>
 
 ```typescript
-type Node = Error | Value | Op | Tag;
+type Node = Value | Op | Tag;
 ```
