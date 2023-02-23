@@ -26,18 +26,18 @@ import { Parser } from "@beehiveinnovation/rainlang";
 
 // to execute the parsing and get parse tree object and ExpressionConfig
 let parseTree;
-let stateConfig;
-[ parseTree, stateConfig ] = Parser.get(expression opMeta);
+let expressionConfig;
+[ parseTree, expressionConfig ] = Parser.get(expression opMeta, callback);
 
 // to get parse tree object only
-let parseTree = Parser.getParseTree(expression, opMeta);
+let parseTree = Parser.getParseTree(expression, opMeta, callback);
 
 // to get ExpressionConfig only
-let stateConfig = Parser.getExpressionConfig(expression, opMeta);
+let expressionConfig = Parser.getExpressionConfig(expression, opMeta, callback);
 
 // to build(compile) ExpressionConfig from ParseTree object or a Node or array of Node
 let argument: Node || Node[] || ParseTree = objectInstanceOfSpecifiedType;
-let stateConfig = Parser.compile(argument)
+let expressionConfig = Parser.compile(argument)
 ```
 
 

@@ -10,16 +10,23 @@ Type of Parser's Opcode node
 type Op = {
     opcode: {
         name: string;
-        position: number[];
+        description: string;
+        position: Position;
     };
     operand: number;
     output: number;
-    position: number[];
-    parens: number[];
+    position: Position;
+    parens: Position;
     parameters: Node[];
-    data?: any;
-    error?: string;
-    infixOp?: boolean;
-    tag?: Tag;
+    operandArgs?: {
+        position: Position;
+        args: {
+            value: number;
+            name: string;
+            position: Position;
+            description?: string;
+        }[];
+    };
+    tags?: Tag[];
 };
 ```

@@ -1,23 +1,18 @@
 import { BigNumberish } from "ethers"
 
+
 /**
- * @public
- * Expression Notations
+ * @public Type of position start and end indexes, inclusive at both ends
  */
-export enum Notations {
-    prefix,
-    postfix,
-    infix,
-}
+export type Position = [number, number];
 
 /**
  * @public
- * Type of Parser's Error node
+ * Type of Parser's Diagnostic (error)
  */
-export type Error = {
-    error: string;
-    position: number[];
-    tag?: Tag;
+export type Diagnostic = {
+    msg: string;
+    position: Position;
 };
 
 /**
@@ -26,8 +21,7 @@ export type Error = {
  */
 export type Value = {
     value: BigNumberish;
-    position: number[];
-    error?: string;
+    position: Position;
     tag?: Tag;
 };
 
@@ -38,17 +32,24 @@ export type Value = {
 export type Op = {
     opcode: {
         name: string;
-        position: number[];
+        description: string;
+        position: Position;
     };
     operand: number;
     output: number;
-    position: number[];
-    parens: number[];
+    position: Position;
+    parens: Position;
     parameters: Node[];
-    data?: any;
-    error?: string;
-    infixOp?: boolean;
-    tag?: Tag;
+    operandArgs?: {
+        position: Position;
+        args: {
+            value: number;
+            name: string;
+            position: Position;
+            description?: string;
+        }[];
+    };
+    tags?: Tag[];
 };
 
 /**
@@ -56,25 +57,23 @@ export type Op = {
  */
 export type Tag = {
     name: string;
-    position: number[];
-    error?: string;
+    position: Position;
     tag?: Tag;
 }
 
 /**
  * @public
  */
-export type Comment = Error | {
+export type Comment = {
     comment: string;
-    position: number[];
-    error?: string;
+    position: Position;
 }
 
 /**
  * @public
  * Type of Parser's Node
  */
-export type Node = Error | Value | Op | Tag;
+export type Node = Value | Op | Tag;
 
 /**
  * @public
@@ -83,19 +82,13 @@ export type Node = Error | Value | Op | Tag;
 export type State = {
     parse: {
         tree: Node[];
-        tags: Tag[][];
-        multiOutputCache: (Op | Value)[][];
+        aliases: Tag[][];
+        subExpAliases: Tag[];
     };
     track: {
-        notation: number[];
         parens: {
             open: number[];
             close: number[];
-        };
-        operandArgs: {
-            cache: number[][];
-            errorCache: string[];
-            lenCache: number[];
         };
     };
     depthLevel: number;
@@ -106,6 +99,6 @@ export type State = {
 * Type of a parse tree object
 */
 export type ParseTree = Record<
-    string,
-    { tree: Node[]; position: number[] }
+    number,
+    { tree: Node[]; position: Position; }
 >;

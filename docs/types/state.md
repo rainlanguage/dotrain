@@ -10,19 +10,13 @@ Type of Parser's State
 type State = {
     parse: {
         tree: Node[];
-        tags: Tag[][];
-        multiOutputCache: (Op | Value)[][];
+        aliases: Tag[][];
+        subExpAliases: Tag[];
     };
     track: {
-        notation: number[];
         parens: {
             open: number[];
             close: number[];
-        };
-        operandArgs: {
-            cache: number[][];
-            errorCache: string[];
-            lenCache: number[];
         };
     };
     depthLevel: number;
