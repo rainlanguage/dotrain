@@ -244,7 +244,11 @@ class RainParser {
                 this._parse();
             }
             catch (runtimeError) {
-                this.state.runtimeError = runtimeError as Error;
+                this.state.runtimeError = {
+                    name: (runtimeError as Error).name,
+                    message: (runtimeError as Error).message,
+                    stack: (runtimeError as Error).stack
+                } as Error;
             }
         }
     }
@@ -727,12 +731,12 @@ class RainParser {
                                                 if (_node.output > 0) {
                                                     _node.lhs = [];
                                                     _tags.splice(-_node.output).forEach(v => {
-                                                        if (v.name !== "_") _node.lhs?.push(v);
+                                                        _node.lhs?.push(v);
                                                     });
                                                 }
                                             }
                                             else _tags.splice(-1).forEach(v => {
-                                                if (v.name !== "_") _node.lhs = v;
+                                                _node.lhs = v;
                                             });
                                         }
                                     }
@@ -753,40 +757,58 @@ class RainParser {
                                                 if (_node.output > 0) {
                                                     _node.lhs = [];
                                                     _tags.splice(-_node.output).forEach(v => {
-                                                        if (v.name !== "_") _node.lhs?.push(v);
+                                                        _node.lhs?.push(v);
                                                     }); 
                                                 }
                                             }
                                             else _tags.splice(-1).forEach(v => {
-                                                if (v.name !== "_") _node.lhs = v;
+                                                _node.lhs = v;
                                             });
                                         }
                                     }
                                     else {
+                                        let _c = -_diff;
                                         const _nodes = [...this.state.parse.tree];
                                         for (let k = 0; k < -_diff; k++) {
-                                            const _node = _nodes.pop()!;
-                                            this.problems.push({
-                                                msg: `no LHS item exists to match this RHS item`,
-                                                position: _node.position,
-                                                code: 0x302
-                                            });
-                                        }
-                                        for (let k = 0; k < _treeCount; k++) {
-                                            const _node = this.state.parse.tree[
-                                                this.state.parse.tree.length - 1 - k + _diff
-                                            ];
-                                            if ("opcode" in _node) {
-                                                if (_node.output > 0) {
-                                                    _node.lhs = [];
-                                                    _tags.slice(-_node.output).forEach(v => {
-                                                        if (v.name !== "_") _node.lhs?.push(v);
+                                            if ("opcode" in _nodes[k]) {
+                                                if ((_nodes[k] as RDOpNode).output > 0) {
+                                                    const _node = _nodes[_nodes.length - 1];
+                                                    this.problems.push({
+                                                        msg: `no LHS item exists to match this RHS item`,
+                                                        position: _node.position,
+                                                        code: 0x302
                                                     });
+                                                    if ((_nodes[k] as RDOpNode).output > 1) {
+                                                        if (_c >= (_nodes[k] as RDOpNode).output) {
+                                                            _nodes.pop();
+                                                            _c -= (_nodes[k] as RDOpNode).output;
+                                                        }
+                                                        k += ((_nodes[k] as RDOpNode).output - 1);
+                                                    }
+                                                    else {
+                                                        _nodes.pop();
+                                                        _c--;
+                                                    }
                                                 }
                                             }
-                                            else _tags.slice(-1).forEach(v => {
-                                                if (v.name !== "_") _node.lhs = v;
-                                            });
+                                        }
+                                        for (let k = 0; k < _nodes.length; k++) {
+                                            const _node = this.state.parse.tree[
+                                                _nodes.length - 1 - k
+                                            ];
+                                            if (_node) {
+                                                if ("opcode" in _node) {
+                                                    if (_node.output > 0) {
+                                                        _node.lhs = [];
+                                                        _tags.slice(-_node.output).forEach(v => {
+                                                            _node.lhs?.push(v);
+                                                        });
+                                                    }
+                                                }
+                                                else _tags.slice(-1).forEach(v => {
+                                                    _node.lhs = v;
+                                                });
+                                            }
                                         }
                                     }
                                 }
