@@ -13,6 +13,7 @@ export type RDPosition = [number, number];
 export type RDProblem = {
     msg: string;
     position: RDPosition;
+    code: number;
 };
 
 /**
@@ -102,6 +103,7 @@ export type RainParseState = {
     depthLevel: number;
     operandArgsErr: boolean;
     runtimeError: Error | undefined;
+    opmetaError: boolean;
 };
 
 /**

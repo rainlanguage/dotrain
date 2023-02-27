@@ -7,3 +7,6 @@ export * from './parser/opMetaTypes';
 export * from './parser/rainParserTypes';
 
 export * from './utils';
+
+export * from './rainLanguageTypes';
+export * from './rainLanguageService';

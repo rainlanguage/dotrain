@@ -12,6 +12,7 @@
 
 |  Enumeration | Description |
 |  --- | --- |
+|  [ErrorCode](./enums/errorcode.md) | Error codes used by diagnostics |
 |  [MemoryType](./enums/memorytype.md) | Type for read-memory opcode |
 
 ## Functions
@@ -24,12 +25,27 @@
 |  [extractByBits(value, bits, computation, computationVar)](./variables/extractbybits_1.md) | Method to extract value from operand by specified bits indexes |
 |  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properites from a Map as a new Map with same keys. |
 |  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
+|  [getLanguageService(params)](./variables/getlanguageservice_1.md) | Main function to get language services for Rain |
 |  [isBigNumberish(value)](./variables/isbignumberish_1.md) | function to check if the a value is of type BigNumberish, from EthersJS library |
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [memoryOperand(type, offset)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
 |  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [rlc(document, opmeta)](./variables/rlc_1.md) | Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes) |
 |  [rld(expressionConfig, opmeta, prettyFormat)](./variables/rld_1.md) | Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document |
+
+## Interfaces
+
+|  Interface | Description |
+|  --- | --- |
+|  [ClientCapabilities](./interfaces/clientcapabilities.md) | Describes what LSP capabilities the client supports |
+|  [LanguageService](./interfaces/languageservice.md) | Interface for language services |
+|  [LanguageServiceParams](./interfaces/languageserviceparams.md) | Parameters for initiating Language Services |
+
+## Namespaces
+
+|  Namespace | Description |
+|  --- | --- |
+|  [ClientCapabilities](./namespaces/clientcapabilities.md) | Predefined latest client capabilities |
 
 ## Variables
 

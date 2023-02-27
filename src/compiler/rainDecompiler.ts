@@ -1,3 +1,4 @@
+import { TextDocument } from '../rainLanguageTypes';
 import { RainDocument } from '../parser/rainParser';
 import { ExpressionConfig } from './expressionConfigTypes';
 import { BytesLike, BigNumber, ethers } from 'ethers';
@@ -259,8 +260,14 @@ export function rld(
     }
 
     return Promise.resolve(prettyFormat 
-        ? new RainDocument(rainFormat(_finalStack.join('\n')), opmeta) 
-        : new RainDocument(_finalStack.join('\n'), opmeta)
+        ? new RainDocument(
+            TextDocument.create("file", "rainlang", 1, rainFormat(_finalStack.join('\n'))), 
+            opmeta
+        )
+        : new RainDocument(
+            TextDocument.create("file", "rainlang", 1, _finalStack.join('\n')),
+            opmeta
+        )
     );
 }
 
