@@ -4,6 +4,7 @@ node_modules
 dist
 .env
 docs
+tsconfig.json
 .DS_Store
 op.meta.schema.json
 allStandardOpMeta.json

@@ -1,15 +1,13 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import Ajv from "ajv";
 import fs from "fs";
-import type { BytesLike } from 'ethers';
-import { isBytes, isHexString } from 'ethers/lib/utils';
-import { BigNumber, BigNumberish, ethers, utils } from 'ethers';
-import { ExpressionConfig } from './types';
-import stringMath from "string-math";
+import Ajv from "ajv";
 import { resolve } from "path";
 import { format } from "prettier";
+import stringMath from "string-math";
+import type { BytesLike } from 'ethers';
 import { deflateSync, inflateSync } from "zlib";
-
+import { isBytes, isHexString } from 'ethers/lib/utils';
+import { ExpressionConfig } from "./compiler/expressionConfigTypes";
+import { BigNumber, BigNumberish, ethers, utils } from 'ethers';
 
 export const {
     /**
@@ -42,15 +40,8 @@ export const {
      * @see ethers.parseUnits
      */
     parseUnits,
-} = utils
+} = utils;
 
-/**
- * @public
- */
-export enum MemoryType {
-    Stack,
-    Constant,
-}
 
 /**
  * @public
@@ -67,8 +58,8 @@ export const bytify = (
     value: number | BytesLike | utils.Hexable,
     bytesLength = 1
 ): BytesLike => {
-    return zeroPad(hexlify(value), bytesLength)
-}
+    return zeroPad(hexlify(value), bytesLength);
+};
 
 /**
  * @public
@@ -81,8 +72,8 @@ export const op = (
     code: number,
     erand: number | BytesLike | utils.Hexable = 0
 ): Uint8Array => {
-    return concat([bytify(code, 2), bytify(erand, 2)])
-}
+    return concat([bytify(code, 2), bytify(erand, 2)]);
+};
 
 /**
  * @public
@@ -92,7 +83,7 @@ export const op = (
  * @param offset - the position of the item in respect to its type
  */
 export function memoryOperand(type: number, offset: number): number {
-    return (offset << 1) + type
+    return (offset << 1) + type;
 }
 
 /**
@@ -104,13 +95,13 @@ export function memoryOperand(type: number, offset: number): number {
  */
 export const paddedUInt256 = (report: BigNumberish): string => {
     if (BigNumber.from(report).gt(ethers.constants.MaxUint256)) {
-        throw new Error(`${report} exceeds max uint256`)
+        throw new Error(`${report} exceeds max uint256`);
     }
     return (
         '0x' +
         BigNumber.from(report).toHexString().substring(2).padStart(64, '0')
-    )
-}
+    );
+};
 
 /**
  * @public Utility function to produce 32 bits size hexString
@@ -120,10 +111,10 @@ export const paddedUInt256 = (report: BigNumberish): string => {
  */
 export const paddedUInt32 = (value: BigNumberish): string => {
     if (BigNumber.from(value).gt('0xffffffff')) {
-        throw new Error(`${value} exceeds max uint32`)
+        throw new Error(`${value} exceeds max uint32`);
     }
-    return BigNumber.from(value).toHexString().substring(2).padStart(8, '0')
-}
+    return BigNumber.from(value).toHexString().substring(2).padStart(8, '0');
+};
 
 /**
  * @public Utility function to produce 64 bits size hexString
@@ -133,10 +124,10 @@ export const paddedUInt32 = (value: BigNumberish): string => {
  */
 export const paddedUInt64 = (value: BigNumberish): string => {
     if (BigNumber.from(value).gt('0xffffffffffffffff')) {
-        throw new Error(`${value} exceeds max uint64`)
+        throw new Error(`${value} exceeds max uint64`);
     }
-    return BigNumber.from(value).toHexString().substring(2).padStart(16, '0')
-}
+    return BigNumber.from(value).toHexString().substring(2).padStart(16, '0');
+};
 
 /**
  * @public Utility function to produce 128 bits size hexString
@@ -146,10 +137,10 @@ export const paddedUInt64 = (value: BigNumberish): string => {
  */
 export const paddedUInt128 = (value: BigNumberish): string => {
     if (BigNumber.from(value).gt('0xffffffffffffffffffffffffffffffff')) {
-        throw new Error(`${value} exceeds max uint128`)
+        throw new Error(`${value} exceeds max uint128`);
     }
-    return BigNumber.from(value).toHexString().substring(2).padStart(32, '0')
-}
+    return BigNumber.from(value).toHexString().substring(2).padStart(32, '0');
+};
 
 /**
  * @public
@@ -162,13 +153,13 @@ export const paddedUInt160 = (address: BigNumberish): string => {
     if (
         BigNumber.from(address).gt('0xffffffffffffffffffffffffffffffffffffffff')
     ) {
-        throw new Error(`${address} exceeds max uint160`)
+        throw new Error(`${address} exceeds max uint160`);
     }
     return (
         '0x' +
         BigNumber.from(address).toHexString().substring(2).padStart(40, '0')
-    )
-}
+    );
+};
 
 /**
  * @public
@@ -186,7 +177,7 @@ export function isBigNumberish(value: any): boolean {
         isHexString(value) ||
         typeof value === 'bigint' ||
         isBytes(value))
-    )
+    );
 }
 
 /**
@@ -202,21 +193,21 @@ export function extractFromMap(
     properties: string[]
 ): Map<any, any> {
     if (properties.length > 0) {
-        const _arr = Array.from(map.entries())
+        const _arr = Array.from(map.entries());
         for (const item of _arr) {
-            let _newArr = {}
+            let _newArr = {};
             for (const key of Object.keys(item[1])) {
                 if (properties.includes(key)) {
                     _newArr = {
                         ..._newArr,
                         [key]: item[1][key],
-                    }
+                    };
                 }
             }
-            item[1] = _newArr
+            item[1] = _newArr;
         }
-        return new Map(_arr)
-    } else return map
+        return new Map(_arr);
+    } else return map;
 }
 
 /**
@@ -235,21 +226,21 @@ export function extractFromRecord<T extends string | number | symbol>(
         for (const key in record) {
             for (const value in record[key]) {
                 if (properties.includes(value)) {
-                    record[key] = record[key][value]
+                    record[key] = record[key][value];
                 }
             }
         }
-        return record as Record<T, any>
+        return record as Record<T, any>;
     } else if (properties.length > 0) {
         for (const key in record) {
             for (const value in record[key]) {
                 if (!properties.includes(value)) {
-                    delete record[key][value]
+                    delete record[key][value];
                 }
             }
         }
-        return record as Record<T, any>
-    } else return record
+        return record as Record<T, any>;
+    } else return record;
 }
 
 /**
@@ -265,21 +256,21 @@ export function mapToRecord<K extends string | number | symbol>(
     map: Map<K, any>,
     properties?: string[]
 ): Record<K, any> {
-    const _ret: Record<any, any> = {}
-    const Properties = properties ? properties : []
+    const _ret: Record<any, any> = {};
+    const Properties = properties ? properties : [];
 
     if (Properties.length === 1) {
         for (const [key, value] of map) {
-            _ret[key] = value[Properties[0]]
+            _ret[key] = value[Properties[0]];
         }
 
-        return _ret as Record<K, any>
+        return _ret as Record<K, any>;
     } else {
         for (const [key, value] of extractFromMap(map, Properties)) {
-            _ret[key] = value
+            _ret[key] = value;
         }
 
-        return _ret as Record<K, any>
+        return _ret as Record<K, any>;
     }
 }
 
@@ -297,11 +288,11 @@ export function recordToMap<K extends string | number | symbol>(
     record: Record<K, any>,
     properties?: string | string[]
 ): Map<K, any> {
-    const Properties = properties ? properties : []
+    const Properties = properties ? properties : [];
 
     return new Map(
         Object.entries(extractFromRecord(record, Properties))
-    ) as Map<K, any>
+    ) as Map<K, any>;
 }
 
 /**
@@ -316,26 +307,26 @@ export const areEqualStateConfigs = (
     config1: ExpressionConfig,
     config2: ExpressionConfig
 ): boolean => {
-    if (config1.constants.length !== config2.constants.length) return false
-    if (config1.sources.length !== config2.sources.length) return false
+    if (config1.constants.length !== config2.constants.length) return false;
+    if (config1.sources.length !== config2.sources.length) return false;
 
     for (let i = 0; i < config1.constants.length; i++) {
         if (
             !BigNumber.from(config1.constants[i]).eq(
                 BigNumber.from(config2.constants[i])
             )
-        ) return false
+        ) return false;
     }
 
     for (let i = 0; i < config1.sources.length; i++) {
         if (
             hexlify(config1.sources[i], { allowMissingPrefix: true }) !== 
             hexlify(config2.sources[i], { allowMissingPrefix: true })
-        ) return false
+        ) return false;
     }
 
-    return true
-}
+    return true;
+};
 
 /**
  * @public
@@ -347,16 +338,16 @@ export const areEqualStateConfigs = (
 export function deepFreeze(object: any) {
     if (typeof object === 'object') {
         // Retrieve the property names defined on object
-        const propNames = Object.getOwnPropertyNames(object)
+        const propNames = Object.getOwnPropertyNames(object);
     
         // Freeze properties before freezing self
         for (const name of propNames) {
-            const value = object[name]
+            const value = object[name];
             if (value && typeof value === "object") {
-                deepFreeze(value)
+                deepFreeze(value);
             }
         }
-        return Object.freeze(object)
+        return Object.freeze(object);
     }
 }
 
@@ -376,21 +367,21 @@ export function extractByBits(
     computation?: string,
     computationVar?: string
 ): number {
-    const _var = computationVar ? computationVar : "bits"
+    const _var = computationVar ? computationVar : "bits";
     const _binary = Array.from(value.toString(2))
         .reverse()
         .join("")
-        .padEnd(16, "0")
+        .padEnd(16, "0");
     const _extractedVal = Number("0b" + Array.from(_binary.slice(bits[0], bits[1]))
         .reverse()
         .join("")
-    )
+    );
     if (computation) {
-        computation = computation.replace(new RegExp(_var, "g"), _extractedVal.toString())
-        const _result = stringMath(computation, (_err, _res) => _res)
+        computation = computation.replace(new RegExp(_var, "g"), _extractedVal.toString());
+        const _result = stringMath(computation, (_err, _res) => _res);
         return _result !== null ? _result : NaN;
     }
-    else return _extractedVal
+    else return _extractedVal;
 }
 
 /**
@@ -422,54 +413,54 @@ export function constructByBits(args: {
      */
     computationVar?: string
 }[]): number | number[] {
-    let result = 0
-    const error = []
+    let result = 0;
+    const error = [];
     for (let i = 0; i < args.length; i++) {
-        let _val = args[i].value
-        const _defaultRange = 2 ** ((args[i].bits[1] - args[i].bits[0]) + 1)
-        const _offset = args[i].bits[0] - 0
-        let _eq = args[i].computation
+        let _val = args[i].value;
+        const _defaultRange = 2 ** ((args[i].bits[1] - args[i].bits[0]) + 1);
+        const _offset = args[i].bits[0] - 0;
+        let _eq = args[i].computation;
         if (_eq) {
-            let _var = "arg"
-            if (args[i].computationVar) _var = args[i].computationVar as string
-            _eq = _eq.replace(new RegExp(_var, "g"), _val.toString())
-            const _res = stringMath(_eq, (_err, _res) => _res)
-            if (_res !== null) _val = _res
-            else error.push(i)
+            let _var = "arg";
+            if (args[i].computationVar) _var = args[i].computationVar as string;
+            _eq = _eq.replace(new RegExp(_var, "g"), _val.toString());
+            const _res = stringMath(_eq, (_err, _res) => _res);
+            if (_res !== null) _val = _res;
+            else error.push(i);
         }
         if (_val < _defaultRange) {
-            const _validRanges = args[i].validRange
+            const _validRanges = args[i].validRange;
             if (_validRanges) {
-                let check1 = true
-                let check2 = true
+                let check1 = true;
+                let check2 = true;
                 for (let j = 0; j < _validRanges.length; j++) {
                     if (_validRanges[j].length === 1) {
                         if (check2 && _val === _validRanges[j][0]) {
-                            check1 = false
-                            check2 = false
+                            check1 = false;
+                            check2 = false;
                             result = 
                                 result + 
-                                Number("0b" + _val.toString(2) + "0".repeat(_offset))
+                                Number("0b" + _val.toString(2) + "0".repeat(_offset));
                         }
                     }
                     else {
                         if (check2 && _validRanges[j][0] <= _val && _val <= _validRanges[j][1]) {
-                            check1 = false
-                            check2 = false
+                            check1 = false;
+                            check2 = false;
                             result = 
                                 result + 
-                                Number("0b" + _val.toString(2) + "0".repeat(_offset))
+                                Number("0b" + _val.toString(2) + "0".repeat(_offset));
                         }
                     }
                 }
-                if (check1) error.push(i)
+                if (check1) error.push(i);
             }
-            else result = result + Number("0b" + _val.toString(2) + "0".repeat(_offset))
+            else result = result + Number("0b" + _val.toString(2) + "0".repeat(_offset));
         }
-        else error.push(i)
+        else error.push(i);
     }
-    if (error.length) return error
-    else return result
+    if (error.length) return error;
+    else return result;
 }
 
 /**
@@ -485,24 +476,24 @@ export const validateMeta = (
     schema: object | string
 ): boolean => {
     const _expandBits = (bits: [number, number]) => {
-        const _len = bits[1] - bits[0] + 1
-        const _result = []
+        const _len = bits[1] - bits[0] + 1;
+        const _result = [];
         for (let i = 0; i < _len; i++) {
-            _result.push(bits[0] + i)
+            _result.push(bits[0] + i);
         }
-        return _result
-    }
-    let _meta
-    let _schema
-    if (typeof meta === "string") _meta = JSON.parse(meta)
-    else _meta = meta
-    if (typeof schema === "string") _schema = JSON.parse(schema)
-    else _schema = schema
+        return _result;
+    };
+    let _meta;
+    let _schema;
+    if (typeof meta === "string") _meta = JSON.parse(meta);
+    else _meta = meta;
+    if (typeof schema === "string") _schema = JSON.parse(schema);
+    else _schema = schema;
     const ajv = new Ajv();
     const validate = ajv.compile(_schema);
-    if (!Array.isArray(_meta)) _meta = [_meta]
+    if (!Array.isArray(_meta)) _meta = [_meta];
 
-    const _allAliases = []
+    const _allAliases = [];
     for (let i = 0; i < _meta.length; i++) {
 
         // validate by schema
@@ -512,30 +503,30 @@ export const validateMeta = (
         if ("operand" in _meta[i] && "inputs" in _meta[i] && "outputs" in _meta[i]) {
 
             // cache all aliases for check across all ops
-            _allAliases.push(_meta[i].name)
-            if (_meta[i].aliases) _allAliases.push(..._meta[i].aliases)
+            _allAliases.push(_meta[i].name);
+            if (_meta[i].aliases) _allAliases.push(..._meta[i].aliases);
 
             // check for operand args validity
             if (typeof _meta[i].operand !== "number") {
-                let check = true
+                let check = true;
                 for (let j = 0; j < _meta[i].operand.length; j++) {
                     // check computation validity
                     if ("computation" in _meta[i].operand[j]) {
-                        let _comp = _meta[i].operand[j].computation
-                        _comp = _comp.replace(/arg/g, "30")
-                        try { stringMath(_comp) }
-                        catch { return false }
+                        let _comp = _meta[i].operand[j].computation;
+                        _comp = _comp.replace(/arg/g, "30");
+                        try { stringMath(_comp); }
+                        catch { return false; }
                     }
                     // bits range validity
-                    if (_meta[i].operand[j].bits[0] > _meta[i].operand[j].bits[1]) return false
+                    if (_meta[i].operand[j].bits[0] > _meta[i].operand[j].bits[1]) return false;
                     // check bits overlap
-                    const _range1 = _expandBits(_meta[i].operand[j].bits)
+                    const _range1 = _expandBits(_meta[i].operand[j].bits);
                     for (let k = j + 1; k < _meta[i].operand.length; k++) {
-                        const _range2 = _expandBits(_meta[i].operand[k].bits)
+                        const _range2 = _expandBits(_meta[i].operand[k].bits);
                         _range1.forEach(v => {
-                            if (_range2.includes(v)) check = false
-                        })
-                        if (!check) return false
+                            if (_range2.includes(v)) check = false;
+                        });
+                        if (!check) return false;
                     }
                 }
             }
@@ -544,27 +535,27 @@ export const validateMeta = (
             if (typeof _meta[i].inputs !== "number") {
                 // check bits range validity
                 if ("bits" in _meta[i].inputs) {
-                    if (_meta[i].inputs.bits[0] > _meta[i].inputs.bits[1]) return false
+                    if (_meta[i].inputs.bits[0] > _meta[i].inputs.bits[1]) return false;
                 }
                 // check computation validity
                 if ("computation" in _meta[i].inputs) {
-                    let _comp = _meta[i].inputs.computation
-                    _comp = _comp.replace(/bits/g, "30")
-                    try { stringMath(_comp) }
-                    catch { return false }
+                    let _comp = _meta[i].inputs.computation;
+                    _comp = _comp.replace(/bits/g, "30");
+                    try { stringMath(_comp); }
+                    catch { return false; }
                 }
             }
 
             // check for outputs bits and computation validity
             if (typeof _meta[i].outputs !== "number") {
                 // check bits range validity
-                if (_meta[i].outputs.bits[0] > _meta[i].outputs.bits[1]) return false
+                if (_meta[i].outputs.bits[0] > _meta[i].outputs.bits[1]) return false;
                 // check computation validity
                 if ("computation" in _meta[i].outputs) {
-                    let _comp = _meta[i].outputs.computation
-                    _comp = _comp.replace(/bits/g, "30")
-                    try { stringMath(_comp) }
-                    catch { return false }
+                    let _comp = _meta[i].outputs.computation;
+                    _comp = _comp.replace(/bits/g, "30");
+                    try { stringMath(_comp); }
+                    catch { return false; }
                 }
             }
         }
@@ -573,7 +564,7 @@ export const validateMeta = (
     // check for overlap among all aliases
     if (_allAliases.length) {
         while (_allAliases.length) {
-            const _item = _allAliases.splice(0, 1)[0]
+            const _item = _allAliases.splice(0, 1)[0];
             if (_allAliases.includes(_item)) return false;
         }
     }
@@ -606,19 +597,19 @@ export const bytesFromMeta = (
             }
         }
     };
-    let _meta
-    let _schema
-    if (typeof meta === "string") _meta = JSON.parse(meta)
-    else _meta = meta
-    if (typeof schema === "string") _schema = JSON.parse(schema)
-    else _schema = schema
+    let _meta;
+    let _schema;
+    if (typeof meta === "string") _meta = JSON.parse(meta);
+    else _meta = meta;
+    if (typeof schema === "string") _schema = JSON.parse(schema);
+    else _schema = schema;
     if (_schema) {
         if (!validateMeta(_meta, _schema))
             throw new Error("provided meta object is not valid");
     }
     const formatted = format(JSON.stringify(_meta, null, 4), { parser: "json" });
     const bytes = Uint8Array.from(deflateSync(formatted));
-    const hex = hexlify(bytes, { allowMissingPrefix: true })
+    const hex = hexlify(bytes, { allowMissingPrefix: true });
     if (path.length) _write(formatted);
     return hex;
 };
@@ -649,10 +640,10 @@ export const metaFromBytes = (
             }
         }
     };
-    let _schema
-    if (typeof schema === "string") _schema = JSON.parse(schema)
-    else _schema = schema
-    const _bytesArr = arrayify(bytes, { allowMissingPrefix: true })
+    let _schema;
+    if (typeof schema === "string") _schema = JSON.parse(schema);
+    else _schema = schema;
+    const _bytesArr = arrayify(bytes, { allowMissingPrefix: true });
     const _meta = format(inflateSync(_bytesArr).toString(), { parser: "json" });
     if (_schema) {
         if (!validateMeta(JSON.parse(_meta), _schema))
@@ -661,3 +652,30 @@ export const metaFromBytes = (
     if (path.length) _write(_meta);
     return JSON.parse(_meta);
 };
+
+
+/**
+ * @public
+ * Deep copy an item in a way that all of its properties get new reference
+ * 
+ * @param variable - The variable to copy
+ * @returns a new deep copy of the variable
+ */
+export function deepCopy<T>(variable: T): T {
+    let _result: any;
+    if (Array.isArray(variable)) {
+        _result = [] as T;
+        for (let i = 0; i < variable.length; i++) {
+            _result.push(deepCopy(variable[i]));
+        }
+    }
+    else if (typeof variable === "object") {
+        _result = {};
+        const _keys = Object.keys(variable as object);
+        for (let i = 0; i < _keys.length; i++) {
+            _result[_keys[i]] = deepCopy((variable as any)[_keys[i]]);
+        }
+    }
+    else _result = variable;
+    return _result as T;
+}

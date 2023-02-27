@@ -1,18 +1,10 @@
-import { BigNumberish, BytesLike } from 'ethers'
-
 /**
  * @public
- * Type of valid parsed expression, i.e. compiled bytes 
+ * Type for read-memory opcode
  */
-export type ExpressionConfig = {
-    /**
-     * Sources verbatim.
-     */
-    sources: BytesLike[];
-    /**
-     * Constants verbatim.
-     */
-    constants: BigNumberish[];
+export enum MemoryType {
+    Stack,
+    Constant,
 }
 
 /**
