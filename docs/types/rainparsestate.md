@@ -14,6 +14,7 @@ type RainParseState = {
         subExpAliases: RDAliasNode[];
     };
     track: {
+        char: number;
         parens: {
             open: number[];
             close: number[];

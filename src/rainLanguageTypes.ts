@@ -37,37 +37,42 @@ export {
 export enum ErrorCode {
     UndefinedOpMeta = 0,
     UndefinedWord = 1,
-    InvalidWordPattern = 2,
-    InvalidExpression = 3,
-    InvalidInputsMeta = 4,
-    InvalidOutputsMeta = 5,
-    InvalidNestedNode = 6,
-    InvalidSelfRef = 7,
 
-    UnexpectedEndOfComment = 0x101,
-    UnexpectedEndOfOperandArgs = 0x102,
-    UnexpectedCloseParen = 0x103,
-    UnexpectedRHSComment = 0x104,
+    InvalidWordPattern = 0x101,
+    InvalidExpression = 0x102,
+    InvalidInputsMeta = 0x103,
+    InvalidOutputsMeta = 0x104,
+    InvalidNestedNode = 0x105,
+    InvalidSelfReferenceLHS = 0x106,
 
-    OpcodeExpected = 0x201,
-    SpaceExpected = 0x202,
-    OperandArgsExpected = 0x203,
-    ClosingParenExpected = 0x204,
-    OpeningParenExpected = 0x205,
-    BracketsExpected = 0x206,
+    UnexpectedEndOfComment = 0x201,
+    UnexpectedClosingParen = 0x202,
+    UnexpectedRHSComment = 0x203,
 
-    MismatchRHS = 0x301,
-    MismatchLHS = 0x302,
-    MismatchOperandArgs = 0x303,
-    MismatchInputs = 0x304,
-    MismatchOutputs = 0x305,
+    ExpectedOpcode = 0x301,
+    ExpectedSpace = 0x302,
+    ExpectedOperandArgs = 0x303,
+    ExpectedClosingParen = 0x304,
+    ExpectedOpeningParen = 0x305,
+    ExpectedOpeningOperandArgBracket = 0x306,
+    ExpectedClosingOperandArgBracket = 0x307,
 
-    OORInputs = 0x401,
-    OOROperandArgs = 0x402,
-    OORValue = 0x403,
+    MismatchRHS = 0x401,
+    MismatchLHS = 0x402,
+    MismatchOperandArgs = 0x403,
+    MismatchInputs = 0x404,
+    MismatchOutputs = 0x405,
 
-    UnknownOp = 0x500,
+    OutOfRangeInputs = 0x501,
+    OutOfRangeOperandArgs = 0x502,
+    OutOfRangeValue = 0x503,
+
+    UnknownOp = 0x600,
+
+    RuntimeError = 0x700,
 }
+
+//export const RainErrors
 
 /**
  * @public

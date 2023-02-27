@@ -95,6 +95,7 @@ export type RainParseState = {
         subExpAliases: RDAliasNode[];
     };
     track: {
+        char: number;
         parens: {
             open: number[];
             close: number[];
@@ -114,5 +115,4 @@ export type RainDocumentResult = {
     parseTree: RDParseTree;
     comments: RDComment[];
     problems: RDProblem[];
-    runtimeError: Error | undefined;
 }
