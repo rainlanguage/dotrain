@@ -6,7 +6,7 @@
 
 |  Class | Description |
 |  --- | --- |
-|  [RainDocument](./classes/raindocument.md) | RainDocument is a wrapper for RainParser that provides the main functionalities and data types in order to be used later on to provide Rain Language Services or in Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes)<br><br>\* |
+|  [RainDocument](./classes/raindocument.md) | RainDocument is a wrapper for RainParser that provides the main functionalities and data types in order to be used later on to provide Rain Language Services or in Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes) |
 
 ## Enumerations
 
@@ -25,7 +25,7 @@
 |  [extractByBits(value, bits, computation, computationVar)](./variables/extractbybits_1.md) | Method to extract value from operand by specified bits indexes |
 |  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properites from a Map as a new Map with same keys. |
 |  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
-|  [getLanguageService(params)](./variables/getlanguageservice_1.md) | Main function to get language services for Rain |
+|  [getLanguageService(params)](./variables/getlanguageservice_1.md) | Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services |
 |  [isBigNumberish(value)](./variables/isbignumberish_1.md) | function to check if the a value is of type BigNumberish, from EthersJS library |
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [memoryOperand(type, offset)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
@@ -38,7 +38,7 @@
 |  Interface | Description |
 |  --- | --- |
 |  [ClientCapabilities](./interfaces/clientcapabilities.md) | Describes what LSP capabilities the client supports |
-|  [LanguageService](./interfaces/languageservice.md) | Interface for language services |
+|  [LanguageService](./interfaces/languageservice.md) | Interface for Rain language services |
 |  [LanguageServiceParams](./interfaces/languageserviceparams.md) | Parameters for initiating Language Services |
 
 ## Namespaces

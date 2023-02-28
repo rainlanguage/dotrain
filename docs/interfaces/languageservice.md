@@ -2,7 +2,7 @@
 
 # Interface LanguageService
 
-Interface for language services
+Interface for Rain language services
 
 <b>Signature:</b>
 

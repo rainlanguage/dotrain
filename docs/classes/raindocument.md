@@ -4,8 +4,6 @@
 
 RainDocument is a wrapper for RainParser that provides the main functionalities and data types in order to be used later on to provide Rain Language Services or in Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes)
 
-\*
-
 <b>Signature:</b>
 
 ```typescript

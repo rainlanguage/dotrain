@@ -15,7 +15,7 @@ import {
 
 /**
  * @public
- * Interface for language services
+ * Interface for Rain language services
  */
 export interface LanguageService {
 	doValidation(document: TextDocument, opmeta: Uint8Array | string): Promise<Diagnostic[]>;
@@ -28,9 +28,21 @@ export interface LanguageService {
 
 /**
  * @public
- * Main function to get language services for Rain
+ * Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services
+ * 
+ * @example
+ * ```ts
+ * // importing
+ * import { getLanguageService } from "@rainprotocol/rainlang";
+ * 
+ * // initiating the services
+ * const langServices = getLanguageService(clientCapabilities);
+ * 
+ * // getting validation results (lsp Diagnostics)
+ * const errors = await langServices.doValidate(myDocument, opmeta);
+ * ```
  */
-export function getLanguageService(params: LanguageServiceParams): LanguageService {
+export function getLanguageService(params?: LanguageServiceParams): LanguageService {
 
     const rainCompletion = new RainCompletion(params);
     const rainHover = new RainHover(params);
