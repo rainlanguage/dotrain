@@ -353,6 +353,15 @@ class RainParser {
      */
     public updateText(textDocument: TextDocument, parse = true) {
         this.textDocument = textDocument;
+        if (this.textDocument.getText() === "") {
+            this.exp = "";
+            this.resetState();
+            this.parseTree = [];
+            this.problems = [];
+            this.comments = [];
+            this.state.track.char = 0;
+            this.state.parse.expAliases = [];
+        }
         if (parse) this.parse();
     }
 
