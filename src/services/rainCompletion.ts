@@ -31,12 +31,12 @@ export class RainCompletion {
         opmeta: Uint8Array | string,
         position: Position
     ): Promise<CompletionItem[] | null> {
-        const _rp = new RainDocument(textDocument, opmeta);
+        const _rd = new RainDocument(textDocument, opmeta);
         const _td = textDocument;
         const _text = _td.getText();
         const _offset = _td.offsetAt(position);
         if (_offset === _text.length - 1 || _text[_offset + 1].match(/[<>(),;\s\n]/)) {
-            const _compOps = _rp.getOpMeta().map(v => {
+            const _compOps = _rd.getOpMeta().map(v => {
                 return {
                     label: v.name,
                     kind: CompletionItemKind.Operator,
