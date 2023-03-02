@@ -40,11 +40,24 @@ export class RainCompletion {
                 return {
                     label: v.name,
                     kind: CompletionItemKind.Function,
-                    detail: "opcode " + v.name + (v.operand === 0 ? "()" : "<>()"),
+                    detail: "opcode " + v.name + (
+                        v.operand === 0 
+                            ? "()" 
+                            : v.operand.find(i => i.name !== "inputs") 
+                                ? "<>()" 
+                                : "()"
+                    ),
                     documentation: {
                         kind: this.documentionType,
                         value: v.desc
-                    }
+                    },
+                    insertText: v.name + (
+                        v.operand === 0 
+                            ? "()" 
+                            : v.operand.find(i => i.name !== "inputs") 
+                                ? "<>()" 
+                                : "()"
+                    )
                 } as CompletionItem;
             });
             _rd.getOpMeta().forEach(v => {
@@ -52,11 +65,24 @@ export class RainCompletion {
                     _result.push({
                         label: e,
                         kind: CompletionItemKind.Function,
-                        detail: "opcode " + e + (v.operand === 0 ? "()" : "<>()"),
+                        detail: "opcode " + e + (
+                            v.operand === 0 
+                                ? "()" 
+                                : v.operand.find(i => i.name !== "inputs") 
+                                    ? "<>()" 
+                                    : "()"
+                        ),
                         documentation: {
                             kind: this.documentionType,
                             value: v.desc
-                        }
+                        },
+                        insertText: v.name + (
+                            v.operand === 0 
+                                ? "()" 
+                                : v.operand.find(i => i.name !== "inputs") 
+                                    ? "<>()" 
+                                    : "()"
+                        )
                     })
                 );
             });
