@@ -32,10 +32,10 @@ export class RainHover {
         opmeta: Uint8Array | string,
         position: Position
     ): Promise<Hover | null> {
-        const _rp = new RainDocument(textDocument, opmeta);
+        const _rd = new RainDocument(textDocument, opmeta);
         const _td = textDocument;
         const _offset = _td.offsetAt(position);
-        const _tree = _rp.getParseTree().find(v => 
+        const _tree = _rd.getParseTree().find(v => 
             v.position[0] <= _offset && v.position[1] >= _offset
         );
         const search = (node: RDNode[]): Hover | null => {

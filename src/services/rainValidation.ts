@@ -12,10 +12,10 @@ export function doValidation(
     textDocument: TextDocument, 
     opmeta: Uint8Array | string
 ): Promise<Diagnostic[]> {
-    const _rp = new RainDocument(textDocument, opmeta);
-    const _td = _rp.getTextDocument();
+    const _rd = new RainDocument(textDocument, opmeta);
+    const _td = _rd.getTextDocument();
 
-    return Promise.resolve(_rp.getProblems().map(v => {
+    return Promise.resolve(_rd.getProblems().map(v => {
         return Diagnostic.create(
             Range.create(
                 _td.positionAt(v.position[0]),
