@@ -72,7 +72,11 @@ export class RainHover {
                             return {
                                 contents: {
                                     kind: this.contentType,
-                                    value: "opcode" in _n ? _n.opcode.name : "value" in _n ? _n.value : _n.name
+                                    value: "opcode" in _n ? 
+                                        "Alias for opcode " + _n.opcode.name 
+                                        : "value" in _n 
+                                            ? "Alias for value " + _n.value 
+                                            : "Alias for alias " + _n.name
                                 }
                             } as Hover;
                         }

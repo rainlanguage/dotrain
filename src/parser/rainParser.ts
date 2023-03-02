@@ -1,5 +1,3 @@
-import { format } from 'prettier';
-import { deflateSync } from 'zlib';
 import { ErrorCode, TextDocument } from '../rainLanguageTypes';
 import { BigNumberish, BytesLike, ethers } from 'ethers';
 import OpMetaSchema from "../schema/op.meta.schema.json";
@@ -35,6 +33,7 @@ import {
     isBigNumberish,
     constructByBits
 } from '../utils';
+import { isBytesLike } from 'ethers/lib/utils';
 
 
 /**
@@ -64,22 +63,21 @@ export class RainDocument {
     /**
      * @public constructor of RainDocument object
      * @param textDocument - Raw text to parse (can be updated at any time after instantiation)
-     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string
+     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array
      */
-    constructor(textDocument: TextDocument, opmeta: Uint8Array | string) {
+    constructor(textDocument: TextDocument, opmeta: BytesLike) {
         this._rp = new RainParser(textDocument, opmeta);
     }
 
     /**
      * @public Method to update the RainDocument with new text or opmeta and get the parse results
      * @param newTextDocument - (optional) Raw text to parse
-     * @param newOpMeta - (optional) Ops meta as bytes ie hex string or Uint8Array or json content as string
-     * @returns RainDocument results
+     * @param newOpMeta - (optional) Ops meta as bytes ie hex string or Uint8Array
      */
     public update(
         newTextDocument?: TextDocument,
-        newOpMeta?: Uint8Array | string
-    ): RainDocumentResult {
+        newOpMeta?: BytesLike
+    ) {
         if (newOpMeta && newTextDocument) {
             this._rp.updateText(newTextDocument, false);
             this._rp.updateOpMeta(newOpMeta);
@@ -91,7 +89,6 @@ export class RainDocument {
             this._rp.updateText(newTextDocument);
         }
         else this._rp.parse();
-        return this._rp.getParseResult();
     }
 
     /**
@@ -155,14 +152,14 @@ export class RainDocument {
      * @public Get the parsed exp aliases of this RainParser instance
      */
     public getLHSAliases(): RDAliasNode[][] {
-        return deepCopy(this._rp.getLHSAliases());
+        return this._rp.getLHSAliases();
     }
     
     /**
      * @public Get the current sub-exp aliases of this RainParser instance
      */
     public getCurrentLHSAliases(): RDAliasNode[] {
-        return deepCopy(this._rp.getCurrentLHSAliases());
+        return this._rp.getCurrentLHSAliases();
     }
 
     /**
@@ -221,15 +218,16 @@ class RainParser {
         depthLevel: 0,
         operandArgsErr: false,
         runtimeError: undefined,
-        opmetaError: true
+        opmetaError: true,
+        opMetaErrorMsg: undefined
     };
 
     /**
      * @public Constructs a new RainParser object
      * @param textDocument - (optional) Raw text to parse (can be updated at any time after instantiation)
-     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string
+     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array
      */
-    constructor(textDocument: TextDocument, opmeta: Uint8Array | string) {
+    constructor(textDocument: TextDocument, opmeta: BytesLike) {
         // @TODO - add extract opmeta from text
         this.textDocument = textDocument;
         this.updateOpMeta(opmeta);
@@ -269,54 +267,40 @@ class RainParser {
     /**
      * @public 
      * Updates the op meta of this RainParser instance if the provided op meta was different than existing one
-     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string
+     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array
      * @param parse - Parse if the provided op meta vas valid
      * @return true if the new opmeta is valid and different than existing one
      */
-    public updateOpMeta(opmeta: Uint8Array | string, parse = true) {
+    public updateOpMeta(opmeta: BytesLike, parse = true) {
         let _newOpMetaBytes = "";
-        if (isBigNumberish(opmeta)) _newOpMetaBytes = hexlify(
+        if (isBytesLike(opmeta)) _newOpMetaBytes = hexlify(
             opmeta, 
             { allowMissingPrefix: true }
         );
         else {
-            try {
-                _newOpMetaBytes = hexlify(
-                    Uint8Array.from(
-                        deflateSync(
-                            format(
-                                JSON.stringify(JSON.parse(opmeta as string), null, 4), 
-                                { parser: "json" }
-                            )
-                        )
-                    ), 
-                    { allowMissingPrefix: true }
-                );
-            }
-            catch {
-                this.exp = "";
-                this.resetState();
-                this.parseTree = [];
-                this.problems = [];
-                this.comments = [];
-                this.rawOpMeta = "";
-                this.opmeta = [];
-                this.names = [];
-                this.opAliases = [];
-                this.pops = [];
-                this.pushes = [];
-                this.operand = [];
-                this.opAliases = [];
-                this.state.track.char = 0;
-                this.state.opmetaError = true;
-                this.state.parse.expAliases = [];
-            }
+            this.exp = "";
+            this.resetState();
+            this.parseTree = [];
+            this.problems = [];
+            this.comments = [];
+            this.rawOpMeta = "";
+            this.opmeta = [];
+            this.names = [];
+            this.opAliases = [];
+            this.pops = [];
+            this.pushes = [];
+            this.operand = [];
+            this.opAliases = [];
+            this.state.track.char = 0;
+            this.state.opmetaError = true;
+            this.state.parse.expAliases = [];
         }
         if (_newOpMetaBytes && _newOpMetaBytes !== this.rawOpMeta) {
             try {
                 this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
                 this.rawOpMeta = _newOpMetaBytes;
                 this.state.opmetaError = false;
+                this.state.opMetaErrorMsg = undefined;
                 this.names = this.opmeta.map(v => v.name);
                 this.opAliases = this.opmeta.map(v => v.aliases);
                 this.pops = this.opmeta.map(v => v.inputs);
@@ -324,7 +308,7 @@ class RainParser {
                 this.operand = this.opmeta.map(v => v.operand);
                 this.opAliases = this.opmeta.map(v => v.aliases);
             }
-            catch {
+            catch (_err) {
                 this.exp = "";
                 this.resetState();
                 this.parseTree = [];
@@ -341,6 +325,7 @@ class RainParser {
                 this.state.opmetaError = true;
                 this.state.parse.expAliases = [];
                 this.rawOpMeta = _newOpMetaBytes;
+                this.state.opMetaErrorMsg = _err?.toString().slice(7);
             }
         }
         if (parse) this.parse();
@@ -520,20 +505,51 @@ class RainParser {
         this.state.parse.expAliases = [];
         let document = this.textDocument.getText();
 
-        if (this.state.opmetaError) this.problems.push({
-            msg: "invalid op meta",
-            position: [0, this.textDocument.getText().length - 1],
-            code: ErrorCode.UndefinedOpMeta
-        });
+        if (this.state.opmetaError) {
+            this.problems.push({
+                msg: "invalid op meta",
+                position: [0, this.textDocument.getText().length - 1],
+                code: ErrorCode.UndefinedOpMeta
+            });
+            if (this.state.opMetaErrorMsg) this.problems.push({
+                msg: this.state.opMetaErrorMsg,
+                position: [0, this.textDocument.getText().length - 1],
+                code: ErrorCode.UndefinedOpMeta
+            });
+        }
+        else if (document.search(/[^ -~]/) > -1) {
+            let _i = document.search(/[^ -~]/);
+            while (_i > -1) {
+                const _charCode = document.codePointAt(_i)!.toString(16).padStart(4, "0");
+                const _char = _charCode.length > 4 
+                    ? document[_i] + document[_i + 1] 
+                    : document[_i];
+                this.problems.push({
+                    msg: _charCode.length > 4 
+                        ? `found non-ASCII character: "${_char}"`
+                        : `found non-printable-ASCII character: "${_char}"`,
+                    position: _charCode.length > 4 
+                        ? [_i, _i + 1]
+                        : [_i, _i],
+                    code: _charCode.length > 4 
+                        ? ErrorCode.NonASCIICharacter
+                        : ErrorCode.NonPrintableASCIICharacter
+                });
+                document = document.replace(
+                    _charCode.length > 4 
+                        ? document[_i] + document[_i + 1] 
+                        : document[_i], 
+                    " ".repeat(_charCode.length > 4 ? 2 : 1)
+                );
+                _i = document.search(/[^ -~]/);
+            }
+        }
         else {
             // start parsing if the string is not empty
             if (document.length) {
 
                 // ----------- remove indents -----------
                 document = document.replace(/\n/g, ' ');
-
-                // // ----------- convert html &nbps to standard whitespace -----------
-                // document = document.replace(/&nbsp/g, ' ');
 
                 // ----------- extract comments if any exists -----------
                 if(document.includes('/*')) {
@@ -1055,37 +1071,19 @@ class RainParser {
                     node.operand = 0;
                     if (this.pops[_index] === 0) {
                         if (node.parameters.length) this.problems.push({
-                            msg: "invalid number of inputs",
-                            position: [...node.position],
-                            code: ErrorCode.MismatchInputs
+                            msg: "out-of-range inputs",
+                            position: [...node.parens],
+                            code: ErrorCode.OutOfRangeInputs
                         });
                     }
                     else {
                         if (
-                            "bits" in (this.pops[_index] as InputArgs) || 
-                            "computation" in (this.pops[_index] as InputArgs)
+                            node.parameters.length !== 
+                            (this.pops[_index] as InputArgs).parameters.length
                         ) this.problems.push({
-                            msg: "invalid input meta format",
-                            position: [...node.position],
-                            code: ErrorCode.InvalidInputsMeta
-                        });
-                        else {
-                            if (
-                                node.parameters.length !== 
-                                (this.pops[_index] as InputArgs).parameters.length
-                            ) this.problems.push({
-                                msg: "out-of-range inputs",
-                                position: [...node.position],
-                                code: ErrorCode.OutOfRangeInputs
-                            });
-                        }
-                    }
-                    if (typeof this.pushes[_index] !== "number") {
-                        node.output = NaN;
-                        this.problems.push({
-                            msg: "invalid output meta format",
-                            position: [...node.position],
-                            code: ErrorCode.InvalidOutputsMeta
+                            msg: "out-of-range inputs",
+                            position: [...node.parens],
+                            code: ErrorCode.OutOfRangeInputs
                         });
                     }
                 }
@@ -1118,6 +1116,25 @@ class RainParser {
                             (this.pushes[_index] as ComputedOutput).bits, 
                             (this.pushes[_index] as ComputedOutput).computation
                         );
+                        if (this.pops[_index] === 0) {
+                            if (node.parameters.length) this.problems.push({
+                                msg: "out-of-range inputs",
+                                position: [...node.parens],
+                                code: ErrorCode.OutOfRangeInputs
+                            });
+                        }
+                        else {
+                            if (_inputsIndex === -1) {
+                                if (
+                                    node.parameters.length !== 
+                                    (this.pops[_index] as InputArgs).parameters.length
+                                ) this.problems.push({
+                                    msg: "out-of-range inputs",
+                                    position: [...node.parens],
+                                    code: ErrorCode.OutOfRangeInputs
+                                });
+                            }
+                        }
                     }
                     else {
                         node.operand = NaN;
@@ -1179,7 +1196,73 @@ class RainParser {
             v => v.name === _word
         );
 
-        if (_aliasIndex > -1) {
+        if (this.exp.startsWith("(") || this.exp.startsWith("<")) {
+            if (!_word.match(this.wordPattern)) this.problems.push({
+                msg: `invalid word pattern: "${_word}"`,
+                position: [..._wordPos],
+                code: ErrorCode.InvalidWordPattern
+            });
+            let _enum = this.names.indexOf(_word);
+            if (_enum === -1) _enum = this.opAliases.findIndex(v => v?.includes(_word));
+            let count = 0;
+            if (_enum > -1 && typeof this.operand[_enum] !== "number") {
+                (this.operand[_enum] as OperandArgs).forEach(v => {
+                    if (v.name !== "inputs") count++;
+                });
+            }
+            if (_enum === -1) {
+                this.problems.push({
+                    msg: `unknown opcode: "${_word}"`,
+                    position: [..._wordPos],
+                    code: ErrorCode.UnknownOp
+                });
+            }
+            let _op: RDOpNode = {
+                opcode: {
+                    name: _enum > -1 ? this.names[_enum] : "unknown opcode",
+                    description: _enum > -1 ? this.opmeta[_enum].desc : "",
+                    position: [..._wordPos],
+                },
+                operand: NaN,
+                output: NaN,
+                position: [[..._wordPos][0], NaN],
+                parens: [NaN, NaN],
+                parameters: []
+            };
+            if (this.exp.startsWith("<")) _op = 
+                this.resolveOperand(entry + _word.length, _op, count)!;
+            else if (count) {
+                this.problems.push({
+                    msg: `expected operand arguments for opcode ${_op.opcode.name}`,
+                    position: [..._wordPos],
+                    code: ErrorCode.ExpectedOperandArgs
+                });
+                this.state.operandArgsErr = true;
+            }
+            if (this.exp.startsWith("(")) {
+                const _pos = _op.operandArgs 
+                    ? [..._op.operandArgs!.position][1] + 1 
+                    : [..._wordPos][1] + 1;
+                this.exp = this.exp.replace('(', '');
+                this.state.track.parens.open.push(_pos);
+                _op.parens[0] = _pos;
+                this.updateTree(_op);
+                this.state.depthLevel++;
+                this.problems.push({
+                    msg: 'expected ")"',
+                    position: [[..._wordPos][0], _pos],
+                    code: ErrorCode.ExpectedClosingParen
+                });
+            }
+            else {
+                this.problems.push({
+                    msg: 'expected "("',
+                    position: [..._wordPos],
+                    code: ErrorCode.ExpectedOpeningParen
+                });
+            }
+        }
+        else if (_aliasIndex > -1) {
             if (!_word.match(this.wordPattern)) this.problems.push({
                 msg: `invalid pattern for alias: ${_word}`,
                 position: [..._wordPos],
@@ -1222,90 +1305,11 @@ class RainParser {
                     position: [..._wordPos],
                 });
             }
-            else {
-                let _enum = this.names.indexOf(_word);
-                if (_enum === -1) _enum = this.opAliases.findIndex(v => v?.includes(_word));
-                let count = 0;
-                if (_enum > -1 && typeof this.operand[_enum] !== "number") {
-                    (this.operand[_enum] as OperandArgs).forEach(v => {
-                        if (v.name !== "inputs") count++;
-                    });
-                }
-                if (this.exp.startsWith('<') || this.exp.startsWith('(')) {
-                    const _errIndex = this.problems.length;
-                    if (_enum === -1) {
-                        this.problems.push({
-                            msg: `unknown opcode: "${_word}"`,
-                            position: [..._wordPos],
-                            code: ErrorCode.UnknownOp
-                        });
-                    }
-                    let _op: RDOpNode = {
-                        opcode: {
-                            name: _enum > -1 ? this.names[_enum] : "unknown opcode",
-                            description: _enum > -1 ? this.opmeta[_enum].desc : "",
-                            position: [..._wordPos],
-                        },
-                        operand: NaN,
-                        output: NaN,
-                        position: [[..._wordPos][0], NaN],
-                        parens: [NaN, NaN],
-                        parameters: []
-                    };
-                    if (this.exp.startsWith("<")) _op = 
-                        this.resolveOperand(entry + _word.length, _op, count)!;
-                    else if (count) {
-                        this.problems.push({
-                            msg: `expected operand arguments for opcode ${_op.opcode.name}`,
-                            position: [..._wordPos],
-                            code: ErrorCode.ExpectedOperandArgs
-                        });
-                        this.state.operandArgsErr = true;
-                    }
-                    if (this.exp.startsWith("(")) {
-                        const _pos = _op.operandArgs 
-                            ? [..._op.operandArgs!.position][1] + 1 
-                            : [..._wordPos][1] + 1;
-                        this.exp = this.exp.replace('(', '');
-                        this.state.track.parens.open.push(_pos);
-                        _op.parens[0] = _pos;
-                        this.updateTree(_op);
-                        this.state.depthLevel++;
-                        this.problems.push({
-                            msg: 'expected ")"',
-                            position: [[..._wordPos][0], _pos],
-                            code: ErrorCode.ExpectedClosingParen
-                        });
-                    }
-                    else {
-                        if (_enum === -1) this.problems[_errIndex].position[1] = 
-                            [..._op.operandArgs!.position][1];
-                        else this.problems.push({
-                            msg: 'expected "("',
-                            position: [..._wordPos],
-                            code: ErrorCode.ExpectedOpeningParen
-                        });
-                    }
-                }
-                else {
-                    if (_enum === -1) this.problems.push({
-                        msg: `undefined word: ${_word}`,
-                        position: [..._wordPos],
-                        code: ErrorCode.UndefinedWord
-                    });
-                    else {
-                        this.problems.push({
-                            msg: `expected "${_word}" opcode to be followed by ${
-                                count > 0 ? "operand args and parens" : "parens"
-                            }`,
-                            position: [..._wordPos],
-                            code: count > 0 
-                                ? ErrorCode.ExpectedOpeningOperandArgBracket 
-                                : ErrorCode.ExpectedOpeningParen
-                        });
-                    }
-                }
-            }   
+            else this.problems.push({
+                msg: `undefined word: ${_word}`,
+                position: [..._wordPos],
+                code: ErrorCode.UndefinedWord
+            });
         }
         else this.problems.push({
             msg: `"${_word}" is not a valid rainlang word`,

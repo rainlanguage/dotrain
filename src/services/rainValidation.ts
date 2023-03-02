@@ -1,5 +1,5 @@
 import { RainDocument } from "../parser/rainParser";
-import { Diagnostic, TextDocument, Range, DiagnosticSeverity } from "../rainLanguageTypes";
+import { Diagnostic, TextDocument, Range, DiagnosticSeverity, ErrorCode } from "../rainLanguageTypes";
 
 /**
  * @public
@@ -19,19 +19,19 @@ export function doValidation(
         return Diagnostic.create(
             Range.create(
                 _td.positionAt(v.position[0]),
-                _td.positionAt(v.position[1])
+                _td.positionAt(v.position[1] + 1)
             ),
-            v.msg,
+            ErrorCode[v.code],
             DiagnosticSeverity.Error,
             v.code,
-            "rl",
+            "rain",
             [
                 {
                     location: {
                         uri: _td.uri,
                         range: Range.create(
                             _td.positionAt(v.position[0]),
-                            _td.positionAt(v.position[1])
+                            _td.positionAt(v.position[1] + 1)
                         )
                     },
                     message: v.msg

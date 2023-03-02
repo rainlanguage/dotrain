@@ -105,6 +105,7 @@ export type RainParseState = {
     operandArgsErr: boolean;
     runtimeError: Error | undefined;
     opmetaError: boolean;
+    opMetaErrorMsg: string | undefined;
 };
 
 /**
@@ -116,3 +117,5 @@ export type RainDocumentResult = {
     comments: RDComment[];
     problems: RDProblem[];
 }
+
+

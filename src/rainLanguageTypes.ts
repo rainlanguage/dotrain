@@ -37,6 +37,8 @@ export {
 export enum ErrorCode {
     UndefinedOpMeta = 0,
     UndefinedWord = 1,
+    NonASCIICharacter = 2,
+    NonPrintableASCIICharacter = 3,
 
     InvalidWordPattern = 0x101,
     InvalidExpression = 0x102,
@@ -60,8 +62,6 @@ export enum ErrorCode {
     MismatchRHS = 0x401,
     MismatchLHS = 0x402,
     MismatchOperandArgs = 0x403,
-    MismatchInputs = 0x404,
-    MismatchOutputs = 0x405,
 
     OutOfRangeInputs = 0x501,
     OutOfRangeOperandArgs = 0x502,
@@ -69,7 +69,7 @@ export enum ErrorCode {
 
     UnknownOp = 0x600,
 
-    RuntimeError = 0x700,
+    RuntimeError = 0x700
 }
 
 //export const RainErrors

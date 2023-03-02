@@ -228,7 +228,7 @@ Method to update the RainDocument with new text or opmeta and get the parse resu
 <b>Signature:</b>
 
 ```typescript
-update(newTextDocument?: TextDocument, newOpMeta?: Uint8Array | string): RainDocumentResult;
+update(newTextDocument?: TextDocument, newOpMeta?: BytesLike): void;
 ```
 
 #### Parameters
@@ -236,11 +236,9 @@ update(newTextDocument?: TextDocument, newOpMeta?: Uint8Array | string): RainDoc
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  newTextDocument | `TextDocument` | (optional) Raw text to parse |
-|  newOpMeta | `Uint8Array \| string` | (optional) Ops meta as bytes ie hex string or Uint8Array or json content as string |
+|  newOpMeta | `BytesLike` | (optional) Ops meta as bytes ie hex string or Uint8Array |
 
 <b>Returns:</b>
 
-`RainDocumentResult`
-
-RainDocument results
+`void`
 

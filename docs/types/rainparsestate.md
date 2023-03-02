@@ -24,5 +24,6 @@ type RainParseState = {
     operandArgsErr: boolean;
     runtimeError: Error | undefined;
     opmetaError: boolean;
+    opMetaErrorMsg: string | undefined;
 };
 ```
