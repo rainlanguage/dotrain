@@ -85,7 +85,6 @@ export class RainHover {
                             } as Hover;
                         }
                     }
-                    return null;
                 }
             }
             return null;
