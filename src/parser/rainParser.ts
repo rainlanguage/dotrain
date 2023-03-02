@@ -517,8 +517,8 @@ class RainParser {
                 code: ErrorCode.UndefinedOpMeta
             });
         }
-        else if (document.search(/[^ -~]/) > -1) {
-            let _i = document.search(/[^ -~]/);
+        else if (document.search(/[^ -~\s]/) > -1) {
+            let _i = document.search(/[^ -~\s]/);
             while (_i > -1) {
                 const _charCode = document.codePointAt(_i)!.toString(16).padStart(4, "0");
                 const _char = _charCode.length > 4 
@@ -527,7 +527,7 @@ class RainParser {
                 this.problems.push({
                     msg: _charCode.length > 4 
                         ? `found non-ASCII character: "${_char}"`
-                        : `found non-printable-ASCII character: "${_char}"`,
+                        : `found non-printable-ASCII character with unicode: "U+${_charCode}"`,
                     position: _charCode.length > 4 
                         ? [_i, _i + 1]
                         : [_i, _i],
@@ -541,7 +541,7 @@ class RainParser {
                         : document[_i], 
                     " ".repeat(_charCode.length > 4 ? 2 : 1)
                 );
-                _i = document.search(/[^ -~]/);
+                _i = document.search(/[^ -~\s]/);
             }
         }
         else {
@@ -549,6 +549,8 @@ class RainParser {
             if (document.length) {
 
                 // ----------- remove indents -----------
+                document = document.replace(/\r\n/g, ' ');
+                document = document.replace(/\r/g, ' ');
                 document = document.replace(/\n/g, ' ');
 
                 // ----------- extract comments if any exists -----------
