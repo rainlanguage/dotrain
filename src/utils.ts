@@ -82,7 +82,7 @@ export const op = (
  * @param type - Type of the opcode, either 'stack' or 'constant'
  * @param offset - the position of the item in respect to its type
  */
-export function memoryOperand(type: number, offset: number): number {
+export function memoryOperand(offset: number, type: number): number {
     return (offset << 1) + type;
 }
 
