@@ -41,7 +41,7 @@ export class RainHover {
         const search = (node: RDNode[]): Hover | null => {
             for (let i = 0; i < node.length; i++) {
                 const _n = node[i];
-                if (node[i].position[0] <= _offset && node[i].position[1] > _offset) {
+                if (node[i].position[0] <= _offset && node[i].position[1] >= _offset) {
                     if ("opcode" in _n) {
                         if (_n.parens[0] < _offset && _n.parens[1] > _offset) {
                             return search(_n.parameters);
@@ -55,13 +55,17 @@ export class RainHover {
                     }
                     else if ("value" in _n) {
                         return {
-                            contents: this.contentType,
-                            value: _n.value
+                            contents: {
+                                kind: this.contentType,
+                                value: "Value"
+                            }
                         } as Hover;
                     }
                     else return {
-                        contents: this.contentType,
-                        value: _n.name
+                        contents: {
+                            kind: this.contentType,
+                            value: "LHS Alias"
+                        }
                     } as Hover;
                 }
                 else if (_n.lhs) {
