@@ -1401,8 +1401,8 @@ class RainParser {
                                 op(
                                     this.names.indexOf("read-memory"),
                                     memoryOperand(
+                                        constants.indexOf(_node.value),
                                         MemoryType.Constant,
-                                        constants.indexOf(_node.value)
                                     )
                                 )
                             );
@@ -1411,7 +1411,7 @@ class RainParser {
                             _sourcesCache.push(
                                 op(
                                     this.names.indexOf("read-memory"),
-                                    memoryOperand(MemoryType.Constant, constants.length)
+                                    memoryOperand(constants.length, MemoryType.Constant)
                                 )
                             );
                             constants.push(_node.value);
@@ -1425,7 +1425,7 @@ class RainParser {
                             _sourcesCache.push(
                                 op(
                                     this.names.indexOf("read-memory"),
-                                    memoryOperand(MemoryType.Constant, _i)
+                                    memoryOperand(_i, MemoryType.Constant)
                                 )
                             );
                         }
@@ -1433,7 +1433,7 @@ class RainParser {
                             _sourcesCache.push(
                                 op(
                                     this.names.indexOf("read-memory"),
-                                    memoryOperand(MemoryType.Constant, constants.length)
+                                    memoryOperand(constants.length, MemoryType.Constant)
                                 )
                             );
                             constants.push(
@@ -1449,7 +1449,7 @@ class RainParser {
                     if (_i > -1) _sourcesCache.push(
                         op(
                             this.names.indexOf("read-memory"),
-                            memoryOperand(MemoryType.Stack, _i)
+                            memoryOperand(_i, MemoryType.Stack)
                         )
                     );
                     else throw new Error(`cannot find "${_node.name}"`);
