@@ -55,9 +55,12 @@
 |  [arrayify](./variables/arrayify.md) | ethers arrayify |
 |  [bytesFromMeta](./variables/bytesfrommeta.md) | Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment |
 |  [bytify](./variables/bytify.md) | Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte, unless a desired `bytesLength` is specified. |
+|  [cborDecode](./variables/cbordecode.md) | Use CBOR to decode from a given value.<br><br>This will try to decode all from the given value, allowing to decoded CBOR sequences. Always will return an array with the decoded results. |
 |  [concat](./variables/concat.md) | ethers concat |
+|  [decodeRainMetaDocument](./variables/decoderainmetadocument.md) | Use a given `dataEncoded_` as hex string and decoded it following the Rain enconding design. |
 |  [hexlify](./variables/hexlify.md) | ethers hexlify |
 |  [hexZeroPad](./variables/hexzeropad.md) | ethers hexZeroPad |
+|  [MAGIC\_NUMBERS](./variables/magic_numbers.md) | Magic numbers used to identify Rain documents. This use `BigInt` with their literal numbers.<br><br>See more abour Magic numbers: https://github.com/rainprotocol/metadata-spec/blob/main/README.md |
 |  [metaFromBytes](./variables/metafrombytes.md) | Decompress and convert bytes to meta |
 |  [op](./variables/op.md) | Converts an opcode and operand to bytes, and returns their concatenation. |
 |  [paddedUInt128](./variables/paddeduint128.md) | Utility function to produce 128 bits size hexString |

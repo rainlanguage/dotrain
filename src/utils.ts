@@ -1,5 +1,6 @@
 import fs from "fs";
 import Ajv from "ajv";
+import cbor from "cbor";
 import { resolve } from "path";
 import { format } from "prettier";
 import stringMath from "string-math";
@@ -774,3 +775,68 @@ export function deepCopy<T>(variable: T): T {
     else _result = variable;
     return _result as T;
 }
+
+/**
+ * @public
+ * Magic numbers used to identify Rain documents. This use `BigInt` with their
+ * literal numbers.
+ *
+ * See more abour Magic numbers:
+ * https://github.com/rainprotocol/metadata-spec/blob/main/README.md
+ */
+export const MAGIC_NUMBERS = {
+    /**
+     * Prefixes every rain meta document
+     */
+    RAIN_META_DOCUMENT: BigInt("0xff0a89c674ee7874"),
+    /**
+     * Solidity ABIv2
+     */
+    SOLIDITY_ABIV2: BigInt("0xffe5ffb4a3ff2cde"),
+    /**
+     * Ops meta v1
+     */
+    OPS_META_V1: BigInt("0xffe5282f43e495b4"),
+    /**
+     * Contract meta v1
+     */
+    CONTRACT_META_V1: BigInt("0xffc21bbf86cc199b"),
+};
+
+/**
+ * @public
+ * Use CBOR to decode from a given value.
+ *
+ * This will try to decode all from the given value, allowing to decoded CBOR
+ * sequences. Always will return an array with the decoded results.
+ *
+ * @param dataEncoded_ - The data to be decoded
+ * @returns An array with the decoded data.
+ */
+export const cborDecode = (dataEncoded_: string): Array<any> => {
+    return cbor.decodeAllSync(dataEncoded_);
+};
+  
+/**
+ * @public
+ * Use a given `dataEncoded_` as hex string and decoded it following the Rain
+ * enconding design.
+ *
+ * @param dataEncoded_ - The data to be decoded
+ * @returns An array with the values decoded.
+ */
+export const decodeRainMetaDocument = (dataEncoded_: string): Array<any> => {
+    const metaDocumentHex =
+      "0x" + MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
+  
+    dataEncoded_ = dataEncoded_.toLowerCase().startsWith("0x")
+        ? dataEncoded_
+        : "0x" + dataEncoded_;
+  
+    if (!dataEncoded_.startsWith(metaDocumentHex)) {
+        throw new Error(
+            "Invalid data. Does not start with meta document magic number."
+        );
+    }
+    return cborDecode(dataEncoded_.replace(metaDocumentHex, ""));
+};
