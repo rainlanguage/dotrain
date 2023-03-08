@@ -49,16 +49,19 @@ export async function getOpMetaFromSg(
 
 export async function getOpMetaFromSg(
     deployerAddress: string, 
-    chainId: number | string = 0x80001
+    source: number | string = 0x80001
 ): Promise<string> {
     const _query = getQuery(deployerAddress);
-    const _sgEndpointURL = isBigNumberish(chainId) 
-        ? sgBook[Number(chainId)] 
-        : chainId as string;
+    const _sgEndpointURL = isBigNumberish(source) 
+        ? sgBook[Number(source)] 
+        : (source as string).startsWith("https://api.thegraph.com/subgraphs/name/")
+            ? source as string
+            : "";
+    if (!_sgEndpointURL) throw new Error("invalid subgraph endpoint URL");
     const _response = await axios.post(
         _sgEndpointURL, 
         { query: _query }, 
-        { headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' } }
+        { headers: { 'Content-Type': 'application/json' } }
     );
     if (_response?.data?.data?.expressionDeployer?.meta) {
         const _bytes = decodeRainMetaDocument(_response.data.data.expressionDeployer.meta)?.find(
