@@ -1,4 +1,4 @@
-import axios from "axios";
+import { gql, GraphQLClient } from 'graphql-request';
 import { decodeRainMetaDocument, hexlify, isBigNumberish, MAGIC_NUMBERS } from "../utils";
 
 /**
@@ -17,8 +17,8 @@ export const sgBook: {
  */
 export const getQuery = (address: string): string => {
     if (address.match(/^0x[a-fA-F0-9]{40}$/)) {
-        return `{
-    expressionDeployer(id: "${address.toLowerCase()}") {
+        return gql`query MyQuery {
+    expressionDeployer(id: "${address}") {
         meta
     }
 }`;} 
@@ -58,13 +58,14 @@ export async function getOpMetaFromSg(
             ? source as string
             : "";
     if (!_sgEndpointURL) throw new Error("invalid subgraph endpoint URL");
-    const _response = await axios.post(
-        _sgEndpointURL, 
-        { query: _query }, 
-        { headers: { 'Content-Type': 'application/json' } }
-    );
-    if (_response?.data?.data?.expressionDeployer?.meta) {
-        const _bytes = decodeRainMetaDocument(_response.data.data.expressionDeployer.meta)?.find(
+    const graphQLClient = new GraphQLClient(_sgEndpointURL, {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    const _response = (await graphQLClient.request(_query)) as any;
+    if (_response?.expressionDeployer?.meta) {
+        const _bytes = decodeRainMetaDocument(_response.expressionDeployer.meta)?.find(
             v => v.get(1) === MAGIC_NUMBERS.OPS_META_V1
         )?.get(0);
         if (_bytes) return hexlify(_bytes);
