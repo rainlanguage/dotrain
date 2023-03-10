@@ -1284,7 +1284,8 @@ class RainParser {
         }
         else if (_word.match(this.numericPattern)) {
             let _val = _word;
-            if (!isBigNumberish(_word)) {
+            if (_word.startsWith("0b")) _val = Number(_word).toString();
+            else if (!isBigNumberish(_word)) {
                 const _nums = _word.match(/\d+/g)!;
                 _val = _nums[0] + "0".repeat(Number(_nums[1]));
             }
