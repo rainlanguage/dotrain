@@ -549,7 +549,7 @@ class RainParser {
             if (document.length) {
 
                 // ----------- remove indents -----------
-                document = document.replace(/\r\n/g, ' ');
+                document = document.replace(/\r\n/g, '  ');
                 document = document.replace(/\r/g, ' ');
                 document = document.replace(/\n/g, ' ');
 
@@ -1092,78 +1092,87 @@ class RainParser {
                 else {
                     let _argIndex = 0;
                     let _inputsIndex = -1;
-                    const _operand = constructByBits(
-                        (this.operand[_index] as OperandArgs).map((v, i) => {
-                            if (v.name === "inputs") {
-                                _inputsIndex = i;
-                                return {
-                                    value: node.parameters.length,
+                    const _argsLength = (this.operand[_index] as OperandArgs).find(v => v.name === "inputs")
+                        ? (this.operand[_index] as OperandArgs).length - 1
+                        : (this.operand[_index] as OperandArgs).length;
+                    if (_argsLength === node.operandArgs?.args.length) {
+                        const _operand = constructByBits(
+                            (this.operand[_index] as OperandArgs).map((v, i) => {
+                                if (v.name === "inputs") {
+                                    _inputsIndex = i;
+                                    return {
+                                        value: node.parameters.length,
+                                        bits: v.bits,
+                                        computation: v.computation,
+                                        validRange: v.validRange
+                                    };
+                                }
+                                else return {
+                                    value: node.operandArgs!.args[_argIndex++]?.value,
                                     bits: v.bits,
                                     computation: v.computation,
                                     validRange: v.validRange
                                 };
-                            }
-                            else return {
-                                value: node.operandArgs!.args[_argIndex++].value,
-                                bits: v.bits,
-                                computation: v.computation,
-                                validRange: v.validRange
-                            };
-                        })
-                    );
-                    if (typeof _operand === "number") {
-                        node.operand = _operand;
-                        if (typeof this.pushes[_index] !== "number") node.output = extractByBits(
-                            _operand, 
-                            (this.pushes[_index] as ComputedOutput).bits, 
-                            (this.pushes[_index] as ComputedOutput).computation
+                            })
                         );
-                        if (this.pops[_index] === 0) {
-                            if (node.parameters.length) this.problems.push({
-                                msg: "out-of-range inputs",
-                                position: [...node.parens],
-                                code: ErrorCode.OutOfRangeInputs
-                            });
+                        if (typeof _operand === "number") {
+                            node.operand = _operand;
+                            if (typeof this.pushes[_index] !== "number") node.output = extractByBits(
+                                _operand, 
+                                (this.pushes[_index] as ComputedOutput).bits, 
+                                (this.pushes[_index] as ComputedOutput).computation
+                            );
+                            if (this.pops[_index] === 0) {
+                                if (node.parameters.length) this.problems.push({
+                                    msg: "out-of-range inputs",
+                                    position: [...node.parens],
+                                    code: ErrorCode.OutOfRangeInputs
+                                });
+                            }
+                            else {
+                                if (_inputsIndex === -1) {
+                                    if (
+                                        node.parameters.length !== 
+                                        (this.pops[_index] as InputArgs).parameters.length
+                                    ) this.problems.push({
+                                        msg: "out-of-range inputs",
+                                        position: [...node.parens],
+                                        code: ErrorCode.OutOfRangeInputs
+                                    });
+                                }
+                            }
                         }
                         else {
-                            if (_inputsIndex === -1) {
-                                if (
-                                    node.parameters.length !== 
-                                    (this.pops[_index] as InputArgs).parameters.length
-                                ) this.problems.push({
-                                    msg: "out-of-range inputs",
-                                    position: [...node.parens],
-                                    code: ErrorCode.OutOfRangeInputs
-                                });
-                            }
-                        }
-                    }
-                    else {
-                        node.operand = NaN;
-                        if (typeof this.pushes[_index] !== "number") node.output = NaN;
-                        for (let i = 0; i < _operand.length; i++) {
-                            if (_inputsIndex > -1) {
-                                if (_operand[i] === _inputsIndex) this.problems.push({
-                                    msg: "out-of-range inputs",
-                                    position: [...node.parens],
-                                    code: ErrorCode.OutOfRangeInputs
-                                });
-                                else if (_operand[i] < _inputsIndex) this.problems.push({
+                            node.operand = NaN;
+                            if (typeof this.pushes[_index] !== "number") node.output = NaN;
+                            for (let i = 0; i < _operand.length; i++) {
+                                if (_inputsIndex > -1) {
+                                    if (_operand[i] === _inputsIndex) this.problems.push({
+                                        msg: "out-of-range inputs",
+                                        position: [...node.parens],
+                                        code: ErrorCode.OutOfRangeInputs
+                                    });
+                                    else if (_operand[i] < _inputsIndex) this.problems.push({
+                                        msg: "out-of-range operand argument",
+                                        position: [
+                                            ...node.operandArgs!.args[_operand[i]].position
+                                        ],
+                                        code: ErrorCode.OutOfRangeOperandArgs
+                                    });
+                                    else this.problems.push({
+                                        msg: "out-of-range operand argument",
+                                        position: [
+                                            ...node.operandArgs!.args[_operand[i] - 1].position
+                                        ],
+                                        code: ErrorCode.OutOfRangeOperandArgs
+                                    });
+                                }
+                                else this.problems.push({
                                     msg: "out-of-range operand argument",
                                     position: [...node.operandArgs!.args[_operand[i]].position],
                                     code: ErrorCode.OutOfRangeOperandArgs
                                 });
-                                else this.problems.push({
-                                    msg: "out-of-range operand argument",
-                                    position: [...node.operandArgs!.args[_operand[i] - 1].position],
-                                    code: ErrorCode.OutOfRangeOperandArgs
-                                });
                             }
-                            else this.problems.push({
-                                msg: "out-of-range operand argument",
-                                position: [...node.operandArgs!.args[_operand[i]].position],
-                                code: ErrorCode.OutOfRangeOperandArgs
-                            });
                         }
                     }
                 }

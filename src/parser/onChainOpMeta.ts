@@ -18,7 +18,7 @@ export const sgBook: {
 export const getQuery = (address: string): string => {
     if (address.match(/^0x[a-fA-F0-9]{40}$/)) {
         return gql`query MyQuery {
-    expressionDeployer(id: "${address}") {
+    expressionDeployer(id: "${address.toLowerCase()}") {
         meta
     }
 }`;} 
