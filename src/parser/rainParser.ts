@@ -549,7 +549,7 @@ class RainParser {
             if (document.length) {
 
                 // ----------- remove indents -----------
-                document = document.replace(/\r\n/g, ' ');
+                document = document.replace(/\r\n/g, '  ');
                 document = document.replace(/\r/g, ' ');
                 document = document.replace(/\n/g, ' ');
 
