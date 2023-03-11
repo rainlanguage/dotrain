@@ -549,7 +549,7 @@ class RainParser {
             if (document.length) {
 
                 // ----------- remove indents -----------
-                document = document.replace(/\r\n/g, '  ');
+                document = document.replace(/\r\n/g, ' ');
                 document = document.replace(/\r/g, ' ');
                 document = document.replace(/\n/g, ' ');
 
@@ -1095,7 +1095,7 @@ class RainParser {
                     const _argsLength = (this.operand[_index] as OperandArgs).find(v => v.name === "inputs")
                         ? (this.operand[_index] as OperandArgs).length - 1
                         : (this.operand[_index] as OperandArgs).length;
-                    if (_argsLength === node.operandArgs?.args.length) {
+                    if (_argsLength === (node.operandArgs?.args.length ?? 0)) {
                         const _operand = constructByBits(
                             (this.operand[_index] as OperandArgs).map((v, i) => {
                                 if (v.name === "inputs") {
