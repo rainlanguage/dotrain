@@ -7,15 +7,15 @@ Constructs operand for standard STATE opecode
 <b>Signature:</b>
 
 ```typescript
-function memoryOperand(type: number, offset: number): number;
+function memoryOperand(offset: number, type: number): number;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  type | `number` | Type of the opcode, either 'stack' or 'constant' |
 |  offset | `number` | the position of the item in respect to its type |
+|  type | `number` | Type of the opcode, either 'stack' or 'constant' |
 
 <b>Returns:</b>
 

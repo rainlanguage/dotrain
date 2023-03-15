@@ -51,9 +51,15 @@
     },
     "dependencies": {
         "ajv": "^8.12.0",
-        "algebra.js": "^0.2.6",
+        "algebra.js": "git+https://github.com/rouzwelt/algebra.js",
+        "cbor": "^8.1.0",
         "ethers": "^5.7.2",
+        "graphql": "^16.6.0",
+        "graphql-request": "^5.2.0",
         "prettier": "^2.8.3",
-        "string-math": "^1.2.2"
+        "string-math": "^1.2.2",
+        "vscode-languageserver-protocol": "^3.17.3",
+        "vscode-languageserver-textdocument": "^1.0.8",
+        "vscode-languageserver-types": "^3.17.3"
     }
 }

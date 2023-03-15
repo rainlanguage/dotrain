@@ -11,6 +11,5 @@ type RainDocumentResult = {
     parseTree: RDParseTree;
     comments: RDComment[];
     problems: RDProblem[];
-    runtimeError: Error | undefined;
 };
 ```

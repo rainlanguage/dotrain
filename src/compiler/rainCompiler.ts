@@ -1,4 +1,5 @@
 import { RainDocument } from "../parser/rainParser";
+import { TextDocument } from "../rainLanguageTypes";
 import { ExpressionConfig } from "./expressionConfigTypes";
 
 
@@ -11,19 +12,18 @@ import { ExpressionConfig } from "./expressionConfigTypes";
  * @returns ExpressionConfig promise
  */
 export function rlc(
-    document: RainDocument | string,
+    document: RainDocument | TextDocument | string,
     opmeta?: Uint8Array | string
 ): Promise<ExpressionConfig> {
     let _rainDocument: RainDocument;
     if (document instanceof RainDocument) _rainDocument = document;
     else {
         if (opmeta) {
-            try {
-                _rainDocument = new RainDocument(document, opmeta);
-            }
-            catch (err) {
-                return Promise.reject("invalid op meta");
-            }
+            if (typeof document === "string") _rainDocument = new RainDocument(
+                TextDocument.create("file", "rainlang", 1, document), 
+                opmeta
+            );
+            else _rainDocument = new RainDocument(document, opmeta);
         }
         else return Promise.reject("expected op meta");
     }

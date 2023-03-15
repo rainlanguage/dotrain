@@ -14,6 +14,7 @@ type RainParseState = {
         subExpAliases: RDAliasNode[];
     };
     track: {
+        char: number;
         parens: {
             open: number[];
             close: number[];
@@ -22,5 +23,7 @@ type RainParseState = {
     depthLevel: number;
     operandArgsErr: boolean;
     runtimeError: Error | undefined;
+    opmetaError: boolean;
+    opMetaErrorMsg: string | undefined;
 };
 ```

@@ -4,8 +4,6 @@
 
 RainDocument is a wrapper for RainParser that provides the main functionalities and data types in order to be used later on to provide Rain Language Services or in Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes)
 
-\*
-
 <b>Signature:</b>
 
 ```typescript
@@ -38,12 +36,13 @@ const newResult = myRainDocument.update(newText, newOpmeta)
 |  [getCurrentLHSAliases()](./raindocument.md#getCurrentLHSAliases-method-1) | Get the current sub-exp aliases of this RainParser instance |
 |  [getExpressionConfig(item)](./raindocument.md#getExpressionConfig-method-1) | Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used. |
 |  [getLHSAliases()](./raindocument.md#getLHSAliases-method-1) | Get the parsed exp aliases of this RainParser instance |
-|  [getOpMeta()](./raindocument.md#getOpMeta-method-1) | Get the current raw op meta of this RainDocument instance in hex string |
+|  [getOpMeta()](./raindocument.md#getOpMeta-method-1) | Get the current op meta of this RainDocument instance |
 |  [getParseTree()](./raindocument.md#getParseTree-method-1) | Get the current parse tree of this RainDocument instance |
 |  [getProblems()](./raindocument.md#getProblems-method-1) | Get the current problems of this RainDocument instance |
+|  [getRawOpMeta()](./raindocument.md#getRawOpMeta-method-1) | Get the current raw op meta of this RainDocument instance in hex string |
 |  [getResult()](./raindocument.md#getResult-method-1) | Get the current parse result of this RainDocument instance which consists of parse tree, problems, comments and expression aliases |
 |  [getRuntimeError()](./raindocument.md#getRuntimeError-method-1) | Get the current runtime error of this RainDocument instance |
-|  [getText()](./raindocument.md#getText-method-1) | Get the current text of this RainDocument instance |
+|  [getTextDocument()](./raindocument.md#getTextDocument-method-1) | Get the current text of this RainDocument instance |
 |  [update(newTextDocument, newOpMeta)](./raindocument.md#update-method-1) | Method to update the RainDocument with new text or opmeta and get the parse results |
 
 ## Method Details
@@ -119,16 +118,16 @@ getLHSAliases(): RDAliasNode[][];
 
 ### getOpMeta()
 
-Get the current raw op meta of this RainDocument instance in hex string
+Get the current op meta of this RainDocument instance
 
 <b>Signature:</b>
 
 ```typescript
-getOpMeta(): string;
+getOpMeta(): OpMeta[];
 ```
 <b>Returns:</b>
 
-`string`
+`OpMeta[]`
 
 <a id="getParseTree-method-1"></a>
 
@@ -160,6 +159,21 @@ getProblems(): RDProblem[];
 
 `RDProblem[]`
 
+<a id="getRawOpMeta-method-1"></a>
+
+### getRawOpMeta()
+
+Get the current raw op meta of this RainDocument instance in hex string
+
+<b>Signature:</b>
+
+```typescript
+getRawOpMeta(): string;
+```
+<b>Returns:</b>
+
+`string`
+
 <a id="getResult-method-1"></a>
 
 ### getResult()
@@ -190,20 +204,20 @@ getRuntimeError(): Error | undefined;
 
 `Error | undefined`
 
-<a id="getText-method-1"></a>
+<a id="getTextDocument-method-1"></a>
 
-### getText()
+### getTextDocument()
 
 Get the current text of this RainDocument instance
 
 <b>Signature:</b>
 
 ```typescript
-getText(): string;
+getTextDocument(): TextDocument;
 ```
 <b>Returns:</b>
 
-`string`
+`TextDocument`
 
 <a id="update-method-1"></a>
 
@@ -214,19 +228,17 @@ Method to update the RainDocument with new text or opmeta and get the parse resu
 <b>Signature:</b>
 
 ```typescript
-update(newTextDocument?: string, newOpMeta?: Uint8Array | string): RainDocumentResult;
+update(newTextDocument?: TextDocument, newOpMeta?: BytesLike): void;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  newTextDocument | `string` | (optional) Raw text to parse |
-|  newOpMeta | `Uint8Array \| string` | (optional) Ops meta as bytes ie hex string or Uint8Array or json content as string |
+|  newTextDocument | `TextDocument` | (optional) Raw text to parse |
+|  newOpMeta | `BytesLike` | (optional) Ops meta as bytes ie hex string or Uint8Array |
 
 <b>Returns:</b>
 
-`RainDocumentResult`
-
-RainDocument results
+`void`
 

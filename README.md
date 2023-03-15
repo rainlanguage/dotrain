@@ -1,8 +1,7 @@
-# **Rain Language**
-A WIP Parser and Formatter written in TypeScript used to read and write in Rain Language.
-The primary goal of the rain language is to make smart contract development accessible for as many people as possible.
+# **Rain Language - Standalone**
+The Rain language (aka rainlang) standalone encapsulates the Rain language compiler (rlc) and Rain language services that are written in typescript, and exposes them through Language Server Protocol (lsp) standard definitions. This is well suited for editors and IDE support, which can be intracted with directly through API and be used in tools like Slate or be wrapped and managed in a client/server module and be used in monaco editor or codemirror.
 
-This is fundamentally grounded in our belief that accessibility is the difference between theoretical and practical decentralisation. There are many people who would like to participate in authoring and auditing crypto code but currently cannot. When someone wants/needs to do something but cannot, then they delegate to someone who can, this is by definition centralisation.
+The primary goal of the Rain language is to make smart contract development accessible for as many people as possible. This is fundamentally grounded in our belief that accessibility is the difference between theoretical and practical decentralisation. There are many people who would like to participate in authoring and auditing crypto code but currently cannot. When someone wants/needs to do something but cannot, then they delegate to someone who can, this is by definition centralisation.
 
 For more info and details, please read this [article](https://hackmd.io/@REJeq0MuTUiqnjx9w5SsUA/HJj9s-nfi#Rainlang-has-a-spectrum-of-representations-from-concise-gtexplicit)
 
@@ -16,37 +15,37 @@ yarn add --dev https://github.com/rouzwelt/rainlang.git
 or
 npm install --save-dev https://github.com/rouzwelt/rainlang.git
 ```
+<br>
 
 
-### **Parser**
-Parser is a compiler to generate a valid ExpressionConfig (deployable bytes) from rain expressions.
+### **Language Services**
+Rain Language Services provide validation of a Rain docuemtn and services like completion, hover, etc.
 ```typescript
-// to import
-import { Parser } from "@beehiveinnovation/rainlang";
+// importing
+import { getLanguageService } from "@rainprotocol/rainlang";
 
-// to execute the parsing and get parse tree object and ExpressionConfig
-let parseTree;
-let expressionConfig;
-[ parseTree, expressionConfig ] = Parser.get(expression opMeta, callback);
+// initiating the services
+const langServices = getLanguageService(clientCapabilities);
 
-// to get parse tree object only
-let parseTree = Parser.getParseTree(expression, opMeta, callback);
+// getting validation results (lsp Diagnostics)
+const errors = await langServices.doValidate(myDocument, opmeta);
+```
+<br>
 
-// to get ExpressionConfig only
-let expressionConfig = Parser.getExpressionConfig(expression, opMeta, callback);
+### **Rain Language Compiler (rlc) and Decompiler (rld)**
+Rain Language compiler/decompiler, compiles a Rain document to a valid ExpressionConfig and vice versa for decompiler.
+```typescript
+// importing
+import { rlc, rld } from "@rainprotocol/rainlang";
 
-// to build(compile) ExpressionConfig from ParseTree object or a Node or array of Node
-let argument: Node || Node[] || ParseTree = objectInstanceOfSpecifiedType;
-let expressionConfig = Parser.compile(argument)
+// compiling a Rain document to get ExpressionConfig aka deployable bytes
+const bytes = await rlc(myDocument, opmeta);
+
+// decompiling an ExpressionConfig to a valid Rain document
+const rainDocument = await rld(expressionConfig, opmeta);
 ```
 
-
-### **Formatter**
-The generator of human friendly readable source.
-Format an ExpressionConfig to a more human readable form, making easier to understand. This form allows users read exactly
-what the Script will do, like the conditions, values used, etc. Also, anyone can learn to write their own scripts
-if use the Human Form to see the output for each combination that they made.
-
+<br>
 
 ## **Developers**
 To get started, clone the repo and install the dependencies:

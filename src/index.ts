@@ -5,5 +5,9 @@ export * from './compiler/expressionConfigTypes';
 export * from './parser/rainParser';
 export * from './parser/opMetaTypes';
 export * from './parser/rainParserTypes';
+export * from './parser/onChainOpMeta';
 
 export * from './utils';
+
+export * from './rainLanguageTypes';
+export * from './rainLanguageService';

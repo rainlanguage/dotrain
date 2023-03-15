@@ -10,5 +10,6 @@ Type of RainDocument's problem (error)
 type RDProblem = {
     msg: string;
     position: RDPosition;
+    code: number;
 };
 ```

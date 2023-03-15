@@ -13,6 +13,7 @@ export type RDPosition = [number, number];
 export type RDProblem = {
     msg: string;
     position: RDPosition;
+    code: number;
 };
 
 /**
@@ -94,6 +95,7 @@ export type RainParseState = {
         subExpAliases: RDAliasNode[];
     };
     track: {
+        char: number;
         parens: {
             open: number[];
             close: number[];
@@ -102,6 +104,8 @@ export type RainParseState = {
     depthLevel: number;
     operandArgsErr: boolean;
     runtimeError: Error | undefined;
+    opmetaError: boolean;
+    opMetaErrorMsg: string | undefined;
 };
 
 /**
@@ -112,5 +116,6 @@ export type RainDocumentResult = {
     parseTree: RDParseTree;
     comments: RDComment[];
     problems: RDProblem[];
-    runtimeError: Error | undefined;
 }
+
+
