@@ -1,5 +1,5 @@
 import { RainDocument } from "../parser/rainParser";
-import { LanguageServiceParams, TextDocument, CompletionItem, Position } from "../rainLanguageTypes";
+import { LanguageServiceParams, TextDocument, CompletionItem, Position } from "../../shared/rainLanguageTypes";
 import { CompletionItemKind, MarkupKind } from "vscode-languageserver-types";
 
 /**

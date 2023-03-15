@@ -11,8 +11,13 @@ let
         yarn test
     '';
 
-    flush-all = pkgs.writeShellScriptBin "flush-all" ''
+    flush = pkgs.writeShellScriptBin "flush" ''
         rm -rf dist
+    '';
+
+    flush-all = pkgs.writeShellScriptBin "flush-all" ''
+        flush
+        rm -rf docs
         rm -rf node_modules
     '';
 
@@ -21,6 +26,14 @@ let
         yarn install --ignore-scripts
         build
         local-test
+    '';
+
+    build-cjs = pkgs.writeShellScriptBin "build-cjs" ''
+        yarn build-cjs
+    '';
+
+    build-esm = pkgs.writeShellScriptBin "build-esm" ''
+        yarn build-esm
     '';
 
     build = pkgs.writeShellScriptBin "build" ''
@@ -49,9 +62,12 @@ let
             pkgs.yarn
             pkgs.nodejs-16_x
             build
+            build-cjs
+            build-esm
             build-all
             local-test
             ci-test
+            flush
             flush-all
             docgen
             lint

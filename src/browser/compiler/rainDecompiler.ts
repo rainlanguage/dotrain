@@ -1,10 +1,10 @@
-import { TextDocument } from '../rainLanguageTypes';
+import { TextDocument } from '../../shared/rainLanguageTypes';
 import { RainDocument } from '../parser/rainParser';
-import { ExpressionConfig } from './expressionConfigTypes';
+import { ExpressionConfig } from '../../shared/compiler/expressionConfigTypes';
 import { BytesLike, BigNumber, ethers } from 'ethers';
-import OpMetaSchema from "../schema/op.meta.schema.json";
+import OpMetaSchema from "../../shared/schema/op.meta.schema.json";
 import { Equation, Expression, parse } from 'algebra.js';
-import { OpMeta, InputMeta, OutputMeta, OperandArgs } from '../parser/opMetaTypes';
+import { OpMeta, InputMeta, OutputMeta, OperandArgs } from '../../shared/parser/opMetaTypes';
 import { arrayify, extractByBits, isBigNumberish, metaFromBytes, validateMeta } from '../utils';
 
 
@@ -114,7 +114,7 @@ export function rld(
         bits: [number, number], 
         computation?: string
     }[]): number[] {
-        const result = [];
+        const result: number[] = [];
         for (let i = 0; i < args.length; i++) {
             let _val = extractByBits(value, args[i].bits);
             const _comp = args[i].computation;

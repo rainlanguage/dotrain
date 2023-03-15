@@ -1,7 +1,8 @@
-import { ErrorCode, TextDocument } from '../rainLanguageTypes';
+import { isBytesLike } from '../utils';
 import { BigNumberish, BytesLike, ethers } from 'ethers';
-import OpMetaSchema from "../schema/op.meta.schema.json";
-import { ExpressionConfig } from '../compiler/expressionConfigTypes';
+import OpMetaSchema from "../../shared/schema/op.meta.schema.json";
+import { ErrorCode, TextDocument } from '../../shared/rainLanguageTypes';
+import { ExpressionConfig } from '../../shared/compiler/expressionConfigTypes';
 import { 
     RDNode, 
     RDOpNode, 
@@ -11,7 +12,7 @@ import {
     RDAliasNode,
     RainParseState, 
     RainDocumentResult
-} from './rainParserTypes';
+} from '../../shared/parser/rainParserTypes';
 import { 
     OpMeta,
     InputMeta,
@@ -21,7 +22,7 @@ import {
     OperandArgs,
     OperandMeta,
     ComputedOutput
-} from './opMetaTypes';
+} from '../../shared/parser/opMetaTypes';
 import {
     op,
     concat,
@@ -33,7 +34,6 @@ import {
     isBigNumberish,
     constructByBits
 } from '../utils';
-import { isBytesLike } from 'ethers/lib/utils';
 
 
 /**

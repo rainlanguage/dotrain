@@ -63,6 +63,9 @@
 |  [getQuery](./variables/getquery.md) | Get the query content |
 |  [hexlify](./variables/hexlify.md) | ethers hexlify |
 |  [hexZeroPad](./variables/hexzeropad.md) | ethers hexZeroPad |
+|  [isBytes](./variables/isbytes.md) | ethers isBytes |
+|  [isBytesLike](./variables/isbyteslike.md) | ethers isBytesLike |
+|  [isHexString](./variables/ishexstring.md) | ethers isHexString |
 |  [MAGIC\_NUMBERS](./variables/magic_numbers.md) | Magic numbers used to identify Rain documents. This use `BigInt` with their literal numbers.<br><br>See more abour Magic numbers: https://github.com/rainprotocol/metadata-spec/blob/main/README.md |
 |  [metaFromBytes](./variables/metafrombytes.md) | Decompress and convert bytes to meta |
 |  [op](./variables/op.md) | Converts an opcode and operand to bytes, and returns their concatenation. |

@@ -1,7 +1,7 @@
 import { RainDocument } from "../parser/rainParser";
-import { LanguageServiceParams, TextDocument, Position, Hover } from "../rainLanguageTypes";
+import { LanguageServiceParams, TextDocument, Position, Hover } from "../../shared/rainLanguageTypes";
 import { MarkupKind } from "vscode-languageserver-types";
-import { RDNode } from "../parser/rainParserTypes";
+import { RDNode } from "../../shared/parser/rainParserTypes";
 
 /**
  * Rain Completion class

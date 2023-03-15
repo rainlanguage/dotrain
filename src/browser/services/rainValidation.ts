@@ -1,5 +1,5 @@
 import { RainDocument } from "../parser/rainParser";
-import { Diagnostic, TextDocument, Range, DiagnosticSeverity, ErrorCode } from "../rainLanguageTypes";
+import { Diagnostic, TextDocument, Range, DiagnosticSeverity, ErrorCode } from "../../shared/rainLanguageTypes";
 
 /**
  * @public

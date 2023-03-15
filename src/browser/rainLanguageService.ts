@@ -3,7 +3,7 @@ import { RainHover } from './services/rainHover';
 import { RainDocument } from './parser/rainParser';
 import { doValidation } from './services/rainValidation';
 import { RainCompletion } from './services/rainCompletion';
-import { RainDocumentResult } from './parser/rainParserTypes';
+import { RainDocumentResult } from '../shared/parser/rainParserTypes';
 import {
     LanguageServiceParams,
     TextDocument,
@@ -11,7 +11,7 @@ import {
     CompletionItem, 
     Hover, 
     Diagnostic
-} from './rainLanguageTypes';
+} from '../shared/rainLanguageTypes';
 
 /**
  * @public
