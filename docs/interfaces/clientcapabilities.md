@@ -14,7 +14,7 @@ interface ClientCapabilities
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [textDocument](./clientcapabilities.md#textDocument-property) | <pre>{&#010;    completion?: {&#010;        completionItem?: {&#010;            documentationFormat?: MarkupKind[];&#010;        };&#010;    };&#010;    hover?: {&#010;        contentFormat?: MarkupKind[];&#010;    };&#010;}</pre> | The text document client capabilities |
+|  [textDocument](./clientcapabilities.md#textDocument-property) | <pre>{&#010;    publishDiagnostics?: {&#010;        relatedInformation?: boolean;&#010;    };&#010;    completion?: {&#010;        completionItem?: {&#010;            documentationFormat?: MarkupKind[];&#010;        };&#010;    };&#010;    hover?: {&#010;        contentFormat?: MarkupKind[];&#010;    };&#010;}</pre> | The text document client capabilities |
 
 ## Property Details
 
@@ -28,6 +28,9 @@ The text document client capabilities
 
 ```typescript
 textDocument?: {
+        publishDiagnostics?: {
+            relatedInformation?: boolean;
+        };
         completion?: {
             completionItem?: {
                 documentationFormat?: MarkupKind[];

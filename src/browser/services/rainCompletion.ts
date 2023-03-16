@@ -1,6 +1,7 @@
 import { RainDocument } from "../parser/rainParser";
-import { LanguageServiceParams, TextDocument, CompletionItem, Position } from "../../shared/rainLanguageTypes";
 import { CompletionItemKind, MarkupKind } from "vscode-languageserver-types";
+import { LanguageServiceParams, TextDocument, CompletionItem, Position } from "../../shared/rainLanguageTypes";
+
 
 /**
  * Rain Completion class
@@ -21,21 +22,48 @@ export class RainCompletion {
     /**
      * @public Provides completion items
      * 
-     * @param textDocument - The TextDocuemnt
-     * @param opmeta - The op meta
+     * @param document - The RainDocument object instance
      * @param position - Position of the textDocument to get the completion items for
      * @returns Promise of completion items and null if no completion items were available for that position
      */
     public doComplete(
-        textDocument: TextDocument,
-        opmeta: Uint8Array | string,
+        document: RainDocument, 
         position: Position
-    ): Promise<CompletionItem[] | null> {
-        const _rd = new RainDocument(textDocument, opmeta);
-        const _td = textDocument;
-        const _text = _td.getText();
+    ): CompletionItem[] | null
+
+    /**
+     * @public Provides completion items
+     * 
+     * @param document - The TextDocuemnt
+     * @param position - Position of the textDocument to get the completion items for
+     * @param opmeta - The op meta
+     * @returns Promise of completion items and null if no completion items were available for that position
+     */
+    public doComplete(
+        document: RainDocument, 
+        position: Position,
+        opmeta: Uint8Array | string
+    ): CompletionItem[] | null
+
+    public doComplete(
+        document: TextDocument | RainDocument,
+        position: Position,
+        opmeta: Uint8Array | string = ""
+    ): CompletionItem[] | null {
+        let _rd: RainDocument;
+        let _td: TextDocument;
+        if (document instanceof RainDocument) {
+            _rd = document;
+            _td = _rd.getTextDocument();
+        }
+        else {
+            _rd = new RainDocument(document, opmeta );
+            _td = document;
+        }
+        // const _text = _td.getText();
         const _offset = _td.offsetAt(position);
-        if (_offset === _text.length - 1 || _text[_offset + 1].match(/[<>(),;\s\n]/)) {
+        try {
+            // if (_offset === _text.length - 1 || _text[_offset + 1]?.match(/[<>(),;\s\r\n]/)) {
             const _result = _rd.getOpMeta().map(v => {
                 return {
                     label: v.name,
@@ -110,21 +138,33 @@ export class RainCompletion {
                     }
                     else return false;
                 })?.position;
-                if (_pos) _text = " to " + `"${_rd.getTextDocument()
-                    .getText()
-                    .slice(_pos[0], _pos[1] + 1)}"`;
+                if (_pos) _text = `${
+                    _rd!.getTextDocument().getText().slice(_pos[0], _pos[1] + 1)
+                }`;
                 _result.unshift({
                     label: v.name,
                     kind: CompletionItemKind.Variable,
-                    detail: v.name,
+                    detail: v.name === "_" ? "placeholder _" : v.name,
                     documentation: {
                         kind: this.documentionType,
-                        value: `LHS Alias${_text}`
+                        value: this.documentionType === "markdown" 
+                            ? [
+                                `LHS Alias to `,
+                                "```rainlang",
+                                _text,
+                                "```"
+                            ].join("\n")
+                            : `LHS Alias to: ${_text}`
                     }
                 });
             });
-            return Promise.resolve(_result);
+            return _result;
+            // }
+            // else return null;
         }
-        else return Promise.resolve(null);
+        catch (err) {
+            console.log(err);
+            return null;
+        }
     }
 }
