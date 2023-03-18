@@ -1196,7 +1196,7 @@ class RainParser {
      */
     private consume(entry: number): void {
         const _tmp = this.findIndex(this.exp);
-        const _index = _tmp < 0 ? this.exp.length : _tmp;
+        const _index = _tmp < 0 ? this.exp.length : _tmp === 0 ? 1 : _tmp;
         const _word = this.exp.slice(0, _index);
         const _wordPos: [number, number] = [entry, entry + _word.length - 1];
         this.state.track.char = entry + _word.length - 1;
