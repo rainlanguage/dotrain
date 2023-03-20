@@ -5,5 +5,8 @@ export * from './parser/rainParser';
 export * from '../shared/parser/opMetaTypes';
 export * from '../shared/parser/rainParserTypes';
 export * from '../shared/rainLanguageTypes';
+export * from "./services/rainHover";
+export * from "./services/rainDiagnostics";
+export * from "./services/rainCompletion";
 export * from './rainLanguageService';
 export * from './utils';

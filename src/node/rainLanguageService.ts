@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
-import { RainHover } from './services/rainHover';
-import { RainDocument } from './parser/rainParser';
-import { RainDiagnostics } from './services/rainValidation';
-import { RainCompletion } from './services/rainCompletion';
-import { RainDocumentResult } from '../shared/parser/rainParserTypes';
+import { getRainHover } from "./services/rainHover";
+import { RainDocument } from "./parser/rainParser";
+import { getRainDiagnostics } from "./services/rainDiagnostics";
+import { getRainCompletion } from "./services/rainCompletion";
+import { RainDocumentResult } from "../shared/parser/rainParserTypes";
 import {
     LanguageServiceParams,
     TextDocument,
@@ -11,7 +11,8 @@ import {
     CompletionItem, 
     Hover, 
     Diagnostic
-} from '../shared/rainLanguageTypes';
+} from "../shared/rainLanguageTypes";
+
 
 /**
  * @public
@@ -21,9 +22,9 @@ export interface LanguageService {
     rainDocuments: Map<string, RainDocument>;
 	newRainDocument(textDocument: TextDocument, opmeta: Uint8Array | string): RainDocument;
     parseRainDocument(textDocument: TextDocument, opmeta?: Uint8Array | string): RainDocumentResult;
-    doValidation(textDocument: TextDocument, opmeta?: Uint8Array | string): Promise<Diagnostic[]>;
-	doComplete(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string): CompletionItem[] | null;
-    doHover(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string): Hover | null;
+    doValidation(textDocument: TextDocument, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): Promise<Diagnostic[]>;
+	doComplete(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): CompletionItem[] | null;
+    doHover(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): Hover | null;
     // doResolve(item: CompletionItem): Promise<CompletionItem>;
 }
 
@@ -45,52 +46,54 @@ export interface LanguageService {
  */
 export function getLanguageService(params?: LanguageServiceParams): LanguageService {
 
-    const rainHover = new RainHover(params);
-    const rainCompletion = new RainCompletion(params);
-    const rainDiagnostics = new RainDiagnostics(params);
     const rainDocuments: Map<string, RainDocument> = new Map();
 
     return {
         rainDocuments,
         newRainDocument: (textDocument, opmeta) => {
-            const _rainDoc = rainDocuments.get(textDocument.uri);
+            let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
                 rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta));
+                _rainDoc = rainDocuments.get(textDocument.uri)!;
             }
             else _rainDoc.update(textDocument, opmeta);
-            return rainDocuments.get(textDocument.uri)!;
+            return _rainDoc;
         },
         parseRainDocument: (textDocument, opmeta) => {
-            const _rainDoc = rainDocuments.get(textDocument.uri);
+            let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
                 rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta ?? ""));
+                _rainDoc = rainDocuments.get(textDocument.uri)!;
             }
             else _rainDoc.update(textDocument, opmeta);
-            return rainDocuments.get(textDocument.uri)!.getResult();
+            return _rainDoc.getResult();
         },
         doValidation: (textDocument, opmeta) => {
-            const _rainDoc = rainDocuments.get(textDocument.uri);
+            let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
                 rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta ?? ""));
+                _rainDoc = rainDocuments.get(textDocument.uri)!;
             }
             else _rainDoc.update(textDocument, opmeta);
-            return rainDiagnostics.doValidation(rainDocuments.get(textDocument.uri)!);
+            return getRainDiagnostics(_rainDoc, params);
         },
         doComplete: (textDocument, position, opmeta) => {
-            const _rainDoc = rainDocuments.get(textDocument.uri);
+            let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
                 rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta ?? ""));
+                _rainDoc = rainDocuments.get(textDocument.uri)!;
             }
             else _rainDoc.update(textDocument, opmeta);
-            return rainCompletion.doComplete(rainDocuments.get(textDocument.uri)!, position);
+            return getRainCompletion(_rainDoc, position, params);
         },
         doHover: (textDocument, position, opmeta) => {
-            const _rainDoc = rainDocuments.get(textDocument.uri);
+            let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
                 rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta ?? ""));
+                _rainDoc = rainDocuments.get(textDocument.uri)!;
             }
             else _rainDoc.update(textDocument, opmeta);
-            return rainHover.doHover(rainDocuments.get(textDocument.uri)!, position);
+            return getRainHover(_rainDoc, position, params);
         },
         // doResolve: rainCompletion.doResolve.bind(rainCompletion),
     };

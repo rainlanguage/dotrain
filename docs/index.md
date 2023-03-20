@@ -28,6 +28,12 @@
 |  [getLanguageService(params)](./variables/getlanguageservice_1.md) | Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services |
 |  [getOpMetaFromSg(deployerAddress, chainId)](./variables/getopmetafromsg_1.md) | Get the op meta from sg |
 |  [getOpMetaFromSg(deployerAddress, sgUrl)](./variables/getopmetafromsg_2.md) | Get the op meta from sg |
+|  [getRainCompletion(document, position, opmeta, setting)](./variables/getraincompletion_1.md) | Provides completion items |
+|  [getRainCompletion(document, position, setting)](./variables/getraincompletion_2.md) | Provides completion items |
+|  [getRainDiagnostics(document, opmeta, setting)](./variables/getraindiagnostics_1.md) | Provides diagnostics |
+|  [getRainDiagnostics(document, setting)](./variables/getraindiagnostics_2.md) | Provides diagnostics |
+|  [getRainHover(document, position, opmeta, setting)](./variables/getrainhover_1.md) | Provides hover items |
+|  [getRainHover(document, position, setting)](./variables/getrainhover_2.md) | Provides hover items |
 |  [isBigNumberish(value)](./variables/isbignumberish_1.md) | function to check if the a value is of type BigNumberish, from EthersJS library |
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [memoryOperand(offset, type)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |

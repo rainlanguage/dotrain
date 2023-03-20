@@ -20,9 +20,9 @@ interface LanguageService
 
 |  Method | Description |
 |  --- | --- |
-|  [doComplete(textDocument, position, opmeta)](./languageservice.md#doComplete-method-1) |  |
-|  [doHover(textDocument, position, opmeta)](./languageservice.md#doHover-method-1) |  |
-|  [doValidation(textDocument, opmeta)](./languageservice.md#doValidation-method-1) |  |
+|  [doComplete(textDocument, position, opmeta, setting)](./languageservice.md#doComplete-method-1) |  |
+|  [doHover(textDocument, position, opmeta, setting)](./languageservice.md#doHover-method-1) |  |
+|  [doValidation(textDocument, opmeta, setting)](./languageservice.md#doValidation-method-1) |  |
 |  [newRainDocument(textDocument, opmeta)](./languageservice.md#newRainDocument-method-1) |  |
 |  [parseRainDocument(textDocument, opmeta)](./languageservice.md#parseRainDocument-method-1) |  |
 
@@ -42,12 +42,12 @@ rainDocuments: Map<string, RainDocument>;
 
 <a id="doComplete-method-1"></a>
 
-### doComplete(textDocument, position, opmeta)
+### doComplete(textDocument, position, opmeta, setting)
 
 <b>Signature:</b>
 
 ```typescript
-doComplete(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string): CompletionItem[] | null;
+doComplete(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): CompletionItem[] | null;
 ```
 
 #### Parameters
@@ -57,6 +57,7 @@ doComplete(textDocument: TextDocument, position: Position, opmeta?: Uint8Array |
 |  textDocument | `TextDocument` |  |
 |  position | `Position` |  |
 |  opmeta | `Uint8Array \| string` |  |
+|  setting | [LanguageServiceParams](./languageserviceparams.md) |  |
 
 <b>Returns:</b>
 
@@ -64,12 +65,12 @@ doComplete(textDocument: TextDocument, position: Position, opmeta?: Uint8Array |
 
 <a id="doHover-method-1"></a>
 
-### doHover(textDocument, position, opmeta)
+### doHover(textDocument, position, opmeta, setting)
 
 <b>Signature:</b>
 
 ```typescript
-doHover(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string): Hover | null;
+doHover(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): Hover | null;
 ```
 
 #### Parameters
@@ -79,6 +80,7 @@ doHover(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | st
 |  textDocument | `TextDocument` |  |
 |  position | `Position` |  |
 |  opmeta | `Uint8Array \| string` |  |
+|  setting | [LanguageServiceParams](./languageserviceparams.md) |  |
 
 <b>Returns:</b>
 
@@ -86,12 +88,12 @@ doHover(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | st
 
 <a id="doValidation-method-1"></a>
 
-### doValidation(textDocument, opmeta)
+### doValidation(textDocument, opmeta, setting)
 
 <b>Signature:</b>
 
 ```typescript
-doValidation(textDocument: TextDocument, opmeta?: Uint8Array | string): Promise<Diagnostic[]>;
+doValidation(textDocument: TextDocument, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): Promise<Diagnostic[]>;
 ```
 
 #### Parameters
@@ -100,6 +102,7 @@ doValidation(textDocument: TextDocument, opmeta?: Uint8Array | string): Promise<
 |  --- | --- | --- |
 |  textDocument | `TextDocument` |  |
 |  opmeta | `Uint8Array \| string` |  |
+|  setting | [LanguageServiceParams](./languageserviceparams.md) |  |
 
 <b>Returns:</b>
 
