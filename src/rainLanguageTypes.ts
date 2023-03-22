@@ -95,6 +95,15 @@ export interface ClientCapabilities {
      */
     textDocument?: {
         /**
+         * Capabilities specific to the `textDocument/publishDiagnostics` notification.
+         */
+        publishDiagnostics?: {
+            /**
+             * Whether the clients accepts diagnostics with related information.
+             */
+            relatedInformation?: boolean;
+        };
+        /**
          * Capabilities specific to completions.
          */
         completion?: {
@@ -128,8 +137,11 @@ export interface ClientCapabilities {
  * Predefined latest client capabilities
  */
 export namespace ClientCapabilities {
-    export const LATEST: ClientCapabilities = {
+    export const ALL: ClientCapabilities = {
         textDocument: {
+            publishDiagnostics: {
+                relatedInformation: true
+            },
             completion: {
                 completionItem: {
                     documentationFormat: [MarkupKind.Markdown, MarkupKind.PlainText]

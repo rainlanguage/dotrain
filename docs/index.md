@@ -28,6 +28,12 @@
 |  [getLanguageService(params)](./variables/getlanguageservice_1.md) | Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services |
 |  [getOpMetaFromSg(deployerAddress, chainId)](./variables/getopmetafromsg_1.md) | Get the op meta from sg |
 |  [getOpMetaFromSg(deployerAddress, sgUrl)](./variables/getopmetafromsg_2.md) | Get the op meta from sg |
+|  [getRainCompletion(document, position, opmeta, setting)](./variables/getraincompletion_1.md) | Provides completion items |
+|  [getRainCompletion(document, position, setting)](./variables/getraincompletion_2.md) | Provides completion items |
+|  [getRainDiagnostics(document, opmeta, setting)](./variables/getraindiagnostics_1.md) | Provides diagnostics |
+|  [getRainDiagnostics(document, setting)](./variables/getraindiagnostics_2.md) | Provides diagnostics |
+|  [getRainHover(document, position, opmeta, setting)](./variables/getrainhover_1.md) | Provides hover items |
+|  [getRainHover(document, position, setting)](./variables/getrainhover_2.md) | Provides hover items |
 |  [isBigNumberish(value)](./variables/isbignumberish_1.md) | function to check if the a value is of type BigNumberish, from EthersJS library |
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [memoryOperand(offset, type)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
@@ -59,13 +65,18 @@
 |  [bytify](./variables/bytify.md) | Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte, unless a desired `bytesLength` is specified. |
 |  [cborDecode](./variables/cbordecode.md) | Use CBOR to decode from a given value.<br><br>This will try to decode all from the given value, allowing to decoded CBOR sequences. Always will return an array with the decoded results. |
 |  [concat](./variables/concat.md) | ethers concat |
+|  [CONSTANTS](./variables/constants.md) | ethers constants |
 |  [decodeRainMetaDocument](./variables/decoderainmetadocument.md) | Use a given `dataEncoded_` as hex string and decoded it following the Rain enconding design. |
 |  [getQuery](./variables/getquery.md) | Get the query content |
 |  [hexlify](./variables/hexlify.md) | ethers hexlify |
 |  [hexZeroPad](./variables/hexzeropad.md) | ethers hexZeroPad |
+|  [isBytes](./variables/isbytes.md) | ethers isBytes |
+|  [isBytesLike](./variables/isbyteslike.md) | ethers isBytesLike |
+|  [isHexString](./variables/ishexstring.md) | ethers isHexString |
 |  [MAGIC\_NUMBERS](./variables/magic_numbers.md) | Magic numbers used to identify Rain documents. This use `BigInt` with their literal numbers.<br><br>See more abour Magic numbers: https://github.com/rainprotocol/metadata-spec/blob/main/README.md |
 |  [metaFromBytes](./variables/metafrombytes.md) | Decompress and convert bytes to meta |
 |  [op](./variables/op.md) | Converts an opcode and operand to bytes, and returns their concatenation. |
+|  [OpMetaSchema](./variables/opmetaschema.md) | op meta schema used for validation |
 |  [paddedUInt128](./variables/paddeduint128.md) | Utility function to produce 128 bits size hexString |
 |  [paddedUInt160](./variables/paddeduint160.md) | Utility function that transforms a BigNumberish to an ether address (40 char length hexString) |
 |  [paddedUInt256](./variables/paddeduint256.md) | Utility function that transforms a BigNumberish from the output of the ITierV2 contract report |

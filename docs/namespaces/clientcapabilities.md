@@ -14,5 +14,5 @@ namespace ClientCapabilities
 
 |  Variable | Description |
 |  --- | --- |
-|  [LATEST](./clientcapabilities/variables/latest.md) |  |
+|  [ALL](./clientcapabilities/variables/all.md) |  |
 

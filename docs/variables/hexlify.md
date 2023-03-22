@@ -7,5 +7,5 @@ ethers hexlify
 <b>Signature:</b>
 
 ```typescript
-hexlify: typeof ethers.utils.hexlify
+hexlify: typeof utils.hexlify
 ```

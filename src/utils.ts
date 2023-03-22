@@ -1,46 +1,54 @@
-import fs from "fs";
 import Ajv from "ajv";
-import cbor from "cbor";
-import { resolve } from "path";
-import { format } from "prettier";
 import stringMath from "string-math";
-import type { BytesLike } from 'ethers';
-import { deflateSync, inflateSync } from "zlib";
-import { isBytes, isBytesLike, isHexString } from 'ethers/lib/utils';
+import { deflate, inflate } from "pako";
+import { decodeAllSync } from "cbor-web";
+import { format } from "prettier/standalone";
+import babelParser from "prettier/parser-babel";
 import { ExpressionConfig } from "./compiler/expressionConfigTypes";
-import { BigNumber, BigNumberish, ethers, utils } from 'ethers';
+import { BigNumber, BigNumberish, utils, ethers, BytesLike } from 'ethers';
 
+/**
+ * @public ethers constants
+ */
+export const CONSTANTS = ethers.constants;
+export { BytesLike, BigNumber, BigNumberish } from "ethers";
 export const {
     /**
      * @public ethers concat
-     * @see ethers.concat
      */
     concat,
     /**
      * @public ethers hexlify
-     * @see ethers.hexlify
      */
     hexlify,
     /**
      * @public ethers zeroPad
-     * @see ethers.zeroPad
      */
     zeroPad,
     /**
      * @public ethers hexZeroPad
-     * @see ethers.hexZeroPad
      */
     hexZeroPad,
     /**
      * @public ethers arrayify
-     * @see ethers.arrayify
      */
     arrayify,
     /**
      * @public ethers parseUnits
-     * @see ethers.parseUnits
      */
     parseUnits,
+    /**
+     * @public ethers isBytes
+     */
+    isBytes,
+    /**
+     * @public ethers isBytesLike
+     */
+    isBytesLike,
+    /**
+     * @public ethers isHexString
+     */
+    isHexString
 } = utils;
 
 
@@ -95,7 +103,7 @@ export function memoryOperand(offset: number, type: number): number {
  * @returns hexadecimal string of the report already padded (64 char hexString)
  */
 export const paddedUInt256 = (report: BigNumberish): string => {
-    if (BigNumber.from(report).gt(ethers.constants.MaxUint256)) {
+    if (BigNumber.from(report).gt(CONSTANTS.MaxUint256)) {
         throw new Error(`${report} exceeds max uint256`);
     }
     return (
@@ -350,6 +358,32 @@ export function deepFreeze(object: any) {
         }
         return Object.freeze(object);
     }
+}
+
+/**
+ * @public
+ * Deep copy an item in a way that all of its properties get new reference
+ * 
+ * @param variable - The variable to copy
+ * @returns a new deep copy of the variable
+ */
+export function deepCopy<T>(variable: T): T {
+    let _result: any;
+    if (Array.isArray(variable)) {
+        _result = [] as T;
+        for (let i = 0; i < variable.length; i++) {
+            _result.push(deepCopy(variable[i]));
+        }
+    }
+    else if (typeof variable === "object") {
+        _result = {};
+        const _keys = Object.keys(variable as object);
+        for (let i = 0; i < _keys.length; i++) {
+            _result[_keys[i]] = deepCopy((variable as any)[_keys[i]]);
+        }
+    }
+    else _result = variable;
+    return _result as T;
 }
 
 /**
@@ -667,33 +701,19 @@ export const validateMeta = (
     }
     return true;
 };
-  
+
 /**
-   * @public
-   * Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment
-   *
-   * @param meta - A meta object or array of meta objects or stringified format of them
-   * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
-   * @param path - (optional) The path to write the file to if generating an output 
-   * json file is desired, example: path/to/name.json
-   * @returns Bytes as HexString
-   */
+ * @public
+ * Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment
+ *
+ * @param meta - A meta object or array of meta objects or stringified format of them
+ * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
+ * @returns Bytes as HexString
+ */
 export const bytesFromMeta = (
     meta: object | object[] | string,
-    schema: object | string,
-    path = ""
+    schema: object | string
 ): string => {
-    const _write = (_meta: any) => {
-        if (path) {
-            let _path = resolve(path);
-            if (!_path.endsWith(".json")) _path = _path + "Meta.json";
-            try {
-                fs.writeFileSync(_path, _meta);
-            } catch (error) {
-                console.log(error);
-            }
-        }
-    };
     let _meta;
     let _schema;
     if (typeof meta === "string") _meta = JSON.parse(meta);
@@ -702,79 +722,42 @@ export const bytesFromMeta = (
     else _schema = schema;
     if (!validateMeta(_meta, _schema))
         throw new Error("provided meta object is not valid");
-    const formatted = format(JSON.stringify(_meta, null, 4), { parser: "json" });
-    const bytes = Uint8Array.from(deflateSync(formatted));
+    const formatted = format(
+        JSON.stringify(_meta, null, 4), 
+        { parser: "json",  plugins: [babelParser] }
+    );
+    const bytes = deflate(formatted);
     const hex = hexlify(bytes, { allowMissingPrefix: true });
-    if (path.length) _write(formatted);
     return hex;
 };
 
 /**
-   * @public
-   * Decompress and convert bytes to meta
-   *
-   * @param bytes - Bytes to decompress and convert to json
-   * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
-   * @param path - (optional) The path to write the file to if generating an output 
-   * json file is desired, example: path/to/name.json
-   * @returns meta content as object
-   */
+ * @public
+ * Decompress and convert bytes to meta
+ *
+ * @param bytes - Bytes to decompress and convert to json
+ * @param schema - Json schema to validate as object (JSON.parsed) or stringified format
+ * @returns meta content as object
+ */
 export const metaFromBytes = (
     bytes: BytesLike,
-    schema: object | string,
-    path = ""
+    schema: object | string
 ) => {
-    const _write = (_meta: any) => {
-        if (path) {
-            let _path = resolve(path);
-            if (!_path.endsWith(".json")) _path = _path + "Meta.json";
-            try {
-                fs.writeFileSync(_path, _meta);
-            } catch (error) {
-                console.log(error);
-            }
-        }
-    };
     if (isBytesLike(bytes)) {
         let _schema;
         if (typeof schema === "string") _schema = JSON.parse(schema);
         else _schema = schema;
         const _bytesArr = arrayify(bytes, { allowMissingPrefix: true });
-        const _meta = format(inflateSync(_bytesArr).toString(), { parser: "json" });
+        const _meta = format(
+            Buffer.from(inflate(_bytesArr)).toString(), 
+            { parser: "json", plugins: [babelParser] }
+        );
         if (!validateMeta(JSON.parse(_meta), _schema))
             throw new Error("invalid meta");
-        if (path.length) _write(_meta);
         return JSON.parse(_meta);
     }
     else throw new Error("invalid meta");
 };
-
-
-/**
- * @public
- * Deep copy an item in a way that all of its properties get new reference
- * 
- * @param variable - The variable to copy
- * @returns a new deep copy of the variable
- */
-export function deepCopy<T>(variable: T): T {
-    let _result: any;
-    if (Array.isArray(variable)) {
-        _result = [] as T;
-        for (let i = 0; i < variable.length; i++) {
-            _result.push(deepCopy(variable[i]));
-        }
-    }
-    else if (typeof variable === "object") {
-        _result = {};
-        const _keys = Object.keys(variable as object);
-        for (let i = 0; i < _keys.length; i++) {
-            _result[_keys[i]] = deepCopy((variable as any)[_keys[i]]);
-        }
-    }
-    else _result = variable;
-    return _result as T;
-}
 
 /**
  * @public
@@ -804,35 +787,35 @@ export const MAGIC_NUMBERS = {
 };
 
 /**
- * @public
- * Use CBOR to decode from a given value.
- *
- * This will try to decode all from the given value, allowing to decoded CBOR
- * sequences. Always will return an array with the decoded results.
- *
- * @param dataEncoded_ - The data to be decoded
- * @returns An array with the decoded data.
- */
+* @public
+* Use CBOR to decode from a given value.
+*
+* This will try to decode all from the given value, allowing to decoded CBOR
+* sequences. Always will return an array with the decoded results.
+*
+* @param dataEncoded_ - The data to be decoded
+* @returns An array with the decoded data.
+*/
 export const cborDecode = (dataEncoded_: string): Array<any> => {
-    return cbor.decodeAllSync(dataEncoded_);
+    return decodeAllSync(dataEncoded_);
 };
-  
+
 /**
- * @public
- * Use a given `dataEncoded_` as hex string and decoded it following the Rain
- * enconding design.
- *
- * @param dataEncoded_ - The data to be decoded
- * @returns An array with the values decoded.
- */
+* @public
+* Use a given `dataEncoded_` as hex string and decoded it following the Rain
+* enconding design.
+*
+* @param dataEncoded_ - The data to be decoded
+* @returns An array with the values decoded.
+*/
 export const decodeRainMetaDocument = (dataEncoded_: string): Array<any> => {
     const metaDocumentHex =
-      "0x" + MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
-  
+  "0x" + MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
+
     dataEncoded_ = dataEncoded_.toLowerCase().startsWith("0x")
         ? dataEncoded_
         : "0x" + dataEncoded_;
-  
+
     if (!dataEncoded_.startsWith(metaDocumentHex)) {
         throw new Error(
             "Invalid data. Does not start with meta document magic number."

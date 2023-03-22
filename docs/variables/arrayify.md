@@ -7,5 +7,5 @@ ethers arrayify
 <b>Signature:</b>
 
 ```typescript
-arrayify: typeof ethers.utils.arrayify
+arrayify: typeof utils.arrayify
 ```

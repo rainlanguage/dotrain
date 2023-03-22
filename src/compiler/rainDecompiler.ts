@@ -1,11 +1,19 @@
-import { TextDocument } from '../rainLanguageTypes';
+import { OpMetaSchema } from "..";
 import { RainDocument } from '../parser/rainParser';
-import { ExpressionConfig } from './expressionConfigTypes';
-import { BytesLike, BigNumber, ethers } from 'ethers';
-import OpMetaSchema from "../schema/op.meta.schema.json";
+import { TextDocument } from '../rainLanguageTypes';
 import { Equation, Expression, parse } from 'algebra.js';
+import { ExpressionConfig } from './expressionConfigTypes';
 import { OpMeta, InputMeta, OutputMeta, OperandArgs } from '../parser/opMetaTypes';
-import { arrayify, extractByBits, isBigNumberish, metaFromBytes, validateMeta } from '../utils';
+import { 
+    arrayify, 
+    BytesLike, 
+    BigNumber, 
+    CONSTANTS, 
+    validateMeta, 
+    extractByBits, 
+    metaFromBytes,
+    isBigNumberish 
+} from '../utils';
 
 
 /**
@@ -114,7 +122,7 @@ export function rld(
         bits: [number, number], 
         computation?: string
     }[]): number[] {
-        const result = [];
+        const result: number[] = [];
         for (let i = 0; i < args.length; i++) {
             let _val = extractByBits(value, args[i].bits);
             const _comp = args[i].computation;
@@ -181,7 +189,7 @@ export function rld(
                     _stack.push(
                         BigNumber.from(
                             _constants[_operand >> 1]
-                        ).eq(ethers.constants.MaxUint256)
+                        ).eq(CONSTANTS.MaxUint256)
                             ? 'max-uint256'
                             : _constants[_operand >> 1]
                     );
