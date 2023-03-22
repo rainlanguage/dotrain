@@ -1,12 +1,12 @@
 import { RainDocument } from "../parser/rainParser";
 import { 
-    Diagnostic,
-    TextDocument,
-    Range,
+    Range, 
+    ErrorCode, 
+    Diagnostic, 
+    TextDocument,     
     DiagnosticSeverity,
-    ErrorCode,
     LanguageServiceParams 
-} from "../../shared/rainLanguageTypes";
+} from "../rainLanguageTypes";
 
 
 /**

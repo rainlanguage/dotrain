@@ -7,5 +7,5 @@ ethers zeroPad
 <b>Signature:</b>
 
 ```typescript
-zeroPad: typeof ethers.utils.zeroPad
+zeroPad: typeof utils.zeroPad
 ```

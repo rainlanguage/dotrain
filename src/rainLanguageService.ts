@@ -3,15 +3,15 @@ import { getRainHover } from "./services/rainHover";
 import { RainDocument } from "./parser/rainParser";
 import { getRainDiagnostics } from "./services/rainDiagnostics";
 import { getRainCompletion } from "./services/rainCompletion";
-import { RainDocumentResult } from "../shared/parser/rainParserTypes";
+import { RainDocumentResult } from "./parser/rainParserTypes";
 import {
-    LanguageServiceParams,
-    TextDocument,
-    Position, 
-    CompletionItem, 
     Hover, 
-    Diagnostic
-} from "../shared/rainLanguageTypes";
+    Position, 
+    Diagnostic, 
+    TextDocument, 
+    CompletionItem, 
+    LanguageServiceParams 
+} from "./rainLanguageTypes";
 
 
 /**

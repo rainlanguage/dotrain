@@ -7,5 +7,5 @@ ethers parseUnits
 <b>Signature:</b>
 
 ```typescript
-parseUnits: typeof ethers.utils.parseUnits
+parseUnits: typeof utils.parseUnits
 ```

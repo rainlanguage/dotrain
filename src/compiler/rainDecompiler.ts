@@ -1,11 +1,19 @@
-import { TextDocument } from '../../shared/rainLanguageTypes';
+import { OpMetaSchema } from "..";
 import { RainDocument } from '../parser/rainParser';
-import { ExpressionConfig } from '../../shared/compiler/expressionConfigTypes';
-import { BytesLike, BigNumber, ethers } from 'ethers';
-import OpMetaSchema from "../../shared/schema/op.meta.schema.json";
+import { TextDocument } from '../rainLanguageTypes';
 import { Equation, Expression, parse } from 'algebra.js';
-import { OpMeta, InputMeta, OutputMeta, OperandArgs } from '../../shared/parser/opMetaTypes';
-import { arrayify, extractByBits, isBigNumberish, metaFromBytes, validateMeta } from '../utils';
+import { ExpressionConfig } from './expressionConfigTypes';
+import { OpMeta, InputMeta, OutputMeta, OperandArgs } from '../parser/opMetaTypes';
+import { 
+    arrayify, 
+    BytesLike, 
+    BigNumber, 
+    CONSTANTS, 
+    validateMeta, 
+    extractByBits, 
+    metaFromBytes,
+    isBigNumberish 
+} from '../utils';
 
 
 /**
@@ -181,7 +189,7 @@ export function rld(
                     _stack.push(
                         BigNumber.from(
                             _constants[_operand >> 1]
-                        ).eq(ethers.constants.MaxUint256)
+                        ).eq(CONSTANTS.MaxUint256)
                             ? 'max-uint256'
                             : _constants[_operand >> 1]
                     );

@@ -7,5 +7,5 @@ ethers isBytesLike
 <b>Signature:</b>
 
 ```typescript
-isBytesLike: typeof ethers.utils.isBytesLike
+isBytesLike: typeof utils.isBytesLike
 ```

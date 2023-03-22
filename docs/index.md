@@ -65,6 +65,7 @@
 |  [bytify](./variables/bytify.md) | Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte, unless a desired `bytesLength` is specified. |
 |  [cborDecode](./variables/cbordecode.md) | Use CBOR to decode from a given value.<br><br>This will try to decode all from the given value, allowing to decoded CBOR sequences. Always will return an array with the decoded results. |
 |  [concat](./variables/concat.md) | ethers concat |
+|  [CONSTANTS](./variables/constants.md) | ethers constants |
 |  [decodeRainMetaDocument](./variables/decoderainmetadocument.md) | Use a given `dataEncoded_` as hex string and decoded it following the Rain enconding design. |
 |  [getQuery](./variables/getquery.md) | Get the query content |
 |  [hexlify](./variables/hexlify.md) | ethers hexlify |
@@ -75,6 +76,7 @@
 |  [MAGIC\_NUMBERS](./variables/magic_numbers.md) | Magic numbers used to identify Rain documents. This use `BigInt` with their literal numbers.<br><br>See more abour Magic numbers: https://github.com/rainprotocol/metadata-spec/blob/main/README.md |
 |  [metaFromBytes](./variables/metafrombytes.md) | Decompress and convert bytes to meta |
 |  [op](./variables/op.md) | Converts an opcode and operand to bytes, and returns their concatenation. |
+|  [OpMetaSchema](./variables/opmetaschema.md) | op meta schema used for validation |
 |  [paddedUInt128](./variables/paddeduint128.md) | Utility function to produce 128 bits size hexString |
 |  [paddedUInt160](./variables/paddeduint160.md) | Utility function that transforms a BigNumberish to an ether address (40 char length hexString) |
 |  [paddedUInt256](./variables/paddeduint256.md) | Utility function that transforms a BigNumberish from the output of the ITierV2 contract report |

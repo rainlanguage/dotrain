@@ -1,6 +1,7 @@
 import { RainDocument } from "../parser/rainParser";
-import { TextDocument } from "../../shared/rainLanguageTypes";
-import { ExpressionConfig } from "../../shared/compiler/expressionConfigTypes";
+import { TextDocument } from "../rainLanguageTypes";
+import { ExpressionConfig } from "./expressionConfigTypes";
+
 
 /**
  * @public

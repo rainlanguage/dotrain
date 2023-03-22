@@ -7,5 +7,5 @@ ethers isBytes
 <b>Signature:</b>
 
 ```typescript
-isBytes: typeof ethers.utils.isBytes
+isBytes: typeof utils.isBytes
 ```

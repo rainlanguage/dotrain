@@ -1,18 +1,6 @@
-import { isBytesLike } from '../utils';
-import { BigNumberish, BytesLike, ethers } from 'ethers';
-import OpMetaSchema from "../../shared/schema/op.meta.schema.json";
-import { ErrorCode, TextDocument } from '../../shared/rainLanguageTypes';
-import { ExpressionConfig } from '../../shared/compiler/expressionConfigTypes';
-import { 
-    RDNode, 
-    RDOpNode, 
-    RDProblem, 
-    RDComment, 
-    RDParseTree,
-    RDAliasNode,
-    RainParseState, 
-    RainDocumentResult
-} from '../../shared/parser/rainParserTypes';
+import { OpMetaSchema } from "..";
+import { ErrorCode, TextDocument } from '../rainLanguageTypes';
+import { ExpressionConfig } from '../compiler/expressionConfigTypes';
 import { 
     OpMeta,
     InputMeta,
@@ -22,17 +10,31 @@ import {
     OperandArgs,
     OperandMeta,
     ComputedOutput
-} from '../../shared/parser/opMetaTypes';
+} from './opMetaTypes';
+import { 
+    RDNode, 
+    RDOpNode, 
+    RDProblem, 
+    RDComment, 
+    RDParseTree,
+    RDAliasNode,
+    RainParseState, 
+    RainDocumentResult
+} from './rainParserTypes';
 import {
     op,
     concat,
     hexlify,
     deepCopy,
+    BytesLike,
+    CONSTANTS,  
+    isBytesLike, 
+    BigNumberish, 
     extractByBits,
     metaFromBytes,
     memoryOperand,
     isBigNumberish,
-    constructByBits
+    constructByBits,
 } from '../utils';
 
 
@@ -1298,7 +1300,7 @@ class RainParser {
                 const _nums = _word.match(/\d+/g)!;
                 _val = _nums[0] + "0".repeat(Number(_nums[1]));
             }
-            if (ethers.constants.MaxUint256.lt(_val)) {
+            if (CONSTANTS.MaxUint256.lt(_val)) {
                 this.problems.push({
                     msg: "value greater than 32 bytes in size",
                     position: [..._wordPos],
@@ -1431,7 +1433,7 @@ class RainParser {
                     }
                     else if (_node.value === 'max-uint256' || _node.value === 'infinity') {
                         const _i = constants.findIndex(
-                            v => ethers.constants.MaxUint256.eq(v)
+                            v => CONSTANTS.MaxUint256.eq(v)
                         );
                         if (_i > -1) {
                             _sourcesCache.push(
