@@ -1,4 +1,5 @@
 import Ajv from "ajv";
+import { Buffer } from "buffer/";
 import stringMath from "string-math";
 import { deflate, inflate } from "pako";
 import { decodeAllSync } from "cbor-web";

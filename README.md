@@ -11,9 +11,9 @@ If you find an issue or you want to propose an improvement, please feel free to 
 ## **Tutorial**
 To get started, install the package:
 ```bash
-yarn add --dev https://github.com/rouzwelt/rainlang.git
+yarn add 'rouzwelt/rainlang.git'
 or
-npm install --save-dev https://github.com/rouzwelt/rainlang.git
+npm install 'rouzwelt/rainlang.git'
 ```
 <br>
 
