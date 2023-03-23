@@ -22,7 +22,7 @@
         "docs",
         "cjs.js",
         "esm.js",
-        "cjs.dts",
+        "cjs.d.ts",
         "esm.d.ts",
         "README.md",
         "package.json"
