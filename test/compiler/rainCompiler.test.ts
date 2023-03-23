@@ -35,7 +35,7 @@ describe("Rain Compiler tests", async function () {
 
         const result = await rlc(expression, opMeta + "thisIsAnInValidOpMeta")
             .catch((err) => {
-                assert(err.problems[0].msg === "invalid op meta")
+                assert(err.problems[0].msg === "invalid op meta");
             });
         assert(result == undefined, "was expecting to fail when no opmeta is specified");
     });
@@ -44,8 +44,8 @@ describe("Rain Compiler tests", async function () {
 
         await rlc(rainlang`_:;`, opMeta)
             .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0)
-                assert(expressionConfig.sources.length == 1)
+                assert(expressionConfig.constants.length == 0);
+                assert(expressionConfig.sources.length == 1);
             })
             .catch((err) => {
                 throw err;
@@ -53,8 +53,8 @@ describe("Rain Compiler tests", async function () {
 
         await rlc(rainlang`:;`, opMeta)
             .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0)
-                assert(expressionConfig.sources.length == 1)
+                assert(expressionConfig.constants.length == 0);
+                assert(expressionConfig.sources.length == 1);
             })
             .catch((err) => {
                 throw err;
@@ -62,8 +62,8 @@ describe("Rain Compiler tests", async function () {
 
         await rlc(rainlang`_ _:;`, opMeta)
             .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0)
-                assert(expressionConfig.sources.length == 1)
+                assert(expressionConfig.constants.length == 0);
+                assert(expressionConfig.sources.length == 1);
             })
             .catch((err) => {
                 throw err;
@@ -71,8 +71,8 @@ describe("Rain Compiler tests", async function () {
 
         await rlc(rainlang`_:;`, opMeta)
             .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0)
-                assert(expressionConfig.sources.length == 1)
+                assert(expressionConfig.constants.length == 0);
+                assert(expressionConfig.sources.length == 1);
             })
             .catch((err) => {
                 throw err;
@@ -82,8 +82,8 @@ describe("Rain Compiler tests", async function () {
                     _:,
                     _:;`, opMeta)
             .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0)
-                assert(expressionConfig.sources.length == 1)
+                assert(expressionConfig.constants.length == 0);
+                assert(expressionConfig.sources.length == 1);
             })
             .catch((err) => {
                 throw err;
@@ -94,8 +94,8 @@ describe("Rain Compiler tests", async function () {
             /* this is a comment */
             _:;`, opMeta)
             .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0)
-                assert(expressionConfig.sources.length == 1)
+                assert(expressionConfig.constants.length == 0);
+                assert(expressionConfig.sources.length == 1);
             })
             .catch((err) => {
                 throw err;
@@ -105,8 +105,8 @@ describe("Rain Compiler tests", async function () {
             _:;
             _:;`, opMeta)
             .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0)
-                assert(expressionConfig.sources.length == 2)
+                assert(expressionConfig.constants.length == 0);
+                assert(expressionConfig.sources.length == 2);
             })
             .catch((err) => {
                 throw err;

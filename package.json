@@ -32,7 +32,7 @@
         "build": "npm run build-cjs && npm run build-esm",
         "build-esm": "tsc -b ./tsconfig.esm.json",
         "build-cjs": "tsc -b ./tsconfig.json",
-        "test": "mocha -r ts-node/register tests/**/*.test.ts --timeout 100000",
+        "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
         "lint": "eslint \"src/**\" \"test/**\"",
         "docgen": "rm -rf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs"
     },
