@@ -440,6 +440,7 @@ class RainParser {
             | RDNode[][]
             | RDParseTree,
     ): ExpressionConfig | undefined {
+        if (this.problems.length) return undefined;
         if (items) return this._compile(items);
         else return this._compile(this.parseTree);
     }
@@ -1380,6 +1381,8 @@ class RainParser {
         const _sources: BytesLike[] = [];
         let _sourcesCache: BytesLike[] = [];
         let _nodes: RDNode[][] = [];
+
+        if (this.problems.length) return undefined;
 
         // convertion to a standard format
         if ("position" in parseTree) _nodes = [[parseTree]];
