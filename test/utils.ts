@@ -1,7 +1,7 @@
 /**
  * Deployer Address to fetch the opmeta from subgraph
  */
-export const deployerAddress = "0x017d5bb72b6c21202382e5f0d2ac0a8a6804a9f7";
+export const deployerAddress = "0x01D5611c2D6FB7Bb1bFa9df2f524196743f59F2a";
 
 export function rainlang(
     strings: TemplateStringsArray,
