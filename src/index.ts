@@ -10,6 +10,7 @@ export * from "./services/rainHover";
 export * from "./services/rainDiagnostics";
 export * from "./services/rainCompletion";
 export * from './rainLanguageService';
+export * from './rainLanguageTypes';
 export * from './utils';
 
 import schema from "./schema/op.meta.schema.json";
