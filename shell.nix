@@ -76,7 +76,7 @@ let
         shellHook = ''
             export PATH=$( npm bin ):$PATH
             # keep it fresh
-            yarn install --ignore-scripts
+            yarn install --ignore-scripts --bypass-integrity-check
             build
         '';
     }
