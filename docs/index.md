@@ -12,6 +12,7 @@
 
 |  Enumeration | Description |
 |  --- | --- |
+|  [CompletionTriggerKind](./enums/completiontriggerkind.md) | How a completion was triggered |
 |  [ErrorCode](./enums/errorcode.md) | Error codes used by diagnostics |
 |  [MemoryType](./enums/memorytype.md) | Type for read-memory opcode |
 
@@ -54,7 +55,6 @@
 |  Namespace | Description |
 |  --- | --- |
 |  [ClientCapabilities](./namespaces/clientcapabilities.md) | Predefined latest client capabilities |
-|  [CompletionTriggerKind](./namespaces/completiontriggerkind.md) | How a completion was triggered |
 
 ## Variables
 
@@ -92,7 +92,6 @@
 
 |  Type Alias | Description |
 |  --- | --- |
-|  [CompletionTriggerKind](./types/completiontriggerkind.md) | How a completion was triggered |
 |  [ComputedOutput](./types/computedoutput.md) | Data type for computed output |
 |  [ExpressionConfig](./types/expressionconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
 |  [InputArgs](./types/inputargs.md) | Data type for input argguments |
