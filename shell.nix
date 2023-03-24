@@ -51,6 +51,7 @@ let
     '';
 
     lint = pkgs.writeShellScriptBin "lint" ''
+        yarn install --ignore-scripts
         yarn lint
     '';
 
