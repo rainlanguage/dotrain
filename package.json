@@ -60,7 +60,7 @@
         "ajv": "^8.12.0",
         "algebra.js": "rouzwelt/algebra.js",
         "buffer": "^6.0.3",
-        "cbor-web": "https://gitpkg.now.sh/rouzwelt/node-cbor/packages/cbor-web?2023-03-22-cbor-web-dts",
+        "cbor-web": "https://gitpkg.now.sh/rouzwelt/node-cbor/packages/cbor-web?4f8d212f058a84ca40993e7db523b80ed6cefc19",
         "ethers": "^5.7.2",
         "graphql": "^16.6.0",
         "graphql-request": "^5.2.0",
