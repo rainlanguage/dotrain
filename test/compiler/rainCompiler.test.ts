@@ -6,7 +6,7 @@ import { deployerAddress, rainlang } from "../utils";
 
 chai.use(chaiAsPromised);
 const assert: Chai.AssertStatic = chai.assert;
-// const expect: Chai.ExpectStatic = chai.expect;
+const expect: Chai.ExpectStatic = chai.expect;
 
 describe("Rain Compiler tests", async function () {
     let opMeta: string;
@@ -40,100 +40,98 @@ describe("Rain Compiler tests", async function () {
         assert(result == undefined, "was expecting to fail when no opmeta is specified");
     });
 
-    it("should accept valid rainlang fragments", async () => {
-
-        await rlc(rainlang`_:;`, opMeta)
-            .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0);
-                assert(expressionConfig.sources.length == 1);
-            })
-            .catch((err) => {
-                throw err;
-            });
-
-        await rlc(rainlang`:;`, opMeta)
-            .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0);
-                assert(expressionConfig.sources.length == 1);
-            })
-            .catch((err) => {
-                throw err;
-            });
-
-        await rlc(rainlang`_ _:;`, opMeta)
-            .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0);
-                assert(expressionConfig.sources.length == 1);
-            })
-            .catch((err) => {
-                throw err;
-            });
-
-        await rlc(rainlang`_:;`, opMeta)
-            .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0);
-                assert(expressionConfig.sources.length == 1);
-            })
-            .catch((err) => {
-                throw err;
-            });
-
-        await rlc(rainlang`
-                    _:,
-                    _:;`, opMeta)
-            .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0);
-                assert(expressionConfig.sources.length == 1);
-            })
-            .catch((err) => {
-                throw err;
-            });
-
-
-        await rlc(rainlang`
-            /* this is a comment */
-            _:;`, opMeta)
-            .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0);
-                assert(expressionConfig.sources.length == 1);
-            })
-            .catch((err) => {
-                throw err;
-            });
-
-        await rlc(rainlang`
-            _:;
-            _:;`, opMeta)
-            .then((expressionConfig: ExpressionConfig) => {
-                assert(expressionConfig.constants.length == 0);
-                assert(expressionConfig.sources.length == 2);
-            })
-            .catch((err) => {
-                throw err;
+    it("should accept valid rainlang fragment `_:;`", async () => {
+        return expect(rlc(rainlang`_:;`, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert(response.constants.length == 0);
+                assert(response.sources.length == 1);
             });
     });
 
-    it("should throw error for invalid rainlang fragments", async () => {
+    it("should accept valid rainlang fragment `:;`", async () => {
+        return expect(rlc(rainlang`:;`, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert(response.constants.length == 0);
+                assert(response.sources.length == 1);
+            });
+    });
+
+    it("should accept valid rainlang fragment `_ _:;`", async () => {
+        return expect(rlc(rainlang`_ _:;`, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert(response.constants.length == 0);
+                assert(response.sources.length == 1);
+            });
+    });
+
+    it("should accept valid rainlang fragment `_:;`", async () => {
+        return expect(rlc(rainlang`_:;`, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert(response.constants.length == 0);
+                assert(response.sources.length == 1);
+            });
+    });
+
+    it("should accept valid rainlang fragment `_:, _:;`", async () => {
+        return expect(rlc(
+            rainlang`_:,
+                    _:;`, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert(response.constants.length == 0);
+                assert(response.sources.length == 1);
+            });
+    });
+
+    it("should accept valid rainlang fragment `/* this is a comment */ _:;`", async () => {
+        return expect(rlc(rainlang`
+        /* this is a comment */
+        _:;`, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert(response.constants.length == 0);
+                assert(response.sources.length == 1);
+            });
+    });
+
+    it("should accept valid rainlang fragment `_:; _:;`", async () => {
+        return expect(rlc(rainlang`
+        _:;
+        _:;`, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert(response.constants.length == 0);
+                assert(response.sources.length == 2);
+            });
+    });
+
+    it("should accept valid rainlang fragment `_:;`", async () => {
+        return expect(rlc(rainlang`_:add(10 20);`, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert(response.constants.length == 2);
+                assert.deepEqual(response.constants, ['10', '20']);
+                assert(response.sources.length == 1);
+            });
+    });
+
+    it("should throw error for invalid rainlang fragment `:add(10 20);`", async () => {
         return assert.isRejected(rlc(rainlang`:add(10 20);`, opMeta));
     });
 
-    it("should throw error for invalid rainlang fragments", async () => {
+    it("should throw error for invalid rainlang fragment `:`", async () => {
         return assert.isRejected(rlc(rainlang`:`, opMeta));
     });
 
-    it("should throw error for invalid rainlang fragments", async () => {
+    it("should throw error for invalid rainlang fragment `,`", async () => {
         return assert.isRejected(rlc(rainlang`,`, opMeta));
     });
 
-    it("should throw error for invalid rainlang fragments", async () => {
+    it("should throw error for invalid rainlang fragment `;`", async () => {
         return assert.isRejected(rlc(rainlang`;`, opMeta));
     });
 
-    it("should throw error for invalid rainlang fragments", async () => {
+    it("should throw error for invalid rainlang fragment `,;`", async () => {
         return assert.isRejected(rlc(rainlang`,;`, opMeta));
     });
 
-    it("should throw error for invalid rainlang fragments", async () => {
+    it("should throw error for invalid rainlang fragment `_;`", async () => {
         return assert.isRejected(rlc(rainlang`_;`, opMeta));
     });
 });
