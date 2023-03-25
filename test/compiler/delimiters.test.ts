@@ -1,6 +1,7 @@
 import * as chai from "chai";
+import { rainlang } from "../../src/utils";
 import chaiAsPromised from 'chai-as-promised';
-import { deployerAddress, rainlang } from "../utils";
+import { deployerAddress } from "../utils";
 import { rlc } from "../../src/compiler/rainCompiler";
 import { ExpressionConfig, getOpMetaFromSg } from "../../src";
 

@@ -13,11 +13,11 @@ let
 
     flush = pkgs.writeShellScriptBin "flush" ''
         rm -rf dist
+        rm -rf docs
     '';
 
     flush-all = pkgs.writeShellScriptBin "flush-all" ''
         flush
-        rm -rf docs
         rm -rf node_modules
     '';
 

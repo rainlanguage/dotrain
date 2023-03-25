@@ -39,6 +39,7 @@
 |  [isBigNumberish(value)](./variables/isbignumberish_1.md) | function to check if the a value is of type BigNumberish, from EthersJS library |
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [memoryOperand(offset, type)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
+|  [rainlang(stringChunks, vars)](./variables/rainlang_1.md) | Method to be used as Tagged Templates to activate embedded rainlang in javascript to typescript that highlights the rainlang syntax. Requires rainlang vscode extension to be installed. |
 |  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [rlc(text, opmeta)](./variables/rlc_1.md) | Rain Language Compiler (rlc), compiles documents into valid ExpressionConfig (deployable bytes) |
 |  [rlc(document, opmeta)](./variables/rlc_2.md) | Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes) |

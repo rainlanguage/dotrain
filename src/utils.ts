@@ -54,6 +54,22 @@ export const {
 
 
 /**
+ * @public Method to be used as Tagged Templates to activate embedded rainlang in 
+ * javascript to typescript that highlights the rainlang syntax. Requires rainlang 
+ * vscode extension to be installed.
+ */
+export function rainlang(
+    stringChunks: TemplateStringsArray,
+    ...vars: any[]
+): string {
+    let result = "";
+    for (let i = 0; i < stringChunks.length; i++) {
+        result = result + stringChunks[i] + (vars[i] ?? "");
+    }
+    return result;
+}
+
+/**
  * @public
  * Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte,
  * unless a desired `bytesLength` is specified.
