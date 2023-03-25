@@ -5,12 +5,39 @@ import { ExpressionConfig } from "./expressionConfigTypes";
 
 /**
  * @public
- * Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes)
+ * Rain Language Compiler (rlc), compiles documents into valid ExpressionConfig (deployable bytes)
  *
- * @param document - The document to compile, either a RainDocument instance or a raw text with opmeta
- * @param opmeta - (optional) Ops meta as bytes ie hex string or Uint8Array or json content as string
+ * @param text - The raw string to compile
+ * @param opmeta - Ops meta as bytes ie hex string or Uint8Array
  * @returns ExpressionConfig promise
  */
+export function rlc(
+    text: string,
+    opmeta: Uint8Array | string
+): Promise<ExpressionConfig>
+
+/**
+ * @public
+ * Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes)
+ *
+ * @param document - The TextDocument to compile
+ * @param opmeta - Ops meta as bytes ie hex string or Uint8Array
+ * @returns ExpressionConfig promise
+ */
+export function rlc(
+    document: TextDocument,
+    opmeta: Uint8Array | string
+): Promise<ExpressionConfig>
+
+/**
+ * @public
+ * Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes)
+ *
+ * @param rainDocument - The rain document to compile
+ * @returns ExpressionConfig promise
+ */
+export function rlc(rainDocument: RainDocument): Promise<ExpressionConfig>
+
 export function rlc(
     document: RainDocument | TextDocument | string,
     opmeta?: Uint8Array | string
@@ -27,7 +54,6 @@ export function rlc(
         }
         else return Promise.reject("expected op meta");
     }
-
     try {
         const _bytes = _rainDocument.getExpressionConfig();
         if (_bytes) return Promise.resolve(_bytes);

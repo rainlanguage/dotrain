@@ -551,7 +551,8 @@ class RainParser {
             // start parsing if the string is not empty
             if (document.length) {
 
-                // ----------- remove indents -----------
+                // ----------- remove indents and tabs -----------
+                document = document.replace(/\t/g, ' ');
                 document = document.replace(/\r\n/g, '  ');
                 document = document.replace(/\r/g, ' ');
                 document = document.replace(/\n/g, ' ');
@@ -593,7 +594,7 @@ class RainParser {
                     }
                 }
 
-                // ----------- begin caching expression sentences -----------
+                // ----------- begin caching expression sources -----------
                 const _doc = document;
                 const _sourceExp: string[] = [];
                 const _sourceExpPos: [number, number][] = [];
@@ -609,11 +610,19 @@ class RainParser {
                     }
                     else {
                         if (document.match(/[^\s+]/)) {
-                            _sourceExpPos.push([
-                                _doc.length - document.length,
-                                _doc.length - 1,
-                            ]);
-                            _sourceExp.push(document);
+                            this.problems.push({
+                                msg: "source item expressions must end with semi",
+                                position: [
+                                    _doc.length - document.length,
+                                    _doc.length - 1,
+                                ],
+                                code: ErrorCode.InvalidExpression
+                            });
+                            // _sourceExpPos.push([
+                            //     _doc.length - document.length,
+                            //     _doc.length - 1,
+                            // ]);
+                            // _sourceExp.push(document);
                         }
                         document = '';
                     }
@@ -630,14 +639,18 @@ class RainParser {
                     let _lhs: string;
 
                     // ----------- cache the sub-expressions -----------
+                    if (!_exp.includes(",")) {
+                        _subExp.push(_exp);
+                        _subExpEntry.push(_sourceExp[i].length - _exp.length);
+                    }
                     while (_exp.includes(',')) {
                         _subExp.push(_exp.slice(0, _exp.indexOf(',')));
                         _subExpEntry.push(_sourceExp[i].length - _exp.length);
                         _exp = _exp.slice(_exp.indexOf(',') + 1);
-                    }
-                    if (_exp.length) {
-                        _subExp.push(_exp);
-                        _subExpEntry.push(_sourceExp[i].length - _exp.length);
+                        if (!_exp.includes(",")) {
+                            _subExp.push(_exp);
+                            _subExpEntry.push(_sourceExp[i].length - _exp.length);
+                        }
                     }
 
                     // ----------- begin parsing sub-expressions -----------
@@ -673,24 +686,23 @@ class RainParser {
 
                             // ----------- begin parsing LHS -----------
                             if (_lhs.length > 0) {
-                                const _aliases: string[] = [];
-                                const _aliasesPos: [number, number][] = [];
-                                const _parsed = this.simpleParse(_lhs, _positionOffset);
-                                _aliases.push(..._parsed.words);
-                                _aliasesPos.push(..._parsed.positions);
-                                for (let k = 0; k < _aliases.length; k++) {
+                                const { words, positions } = this.simpleParse(
+                                    _lhs, 
+                                    _positionOffset
+                                );
+                                for (let k = 0; k < words.length; k++) {
                                     this.state.parse.subExpAliases.push({
-                                        name: _aliases[k],
-                                        position: _aliasesPos[k]
+                                        name: words[k],
+                                        position: positions[k]
                                     });
-                                    if (!_aliases[k].match(/^[a-z][a-z0-9-]*$|_/)) {
+                                    if (!words[k].match(/^[a-z][a-z0-9-]*$|_/)) {
                                         this.problems.push({
-                                            msg: `invalid LHS alias: ${_aliases[k]}`,
-                                            position: _aliasesPos[k],
+                                            msg: `invalid LHS alias: ${words[k]}`,
+                                            position: positions[k],
                                             code:ErrorCode.InvalidWordPattern
                                         });
                                     }
-                                    this.state.track.char = _aliasesPos[k][1];
+                                    this.state.track.char = positions[k][1];
                                 }
                             }
 
@@ -782,7 +794,7 @@ class RainParser {
                                 const _diff = _tagsCount - _outputCount;
                                 const _tags = [...this.state.parse.subExpAliases];
                                 this.state.track.char = _positionOffset;
-                                if (j !== 0 || (j === 0 && _treeCount !== 0)) {
+                                if (!(_currentSourceTree.length === 0 && _treeCount === 0)) {
                                     if (_diff === 0) {
                                         for (let k = 0; k < _treeCount; k++) {
                                             const _node = this.state.parse.tree[
@@ -879,7 +891,8 @@ class RainParser {
                             }
                         }
                         else {
-                            if (_subExp[j].match(/[^\s+]/)) this.problems.push({
+                            // if (_subExp[j].match(/[^\s+]/)) 
+                            this.problems.push({
                                 msg: "invalid rain expression",
                                 position: [
                                     _positionOffset,

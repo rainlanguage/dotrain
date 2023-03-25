@@ -13,11 +13,11 @@ let
 
     flush = pkgs.writeShellScriptBin "flush" ''
         rm -rf dist
+        rm -rf docs
     '';
 
     flush-all = pkgs.writeShellScriptBin "flush-all" ''
         flush
-        rm -rf docs
         rm -rf node_modules
     '';
 
@@ -54,6 +54,10 @@ let
         yarn lint
     '';
 
+    lint-fix = pkgs.writeShellScriptBin "lint-fix" ''
+        yarn lint-fix
+    '';
+
     in
     pkgs.stdenv.mkDerivation {
         name = "shell";
@@ -71,12 +75,13 @@ let
             flush-all
             docgen
             lint
+            lint-fix
         ];
 
         shellHook = ''
             export PATH=$( npm bin ):$PATH
             # keep it fresh
-            yarn install --ignore-scripts
+            yarn install --bypass-integrity-check --ignore-scripts
             build
         '';
     }

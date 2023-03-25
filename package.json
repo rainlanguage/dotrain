@@ -1,7 +1,7 @@
 {
     "name": "@rainprotocol/rainlang",
     "description": "Rainlang standalone server, that encapsulates Rain Language Serivces (in LSP spec) and compiler for NodeJs and Browser environments",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "author": "Rain Protocol",
     "license": "CAL-1.0",
     "repository": {
@@ -32,8 +32,9 @@
         "build": "npm run build-cjs && npm run build-esm",
         "build-esm": "tsc -b ./tsconfig.esm.json",
         "build-cjs": "tsc -b ./tsconfig.json",
-        "test": "echo 'there is not test at the moment'",
+        "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
         "lint": "eslint \"src/**\" \"test/**\"",
+        "lint-fix": "eslint \"src/**\" \"test/**\" --fix",
         "docgen": "rm -rf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs"
     },
     "devDependencies": {
@@ -41,6 +42,7 @@
         "@princjef/api-documenter": "^1.0.2",
         "@types/algebra.js": "^0.2.2",
         "@types/chai": "^4.3.3",
+        "@types/chai-as-promised": "^7.1.5",
         "@types/mocha": "^10.0.0",
         "@types/node": "^18.13.0",
         "@types/pako": "^2.0.0",
@@ -49,6 +51,7 @@
         "@typescript-eslint/eslint-plugin": "^5.42.0",
         "@typescript-eslint/parser": "^5.42.0",
         "chai": "^4.3.6",
+        "chai-as-promised": "7.1.1",
         "eslint": "^8.26.0",
         "mocha": "^10.1.0",
         "ts-loader": "^9.4.2",

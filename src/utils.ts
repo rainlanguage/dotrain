@@ -12,7 +12,7 @@ import { BigNumber, BigNumberish, utils, ethers, BytesLike } from 'ethers';
  * @public ethers constants
  */
 export const CONSTANTS = ethers.constants;
-export { BytesLike, BigNumber, BigNumberish } from "ethers";
+export { BytesLike, BigNumber, BigNumberish };
 export const {
     /**
      * @public ethers concat
@@ -52,6 +52,22 @@ export const {
     isHexString
 } = utils;
 
+
+/**
+ * @public Method to be used as Tagged Templates to activate embedded rainlang in 
+ * javascript to typescript that highlights the rainlang syntax. Requires rainlang 
+ * vscode extension to be installed.
+ */
+export function rainlang(
+    stringChunks: TemplateStringsArray,
+    ...vars: any[]
+): string {
+    let result = "";
+    for (let i = 0; i < stringChunks.length; i++) {
+        result = result + stringChunks[i] + (vars[i] ?? "");
+    }
+    return result;
+}
 
 /**
  * @public
