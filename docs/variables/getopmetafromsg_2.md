@@ -7,7 +7,7 @@ Get the op meta from sg
 <b>Signature:</b>
 
 ```typescript
-function getOpMetaFromSg(deployerAddress: string, sgUrl: string): Promise<string>;
+function getOpMetaFromSg(deployerAddress: string, chainId?: number): Promise<string>;
 ```
 
 ## Parameters
@@ -15,7 +15,7 @@ function getOpMetaFromSg(deployerAddress: string, sgUrl: string): Promise<string
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  deployerAddress | `string` | The address of the deployer to get the op met from its emitted DISpair event |
-|  sgUrl | `string` | The subgraph endpoint URL to query from |
+|  chainId | `number` | (optional) The chain id of the network where the deployer is deployed at. default is Mumbai network |
 
 <b>Returns:</b>
 

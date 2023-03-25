@@ -54,6 +54,10 @@ let
         yarn lint
     '';
 
+    lint-fix = pkgs.writeShellScriptBin "lint-fix" ''
+        yarn lint-fix
+    '';
+
     in
     pkgs.stdenv.mkDerivation {
         name = "shell";
@@ -71,6 +75,7 @@ let
             flush-all
             docgen
             lint
+            lint-fix
         ];
 
         shellHook = ''

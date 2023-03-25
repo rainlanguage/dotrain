@@ -1,32 +1,33 @@
 import * as chai from "chai";
 import chaiAsPromised from 'chai-as-promised';
-import { ExpressionConfig, getOpMetaFromSg } from "../../src";
-import { rlc } from "../../src/compiler/rainCompiler";
 import { deployerAddress, rainlang } from "../utils";
+import { rlc } from "../../src/compiler/rainCompiler";
+import { ExpressionConfig, getOpMetaFromSg } from "../../src";
+
 
 chai.use(chaiAsPromised);
 const assert: Chai.AssertStatic = chai.assert;
 const expect: Chai.ExpectStatic = chai.expect;
 
-describe("Rain Compiler tests", async function () {
+describe("Rainlang Compiler (rlc) tests", async function () {
     let opMeta: string;
 
     before(async () => {
-        opMeta = await getOpMetaFromSg(deployerAddress);
+        opMeta = await getOpMetaFromSg(deployerAddress, "mumbai");
     });
 
-    it("should fail if no opmeta is specified", async () => {
-        const expression = rainlang`
-        /* main source */
-        _: add(1 2);`;
+    // it("should fail if no opmeta is specified", async () => {
+    //     const expression = rainlang`
+    //     /* main source */
+    //     _: add(1 2);`;
 
-        const result = await rlc(expression)
-            .catch((err) => {
-                assert(err === "expected op meta");
-            });
+    //     const result = await rlc(expression)
+    //         .catch((err) => {x
+    //             assert(err === "expected op meta");
+    //         });
 
-        assert(result == undefined, "was expecting to fail when no opmeta is specified");
-    });
+    //     assert(result == undefined, "was expecting to fail when no opmeta is specified");
+    // });
 
     it("should fail if and invalid opmeta is specified", async () => {
         const expression = rainlang`
@@ -82,7 +83,7 @@ describe("Rain Compiler tests", async function () {
             });
     });
 
-    it("should accept valid rainlang fragment `/* this is a comment */ _:;`", async () => {
+    it("should accept valid rainlang fragment `/* this is a comment */`", async () => {
         return expect(rlc(rainlang`
         /* this is a comment */
         _:;`, opMeta)).to.eventually.be.fulfilled

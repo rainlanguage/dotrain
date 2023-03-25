@@ -1,11 +1,12 @@
 import { RainDocument } from "../parser/rainParser";
 import { 
+    Range, 
     Position,
     MarkupKind,  
     TextDocument, 
     CompletionItem, 
     CompletionItemKind, 
-    LanguageServiceParams
+    LanguageServiceParams 
 } from "../rainLanguageTypes";
 
 
@@ -130,41 +131,48 @@ export function getRainCompletion(
             }
         }
         let _pos: [number, number] | undefined;
-        _rd.getLHSAliases()[_currentSource]?.forEach(v => {
-            let _text = "";
-            _pos = _tree[_currentSource].tree.find(e => {
-                if (e.lhs){
-                    if (Array.isArray(e.lhs)) {
-                        if (e.lhs.find(i => i.name === v.name)) return true; 
-                        else return false;
+        _rd.getLHSAliases()[_currentSource]
+            ?.filter(v => v.name !== "_")
+            .forEach(v => {
+                let _text = "";
+                _pos = _tree[_currentSource].tree.find(e => {
+                    if (e.lhs){
+                        if (Array.isArray(e.lhs)) {
+                            if (e.lhs.find(i => i.name === v.name)) return true; 
+                            else return false;
+                        }
+                        else {
+                            if (e.lhs.name === v.name) return true;
+                            else return false;
+                        }
                     }
-                    else {
-                        if (e.lhs.name === v.name) return true;
-                        else return false;
+                    else return false;
+                })?.position;
+                if (_pos) _text = `${
+                    _rd!.getTextDocument().getText(
+                        Range.create(
+                            _td.positionAt(_pos[0]),
+                            _td.positionAt(_pos[1] + 1)
+                        )
+                    )
+                }`;
+                _result.unshift({
+                    label: v.name,
+                    kind: CompletionItemKind.Variable,
+                    detail: v.name,
+                    documentation: {
+                        kind: _documentionType,
+                        value: _documentionType === "markdown" 
+                            ? [
+                                `LHS alias for:`,
+                                "```rainlang",
+                                _text,
+                                "```"
+                            ].join("\n")
+                            : `LHS alias for: ${_text}`
                     }
-                }
-                else return false;
-            })?.position;
-            if (_pos) _text = `${
-                _rd!.getTextDocument().getText().slice(_pos[0], _pos[1] + 1)
-            }`;
-            _result.unshift({
-                label: v.name,
-                kind: CompletionItemKind.Variable,
-                detail: v.name === "_" ? "placeholder _" : v.name,
-                documentation: {
-                    kind: _documentionType,
-                    value: _documentionType === "markdown" 
-                        ? [
-                            `LHS Alias to `,
-                            "```rainlang",
-                            _text,
-                            "```"
-                        ].join("\n")
-                        : `LHS Alias to: ${_text}`
-                }
+                });
             });
-        });
         return _result;
         // }
         // else return null;

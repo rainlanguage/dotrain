@@ -12,7 +12,7 @@ import { BigNumber, BigNumberish, utils, ethers, BytesLike } from 'ethers';
  * @public ethers constants
  */
 export const CONSTANTS = ethers.constants;
-export { BytesLike, BigNumber, BigNumberish } from "ethers";
+export { BytesLike, BigNumber, BigNumberish };
 export const {
     /**
      * @public ethers concat

@@ -1,7 +1,7 @@
 {
     "name": "@rainprotocol/rainlang",
     "description": "Rainlang standalone server, that encapsulates Rain Language Serivces (in LSP spec) and compiler for NodeJs and Browser environments",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "author": "Rain Protocol",
     "license": "CAL-1.0",
     "repository": {
@@ -34,6 +34,7 @@
         "build-cjs": "tsc -b ./tsconfig.json",
         "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
         "lint": "eslint \"src/**\" \"test/**\"",
+        "lint-fix": "eslint \"src/**\" \"test/**\" --fix",
         "docgen": "rm -rf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs"
     },
     "devDependencies": {
@@ -50,6 +51,7 @@
         "@typescript-eslint/eslint-plugin": "^5.42.0",
         "@typescript-eslint/parser": "^5.42.0",
         "chai": "^4.3.6",
+        "chai-as-promised": "7.1.1",
         "eslint": "^8.26.0",
         "mocha": "^10.1.0",
         "ts-loader": "^9.4.2",
@@ -61,7 +63,6 @@
         "ajv": "^8.12.0",
         "algebra.js": "rouzwelt/algebra.js",
         "buffer": "^6.0.3",
-        "chai-as-promised": "^7.1.1",
         "cbor-web": "https://gitpkg.now.sh/rouzwelt/node-cbor/packages/cbor-web?4f8d212f058a84ca40993e7db523b80ed6cefc19",
         "ethers": "^5.7.2",
         "graphql": "^16.6.0",

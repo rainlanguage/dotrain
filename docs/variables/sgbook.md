@@ -8,6 +8,6 @@ Subgraph endpoints and their chain ids as key/value pairs
 
 ```typescript
 sgBook: {
-    [chainId: number]: string;
+    [chainId: number | string]: string;
 }
 ```

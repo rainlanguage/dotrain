@@ -93,7 +93,7 @@ export function getRainHover(
                         kind: _contentType,
                         value: _contentType === "markdown"
                             ? [
-                                "LHS Alias",
+                                "alias for:",
                                 "```rainlang",
                                 _td.getText(
                                     Range.create(
@@ -103,7 +103,7 @@ export function getRainHover(
                                 ),
                                 "```"
                             ].join("\n")
-                            : `LHS Alias to: ${
+                            : `alias for: ${
                                 _td.getText(Range.create(
                                     _td.positionAt(_n.position[0]), 
                                     _td.positionAt(_n.position[1] + 1)
@@ -118,13 +118,14 @@ export function getRainHover(
                 if (!Array.isArray(_lhs)) _lhs = [_lhs];
                 for (let j = 0; j < _lhs.length; j++) {
                     if (_lhs[j].position[0] <= _offset && _lhs[j].position[1] >= _offset) {
+                        const _opener = _lhs[j].name === "_" ? "placeholder" : "alias";
                         return {
                             contents: {
                                 kind: _contentType,
                                 value: "opcode" in _n 
                                     ? _contentType === "markdown"
                                         ? [
-                                            "Alias for", 
+                                            `${_opener} for:`, 
                                             "```rainlang",
                                             _td.getText(
                                                 Range.create(
@@ -134,7 +135,7 @@ export function getRainHover(
                                             ),
                                             "```"
                                         ].join("\n")
-                                        : `Alias for: ${
+                                        : `${_opener} for: ${
                                             _td.getText(Range.create(
                                                 _td.positionAt(_n.position[0]),
                                                 _td.positionAt(_n.position[1] + 1)
@@ -143,22 +144,22 @@ export function getRainHover(
                                     : "value" in _n
                                         ? _contentType === "markdown"
                                             ? [
-                                                "Alias for value",
+                                                `${_opener} for:`,
                                                 "```rainlang",
                                                 _n.value,
                                                 "```"
                                             ].join("\n")
-                                            : `Alias for value: ${
+                                            : `${_opener} for: ${
                                                 _n.value
                                             }`
                                         : _contentType === "markdown"
                                             ? [
-                                                "Alias for alias",
+                                                `${_opener} for:`,
                                                 "```rainlang",
                                                 _n.name,
                                                 "```"
                                             ].join("\n")
-                                            : `Alias for alias: ${
+                                            : `${_opener} for alias: ${
                                                 _n.name
                                             }`
                             }
