@@ -29,7 +29,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     //     assert(result == undefined, "was expecting to fail when no opmeta is specified");
     // });
 
-    it("should fail if and invalid opmeta is specified", async () => {
+    it("should fail if an invalid opmeta is specified", async () => {
         const expression = rainlang`
         /* main source */
         _: add(1 2);`;
