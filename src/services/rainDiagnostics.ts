@@ -61,8 +61,8 @@ export function getRainDiagnostics(
         ?.relatedInformation;
     if (option !== undefined) _hasRelatedInformation = option;
 
-    if (_hasRelatedInformation) return Promise.resolve(_rd.getProblems().map(v => {
-        return Diagnostic.create(
+    if (_hasRelatedInformation) return Promise.resolve(
+        _rd.getProblems().map(v => Diagnostic.create(
             Range.create(
                 _td.positionAt(v.position[0]),
                 _td.positionAt(v.position[1] + 1)
@@ -86,10 +86,10 @@ export function getRainDiagnostics(
                     message: v.msg
                 }
             ]
-        );
-    }));
-    else return Promise.resolve(_rd.getProblems().map(v => {
-        return Diagnostic.create(
+        ))
+    );
+    else return Promise.resolve(
+        _rd.getProblems().map(v => Diagnostic.create(
             Range.create(
                 _td.positionAt(v.position[0]),
                 _td.positionAt(v.position[1] + 1)
@@ -98,6 +98,6 @@ export function getRainDiagnostics(
             DiagnosticSeverity.Error,
             v.code,
             "rain"
-        );
-    })); 
+        ))
+    ); 
 }
