@@ -23,7 +23,6 @@ type RainParseState = {
     depthLevel: number;
     operandArgsErr: boolean;
     runtimeError: Error | undefined;
-    opmetaError: boolean;
-    opMetaErrorMsg: string | undefined;
+    opMetaError: Error | undefined;
 };
 ```

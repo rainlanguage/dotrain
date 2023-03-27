@@ -151,6 +151,13 @@ export class RainDocument {
     }
 
     /**
+     * @public Get the current runtime error of this RainDocument instance
+     */
+    public getOpMetaError(): Error | undefined {
+        return this._rp.getOpMetaError();
+    }
+
+    /**
      * @public Get the parsed exp aliases of this RainParser instance
      */
     public getLHSAliases(): RDAliasNode[][] {
@@ -220,8 +227,7 @@ class RainParser {
         depthLevel: 0,
         operandArgsErr: false,
         runtimeError: undefined,
-        opmetaError: true,
-        opMetaErrorMsg: undefined
+        opMetaError: undefined
     };
 
     /**
@@ -251,11 +257,9 @@ class RainParser {
                     stack: (runtimeError as Error).stack
                 } as Error;
                 this.problems.push({
-                    msg: [
-                        `Runtime Error: `,
-                        (runtimeError as Error).message,
-                        (runtimeError as Error).stack?.split(/\n+/)
-                    ].join(""),
+                    msg: `Runtime Error: ${
+                        this.state.runtimeError.message
+                    }`,
                     position: [
                         this.state.track.char,
                         this.textDocument.getText().length - 1
@@ -294,15 +298,14 @@ class RainParser {
             this.operand = [];
             this.opAliases = [];
             this.state.track.char = 0;
-            this.state.opmetaError = true;
             this.state.parse.expAliases = [];
+            this.state.opMetaError = new Error("op meta must be in valid bytes form");
         }
         if (_newOpMetaBytes && _newOpMetaBytes !== this.rawOpMeta) {
             try {
                 this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
                 this.rawOpMeta = _newOpMetaBytes;
-                this.state.opmetaError = false;
-                this.state.opMetaErrorMsg = undefined;
+                this.state.opMetaError = undefined;
                 this.names = this.opmeta.map(v => v.name);
                 this.opAliases = this.opmeta.map(v => v.aliases);
                 this.pops = this.opmeta.map(v => v.inputs);
@@ -324,10 +327,11 @@ class RainParser {
                 this.operand = [];
                 this.opAliases = [];
                 this.state.track.char = 0;
-                this.state.opmetaError = true;
                 this.state.parse.expAliases = [];
                 this.rawOpMeta = _newOpMetaBytes;
-                this.state.opMetaErrorMsg = _err?.toString().slice(7);
+                this.state.opMetaError = typeof _err === "string"
+                    ? new Error(_err)
+                    : _err as Error;
             }
         }
         if (parse) this.parse();
@@ -399,6 +403,13 @@ class RainParser {
      */
     public getRuntimeError(): Error | undefined {
         return deepCopy(this.state.runtimeError);
+    }
+
+    /**
+     * @public Get the current runtime error of this RainParser instance
+     */
+    public getOpMetaError(): Error | undefined {
+        return deepCopy(this.state.opMetaError);
     }
 
     /**
@@ -508,14 +519,14 @@ class RainParser {
         this.state.parse.expAliases = [];
         let document = this.textDocument.getText();
 
-        if (this.state.opmetaError) {
+        if (this.state.opMetaError) {
             this.problems.push({
                 msg: "invalid op meta",
                 position: [0, this.textDocument.getText().length - 1],
                 code: ErrorCode.UndefinedOpMeta
             });
-            if (this.state.opMetaErrorMsg) this.problems.push({
-                msg: this.state.opMetaErrorMsg,
+            this.problems.push({
+                msg: `Op Meta Error: ${this.state.opMetaError.message}`,
                 position: [0, this.textDocument.getText().length - 1],
                 code: ErrorCode.UndefinedOpMeta
             });

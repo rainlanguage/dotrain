@@ -4,6 +4,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { assertError, deployerAddress } from "../utils";
 import { rlc } from "../../src/compiler/rainCompiler";
 import { ExpressionConfig, getOpMetaFromSg } from "../../src";
+import { invalidOpMetas } from "../fixtures/opmeta";
 
 
 chai.use(chaiAsPromised);
@@ -17,13 +18,52 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         opMeta = await getOpMetaFromSg(deployerAddress, "mumbai");
     });
 
-    it("should fail if an invalid opmeta is specified", async () => {
+    it("should fail if an empty opmeta is specified", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`_: add(1 2);`, opMeta + "thisIsAnInValidOpMeta"),
-            "invalid op meta",
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.empty),
+            "expected op meta",
             "Invalid Error"
         );
+    });
+
+    it("should fail if an invalid bytes opmeta is specified", async () => {
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.invalid_bytes),
+            "Op Meta Error: op meta must be in valid bytes form",
+            "Invalid Error"
+        );
+    });
+
+    it("should fail if an invalid header opmeta is specified", async () => {
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.invalid_header),
+            "incorrect header check",
+            "Invalid Error"
+        );
+    });
+
+    it("should fail if op meta has invalid operand args", async () => {
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.invalid_operand_args),
+            "Op Meta Error: invalid meta for call, reason: bad operand args order",
+            "Invalid Error"
+        );
+    });
+
+    it("should fail if an invalid opmeta is specified", async () => {
+        const expression = rainlang`
+        /* main source */
+        _: add(1 2);`;
+
+        const result = await rlc(expression, opMeta + "thisIsAnInValidOpMeta")
+            .catch((err) => {
+                assert(err.problems[0].msg === "invalid op meta");
+            });
+        assert(result == undefined, "was expecting to fail when no opmeta is specified");
     });
 
     it("should accept valid rainlang fragment `_:;`", async () => {

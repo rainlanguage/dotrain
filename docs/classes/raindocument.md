@@ -37,6 +37,7 @@ const newResult = myRainDocument.update(newText, newOpmeta)
 |  [getExpressionConfig(item)](./raindocument.md#getExpressionConfig-method-1) | Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used. |
 |  [getLHSAliases()](./raindocument.md#getLHSAliases-method-1) | Get the parsed exp aliases of this RainParser instance |
 |  [getOpMeta()](./raindocument.md#getOpMeta-method-1) | Get the current op meta of this RainDocument instance |
+|  [getOpMetaError()](./raindocument.md#getOpMetaError-method-1) | Get the current runtime error of this RainDocument instance |
 |  [getParseTree()](./raindocument.md#getParseTree-method-1) | Get the current parse tree of this RainDocument instance |
 |  [getProblems()](./raindocument.md#getProblems-method-1) | Get the current problems of this RainDocument instance |
 |  [getRawOpMeta()](./raindocument.md#getRawOpMeta-method-1) | Get the current raw op meta of this RainDocument instance in hex string |
@@ -128,6 +129,21 @@ getOpMeta(): OpMeta[];
 <b>Returns:</b>
 
 `OpMeta[]`
+
+<a id="getOpMetaError-method-1"></a>
+
+### getOpMetaError()
+
+Get the current runtime error of this RainDocument instance
+
+<b>Signature:</b>
+
+```typescript
+getOpMetaError(): Error | undefined;
+```
+<b>Returns:</b>
+
+`Error | undefined`
 
 <a id="getParseTree-method-1"></a>
 

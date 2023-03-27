@@ -60,7 +60,8 @@ export function rlc(
         else {
             return Promise.reject({
                 problems: _rainDocument.getProblems(),
-                runtimeError: _rainDocument.getRuntimeError()
+                runtimeError: _rainDocument.getRuntimeError(),
+                opMetaError: _rainDocument.getOpMetaError()
             });
         }
     }
