@@ -999,13 +999,13 @@ class RainParser {
             this.exp = this.exp.slice(this.exp.indexOf('>') + 1);
             if (_operandArgs.search(/[^0-9\s]/) > -1) {
                 if (op) this.state.operandArgsErr = true;
-                const _erros = _operandArgs.match(/[^0-9\s]+/g)!;
-                for (let i = 0; i < _erros.length; i++) {
+                const _errors = _operandArgs.matchAll(/[^0-9\s]+/g);
+                for (const _err of _errors) {
                     this.problems.push({
                         msg: 'invalid argument pattern',
                         position: [
-                            pos + _operandArgs.indexOf(_erros[i]) + 1,
-                            pos + _operandArgs.indexOf(_erros[i]) + _erros[i].length,
+                            pos + _err.index! + 1,
+                            pos + _err.index! + _err[0].length,
                         ],
                         code: ErrorCode.InvalidWordPattern
                     });
