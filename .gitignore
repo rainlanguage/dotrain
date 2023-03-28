@@ -13,7 +13,7 @@ node_modules
 
 # Generate output
 dist
-rainlang.api.json
+./rainlang.api.json
 
 .DS_Store
 src/.DS_Store
