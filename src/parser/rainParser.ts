@@ -40,9 +40,10 @@ import {
 
 /**
  * @public
- * RainDocument is a wrapper for RainParser that provides the main functionalities 
- * and data types in order to be used later on to provide Rain Language Services or in 
- * Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes)
+ * RainDocument is a class object that provides data and functionalities 
+ * in order to be used later on to provide Rain Language Services or in 
+ * Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes).
+ * It uses Rain parser under the hood which does all the heavy work.
  * 
  * @example
  * ```typescript
@@ -190,8 +191,9 @@ export class RainDocument {
 
 /**
  * @public
- * Rain Parser is a parser written in TypeScript in order to parse a text document using an op meta
- * into known types which later will be used in RainDocument object and Rain Language Services
+ * Rain Parser is a the main workhorse that does all the heavy work of parsing a document, 
+ * written in TypeScript in order to parse a text document using an op meta into known types 
+ * which later will be used in RainDocument object and Rain Language Services and Compiler
  */
 class RainParser {
     public readonly wordPattern = /^[a-z][0-9a-z-]*$/;
