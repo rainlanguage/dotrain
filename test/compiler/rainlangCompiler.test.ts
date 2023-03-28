@@ -54,6 +54,25 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         );
     });
 
+    it("should fail if op meta has invalid schema", async () => {
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.invalid_by_schema),
+            "Op Meta Error: invalid meta for add, reason: failed schema validation",
+            "Invalid Error"
+        );
+    });
+    
+    it("should fail if op meta has duplicate schema", async () => {
+        // await rlc(rainlang`_: add(1 2);`, invalidOpMetas.invalid_operand_args).catch((err) => { throw err; });
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.duplicate_alias),
+            "Op Meta Error: invalid meta, reason: duplicated names or aliases",
+            "Invalid Error"
+        );
+    });
+
     it("should fail if an invalid opmeta is specified", async () => {
         const expression = rainlang`
         /* main source */
@@ -353,7 +372,6 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     });
 
     it("should error if out-of-range operand arguments is provided", async () => {
-        // await rlc(rainlang`_:read-memory<1 2>();`, opMeta).catch((err) => { throw err; });
         await assertError(
             async () => await rlc(rainlang`_: read-memory<1 2>();`, opMeta),
             '1282',
