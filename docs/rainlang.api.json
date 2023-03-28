@@ -1,0 +1,5608 @@
+{
+  "metadata": {
+    "toolPackage": "@microsoft/api-extractor",
+    "toolVersion": "7.34.4",
+    "schemaVersion": 1011,
+    "oldestForwardsCompatibleVersion": 1001,
+    "tsdocConfig": {
+      "$schema": "https://developer.microsoft.com/json-schemas/tsdoc/v0/tsdoc.schema.json",
+      "noStandardTags": true,
+      "tagDefinitions": [
+        {
+          "tagName": "@alpha",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@beta",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@defaultValue",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@decorator",
+          "syntaxKind": "block",
+          "allowMultiple": true
+        },
+        {
+          "tagName": "@deprecated",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@eventProperty",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@example",
+          "syntaxKind": "block",
+          "allowMultiple": true
+        },
+        {
+          "tagName": "@experimental",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@inheritDoc",
+          "syntaxKind": "inline"
+        },
+        {
+          "tagName": "@internal",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@label",
+          "syntaxKind": "inline"
+        },
+        {
+          "tagName": "@link",
+          "syntaxKind": "inline",
+          "allowMultiple": true
+        },
+        {
+          "tagName": "@override",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@packageDocumentation",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@param",
+          "syntaxKind": "block",
+          "allowMultiple": true
+        },
+        {
+          "tagName": "@privateRemarks",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@public",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@readonly",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@remarks",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@returns",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@sealed",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@see",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@throws",
+          "syntaxKind": "block",
+          "allowMultiple": true
+        },
+        {
+          "tagName": "@typeParam",
+          "syntaxKind": "block",
+          "allowMultiple": true
+        },
+        {
+          "tagName": "@virtual",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@betaDocumentation",
+          "syntaxKind": "modifier"
+        },
+        {
+          "tagName": "@internalRemarks",
+          "syntaxKind": "block"
+        },
+        {
+          "tagName": "@preapproved",
+          "syntaxKind": "modifier"
+        }
+      ],
+      "supportForTags": {
+        "@alpha": true,
+        "@beta": true,
+        "@defaultValue": true,
+        "@decorator": true,
+        "@deprecated": true,
+        "@eventProperty": true,
+        "@example": true,
+        "@experimental": true,
+        "@inheritDoc": true,
+        "@internal": true,
+        "@label": true,
+        "@link": true,
+        "@override": true,
+        "@packageDocumentation": true,
+        "@param": true,
+        "@privateRemarks": true,
+        "@public": true,
+        "@readonly": true,
+        "@remarks": true,
+        "@returns": true,
+        "@sealed": true,
+        "@see": true,
+        "@throws": true,
+        "@typeParam": true,
+        "@virtual": true,
+        "@betaDocumentation": true,
+        "@internalRemarks": true,
+        "@preapproved": true
+      },
+      "reportUnsupportedHtmlElements": false
+    }
+  },
+  "kind": "Package",
+  "canonicalReference": "@rainprotocol/rainlang!",
+  "docComment": "",
+  "name": "@rainprotocol/rainlang",
+  "preserveMemberOrder": false,
+  "members": [
+    {
+      "kind": "EntryPoint",
+      "canonicalReference": "@rainprotocol/rainlang!",
+      "name": "",
+      "preserveMemberOrder": false,
+      "members": [
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!areEqualStateConfigs:var",
+          "docComment": "/**\n * Checks 2 ExpressionConfig objects to see if they are equal or not\n *\n * @param config1 - first ExpressionConfig\n *\n * @param config2 - second ExpressionConfig\n *\n * @returns boolean\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "areEqualStateConfigs: "
+            },
+            {
+              "kind": "Content",
+              "text": "(config1: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ", config2: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ") => boolean"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "areEqualStateConfigs",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 6
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!arrayify:var",
+          "docComment": "/**\n * ethers arrayify\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "arrayify: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.arrayify",
+              "canonicalReference": "@ethersproject/bytes!arrayify:function"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "arrayify",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!bytesFromMeta:var",
+          "docComment": "/**\n * Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment\n *\n * @param meta - A meta object or array of meta objects or stringified format of them\n *\n * @param schema - Json schema to validate as object (JSON.parsed) or stringified format\n *\n * @returns Bytes as HexString\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "bytesFromMeta: "
+            },
+            {
+              "kind": "Content",
+              "text": "(meta: object | object[] | string, schema: object | string) => string"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "bytesFromMeta",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!bytify:var",
+          "docComment": "/**\n * Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte, unless a desired `bytesLength` is specified.\n *\n * @param value - value to convert to raw bytes format\n *\n * @param bytesLength - (defaults to 1) number of bytes to left pad if `value` doesn't completely fill the desired amount of memory. Will throw `InvalidArgument` error if value already exceeds bytes length.\n *\n * @returns raw bytes representation as Uint8Array\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "bytify: "
+            },
+            {
+              "kind": "Content",
+              "text": "(value: number | "
+            },
+            {
+              "kind": "Reference",
+              "text": "BytesLike",
+              "canonicalReference": "@ethersproject/bytes!BytesLike:type"
+            },
+            {
+              "kind": "Content",
+              "text": " | "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.Hexable",
+              "canonicalReference": "@ethersproject/bytes!Hexable:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", bytesLength?: number) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "BytesLike",
+              "canonicalReference": "@ethersproject/bytes!BytesLike:type"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "bytify",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 7
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!cborDecode:var",
+          "docComment": "/**\n * Use CBOR to decode from a given value.\n *\n * This will try to decode all from the given value, allowing to decoded CBOR sequences. Always will return an array with the decoded results.\n *\n * @param dataEncoded_ - The data to be decoded\n *\n * @returns An array with the decoded data.\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "cborDecode: "
+            },
+            {
+              "kind": "Content",
+              "text": "(dataEncoded_: string) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<any>"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "cborDecode",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "Interface",
+          "canonicalReference": "@rainprotocol/rainlang!ClientCapabilities:interface",
+          "docComment": "/**\n * Describes what LSP capabilities the client supports\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface ClientCapabilities "
+            }
+          ],
+          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "ClientCapabilities",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@rainprotocol/rainlang!ClientCapabilities#textDocument:member",
+              "docComment": "/**\n * The text document client capabilities\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "textDocument?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "{\n        publishDiagnostics?: {\n            relatedInformation?: boolean;\n        };\n        completion?: {\n            completionItem?: {\n                documentationFormat?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "MarkupKind",
+                  "canonicalReference": "@rainprotocol/rainlang!~MarkupKind"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[];\n            };\n        };\n        hover?: {\n            contentFormat?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "MarkupKind",
+                  "canonicalReference": "@rainprotocol/rainlang!~MarkupKind"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[];\n        };\n    }"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "textDocument",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 6
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
+          "kind": "Namespace",
+          "canonicalReference": "@rainprotocol/rainlang!ClientCapabilities:namespace",
+          "docComment": "/**\n * Predefined latest client capabilities\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare namespace ClientCapabilities "
+            }
+          ],
+          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "ClientCapabilities",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "Variable",
+              "canonicalReference": "@rainprotocol/rainlang!ClientCapabilities.ALL:var",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ALL: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "ClientCapabilities",
+                  "canonicalReference": "@rainprotocol/rainlang!ClientCapabilities:interface"
+                }
+              ],
+              "isReadonly": true,
+              "releaseTag": "Public",
+              "name": "ALL",
+              "variableTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            }
+          ]
+        },
+        {
+          "kind": "Enum",
+          "canonicalReference": "@rainprotocol/rainlang!CompletionTriggerKind:enum",
+          "docComment": "/**\n * How a completion was triggered\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare enum CompletionTriggerKind "
+            }
+          ],
+          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "CompletionTriggerKind",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!CompletionTriggerKind.Invoked:member",
+              "docComment": "/**\n * Completion was triggered by typing an identifier (24x7 code complete), manual invocation (e.g Ctrl+Space) or via API.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "Invoked = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "Invoked"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!CompletionTriggerKind.TriggerCharacter:member",
+              "docComment": "/**\n * Completion was triggered by a trigger character specified by the `triggerCharacters` properties of the `CompletionRegistrationOptions`.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "TriggerCharacter = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "2"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "TriggerCharacter"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!CompletionTriggerKind.TriggerForIncompleteCompletions:member",
+              "docComment": "/**\n * Completion was re-triggered as current completion list is incomplete\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "TriggerForIncompleteCompletions = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "3"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "TriggerForIncompleteCompletions"
+            }
+          ]
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!ComputedOutput:type",
+          "docComment": "/**\n * Data type for computed output\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type ComputedOutput = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    bits: [number, number];\n    computation?: string;\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "ComputedOutput",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!concat:var",
+          "docComment": "/**\n * ethers concat\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "concat: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.concat",
+              "canonicalReference": "@ethersproject/bytes!concat:function"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "concat",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!CONSTANTS:var",
+          "docComment": "/**\n * ethers constants\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "CONSTANTS: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "ethers.constants",
+              "canonicalReference": "ethers!constants"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "CONSTANTS",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!constructByBits:function(1)",
+          "docComment": "/**\n * Method to construct the operand from operand args\n *\n * @param args - Operand arguments\n *\n * @returns operand value\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function constructByBits(args: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    value: number;\n    bits: [number, number];\n    computation?: string;\n    validRange?: number[][];\n    computationVar?: string;\n}[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "number | number[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "args",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "constructByBits"
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!decodeRainMetaDocument:var",
+          "docComment": "/**\n * Use a given `dataEncoded_` as hex string and decoded it following the Rain enconding design.\n *\n * @param dataEncoded_ - The data to be decoded\n *\n * @returns An array with the values decoded.\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "decodeRainMetaDocument: "
+            },
+            {
+              "kind": "Content",
+              "text": "(dataEncoded_: string) => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Array",
+              "canonicalReference": "!Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<any>"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "decodeRainMetaDocument",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!deepCopy:function(1)",
+          "docComment": "/**\n * Deep copy an item in a way that all of its properties get new reference\n *\n * @param variable - The variable to copy\n *\n * @returns a new deep copy of the variable\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function deepCopy<T>(variable: "
+            },
+            {
+              "kind": "Content",
+              "text": "T"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "T"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "variable",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "typeParameters": [
+            {
+              "typeParameterName": "T",
+              "constraintTokenRange": {
+                "startIndex": 0,
+                "endIndex": 0
+              },
+              "defaultTypeTokenRange": {
+                "startIndex": 0,
+                "endIndex": 0
+              }
+            }
+          ],
+          "name": "deepCopy"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!deepFreeze:function(1)",
+          "docComment": "/**\n * Deeply freezes an object, all of the properties of propterties gets frozen\n *\n * @param object - object to freez\n *\n * @returns frozen object\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function deepFreeze(object: "
+            },
+            {
+              "kind": "Content",
+              "text": "any"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "any"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "object",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "deepFreeze"
+        },
+        {
+          "kind": "Enum",
+          "canonicalReference": "@rainprotocol/rainlang!ErrorCode:enum",
+          "docComment": "/**\n * Error codes used by diagnostics\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare enum ErrorCode "
+            }
+          ],
+          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "ErrorCode",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedClosingOperandArgBracket:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedClosingOperandArgBracket = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "775"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExpectedClosingOperandArgBracket"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedClosingParen:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedClosingParen = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "772"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExpectedClosingParen"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedOpcode:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedOpcode = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "769"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExpectedOpcode"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedOpeningOperandArgBracket:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedOpeningOperandArgBracket = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "774"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExpectedOpeningOperandArgBracket"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedOpeningParen:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedOpeningParen = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "773"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExpectedOpeningParen"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedOperandArgs:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedOperandArgs = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "771"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExpectedOperandArgs"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedSpace:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedSpace = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "770"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExpectedSpace"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidExpression:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "InvalidExpression = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "258"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "InvalidExpression"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidInputsMeta:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "InvalidInputsMeta = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "259"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "InvalidInputsMeta"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidNestedNode:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "InvalidNestedNode = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "261"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "InvalidNestedNode"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidOutputsMeta:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "InvalidOutputsMeta = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "260"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "InvalidOutputsMeta"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidSelfReferenceLHS:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "InvalidSelfReferenceLHS = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "262"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "InvalidSelfReferenceLHS"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidWordPattern:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "InvalidWordPattern = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "257"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "InvalidWordPattern"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.MismatchLHS:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "MismatchLHS = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1026"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "MismatchLHS"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.MismatchOperandArgs:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "MismatchOperandArgs = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1027"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "MismatchOperandArgs"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.MismatchRHS:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "MismatchRHS = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1025"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "MismatchRHS"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.NonASCIICharacter:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "NonASCIICharacter = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "2"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "NonASCIICharacter"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.NonPrintableASCIICharacter:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "NonPrintableASCIICharacter = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "3"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "NonPrintableASCIICharacter"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.OutOfRangeInputs:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "OutOfRangeInputs = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1281"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "OutOfRangeInputs"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.OutOfRangeOperandArgs:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "OutOfRangeOperandArgs = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1282"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "OutOfRangeOperandArgs"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.OutOfRangeValue:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "OutOfRangeValue = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1283"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "OutOfRangeValue"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.RuntimeError:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "RuntimeError = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1792"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "RuntimeError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UndefinedOpMeta:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UndefinedOpMeta = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "0"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UndefinedOpMeta"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UndefinedWord:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UndefinedWord = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UndefinedWord"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedClosingParen:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UnexpectedClosingParen = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "514"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UnexpectedClosingParen"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedEndOfComment:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UnexpectedEndOfComment = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "513"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UnexpectedEndOfComment"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedRHSComment:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UnexpectedRHSComment = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "515"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UnexpectedRHSComment"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnknownOp:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UnknownOp = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1536"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UnknownOp"
+            }
+          ]
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type",
+          "docComment": "/**\n * Type of valid parsed expression, i.e. compiled bytes\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type ExpressionConfig = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    sources: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BytesLike",
+              "canonicalReference": "@ethersproject/bytes!BytesLike:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n    constants: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BigNumberish",
+              "canonicalReference": "@ethersproject/bignumber!BigNumberish:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/compiler/expressionConfigTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "ExpressionConfig",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 6
+          }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!extractByBits:function(1)",
+          "docComment": "/**\n * Method to extract value from operand by specified bits indexes\n *\n * @param value - Operand value\n *\n * @param bits - Bits indexes to extract\n *\n * @param computation - Any arethmetical operation to apply to extracted value\n *\n * @param computationVar - The variavle in compuation to solve for, default is \"bits\"\n *\n * @returns Extracted value\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function extractByBits(value: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ", bits: "
+            },
+            {
+              "kind": "Content",
+              "text": "[number, number]"
+            },
+            {
+              "kind": "Content",
+              "text": ", computation?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", computationVar?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 9,
+            "endIndex": 10
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "value",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "bits",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "computation",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            },
+            {
+              "parameterName": "computationVar",
+              "parameterTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 8
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "extractByBits"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!extractFromMap:function(1)",
+          "docComment": "/**\n * Extract some of the properites from a Map as a new Map with same keys.\n *\n * @param map - the map to extract from\n *\n * @param properties - name of the properties in second item of the map elements\n *\n * @returns a new Map with extracted properties\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function extractFromMap(map: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<any, any>"
+            },
+            {
+              "kind": "Content",
+              "text": ", properties: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<any, any>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 8
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "map",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "properties",
+              "parameterTypeTokenRange": {
+                "startIndex": 4,
+                "endIndex": 5
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "extractFromMap"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!extractFromRecord:function(1)",
+          "docComment": "/**\n * Extract some of the properties from a Record as new Record with same keys.\n *\n * @param record - the record to extract from.\n *\n * @param properties - name of the properties in value item of the key/va;ue pair of a Record object\n *\n * @returns a new Record with extracted key/value pairs\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function extractFromRecord<T extends "
+            },
+            {
+              "kind": "Content",
+              "text": "string | number | symbol"
+            },
+            {
+              "kind": "Content",
+              "text": ">(record: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<T, any>"
+            },
+            {
+              "kind": "Content",
+              "text": ", properties: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | string[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<T, any>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 8,
+            "endIndex": 10
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "record",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "properties",
+              "parameterTypeTokenRange": {
+                "startIndex": 6,
+                "endIndex": 7
+              },
+              "isOptional": false
+            }
+          ],
+          "typeParameters": [
+            {
+              "typeParameterName": "T",
+              "constraintTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "defaultTypeTokenRange": {
+                "startIndex": 0,
+                "endIndex": 0
+              }
+            }
+          ],
+          "name": "extractFromRecord"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getLanguageService:function(1)",
+          "docComment": "/**\n * Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services\n *\n * @example\n * ```ts\n * // importing\n * import { getLanguageService } from \"@rainprotocol/rainlang\";\n *\n * // initiating the services\n * const langServices = getLanguageService(clientCapabilities);\n *\n * // getting validation results (lsp Diagnostics)\n * const errors = await langServices.doValidate(myDocument, opmeta);\n * ```\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getLanguageService(params?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageService",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageService:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/rainLanguageService.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "params",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getLanguageService"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getOpMetaFromSg:function(1)",
+          "docComment": "/**\n * Get the op meta from sg\n *\n * @param deployerAddress - The address of the deployer to get the op met from its emitted DISpair event\n *\n * @param network - (optional) The network name, defaults to mumbai if not specified\n *\n * @returns The op meta bytes\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getOpMetaFromSg(deployerAddress: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", network?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 7
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "deployerAddress",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "network",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getOpMetaFromSg"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getOpMetaFromSg:function(2)",
+          "docComment": "/**\n * Get the op meta from sg\n *\n * @param deployerAddress - The address of the deployer to get the op met from its emitted DISpair event\n *\n * @param chainId - (optional) The chain id of the network where the deployer is deployed at. default is Mumbai network\n *\n * @returns The op meta bytes\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getOpMetaFromSg(deployerAddress: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", chainId?: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 7
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "deployerAddress",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "chainId",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getOpMetaFromSg"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getOpMetaFromSg:function(3)",
+          "docComment": "/**\n * Get the op meta from sg\n *\n * @param deployerAddress - The address of the deployer to get the op met from its emitted DISpair event\n *\n * @param sgUrl - The subgraph endpoint URL to query from\n *\n * @returns The op meta bytes\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getOpMetaFromSg(deployerAddress: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", sgUrl: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 7
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 3,
+          "parameters": [
+            {
+              "parameterName": "deployerAddress",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "sgUrl",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "getOpMetaFromSg"
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!getQuery:var",
+          "docComment": "/**\n * Get the query content\n *\n * @param address - Address of the deployer\n *\n * @returns The query content\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "getQuery: "
+            },
+            {
+              "kind": "Content",
+              "text": "(address: string) => string"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "getQuery",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getRainCompletion:function(1)",
+          "docComment": "/**\n * Provides completion items\n *\n * @param document - The TextDocuemnt\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param opmeta - The op meta\n *\n * @param setting - (optional) Language service params\n *\n * @returns Completion items and null if no completion items were available for that position\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getRainCompletion(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TextDocument",
+              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Position",
+              "canonicalReference": "@rainprotocol/rainlang!~Position"
+            },
+            {
+              "kind": "Content",
+              "text": ", opmeta: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Uint8Array",
+              "canonicalReference": "!Uint8Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | string"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "CompletionItem",
+              "canonicalReference": "@rainprotocol/rainlang!~CompletionItem"
+            },
+            {
+              "kind": "Content",
+              "text": "[] | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/services/rainCompletion.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 10,
+            "endIndex": 12
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "opmeta",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 7
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 8,
+                "endIndex": 9
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getRainCompletion"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getRainCompletion:function(2)",
+          "docComment": "/**\n * Provides completion items\n *\n * @param document - The RainDocument object instance\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns Completion items and null if no completion items were available for that position\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getRainCompletion(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Position",
+              "canonicalReference": "@rainprotocol/rainlang!~Position"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "CompletionItem",
+              "canonicalReference": "@rainprotocol/rainlang!~CompletionItem"
+            },
+            {
+              "kind": "Content",
+              "text": "[] | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/services/rainCompletion.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 9
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getRainCompletion"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getRainDiagnostics:function(1)",
+          "docComment": "/**\n * Provides diagnostics\n *\n * @param document - The TextDocument\n *\n * @param opmeta - The op meta\n *\n * @param setting - (optional) Language service params\n *\n * @returns Diagnostics promise\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getRainDiagnostics(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TextDocument",
+              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ", opmeta: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Uint8Array",
+              "canonicalReference": "!Uint8Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | string"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Diagnostic",
+              "canonicalReference": "@rainprotocol/rainlang!~Diagnostic"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/services/rainDiagnostics.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 8,
+            "endIndex": 12
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "opmeta",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 6,
+                "endIndex": 7
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getRainDiagnostics"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getRainDiagnostics:function(2)",
+          "docComment": "/**\n * Provides diagnostics\n *\n * @param document - The RainDocument\n *\n * @param setting - (optional) Language service params\n *\n * @returns Diagnostics promise\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getRainDiagnostics(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Diagnostic",
+              "canonicalReference": "@rainprotocol/rainlang!~Diagnostic"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/services/rainDiagnostics.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 9
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getRainDiagnostics"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getRainHover:function(1)",
+          "docComment": "/**\n * Provides hover items\n *\n * @param document - The TextDocuemnt\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param opmeta - The op meta\n *\n * @param setting - (optional) Language service params\n *\n * @returns Promise of hover item and null if no item was available for that position\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getRainHover(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TextDocument",
+              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Position",
+              "canonicalReference": "@rainprotocol/rainlang!~Position"
+            },
+            {
+              "kind": "Content",
+              "text": ", opmeta: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Uint8Array",
+              "canonicalReference": "!Uint8Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | string"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Hover",
+              "canonicalReference": "@rainprotocol/rainlang!~Hover"
+            },
+            {
+              "kind": "Content",
+              "text": " | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/services/rainHover.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 10,
+            "endIndex": 12
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "opmeta",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 7
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 8,
+                "endIndex": 9
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getRainHover"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getRainHover:function(2)",
+          "docComment": "/**\n * Provides hover items\n *\n * @param document - The RainDocument object instance\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns Promise of hover item and null if no item was available for that position\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getRainHover(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Position",
+              "canonicalReference": "@rainprotocol/rainlang!~Position"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Hover",
+              "canonicalReference": "@rainprotocol/rainlang!~Hover"
+            },
+            {
+              "kind": "Content",
+              "text": " | null"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/services/rainHover.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 9
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getRainHover"
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!hexlify:var",
+          "docComment": "/**\n * ethers hexlify\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "hexlify: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.hexlify",
+              "canonicalReference": "@ethersproject/bytes!hexlify:function"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "hexlify",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!hexZeroPad:var",
+          "docComment": "/**\n * ethers hexZeroPad\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "hexZeroPad: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.hexZeroPad",
+              "canonicalReference": "@ethersproject/bytes!hexZeroPad:function"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "hexZeroPad",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!InputArgs:type",
+          "docComment": "/**\n * Data type for input argguments\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type InputArgs = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    parameters: {\n        name: string;\n        desc?: string;\n        spread?: boolean;\n    }[];\n    bits?: [number, number];\n    computation?: string;\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "InputArgs",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!InputMeta:type",
+          "docComment": "/**\n * Data type of opcode's inputs that determines the number of inputs an opcode has and provide information about them\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type InputMeta = "
+            },
+            {
+              "kind": "Content",
+              "text": "0 | "
+            },
+            {
+              "kind": "Reference",
+              "text": "InputArgs",
+              "canonicalReference": "@rainprotocol/rainlang!InputArgs:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "InputMeta",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!isBigNumberish:function(1)",
+          "docComment": "/**\n * function to check if the a value is of type BigNumberish, from EthersJS library\n *\n * @param value - the value to check\n *\n * @returns boolean\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function isBigNumberish(value: "
+            },
+            {
+              "kind": "Content",
+              "text": "any"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "value",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "isBigNumberish"
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!isBytes:var",
+          "docComment": "/**\n * ethers isBytes\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isBytes: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.isBytes",
+              "canonicalReference": "@ethersproject/bytes!isBytes:function"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "isBytes",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!isBytesLike:var",
+          "docComment": "/**\n * ethers isBytesLike\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isBytesLike: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.isBytesLike",
+              "canonicalReference": "@ethersproject/bytes!isBytesLike:function"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "isBytesLike",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!isHexString:var",
+          "docComment": "/**\n * ethers isHexString\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "isHexString: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.isHexString",
+              "canonicalReference": "@ethersproject/bytes!isHexString:function"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "isHexString",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Interface",
+          "canonicalReference": "@rainprotocol/rainlang!LanguageService:interface",
+          "docComment": "/**\n * Interface for Rain language services\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface LanguageService "
+            }
+          ],
+          "fileUrlPath": "dist/cjs/rainLanguageService.d.ts",
+          "releaseTag": "Public",
+          "name": "LanguageService",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "MethodSignature",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageService#doComplete:member(1)",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "doComplete(textDocument: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "TextDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", position: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Position",
+                  "canonicalReference": "@rainprotocol/rainlang!~Position"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", opmeta?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Uint8Array",
+                  "canonicalReference": "!Uint8Array:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", setting?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "LanguageServiceParams",
+                  "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "CompletionItem",
+                  "canonicalReference": "@rainprotocol/rainlang!~CompletionItem"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[] | null"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isOptional": false,
+              "returnTypeTokenRange": {
+                "startIndex": 10,
+                "endIndex": 12
+              },
+              "releaseTag": "Public",
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "textDocument",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "position",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 4
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "opmeta",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 5,
+                    "endIndex": 7
+                  },
+                  "isOptional": true
+                },
+                {
+                  "parameterName": "setting",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 8,
+                    "endIndex": 9
+                  },
+                  "isOptional": true
+                }
+              ],
+              "name": "doComplete"
+            },
+            {
+              "kind": "MethodSignature",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageService#doHover:member(1)",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "doHover(textDocument: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "TextDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", position: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Position",
+                  "canonicalReference": "@rainprotocol/rainlang!~Position"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", opmeta?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Uint8Array",
+                  "canonicalReference": "!Uint8Array:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", setting?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "LanguageServiceParams",
+                  "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Hover",
+                  "canonicalReference": "@rainprotocol/rainlang!~Hover"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | null"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isOptional": false,
+              "returnTypeTokenRange": {
+                "startIndex": 10,
+                "endIndex": 12
+              },
+              "releaseTag": "Public",
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "textDocument",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "position",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 4
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "opmeta",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 5,
+                    "endIndex": 7
+                  },
+                  "isOptional": true
+                },
+                {
+                  "parameterName": "setting",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 8,
+                    "endIndex": 9
+                  },
+                  "isOptional": true
+                }
+              ],
+              "name": "doHover"
+            },
+            {
+              "kind": "MethodSignature",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageService#doValidation:member(1)",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "doValidation(textDocument: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "TextDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", opmeta?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Uint8Array",
+                  "canonicalReference": "!Uint8Array:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", setting?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "LanguageServiceParams",
+                  "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Promise",
+                  "canonicalReference": "!Promise:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "<"
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Diagnostic",
+                  "canonicalReference": "@rainprotocol/rainlang!~Diagnostic"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]>"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isOptional": false,
+              "returnTypeTokenRange": {
+                "startIndex": 8,
+                "endIndex": 12
+              },
+              "releaseTag": "Public",
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "textDocument",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "opmeta",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 5
+                  },
+                  "isOptional": true
+                },
+                {
+                  "parameterName": "setting",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 6,
+                    "endIndex": 7
+                  },
+                  "isOptional": true
+                }
+              ],
+              "name": "doValidation"
+            },
+            {
+              "kind": "MethodSignature",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageService#newRainDocument:member(1)",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "newRainDocument(textDocument: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "TextDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", opmeta: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Uint8Array",
+                  "canonicalReference": "!Uint8Array:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | string"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RainDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isOptional": false,
+              "returnTypeTokenRange": {
+                "startIndex": 6,
+                "endIndex": 7
+              },
+              "releaseTag": "Public",
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "textDocument",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "opmeta",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 5
+                  },
+                  "isOptional": false
+                }
+              ],
+              "name": "newRainDocument"
+            },
+            {
+              "kind": "MethodSignature",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageService#parseRainDocument:member(1)",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "parseRainDocument(textDocument: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "TextDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", opmeta?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Uint8Array",
+                  "canonicalReference": "!Uint8Array:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | string"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RainDocumentResult",
+                  "canonicalReference": "@rainprotocol/rainlang!RainDocumentResult:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isOptional": false,
+              "returnTypeTokenRange": {
+                "startIndex": 6,
+                "endIndex": 7
+              },
+              "releaseTag": "Public",
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "textDocument",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "opmeta",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 5
+                  },
+                  "isOptional": true
+                }
+              ],
+              "name": "parseRainDocument"
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageService#rainDocuments:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "rainDocuments: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Map",
+                  "canonicalReference": "!Map:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "<string, "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RainDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+                },
+                {
+                  "kind": "Content",
+                  "text": ">"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "rainDocuments",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 5
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
+          "kind": "Interface",
+          "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface",
+          "docComment": "/**\n * Parameters for initiating Language Services\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export interface LanguageServiceParams "
+            }
+          ],
+          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "LanguageServiceParams",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams#clientCapabilities:member",
+              "docComment": "/**\n * Describes the LSP capabilities the client supports.\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "clientCapabilities?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "ClientCapabilities",
+                  "canonicalReference": "@rainprotocol/rainlang!ClientCapabilities:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "clientCapabilities",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            }
+          ],
+          "extendsTokenRanges": []
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!MAGIC_NUMBERS:var",
+          "docComment": "/**\n * Magic numbers used to identify Rain documents. This use `BigInt` with their literal numbers.\n *\n * See more abour Magic numbers: https://github.com/rainprotocol/metadata-spec/blob/main/README.md\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "MAGIC_NUMBERS: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    RAIN_META_DOCUMENT: bigint;\n    SOLIDITY_ABIV2: bigint;\n    OPS_META_V1: bigint;\n    CONTRACT_META_V1: bigint;\n}"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "MAGIC_NUMBERS",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!mapToRecord:function(1)",
+          "docComment": "/**\n * Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol.\n *\n * @param map - The Map to conver to Record\n *\n * @param properties - (optional) properties to pick from the second item of the Map's elements.\n *\n * @returns a new Record from Map\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function mapToRecord<K extends "
+            },
+            {
+              "kind": "Content",
+              "text": "string | number | symbol"
+            },
+            {
+              "kind": "Content",
+              "text": ">(map: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<K, any>"
+            },
+            {
+              "kind": "Content",
+              "text": ", properties?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<K, any>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 8,
+            "endIndex": 10
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "map",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "properties",
+              "parameterTypeTokenRange": {
+                "startIndex": 6,
+                "endIndex": 7
+              },
+              "isOptional": true
+            }
+          ],
+          "typeParameters": [
+            {
+              "typeParameterName": "K",
+              "constraintTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "defaultTypeTokenRange": {
+                "startIndex": 0,
+                "endIndex": 0
+              }
+            }
+          ],
+          "name": "mapToRecord"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!memoryOperand:function(1)",
+          "docComment": "/**\n * Constructs operand for standard STATE opecode\n *\n * @param type - Type of the opcode, either 'stack' or 'constant'\n *\n * @param offset - the position of the item in respect to its type\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function memoryOperand(offset: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ", type: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "offset",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "type",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "memoryOperand"
+        },
+        {
+          "kind": "Enum",
+          "canonicalReference": "@rainprotocol/rainlang!MemoryType:enum",
+          "docComment": "/**\n * Type for read-memory opcode\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare enum MemoryType "
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "MemoryType",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!MemoryType.Constant:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "Constant = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "1"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "Constant"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!MemoryType.Stack:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "Stack = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "0"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "Stack"
+            }
+          ]
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!metaFromBytes:var",
+          "docComment": "/**\n * Decompress and convert bytes to meta\n *\n * @param bytes - Bytes to decompress and convert to json\n *\n * @param schema - Json schema to validate as object (JSON.parsed) or stringified format\n *\n * @returns meta content as object\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "metaFromBytes: "
+            },
+            {
+              "kind": "Content",
+              "text": "(bytes: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BytesLike",
+              "canonicalReference": "@ethersproject/bytes!BytesLike:type"
+            },
+            {
+              "kind": "Content",
+              "text": ", schema: object | string) => any"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "metaFromBytes",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!op:var",
+          "docComment": "/**\n * Converts an opcode and operand to bytes, and returns their concatenation.\n *\n * @param code - the opcode\n *\n * @param erand - the operand, currently limited to 1 byte (defaults to 0)\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "op: "
+            },
+            {
+              "kind": "Content",
+              "text": "(code: number, erand?: number | "
+            },
+            {
+              "kind": "Reference",
+              "text": "BytesLike",
+              "canonicalReference": "@ethersproject/bytes!BytesLike:type"
+            },
+            {
+              "kind": "Content",
+              "text": " | "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.Hexable",
+              "canonicalReference": "@ethersproject/bytes!Hexable:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ") => "
+            },
+            {
+              "kind": "Reference",
+              "text": "Uint8Array",
+              "canonicalReference": "!Uint8Array:interface"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "op",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 7
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!OperandArgs:type",
+          "docComment": "/**\n * Data type for computed operand that consists of some arguments\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type OperandArgs = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    bits: [number, number];\n    name: \"inputs\" | string;\n    desc?: string;\n    computation?: string;\n    validRange?: ([number] | [number, number])[];\n}[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "OperandArgs",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!OperandMeta:type",
+          "docComment": "/**\n * Data type of operand arguments, used only for non-constant operands\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type OperandMeta = "
+            },
+            {
+              "kind": "Content",
+              "text": "0 | "
+            },
+            {
+              "kind": "Reference",
+              "text": "OperandArgs",
+              "canonicalReference": "@rainprotocol/rainlang!OperandArgs:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "OperandMeta",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!OpMeta:type",
+          "docComment": "/**\n * Type Definitions for opcodes metadata used by RainLang.\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type OpMeta = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    name: string;\n    desc: string;\n    operand: "
+            },
+            {
+              "kind": "Reference",
+              "text": "OperandMeta",
+              "canonicalReference": "@rainprotocol/rainlang!OperandMeta:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    inputs: "
+            },
+            {
+              "kind": "Reference",
+              "text": "InputMeta",
+              "canonicalReference": "@rainprotocol/rainlang!InputMeta:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    outputs: "
+            },
+            {
+              "kind": "Reference",
+              "text": "OutputMeta",
+              "canonicalReference": "@rainprotocol/rainlang!OutputMeta:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    aliases?: string[];\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "OpMeta",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 8
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!OpMetaSchema:var",
+          "docComment": "/**\n * op meta schema used for validation\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "OpMetaSchema: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    $schema: string;\n    $ref: string;\n    $comment: string;\n    definitions: {\n        OpMeta: {\n            type: string;\n            properties: {\n                name: {\n                    type: string;\n                    title: string;\n                    description: string;\n                    pattern: string;\n                };\n                desc: {\n                    type: string;\n                    title: string;\n                    description: string;\n                };\n                operand: {\n                    anyOf: ({\n                        type: string;\n                        const: number;\n                        $ref?: undefined;\n                    } | {\n                        $ref: string;\n                        type?: undefined;\n                        const?: undefined;\n                    })[];\n                    title: string;\n                    description: string;\n                };\n                inputs: {\n                    $ref: string;\n                    title: string;\n                    description: string;\n                };\n                outputs: {\n                    $ref: string;\n                    title: string;\n                    description: string;\n                };\n                aliases: {\n                    type: string;\n                    items: {\n                        type: string;\n                        pattern: string;\n                    };\n                    title: string;\n                    description: string;\n                };\n            };\n            required: string[];\n            additionalProperties: boolean;\n            title: string;\n            description: string;\n        };\n        OperandArgs: {\n            type: string;\n            items: {\n                type: string;\n                properties: {\n                    bits: {\n                        type: string;\n                        items: {\n                            type: string;\n                            minimum: number;\n                            maximum: number;\n                        };\n                        minItems: number;\n                        maxItems: number;\n                        title: string;\n                        description: string;\n                    };\n                    name: {\n                        type: string;\n                        title: string;\n                        description: string;\n                        pattern: string;\n                    };\n                    desc: {\n                        type: string;\n                        title: string;\n                        description: string;\n                    };\n                    computation: {\n                        type: string;\n                        title: string;\n                        description: string;\n                    };\n                    validRange: {\n                        type: string;\n                        items: {\n                            anyOf: {\n                                type: string;\n                                items: {\n                                    type: string;\n                                    minimum: number;\n                                    maximum: number;\n                                };\n                                minItems: number;\n                                maxItems: number;\n                            }[];\n                        };\n                        title: string;\n                        description: string;\n                    };\n                };\n                required: string[];\n                additionalProperties: boolean;\n            };\n            minItems: number;\n        };\n        InputMeta: {\n            anyOf: ({\n                type: string;\n                const: number;\n                properties?: undefined;\n                required?: undefined;\n                additionalProperties?: undefined;\n            } | {\n                type: string;\n                properties: {\n                    parameters: {\n                        type: string;\n                        items: {\n                            type: string;\n                            properties: {\n                                name: {\n                                    type: string;\n                                    title: string;\n                                    description: string;\n                                    pattern: string;\n                                };\n                                desc: {\n                                    type: string;\n                                    title: string;\n                                    description: string;\n                                };\n                                spread: {\n                                    type: string;\n                                    title: string;\n                                    description: string;\n                                };\n                            };\n                            required: string[];\n                            additionalProperties: boolean;\n                        };\n                        title: string;\n                        description: string;\n                    };\n                    bits: {\n                        type: string;\n                        items: {\n                            type: string;\n                            minimum: number;\n                            maximum: number;\n                        };\n                        minItems: number;\n                        maxItems: number;\n                        title: string;\n                        description: string;\n                    };\n                    computation: {\n                        type: string;\n                        title: string;\n                        description: string;\n                    };\n                };\n                required: string[];\n                additionalProperties: boolean;\n                const?: undefined;\n            })[];\n        };\n        OutputMeta: {\n            anyOf: ({\n                type: string;\n                minimum: number;\n                properties?: undefined;\n                additionalProperties?: undefined;\n            } | {\n                type: string;\n                properties: {\n                    bits: {\n                        type: string;\n                        items: {\n                            type: string;\n                            minimum: number;\n                            maximum: number;\n                        };\n                        minItems: number;\n                        maxItems: number;\n                        title: string;\n                        description: string;\n                    };\n                    computation: {\n                        type: string;\n                        title: string;\n                        description: string;\n                    };\n                };\n                additionalProperties: boolean;\n                minimum?: undefined;\n            })[];\n        };\n    };\n}"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/index.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "OpMetaSchema",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!OutputMeta:type",
+          "docComment": "/**\n * Data type of opcode's outputs that determines the number of outputs an opcode has and provide information about them\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type OutputMeta = "
+            },
+            {
+              "kind": "Content",
+              "text": "number | "
+            },
+            {
+              "kind": "Reference",
+              "text": "ComputedOutput",
+              "canonicalReference": "@rainprotocol/rainlang!ComputedOutput:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "OutputMeta",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!paddedUInt128:var",
+          "docComment": "/**\n * Utility function to produce 128 bits size hexString\n *\n * @param value - the value to convert into a 128bit size hexString\n *\n * @returns a 32 character hexString (without 0x prefix)\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "paddedUInt128: "
+            },
+            {
+              "kind": "Content",
+              "text": "(value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BigNumberish",
+              "canonicalReference": "@ethersproject/bignumber!BigNumberish:type"
+            },
+            {
+              "kind": "Content",
+              "text": ") => string"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "paddedUInt128",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!paddedUInt160:var",
+          "docComment": "/**\n * Utility function that transforms a BigNumberish to an ether address (40 char length hexString)\n *\n * @param address - value as bignumberish\n *\n * @returns hexadecimal string as an ether address (40 char length hexString)\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "paddedUInt160: "
+            },
+            {
+              "kind": "Content",
+              "text": "(address: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BigNumberish",
+              "canonicalReference": "@ethersproject/bignumber!BigNumberish:type"
+            },
+            {
+              "kind": "Content",
+              "text": ") => string"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "paddedUInt160",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!paddedUInt256:var",
+          "docComment": "/**\n * Utility function that transforms a BigNumberish from the output of the ITierV2 contract report\n *\n * @param report - report as bignumberish from the ITierV2 contract\n *\n * @returns hexadecimal string of the report already padded (64 char hexString)\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "paddedUInt256: "
+            },
+            {
+              "kind": "Content",
+              "text": "(report: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BigNumberish",
+              "canonicalReference": "@ethersproject/bignumber!BigNumberish:type"
+            },
+            {
+              "kind": "Content",
+              "text": ") => string"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "paddedUInt256",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!paddedUInt32:var",
+          "docComment": "/**\n * Utility function to produce 32 bits size hexString\n *\n * @param value - the value to convert into a 32bit size hexString\n *\n * @returns a 8 char hexString (without 0x prefix)\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "paddedUInt32: "
+            },
+            {
+              "kind": "Content",
+              "text": "(value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BigNumberish",
+              "canonicalReference": "@ethersproject/bignumber!BigNumberish:type"
+            },
+            {
+              "kind": "Content",
+              "text": ") => string"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "paddedUInt32",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!paddedUInt64:var",
+          "docComment": "/**\n * Utility function to produce 64 bits size hexString\n *\n * @param value - the value to convert into a 64bit size hexString\n *\n * @returns a 16 character hexString (without 0x prefix)\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "paddedUInt64: "
+            },
+            {
+              "kind": "Content",
+              "text": "(value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BigNumberish",
+              "canonicalReference": "@ethersproject/bignumber!BigNumberish:type"
+            },
+            {
+              "kind": "Content",
+              "text": ") => string"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "paddedUInt64",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!parseUnits:var",
+          "docComment": "/**\n * ethers parseUnits\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "parseUnits: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.parseUnits",
+              "canonicalReference": "@ethersproject/units!parseUnits:function"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "parseUnits",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        },
+        {
+          "kind": "Class",
+          "canonicalReference": "@rainprotocol/rainlang!RainDocument:class",
+          "docComment": "/**\n * RainDocument is a class object that provides data and functionalities in order to be used later on to provide Rain Language Services or in Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.\n *\n * @example\n * ```typescript\n * // to import\n * import { Raindocument } from 'rainlang';\n *\n * // to create a new instance of the RainDocument object which parses right after instantiation\n * const myRainDocument = new RainDocument(text, opmeta)\n *\n * // to get the parse results after instantiation\n * const results = myRainDocument.getResult()\n *\n * // to get the parse results with new text or opmeta\n * const newResult = myRainDocument.update(newText, newOpmeta)\n * ```\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare class RainDocument "
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParser.d.ts",
+          "releaseTag": "Public",
+          "isAbstract": false,
+          "name": "RainDocument",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "Constructor",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:constructor(1)",
+              "docComment": "/**\n * constructor of RainDocument object\n *\n * @param textDocument - Raw text to parse (can be updated at any time after instantiation)\n *\n * @param opmeta - Ops meta as bytes ie hex string or Uint8Array\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "constructor(textDocument: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "TextDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", opmeta: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "BytesLike",
+                  "canonicalReference": "@ethersproject/bytes!BytesLike:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ");"
+                }
+              ],
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "textDocument",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "opmeta",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 4
+                  },
+                  "isOptional": false
+                }
+              ]
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getComments:member(1)",
+              "docComment": "/**\n * Get the current comments inside of the text of this RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getComments(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RDComment",
+                  "canonicalReference": "@rainprotocol/rainlang!RDComment:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getComments"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getCurrentLHSAliases:member(1)",
+              "docComment": "/**\n * Get the current sub-exp aliases of this RainParser instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getCurrentLHSAliases(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RDAliasNode",
+                  "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getCurrentLHSAliases"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getExpressionConfig:member(1)",
+              "docComment": "/**\n * Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used.\n *\n * @param item - Optional item to get the ExpressionConfig for\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getExpressionConfig(item?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RDNode",
+                  "canonicalReference": "@rainprotocol/rainlang!RDNode:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RDNode",
+                  "canonicalReference": "@rainprotocol/rainlang!RDNode:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[][] | "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RDParseTree",
+                  "canonicalReference": "@rainprotocol/rainlang!RDParseTree:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "ExpressionConfig",
+                  "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | undefined"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 9
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "item",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 6
+                  },
+                  "isOptional": true
+                }
+              ],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getExpressionConfig"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getLHSAliases:member(1)",
+              "docComment": "/**\n * Get the parsed exp aliases of this RainParser instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getLHSAliases(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RDAliasNode",
+                  "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[][]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getLHSAliases"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getOpMeta:member(1)",
+              "docComment": "/**\n * Get the current op meta of this RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getOpMeta(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "OpMeta",
+                  "canonicalReference": "@rainprotocol/rainlang!OpMeta:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getOpMeta"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getOpMetaError:member(1)",
+              "docComment": "/**\n * Get the current runtime error of this RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getOpMetaError(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Error",
+                  "canonicalReference": "!Error:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | undefined"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getOpMetaError"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getParseTree:member(1)",
+              "docComment": "/**\n * Get the current parse tree of this RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getParseTree(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RDParseTree",
+                  "canonicalReference": "@rainprotocol/rainlang!RDParseTree:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getParseTree"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getProblems:member(1)",
+              "docComment": "/**\n * Get the current problems of this RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getProblems(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RDProblem",
+                  "canonicalReference": "@rainprotocol/rainlang!RDProblem:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getProblems"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getRawOpMeta:member(1)",
+              "docComment": "/**\n * Get the current raw op meta of this RainDocument instance in hex string\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getRawOpMeta(): "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getRawOpMeta"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getResult:member(1)",
+              "docComment": "/**\n * Get the current parse result of this RainDocument instance which consists of parse tree, problems, comments and expression aliases\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getResult(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RainDocumentResult",
+                  "canonicalReference": "@rainprotocol/rainlang!RainDocumentResult:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getResult"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getRuntimeError:member(1)",
+              "docComment": "/**\n * Get the current runtime error of this RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getRuntimeError(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Error",
+                  "canonicalReference": "!Error:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | undefined"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getRuntimeError"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getTextDocument:member(1)",
+              "docComment": "/**\n * Get the current text of this RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getTextDocument(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "TextDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getTextDocument"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#update:member(1)",
+              "docComment": "/**\n * Method to update the RainDocument with new text or opmeta and get the parse results\n *\n * @param newTextDocument - (optional) Raw text to parse\n *\n * @param newOpMeta - (optional) Ops meta as bytes ie hex string or Uint8Array\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "update(newTextDocument?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "TextDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", newOpMeta?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "BytesLike",
+                  "canonicalReference": "@ethersproject/bytes!BytesLike:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Content",
+                  "text": "void"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "newTextDocument",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": true
+                },
+                {
+                  "parameterName": "newOpMeta",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 4
+                  },
+                  "isOptional": true
+                }
+              ],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "update"
+            }
+          ],
+          "implementsTokenRanges": []
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RainDocumentResult:type",
+          "docComment": "/**\n * Type of RainDocument's parse result\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RainDocumentResult = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    parseTree: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDParseTree",
+              "canonicalReference": "@rainprotocol/rainlang!RDParseTree:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    comments: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDComment",
+              "canonicalReference": "@rainprotocol/rainlang!RDComment:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n    problems: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDProblem",
+              "canonicalReference": "@rainprotocol/rainlang!RDProblem:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RainDocumentResult",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 8
+          }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!rainlang:function(1)",
+          "docComment": "/**\n * Method to be used as Tagged Templates to activate embedded rainlang in javascript to typescript that highlights the rainlang syntax. Requires rainlang vscode extension to be installed.\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function rainlang(stringChunks: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TemplateStringsArray",
+              "canonicalReference": "!TemplateStringsArray:interface"
+            },
+            {
+              "kind": "Content",
+              "text": ", ...vars: "
+            },
+            {
+              "kind": "Content",
+              "text": "any[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "stringChunks",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "vars",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "rainlang"
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RainParseState:type",
+          "docComment": "/**\n * Type of Parser's State\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RainParseState = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    parse: {\n        tree: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n        expAliases: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDAliasNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[][];\n        subExpAliases: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDAliasNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n    };\n    track: {\n        char: number;\n        parens: {\n            open: number[];\n            close: number[];\n        };\n    };\n    depthLevel: number;\n    operandArgsErr: boolean;\n    runtimeError: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Error",
+              "canonicalReference": "!Error:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined;\n    opMetaError: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Error",
+              "canonicalReference": "!Error:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | undefined;\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RainParseState",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 12
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type",
+          "docComment": "/**\n * Type of RainDocument's lhs aliases\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RDAliasNode = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    name: string;\n    position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    lhs?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDAliasNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RDAliasNode",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 6
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RDComment:type",
+          "docComment": "/**\n * Type of RainDocument's comments\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RDComment = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    comment: string;\n    position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RDComment",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RDNode:type",
+          "docComment": "/**\n * Type of RainDocument's prase node\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RDNode = "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDValueNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDValueNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": " | "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDOpNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDOpNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": " | "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDAliasNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RDNode",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 6
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RDOpNode:type",
+          "docComment": "/**\n * Type of RainDocument's Opcode node\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RDOpNode = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    opcode: {\n        name: string;\n        description: string;\n        position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    };\n    operand: number;\n    output: number;\n    position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    parens: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    parameters: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n    operandArgs?: {\n        position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n        args: {\n            value: number;\n            name: string;\n            position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n            description?: string;\n        }[];\n    };\n    lhs?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDAliasNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RDOpNode",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 16
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RDParseTree:type",
+          "docComment": "/**\n * Type of a RainDocument parse tree object\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RDParseTree = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    tree: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[];\n    position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n}[]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RDParseTree",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 6
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RDPosition:type",
+          "docComment": "/**\n * Type of position start and end indexes for RainDocument, inclusive at both ends\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RDPosition = "
+            },
+            {
+              "kind": "Content",
+              "text": "[number, number]"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RDPosition",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RDProblem:type",
+          "docComment": "/**\n * Type of RainDocument's problem (error)\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RDProblem = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    msg: string;\n    position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    code: number;\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RDProblem",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 4
+          }
+        },
+        {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!RDValueNode:type",
+          "docComment": "/**\n * Type of RainDocument's Value node\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type RDValueNode = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    value: "
+            },
+            {
+              "kind": "Reference",
+              "text": "BigNumberish",
+              "canonicalReference": "@ethersproject/bignumber!BigNumberish:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDPosition",
+              "canonicalReference": "@rainprotocol/rainlang!RDPosition:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    lhs?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RDAliasNode",
+              "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "RDValueNode",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 8
+          }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!recordToMap:function(1)",
+          "docComment": "/**\n * Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol.\n *\n * @param record - The Record to convert to a Map\n *\n * @param properties - (optional) properties to pick from the values of key/value pair items of the Record object.\n *\n * @returns Map Object from Record\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function recordToMap<K extends "
+            },
+            {
+              "kind": "Content",
+              "text": "string | number | symbol"
+            },
+            {
+              "kind": "Content",
+              "text": ">(record: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Record",
+              "canonicalReference": "!Record:type"
+            },
+            {
+              "kind": "Content",
+              "text": "<K, any>"
+            },
+            {
+              "kind": "Content",
+              "text": ", properties?: "
+            },
+            {
+              "kind": "Content",
+              "text": "string | string[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Map",
+              "canonicalReference": "!Map:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<K, any>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 8,
+            "endIndex": 10
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "record",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "properties",
+              "parameterTypeTokenRange": {
+                "startIndex": 6,
+                "endIndex": 7
+              },
+              "isOptional": true
+            }
+          ],
+          "typeParameters": [
+            {
+              "typeParameterName": "K",
+              "constraintTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "defaultTypeTokenRange": {
+                "startIndex": 0,
+                "endIndex": 0
+              }
+            }
+          ],
+          "name": "recordToMap"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!rlc:function(1)",
+          "docComment": "/**\n * Rain Language Compiler (rlc), compiles documents into valid ExpressionConfig (deployable bytes)\n *\n * @param text - The raw string to compile\n *\n * @param opmeta - Ops meta as bytes ie hex string or Uint8Array\n *\n * @returns ExpressionConfig promise\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function rlc(text: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", opmeta: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Uint8Array",
+              "canonicalReference": "!Uint8Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/compiler/rainCompiler.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 10
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "text",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "opmeta",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "rlc"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!rlc:function(2)",
+          "docComment": "/**\n * Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes)\n *\n * @param document - The TextDocument to compile\n *\n * @param opmeta - Ops meta as bytes ie hex string or Uint8Array\n *\n * @returns ExpressionConfig promise\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function rlc(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TextDocument",
+              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ", opmeta: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Uint8Array",
+              "canonicalReference": "!Uint8Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/compiler/rainCompiler.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 10
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "opmeta",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "rlc"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!rlc:function(3)",
+          "docComment": "/**\n * Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes)\n *\n * @param rainDocument - The rain document to compile\n *\n * @returns ExpressionConfig promise\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function rlc(rainDocument: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/compiler/rainCompiler.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 7
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 3,
+          "parameters": [
+            {
+              "parameterName": "rainDocument",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "rlc"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!rld:function(1)",
+          "docComment": "/**\n * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document\n *\n * @param expressionConfig - ExpressionConfig to decompile\n *\n * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string\n *\n * @param prettyFormat - (optional) Format the output document\n *\n * @returns a Raindocument promise\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function rld(expressionConfig: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ", opmeta: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Uint8Array",
+              "canonicalReference": "!Uint8Array:interface"
+            },
+            {
+              "kind": "Content",
+              "text": " | string"
+            },
+            {
+              "kind": "Content",
+              "text": ", prettyFormat?: "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/compiler/rainDecompiler.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 8,
+            "endIndex": 12
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "expressionConfig",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "opmeta",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "prettyFormat",
+              "parameterTypeTokenRange": {
+                "startIndex": 6,
+                "endIndex": 7
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "rld"
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!sgBook:var",
+          "docComment": "/**\n * Subgraph endpoints and their chain ids as key/value pairs\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "sgBook: "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    [chainId: number | string]: string;\n}"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "sgBook",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!validateMeta:var",
+          "docComment": "/**\n * Validate a meta or array of metas against a schema\n *\n * @param meta - A meta object or array of meta objects or stringified format of them\n *\n * @param schema - Json schema to validate as object (JSON.parsed) or stringified format\n *\n * @returns boolean\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "validateMeta: "
+            },
+            {
+              "kind": "Content",
+              "text": "(meta: object | object[] | string, schema: object | string) => boolean"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "validateMeta",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!zeroPad:var",
+          "docComment": "/**\n * ethers zeroPad\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "zeroPad: "
+            },
+            {
+              "kind": "Content",
+              "text": "typeof "
+            },
+            {
+              "kind": "Reference",
+              "text": "utils.zeroPad",
+              "canonicalReference": "@ethersproject/bytes!zeroPad:function"
+            }
+          ],
+          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "zeroPad",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 3
+          }
+        }
+      ]
+    }
+  ]
+}

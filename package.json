@@ -35,7 +35,8 @@
         "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
         "lint": "eslint \"src/**\" \"test/**\"",
         "lint-fix": "eslint \"src/**\" \"test/**\" --fix",
-        "docgen": "rm -rf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs"
+        "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
+        "move-api": "copyfiles \"./rainlang.api.json\" \"./docs\" && rimraf ./rainlang.api.json"
     },
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
@@ -52,8 +53,10 @@
         "@typescript-eslint/parser": "^5.42.0",
         "chai": "^4.3.6",
         "chai-as-promised": "7.1.1",
+        "copyfiles": "^2.4.1",
         "eslint": "^8.26.0",
         "mocha": "^10.1.0",
+        "rimraf": "^4.4.1",
         "ts-loader": "^9.4.2",
         "ts-node": "^10.9.1",
         "tslib": "^2.4.1",
