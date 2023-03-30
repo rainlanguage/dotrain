@@ -54,6 +54,62 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         );
     });
 
+    it("should fail if op meta has invalid schema", async () => {
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.invalid_by_schema),
+            "Op Meta Error: invalid meta for add, reason: failed schema validation",
+            "Invalid Error"
+        );
+    });
+
+    it("should fail if op meta has duplicate schema", async () => {
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.duplicate_alias),
+            "Op Meta Error: invalid meta, reason: duplicated names or aliases",
+            "Invalid Error"
+        );
+    });
+
+    it("should fail if op meta has invalid bits", async () => {
+        // await rlc(rainlang`_: add(1 2);`, invalidOpMetas.invalid_operand_args).catch((err) => { throw err; });
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.invalid_bits),
+            "Op Meta Error: invalid meta for scale-18, reason: start bit greater than end bit for saturate",
+            "Invalid Error"
+        );
+    });
+
+    it("should fail if op meta has missing bits in input", async () => {
+        // await rlc(rainlang`_: add(1 2);`, invalidOpMetas.invalid_operand_args).catch((err) => { throw err; });
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.missing_bits),
+            "Op Meta Error: invalid meta for call, reason: must have specified \\\"bits\\\" field for inputs",
+            "Invalid Error"
+        );
+    });
+
+    it("should fail if op meta has missing computation in input", async () => {
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.missing_computation),
+            "Op Meta Error: invalid meta for do-while, reason: must have specified \\\"computation\\\" field for inputs",
+            "Invalid Error"
+        );
+    });
+
+    it("should fail if op meta has unexpected computation in input", async () => {
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(1 2);`, invalidOpMetas.unexpected_computation),
+            "Op Meta Error: invalid meta for do-while, reason: unexpected \\\"computation\\\" field for inputs",
+            "Invalid Error"
+        );
+    });
+
     it("should fail if an invalid opmeta is specified", async () => {
         const expression = rainlang`
         /* main source */
@@ -262,4 +318,112 @@ describe("Rainlang Compiler (rlc) tests", async function () {
             "Invalid Error"
         );
     });
+
+    it("should not accept negative numbers", async () => {
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: add(-10 20);`, opMeta),
+            'is not a valid rainlang word',
+            "Invalid Error"
+        );
+
+        await assertError(
+            async () =>
+                await rlc(rainlang`_: sub(123941 -123941);`, opMeta),
+            'is not a valid rainlang word',
+            "Invalid Error"
+        );
+    });
+
+    it("should only accept ASCII characters", async () => {
+        await assertError(
+            async () => await rlc(rainlang`_: add(10² 20);`, opMeta),
+            'found non-printable-ASCII character',
+            "Invalid Error"
+        );
+    });
+
+    it("should error if invalid operand brackets is provided", async () => {
+        await assertError(
+            async () => await rlc(rainlang`_: read-memory<10 1();`, opMeta),
+            '775',
+            "Invalid Error"
+        );
+    });
+
+    it("should error if invalid parenthesis is provided", async () => {
+        await assertError(
+            async () => await rlc(rainlang`_: read-memory<10 1>;`, opMeta),
+            '773',
+            "Invalid Error"
+        );
+        await assertError(
+            async () => await rlc(rainlang`_: read-memory<10 1>(;`, opMeta),
+            '772',
+            "Invalid Error"
+        );
+    });
+
+    it("should error if invalid word pattern is provided", async () => {
+        await assertError(
+            async () => await rlc(rainlang`_: <10 1>();`, opMeta),
+            '257',
+            "Invalid Error"
+        );
+    });
+
+    it("should error if invalid opcode is passed in the rainlang fragment", async () => {
+        await assertError(
+            async () => await rlc(rainlang`_: readmemory<10 1>();`, opMeta),
+            '1536',
+            "Invalid Error"
+        );
+    });
+
+    it("should error if operand arguments are missing in the rainlang fragment", async () => {
+        await assertError(
+            async () => await rlc(rainlang`_: read-memory();`, opMeta),
+            '771',
+            "Invalid Error"
+        );
+
+        await assertError(
+            async () => await rlc(rainlang`_: read-memory<>();`, opMeta),
+            '1027',
+            "Invalid Error"
+        );
+
+        await assertError(
+            async () => await rlc(rainlang`_: read-memory<1>();`, opMeta),
+            '1027',
+            "Invalid Error"
+        );
+    });
+
+    it("should error if out-of-range operand arguments is provided", async () => {
+        await assertError(
+            async () => await rlc(rainlang`_: read-memory<1 2>();`, opMeta),
+            '1282',
+            "Invalid Error"
+        );
+    });
+
+    it("should error if out-of-range operand arguments is provided", async () => {
+        await assertError(
+            async () => await rlc(rainlang`_: read-memory<1 2>();`, opMeta),
+            '1282',
+            "Invalid Error"
+        );
+
+    });
+
+    it("should error if a word is undefined", async () => {
+        await assertError(
+            async () => await rlc(rainlang`ans: add(ans 1);`, opMeta),
+            'undefined word: ans',
+            "Invalid Error"
+        );
+
+    });
+
 });
