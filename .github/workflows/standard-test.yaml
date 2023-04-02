@@ -2,7 +2,7 @@ name: Standard Test
 on: [push, pull_request]
 jobs:
   build-lint-test:
-    name: Build, lint, and test
+    name: Build, lint, test
     runs-on: ubuntu-latest
 
     steps:
@@ -27,5 +27,5 @@ jobs:
       - name: Test
         run: yarn test
 
-      - name: Test doc generation
+      - name: Test Docs Generation
         run: yarn docgen
