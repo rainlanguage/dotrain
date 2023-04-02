@@ -1,27 +1,31 @@
 name: Standard Test
 on: [push, pull_request]
 jobs:
-  build:
-    name: Build, lint, and test
+  build-lint-test:
+    name: Build, lint, test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
+      - name: Checkout Repo
+        uses: actions/checkout@v3
 
-      - name: Install nix
-        uses: cachix/install-nix-action@v13
+      - name: Install NodeJS v16
+        uses: actions/setup-node@v3
         with:
-          nix_path: nixpkgs=channel:nixos-unstable
+          node-version: 16
+          cache: 'yarn'
+
+      - name: Install Dependencies
+        run: yarn install --ignore-scripts
 
       - name: Build
-        run: nix-shell
+        run: yarn build
 
       - name: Lint
-        run: nix-shell --run lint
+        run: yarn lint
 
       - name: Test
-        run: nix-shell --run local-test
+        run: yarn test
 
-      - name: Test doc generation
-        run: nix-shell --run docgen
+      - name: Test Docs Generation
+        run: yarn docgen
