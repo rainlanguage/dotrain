@@ -14,8 +14,6 @@
     },
     "homepage": "http://rainprotocol.github.io/rainlang/",
     "main": "./dist/cjs/index.js",
-    "module": "./dist/esm/index.js",
-    "browser": "./dist/esm/index.js",
     "files": [
         "dist",
         "src",
