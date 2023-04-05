@@ -22,10 +22,10 @@ jobs:
         run: npm run build
 
       - name: Lint
-        run: npm run lint
+        run: npm run lint && echo ${{ github.event.head_commit.message }}
 
       - name: Test
-        run: npm test && echo ${{ github.event.head_commit.message }}
+        run: npm test
 
       - name: Test Docs Generation
         run: npm run docgen
