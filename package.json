@@ -36,7 +36,8 @@
         "lint": "eslint \"src/**\" \"test/**\"",
         "lint-fix": "eslint \"src/**\" \"test/**\" --fix",
         "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
-        "move-api": "copyfiles \"./rainlang.api.json\" \"./docs\" && rimraf ./rainlang.api.json"
+        "move-api": "copyfiles \"./rainlang.api.json\" \"./docs\" && rimraf ./rainlang.api.json",
+        "release": "release-it"
     },
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
@@ -51,11 +52,13 @@
         "@types/string-math": "^1.0.0",
         "@typescript-eslint/eslint-plugin": "^5.42.0",
         "@typescript-eslint/parser": "^5.42.0",
+        "auto-changelog": "^2.4.0",
         "chai": "^4.3.6",
         "chai-as-promised": "7.1.1",
         "copyfiles": "^2.4.1",
         "eslint": "^8.26.0",
         "mocha": "^10.1.0",
+        "release-it": "^15.10.1",
         "rimraf": "^4.4.1",
         "ts-loader": "^9.4.2",
         "ts-node": "^10.9.1",
