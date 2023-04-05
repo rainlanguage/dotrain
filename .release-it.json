@@ -2,5 +2,15 @@
     "git": {
         "requireBranch": "2023-04-04-use-npm",
         "commitMessage": "update v${version}"
+    },
+    "hooks": {
+        "before:init": ["git pull", "npm run lint"],
+        "after:bump": "npx auto-changelog -p --hide-credit --commit-limit false --sort-commits date-dec"
+    },
+    "github": {
+        "release": true
+    },
+    "npm": {
+        "publish": false
     }
 }
