@@ -21,6 +21,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: comment msg
+        run: echo '${{ github.event.head_commit.message }}'
+
       - name: Lint
         run: npm run lint
 
