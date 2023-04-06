@@ -2,12 +2,17 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.2.9](https://github.com/rainprotocol/rainlang/compare/v1.2.8...v1.2.9)
+
 #### [v1.2.8](https://github.com/rainprotocol/rainlang/compare/v1.2.7...v1.2.8)
+
+> 5 April 2023
 
 - add changelog [`cfaf625`](https://github.com/rainprotocol/rainlang/commit/cfaf625ac28e821161ba7a613f32663209cd69ee)
 - release it config [`8dc109c`](https://github.com/rainprotocol/rainlang/commit/8dc109cdb70085de1ef1bb1a76271dbee76dc1f5)
 - Added error checks [`aaa2232`](https://github.com/rainprotocol/rainlang/commit/aaa2232add9228850adeceb3c7ec83d414cfb568)
 - rld tests wip [`4f73186`](https://github.com/rainprotocol/rainlang/commit/4f731860a5994603d5095cb56ecfbff20243ce4f)
+- update v1.2.8 [`79c1f88`](https://github.com/rainprotocol/rainlang/commit/79c1f88c9b16c1181990837418296a58b27a3e7f)
 - Update standard-test.yaml [`208f73e`](https://github.com/rainprotocol/rainlang/commit/208f73e469d6727ec3d0740352b78826ac340013)
 - Update standard-test.yaml [`f7f93e8`](https://github.com/rainprotocol/rainlang/commit/f7f93e8edd5a0dd2e83343b572520625c677a51b)
 - ths is new commit [`0558438`](https://github.com/rainprotocol/rainlang/commit/05584381df77e8b38e77e3ab58112a00202850ab)
