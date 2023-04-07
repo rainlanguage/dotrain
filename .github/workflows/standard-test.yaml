@@ -29,11 +29,7 @@ jobs:
 
       - name: check env
         run: |
-          echo "$ABCD"
-          echo $ABCD
-          printf "$ABCD"
-          z="$ABCD"
-          printf "$z"
+          echo "${{ github.workspace }}"
 
       - name: Lint
         run: npm run lint
