@@ -22,7 +22,18 @@ jobs:
         run: npm run build
 
       - name: comment msg
-        run: echo '${{ github.event.head_commit.message }}'
+        run: |
+          echo '${{ github.event.head_commit.message }}'
+          x='hello\nworld'
+          echo "ABCD=$x" >> $GITHUB_ENV
+
+      - name: check env
+        run: |
+          echo "$ABCD"
+          echo $ABCD
+          printf "$ABCD"
+          z="$ABCD"
+          printf "$z"
 
       - name: Lint
         run: npm run lint
