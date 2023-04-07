@@ -17,15 +17,14 @@
     "module": "./dist/esm/index.js",
     "browser": "./dist/esm/index.js",
     "files": [
-        "dist",
-        "src",
-        "docs",
-        "cjs.js",
-        "esm.js",
-        "cjs.d.ts",
-        "esm.d.ts",
-        "README.md",
-        "package.json"
+        "/dist",
+        "/src",
+        "/docs",
+        "/cjs.js",
+        "/esm.js",
+        "/cjs.d.ts",
+        "/esm.d.ts",
+        "/CHANGELOG.md"
     ],
     "scripts": {
         "prepare": "npm run build",
@@ -36,7 +35,8 @@
         "lint": "eslint \"src/**\" \"test/**\"",
         "lint-fix": "eslint \"src/**\" \"test/**\" --fix",
         "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
-        "move-api": "copyfiles \"./rainlang.api.json\" \"./docs\" && rimraf ./rainlang.api.json"
+        "move-api": "copyfiles \"./rainlang.api.json\" \"./docs\" && rimraf ./rainlang.api.json",
+        "changelog": "auto-changelog --hide-credit --commit-limit false --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern \"^Update|^update|\\[no-cl\\]$|\\[no\\scl\\]$\" --breaking-pattern \"\\[major\\]$\""
     },
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
@@ -51,6 +51,7 @@
         "@types/string-math": "^1.0.0",
         "@typescript-eslint/eslint-plugin": "^5.42.0",
         "@typescript-eslint/parser": "^5.42.0",
+        "auto-changelog": "^2.4.0",
         "chai": "^4.3.6",
         "chai-as-promised": "7.1.1",
         "copyfiles": "^2.4.1",
