@@ -70,29 +70,36 @@ jobs:
       # Major Release
       - name: Bump Major Version
         id: major
+        # check for [major] in commit msg
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[major]')
+        # bum the version without creating tag and store the version in env
         run: echo "NEW_VERSION=$(npm version major --no-git-tag-version)" >> $GITHUB_ENV
 
       # Minor Release
       - name: Bump Minor Version
         id: minor
+        # check for [minor] in commit msg
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[minor]')
+        # bum the version without creating tag and store the version in env
         run: echo "NEW_VERSION=$(npm version minor --no-git-tag-version)" >> $GITHUB_ENV
 
       # Patch Release
       - name: Bump Patch Version
         id: patch
+        # check for lack of [major] and [minor] in commit msg
         if: steps.git.outcome == 'success' && ! endsWith(github.event.head_commit.message, '[major]') && ! endsWith(github.event.head_commit.message, '[minor]')
+        # bum the version without creating tag and store the version in env
         run: echo "NEW_VERSION=$(npm version patch --no-git-tag-version)" >> $GITHUB_ENV
 
       # Update Changelog
       - name: Update Changelog
         id: changelog
         if: steps.major.outcome == 'success' || steps.minor.outcome == 'success' || steps.patch.outcome == 'success'
+        # run the changelog script to update changelog and generate and write the release note to release-note.txt
         run: |
           npm run changelog
           body=$(npm run changelog --silent --  --stdout --starting-version ${{ env.NEW_VERSION }} --ending-version ${{ env.NEW_VERSION }})
-          header="### CHANGES\nNotable changes of this release:"
+          header="### CHANGES\n\nNotable changes of this release:"
           echo "$header${body:111}" >> ./release-note.txt
 
       # Commit changes and tag
@@ -103,7 +110,7 @@ jobs:
           git add "package.json"
           git add "package-lock.json"
           git add "CHANGELOG.md"
-          git commit -m "ci: release ${{ env.NEW_VERSION }}"
+          git commit -m "CI: Release ${{ env.NEW_VERSION }} [no cl]"
           git tag ${{ env.NEW_VERSION }}
 
       # Publish package to npm
