@@ -1,5 +1,5 @@
 import { GraphQLClient } from 'graphql-request';
-import { decodeRainMetaDocument, hexlify, MAGIC_NUMBERS } from "../utils";
+
 
 /**
  * @public Subgraph endpoints and their chain ids as key/value pairs
@@ -21,7 +21,7 @@ export const sgBook: { [chainId: number | string]: string } = {
  */
 export const getQuery = (address: string): string => {
     if (address.match(/^0x[a-fA-F0-9]{40}$/)) {
-        return `{ expressionDeployer(id: "${address.toLowerCase()}") { meta } }`;
+        return `{ expressionDeployer(id: "${address.toLowerCase()}") { opmeta } }`;
     } 
     else throw new Error("invalid address");
 };
@@ -74,12 +74,6 @@ export async function getOpMetaFromSg(
     if (_url instanceof Error) throw _url;
     const graphQLClient = new GraphQLClient(_url, {headers: {'Content-Type':'application/json'}});
     const _response = (await graphQLClient.request(_query)) as any;
-    if (_response?.expressionDeployer?.meta) {
-        const _bytes = decodeRainMetaDocument(_response.expressionDeployer.meta)?.find(
-            v => v.get(1) === MAGIC_NUMBERS.OPS_META_V1
-        )?.get(0);
-        if (_bytes) return hexlify(_bytes);
-        else throw new Error("cannot decode the opmeta");
-    }
+    if (_response?.expressionDeployer?.opmeta) return _response.expressionDeployer.opmeta;
     else throw new Error("could not fetch the data from subgraph");
 }
