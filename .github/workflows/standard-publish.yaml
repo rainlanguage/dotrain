@@ -120,7 +120,7 @@ jobs:
           git add "package-lock.json"
           git add "CHANGELOG.md"
           git add "rainlang-${{ env.NEW_VERSION }}.zip"
-          git add "rainlang-${{ env.NEW_VERSION }}.ta.gz"
+          git add "rainlang-${{ env.NEW_VERSION }}.tar.gz"
           git commit -m "CI: Release ${{ env.NEW_VERSION }}"
           git tag ${{ env.NEW_VERSION }}
 
