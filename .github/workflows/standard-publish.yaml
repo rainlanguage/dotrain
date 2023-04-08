@@ -1,9 +1,6 @@
 name: Standard Publish
 
-on:
-  push:
-    branches:
-      - master
+on: push
 
 # All steps on the job depend on their previous steps finishing successfully
 jobs:
