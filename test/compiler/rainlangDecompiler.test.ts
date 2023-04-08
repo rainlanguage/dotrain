@@ -45,7 +45,17 @@ describe("Rainlang Decompiler (rld) tests", async function () {
         const expressionConfig = await rlc(expression, opMeta);
         const decompiledText = (await rld(expressionConfig, opMeta, false)).getTextDocument()
             .getText();
-        const expectedText = `_ _ _: 0x0a 0x14 read-memory<1 1>();`;
+        const expectedText = rainlang`_ _ _: 0x0a 0x14 read-memory<1 0>();`;
+        assert(decompiledText === expectedText, `\nExpected: ${expectedText}\nActual: ${decompiledText}`);
+    });
+
+    it("should decompile an expression with existing stack items", async () => {
+
+        const expression = rainlang`a:, b: 20, c: add(a b);`;
+        const expressionConfig = await rlc(expression, opMeta);
+        const decompiledText = (await rld(expressionConfig, opMeta, false)).getTextDocument()
+            .getText();
+        const expectedText = rainlang`_ _: 0x14 add(read-memory<0 0>() read-memory<1 0>());`;
         assert(decompiledText === expectedText, `\nExpected: ${expectedText}\nActual: ${decompiledText}`);
     });
 

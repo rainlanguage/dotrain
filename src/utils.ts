@@ -420,14 +420,11 @@ export function extractByBits(
     computationVar?: string
 ): number {
     const _var = computationVar ? computationVar : "bits";
-    const _binary = Array.from(value.toString(2))
-        .reverse()
-        .join("")
-        .padEnd(16, "0");
-    const _extractedVal = Number("0b" + Array.from(_binary.slice(bits[0], bits[1]))
-        .reverse()
-        .join("")
-    );
+    const _binary = value.toString(2).padStart(16, "0");
+    const _extractedVal = Number("0b" + _binary.slice(
+        _binary.length - bits[1] - 1,
+        _binary.length - bits[0]
+    ));
     if (computation) {
         computation = computation.replace(new RegExp(_var, "g"), _extractedVal.toString());
         const _result = stringMath(computation, (_err, _res) => _res);
