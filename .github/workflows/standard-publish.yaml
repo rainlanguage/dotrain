@@ -121,7 +121,7 @@ jobs:
       # Push repository changes
       - name: Push Changes To Remote
         id: push
-        if: steps.publish.outcome == 'success'
+        if: steps.commit.outcome == 'success'
         run: git push origin
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
