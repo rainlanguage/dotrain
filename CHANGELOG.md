@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.2.5](https://github.com/rainprotocol/rainlang/compare/v1.2.4...v1.2.5)
+
+- fix ci workflow [`57826b0`](https://github.com/rainprotocol/rainlang/commit/57826b044a78c6a57947fc28e35ac4bdf43a3267)
+
 ### [v1.2.4](https://github.com/rainprotocol/rainlang/compare/v0.1.2...v1.2.4)
 
 > 8 April 2023
