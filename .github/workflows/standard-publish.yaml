@@ -1,6 +1,6 @@
 name: Standard Publish
 
-on: push
+on: [push]
 
 # All steps on the job depend on their previous steps finishing successfully
 jobs:
