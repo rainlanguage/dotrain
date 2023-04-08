@@ -106,7 +106,7 @@ jobs:
       # Create zip and tar built package
       - name: Create Built Package
         id: package
-        if: steps.push.outcome == 'success'
+        if: steps.changelog.outcome == 'success'
         run: | 
           zip -r rainlang-${{ env.NEW_VERSION }}.zip dist docs src cjs.js esm.js cjs.d.ts esm.d.ts README.md CHANGELOG.md package.json
           tar -czvf rainlang-${{ env.NEW_VERSION }}.tar.gz dist docs src cjs.js esm.js cjs.d.ts esm.d.ts README.md CHANGELOG.md package.json
