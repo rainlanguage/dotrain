@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
-#### [Unreleased](https://github.com/rainprotocol/rainlang/compare/v0.1.2...HEAD)
+#### [v1.2.6](https://github.com/rainprotocol/rainlang/compare/v0.1.2...v1.2.6)
 
 - merge master [`#31`](https://github.com/rainprotocol/rainlang/pull/31)
 - ci publish workflow [`#30`](https://github.com/rainprotocol/rainlang/pull/30)
@@ -29,6 +29,9 @@ All notable changes to this project will be documented in this file. Dates are d
 - Develop [`#4`](https://github.com/rainprotocol/rainlang/pull/4)
 - fix comments [`#3`](https://github.com/rainprotocol/rainlang/pull/3)
 - Develop [`#2`](https://github.com/rainprotocol/rainlang/pull/2)
+- Update standard-publish.yaml [`e6ca8b9`](https://github.com/rainprotocol/rainlang/commit/e6ca8b9eec5643ef17385d179eb02c7baa9b6ce3)
+- Update standard-publish.yaml [`e637907`](https://github.com/rainprotocol/rainlang/commit/e637907dcebdf7dd885b87d259a1d8ec68d6fa53)
+- Update CHANGELOG.md [`60c681c`](https://github.com/rainprotocol/rainlang/commit/60c681c910e75a5aa70b345b92d96aec3d67ad92)
 - Update standard-publish.yaml [`a81f3f2`](https://github.com/rainprotocol/rainlang/commit/a81f3f2e6f72d337c322364fa498b4e1f471cbb3)
 - Update standard-publish.yaml [`09860ed`](https://github.com/rainprotocol/rainlang/commit/09860ed79c5be131b95a039ea14f8bac1da599da)
 - add polygon subgraph url [`c1ccd54`](https://github.com/rainprotocol/rainlang/commit/c1ccd54db174125acbfba7dbe28c9d79ae6cc643)
