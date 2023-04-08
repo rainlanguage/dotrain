@@ -104,7 +104,7 @@ jobs:
         # run the auto-changelog to update changelog and generate and write the release note to release-note.txt
         run: |
           npx auto-changelog --hide-credit --commit-limit false --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]$|\[no\scl\]$|^CI:\sRelease\sv" --breaking-pattern "\[major\]$" -v ${{ env.NEW_VERSION }}
-          body=$(npx auto-changelog --hide-credit --commit-limit false --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]$|\[no\scl\]$|^CI:\sRelease\sv" --breaking-pattern "\[major\]$" --stdout --unreleased-only -v ${{ env.NEW_VERSION }}) 
+          body=$(npx --silent auto-changelog --hide-credit --commit-limit false --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]$|\[no\scl\]$|^CI:\sRelease\sv" --breaking-pattern "\[major\]$" --stdout --unreleased-only -v ${{ env.NEW_VERSION }}) 
           header="### Notable changes of this release:"
           echo "$header${body:111}" >> ./release-note.txt
 
