@@ -5,9 +5,9 @@ on:
     branches:
       - master
 
-# All steps on the job depend on their previous steps finishing successfully
 jobs:
 
+  # All steps of the job depend on their previous step to finish successfully
   publish:
     runs-on: ubuntu-latest
 
@@ -36,7 +36,10 @@ jobs:
       - name: Install Dependencies
         id: install
         if: steps.node.outcome == 'success'
-        run: npm install --ignore-scripts
+        # install auto-changelog globally to generate changelog
+        run: | 
+          npm install --global auto-changelog
+          npm install --ignore-scripts
 
       # Build the package
       - name: Build
@@ -98,10 +101,10 @@ jobs:
       - name: Update Changelog
         id: changelog
         if: steps.major.outcome == 'success' || steps.minor.outcome == 'success' || steps.patch.outcome == 'success'
-        # run the changelog script to update changelog and generate and write the release note to release-note.txt
+        # run the auto-changelog to update changelog and generate and write the release note to release-note.txt
         run: |
-          npm run changelog -- -v ${{ env.NEW_VERSION }}
-          body=$(npm run changelog --silent --  --stdout --unreleased-only -v ${{ env.NEW_VERSION }}) 
+          npx auto-changelog --hide-credit --commit-limit false --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]$|\[no\scl\]$|^CI:\sRelease\sv" --breaking-pattern "\[major\]$" -v ${{ env.NEW_VERSION }}
+          body=$(npx auto-changelog --hide-credit --commit-limit false --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]$|\[no\scl\]$|^CI:\sRelease\sv" --breaking-pattern "\[major\]$" --stdout --unreleased-only -v ${{ env.NEW_VERSION }}) 
           header="### Notable changes of this release:"
           echo "$header${body:111}" >> ./release-note.txt
 
