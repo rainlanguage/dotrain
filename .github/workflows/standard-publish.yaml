@@ -99,7 +99,8 @@ jobs:
         if: steps.major.outcome == 'success' || steps.minor.outcome == 'success' || steps.patch.outcome == 'success'
         # run the changelog script to update changelog and generate and write the release note to release-note.txt
         run: |
-          npx auto-changelog --hide-credit --commit-limit false --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]$|\[no\scl\]$" --breaking-pattern "\[major\]$" -v ${{ env.NEW_VERSION }} --stdout
+          npx auto-changelog --hide-credit --commit-limit false --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]$|\[no\scl\]$" --breaking-pattern "\[major\]$" -v ${{ env.NEW_VERSION }}
+          cat ${{ github.workspace }}/CHANGELOG.md
 
       # # Create zip and tar built package
       # - name: Create Built Package
