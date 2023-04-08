@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
-#### [v1.2.5](https://github.com/rainprotocol/rainlang/compare/v0.1.2...v1.2.5)
+#### [Unreleased](https://github.com/rainprotocol/rainlang/compare/v0.1.2...HEAD)
 
 - merge master [`#31`](https://github.com/rainprotocol/rainlang/pull/31)
 - ci publish workflow [`#30`](https://github.com/rainprotocol/rainlang/pull/30)
@@ -29,6 +29,8 @@ All notable changes to this project will be documented in this file. Dates are d
 - Develop [`#4`](https://github.com/rainprotocol/rainlang/pull/4)
 - fix comments [`#3`](https://github.com/rainprotocol/rainlang/pull/3)
 - Develop [`#2`](https://github.com/rainprotocol/rainlang/pull/2)
+- Update standard-publish.yaml [`a81f3f2`](https://github.com/rainprotocol/rainlang/commit/a81f3f2e6f72d337c322364fa498b4e1f471cbb3)
+- Update standard-publish.yaml [`09860ed`](https://github.com/rainprotocol/rainlang/commit/09860ed79c5be131b95a039ea14f8bac1da599da)
 - add polygon subgraph url [`c1ccd54`](https://github.com/rainprotocol/rainlang/commit/c1ccd54db174125acbfba7dbe28c9d79ae6cc643)
 - Update rainParser.ts [`d732259`](https://github.com/rainprotocol/rainlang/commit/d732259a3fe0bf721f13df30de57c45b4c71ba3b)
 - Opmeta error  tests [`9eaea96`](https://github.com/rainprotocol/rainlang/commit/9eaea961f42e62077252f779c22e184b76be1a73)
