@@ -97,8 +97,8 @@ jobs:
         if: steps.major.outcome == 'success' || steps.minor.outcome == 'success' || steps.patch.outcome == 'success'
         # run the changelog script to update changelog and generate and write the release note to release-note.txt
         run: |
-          npm run changelog
-          body=$(npm run changelog --silent --  --stdout --starting-version ${{ env.NEW_VERSION }} --ending-version ${{ env.NEW_VERSION }})
+          npm run changelog -- -v ${{ env.NEW_VERSION }}
+          body=$(npm run changelog --silent --  --stdout --unreleased-only -v ${{ env.NEW_VERSION }}) 
           header="### CHANGES\n\nNotable changes of this release:"
           echo "$header${body:111}" >> ./release-note.txt
 

@@ -36,7 +36,7 @@
         "lint-fix": "eslint \"src/**\" \"test/**\" --fix",
         "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
         "move-api": "copyfiles \"./rainlang.api.json\" \"./docs\" && rimraf ./rainlang.api.json",
-        "changelog": "auto-changelog --hide-credit --commit-limit 0 --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern \"\\[no-cl\\]$|\\[no\\scl\\]$\" --breaking-pattern \"\\[major\\]$\""
+        "changelog": "auto-changelog --hide-credit --commit-limit false --sort-commits date-desc --unreleased true --hide-empty-releases --ignore-commit-pattern \"\\[no-cl\\]$|\\[no\\scl\\]$\" --breaking-pattern \"\\[major\\]$\""
     },
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
