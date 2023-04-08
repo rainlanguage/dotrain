@@ -1,6 +1,6 @@
 {
     "name": "@rainprotocol/rainlang",
-    "description": "Rainlang standalone server, that encapsulates Rain Language Serivces (in LSP spec) and compiler for NodeJs and Browser environments",
+    "description": "Rainlang standalone, that encapsulates Rain Language Serivces (in LSP spec) and compiler for NodeJs and Browser environments",
     "version": "1.2.6",
     "author": "Rain Protocol",
     "license": "CAL-1.0",
@@ -12,7 +12,7 @@
     "bugs": {
         "url": "https://github.com/rainprotocol/rainlang/issues"
     },
-    "homepage": "http://rainprotocol.github.io/rainlang#readme",
+    "homepage": "https://github.com/rainprotocol/rainlang#readme",
     "main": "./dist/cjs/index.js",
     "module": "./dist/esm/index.js",
     "browser": "./dist/esm/index.js",
