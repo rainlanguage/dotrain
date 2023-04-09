@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     # do not start if [skip-publish] and [skip publish] is found in commit msg
-    # any keyword instead of the above can be specified for skiping this job if your commit msg includes it
+    # configuration: 
+    # - you can change the keywords to your desired ones in the below "if" statement
     if: contains(github.event.head_commit.message, '[skip-publish]') != true && contains(github.event.head_commit.message, '[skip publish]') != true
 
     # All steps of the job depend on their previous step to finish successfully
@@ -80,7 +81,9 @@ jobs:
       - name: Bump Major Version
         id: major
         # bump major version only if the commit msg ends with [major] keyword
-        # set any other keyword instead of [major] for bumping major version if the commit msg includes that
+        # [major] keyword must be at the end of commit msg
+        # configuration: 
+        # - you can change the keyword to your desired one in the below "if" statement
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[major]')
         # bump the major version without creating tag and commit and store the version in env
         run: echo "NEW_VERSION=$(npm version major --no-git-tag-version)" >> $GITHUB_ENV
@@ -89,7 +92,9 @@ jobs:
       - name: Bump Minor Version
         id: minor
         # bump minor version only if the commit msg ends with [minor] keyword
-        # set any other keyword instead of [minor] for bumping minor version if the commit msg includes that
+        # [minor] keyword must be at the end of commit msg
+        # configuration: 
+        # - you can change the keyword to your desired one in the below "if" statement
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[minor]')
         # bump the minor version without creating tag and commit and store the version in env
         run: echo "NEW_VERSION=$(npm version minor --no-git-tag-version)" >> $GITHUB_ENV
@@ -99,7 +104,8 @@ jobs:
         id: patch
         # bump patch version only if [major] and [minor] are not present in commit msg
         # will increase patch version for any other commits that don't have major and minor keywords
-        # alternatively set a keyword for bumping patch version with specific keyword
+        # configuration: 
+        # - alternatively you can set a keyword for bumping patch version with specific keyword
         if: steps.git.outcome == 'success' && ! endsWith(github.event.head_commit.message, '[major]') && ! endsWith(github.event.head_commit.message, '[minor]')
         # bump the patch version without creating tag and commit and store the version in env
         run: echo "NEW_VERSION=$(npm version patch --no-git-tag-version)" >> $GITHUB_ENV
@@ -108,15 +114,20 @@ jobs:
       - name: Update Changelog
         id: changelog
         if: steps.major.outcome == 'success' || steps.minor.outcome == 'success' || steps.patch.outcome == 'success'
-        # run the auto-changelog to update changelog and generate and write the release note to release-note.txt
-        # set "--ignore-commit-pattern" with any regexp to not include those commits in changelog, [no cl], [no-cl] and Release v* are used here
-        # set "--breaking-pattern" with any regex for marking that commit as "Breaking Change", here [major] keyword is used
-        # see https://www.npmjs.com/package/auto-changelog for more details about options
-        # be aware that these flag are set explicitly to generate changelog in a certain way that then will be sliced to 
+        # run the auto-changelog to update CHANGELOG.md and then generate and write the release note to release-note.txt
+        # all PRs and only top 5 commits with most changes will be included in the CHANGELOG
+        # commits that include [no cl] or [no-cl] in their commit msg will be explicitly
+        # all the commits that end with [major] in their commit msg will be included in the CHANGELOG as "Breaking Change", even if excluded by [no cli]
+        # configuration:
+        # - you can set "--ignore-commit-pattern" with any regexp to not include those commits in CHANGELOG.md that match it, "[no cl]", "[no-cl]" and "Release v*" are used here
+        # - you can set "--breaking-pattern" with any regex for marking the commits that match it as "Breaking Change" in the CHANELOG.md, here "[major]" keyword is used
+        # - see https://www.npmjs.com/package/auto-changelog for more details about options
+        # - be aware that these flags are set explicitly to generate changelog in a certain way that then will be sliced to 
         # make release-note.txt for github release, so any change to the options used will possibly corrupt the CHANGELOG.md and release-note.txt
+        # therefore make sure the content of CHANGELOG and release-note.txt are generated correctly after modifying this step commands
         run: |
-          npx auto-changelog --hide-credit --commit-limit 5 --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]$|\[no\scl\]$|^Release\sv" --breaking-pattern "\[major\]$" -v ${{ env.NEW_VERSION }}
-          body=$(npx --silent auto-changelog --hide-credit --commit-limit 5 --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]$|\[no\scl\]$|^Release\sv" --breaking-pattern "\[major\]$" --stdout --unreleased-only -v ${{ env.NEW_VERSION }}) 
+          npx auto-changelog --hide-credit --commit-limit 5 --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]|\[no\scl\]|^Release\sv" --breaking-pattern "\[major\]$" -v ${{ env.NEW_VERSION }}
+          body=$(npx --silent auto-changelog --hide-credit --commit-limit 5 --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]|\[no\scl\]|^Release\sv" --breaking-pattern "\[major\]$" --stdout --unreleased-only -v ${{ env.NEW_VERSION }}) 
           header="### Notable changes of this release:"
           echo "$header${body:111}" >> ./release-note.txt
 
@@ -152,17 +163,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Create zip and tar built archive pacjage
-      # this step is optional if the release needs to have a built package as well
-      - name: Create Built Package
+      # Create zip and tar built package archives
+      # this step is optional if the github release needs to have a built package archives as well
+      - name: Create Built Package Archives
         id: archive
         if: steps.push.outcome == 'success'
-        # specify the anme of the archive as well as the folders and files to archive
+        # specify the name of the archive as well as the folders and files to archive
         run: | 
           zip -r rainlang-${{ env.NEW_VERSION }}.zip dist docs src cjs.js esm.js cjs.d.ts esm.d.ts README.md CHANGELOG.md package.json
           tar -czvf rainlang-${{ env.NEW_VERSION }}.tar.gz dist docs src cjs.js esm.js cjs.d.ts esm.d.ts README.md CHANGELOG.md package.json
 
-      # Create gitHub release with built packages
+      # Create gitHub release with built package archives
       - name: Create GitHub Release
         if: steps.archive.outcome == 'success'
         uses: softprops/action-gh-release@v1
@@ -173,6 +184,8 @@ jobs:
           body_path: ${{ github.workspace }}/release-note.txt
           # specify the additional files that the release will be having
           # besides the normal release output which is "Source Code", it will also include the acrhives files as well
+          # configuration: 
+          # - remove this section if the previous step is excluded
           files: |
             rainlang-${{ env.NEW_VERSION }}.zip
             rainlang-${{ env.NEW_VERSION }}.tar.gz
