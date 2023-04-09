@@ -40,7 +40,6 @@
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
         "@princjef/api-documenter": "^1.0.2",
-        "@types/algebra.js": "^0.2.2",
         "@types/chai": "^4.3.3",
         "@types/chai-as-promised": "^7.1.5",
         "@types/mocha": "^10.0.0",
@@ -62,8 +61,8 @@
         "typescript": "^4.8.4"
     },
     "dependencies": {
+        "@nohns/algebra.js": "^0.2.9",
         "ajv": "^8.12.0",
-        "algebra.js": "rouzwelt/algebra.js",
         "buffer": "^6.0.3",
         "cbor-web": "https://gitpkg.now.sh/hildjj/node-cbor/packages/cbor-web?e593ce09b34cc1420f402b27ab0dd38a1306cecd",
         "ethers": "^5.7.2",
