@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file. Dates are displayed in UTC.
 
+#### [v1.2.8](https://github.com/rainprotocol/rainlang/compare/v1.2.7...v1.2.8)
+
+- update algebra.js dependency [`fc49c99`](https://github.com/rainprotocol/rainlang/commit/fc49c9933814d5d1c843d4b2e64444a60d230b60)
+
 #### [v1.2.7](https://github.com/rainprotocol/rainlang/compare/v1.2.6...v1.2.7)
+
+> 8 April 2023
 
 - update documentations [`#33`](https://github.com/rainprotocol/rainlang/pull/33)
 
