@@ -21,9 +21,6 @@ jobs:
       - name: Checkout Repo
         id: checkout
         uses: actions/checkout@v3
-        # fetch all history for changelog to be generated correctly
-        with:
-          fetch-depth: 0
 
       # Install node
       - name: Install NodeJS v16
@@ -38,10 +35,7 @@ jobs:
       - name: Install Dependencies
         id: install
         if: steps.node.outcome == 'success'
-        # install auto-changelog library globally for generating changelog
-        run: | 
-          npm install --global auto-changelog
-          npm install --ignore-scripts
+        run: npm install --ignore-scripts
 
       # Build the package
       - name: Build
@@ -85,8 +79,8 @@ jobs:
         # configuration: 
         # - you can change the keyword to your desired one in the below "if" statement
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[major]')
-        # bump the major version without creating tag and commit and store the version in env
-        run: echo "NEW_VERSION=$(npm version major --no-git-tag-version)" >> $GITHUB_ENV
+        # bump the major version with creating tag and commit and store the version in env
+        run: echo "NEW_VERSION=$(npm version major -m "Release %s")" >> $GITHUB_ENV
 
       # Minor Release
       - name: Bump Minor Version
@@ -96,8 +90,8 @@ jobs:
         # configuration: 
         # - you can change the keyword to your desired one in the below "if" statement
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[minor]')
-        # bump the minor version without creating tag and commit and store the version in env
-        run: echo "NEW_VERSION=$(npm version minor --no-git-tag-version)" >> $GITHUB_ENV
+        # bump the minor version with creating tag and commit and store the version in env
+        run: echo "NEW_VERSION=$(npm version minor -m "Release %s")" >> $GITHUB_ENV
 
       # Patch Release
       - name: Bump Patch Version
@@ -107,56 +101,13 @@ jobs:
         # configuration: 
         # - alternatively you can set a keyword for bumping patch version with specific keyword
         if: steps.git.outcome == 'success' && ! endsWith(github.event.head_commit.message, '[major]') && ! endsWith(github.event.head_commit.message, '[minor]')
-        # bump the patch version without creating tag and commit and store the version in env
-        run: echo "NEW_VERSION=$(npm version patch --no-git-tag-version)" >> $GITHUB_ENV
-
-      # Update Changelog
-      - name: Update Changelog
-        id: changelog
-        if: steps.major.outcome == 'success' || steps.minor.outcome == 'success' || steps.patch.outcome == 'success'
-        # run the auto-changelog to update CHANGELOG.md and then generate and write the release note to release-note.txt
-        # all PRs and only top 5 commits with most changes will be included in the CHANGELOG
-        # commits that include [no cl] or [no-cl] in their commit msg will be explicitly
-        # all the commits that end with [major] in their commit msg will be included in the CHANGELOG as "Breaking Change", even if excluded by [no cli]
-        # configuration:
-        # - you can set "--ignore-commit-pattern" with any regexp to not include those commits in CHANGELOG.md that match it, "[no cl]", "[no-cl]" and "Release v*" are used here
-        # - you can set "--breaking-pattern" with any regex for marking the commits that match it as "Breaking Change" in the CHANELOG.md, here "[major]" keyword is used
-        # - see https://www.npmjs.com/package/auto-changelog for more details about options
-        # - be aware that these flags are set explicitly to generate changelog in a certain way that then will be sliced to 
-        # make release-note.txt for github release, so any change to the options used will possibly corrupt the CHANGELOG.md and release-note.txt
-        # therefore make sure the content of CHANGELOG and release-note.txt are generated correctly after modifying this step commands
-        run: |
-          npx auto-changelog --hide-credit --commit-limit 5 --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]|\[no\scl\]|^Release\sv" --breaking-pattern "\[major\]$" -v ${{ env.NEW_VERSION }}
-          body=$(npx --silent auto-changelog --hide-credit --commit-limit 5 --unreleased true --hide-empty-releases --ignore-commit-pattern "\[no-cl\]|\[no\scl\]|^Release\sv" --breaking-pattern "\[major\]$" --stdout --unreleased-only -v ${{ env.NEW_VERSION }}) 
-          header="### Notable changes of this release:"
-          echo "$header${body:111}" >> ./release-note.txt
-
-      # Commit changes and tag
-      - name: Commit And Tag
-        id: commit
-        if: steps.changelog.outcome == 'success'
-        # do not include release-note.txt in the commit as it is generated for github release consumption only
-        run: |
-          git add "package.json"
-          git add "package-lock.json"
-          git add "CHANGELOG.md"
-          git commit -m "Release ${{ env.NEW_VERSION }}"
-          git tag ${{ env.NEW_VERSION }}
-
-      # Publish package to npm
-      # files and folders that go in the npm package should be specified in package.json "files" field
-      - name: Publish To NPM
-        id: publish
-        if: steps.commit.outcome == 'success'
-        uses: JS-DevTools/npm-publish@v1
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-          access: public
+        # bump the patch version with creating tag and commit and store the version in env
+        run: echo "NEW_VERSION=$(npm version patch -m "Release %s")" >> $GITHUB_ENV
 
       # Push changes and tag
       - name: Push Changes To Remote
         id: push
-        if: steps.publish.outcome == 'success'
+        if: steps.major.outcome == 'success' || steps.minor.outcome == 'success' || steps.patch.outcome == 'success'
         run: | 
           git push origin 
           git push -u origin ${{ env.NEW_VERSION }}
@@ -175,13 +126,12 @@ jobs:
 
       # Create gitHub release with built package archives
       - name: Create GitHub Release
+        id: release
         if: steps.archive.outcome == 'success'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.NEW_VERSION }}
           name: Release ${{ env.NEW_VERSION }}
-          # path to release-note.txt to be used as release note
-          body_path: ${{ github.workspace }}/release-note.txt
           # specify the additional files that the release will be having
           # besides the normal release output which is "Source Code", it will also include the acrhives files as well
           # configuration: 
@@ -191,3 +141,13 @@ jobs:
             rainlang-${{ env.NEW_VERSION }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Publish package to npm
+      # files and folders that go in the npm package should be specified in package.json "files" field
+      - name: Publish To NPM
+        id: publish
+        if: steps.release.outcome == 'success'
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          access: public
