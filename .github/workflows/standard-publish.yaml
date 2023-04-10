@@ -80,7 +80,7 @@ jobs:
         # - you can change the keyword to your desired one in the below "if" statement
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[major]')
         # bump the major version with creating tag and commit and store the version in env
-        run: echo "NEW_VERSION=$(npm version major -m "Release %s")" >> $GITHUB_ENV
+        run: echo "NEW_VERSION=$(npm version major -m "Release v%s")" >> $GITHUB_ENV
 
       # Minor Release
       - name: Bump Minor Version
@@ -91,7 +91,7 @@ jobs:
         # - you can change the keyword to your desired one in the below "if" statement
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[minor]')
         # bump the minor version with creating tag and commit and store the version in env
-        run: echo "NEW_VERSION=$(npm version minor -m "Release %s")" >> $GITHUB_ENV
+        run: echo "NEW_VERSION=$(npm version minor -m "Release v%s")" >> $GITHUB_ENV
 
       # Patch Release
       - name: Bump Patch Version
@@ -102,7 +102,7 @@ jobs:
         # - alternatively you can set a keyword for bumping patch version with specific keyword
         if: steps.git.outcome == 'success' && ! endsWith(github.event.head_commit.message, '[major]') && ! endsWith(github.event.head_commit.message, '[minor]')
         # bump the patch version with creating tag and commit and store the version in env
-        run: echo "NEW_VERSION=$(npm version patch -m "Release %s")" >> $GITHUB_ENV
+        run: echo "NEW_VERSION=$(npm version patch -m "Release v%s")" >> $GITHUB_ENV
 
       # Push changes and tag
       - name: Push Changes To Remote
