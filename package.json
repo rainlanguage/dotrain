@@ -23,8 +23,7 @@
         "/cjs.js",
         "/esm.js",
         "/cjs.d.ts",
-        "/esm.d.ts",
-        "/CHANGELOG.md"
+        "/esm.d.ts"
     ],
     "scripts": {
         "prepare": "npm run build",
