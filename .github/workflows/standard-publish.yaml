@@ -121,8 +121,8 @@ jobs:
         if: steps.push.outcome == 'success'
         # specify the name of the archive as well as the folders and files to archive
         run: | 
-          zip -r rainlang-${{ env.NEW_VERSION }}.zip dist docs src cjs.js esm.js cjs.d.ts esm.d.ts README.md CHANGELOG.md package.json
-          tar -czvf rainlang-${{ env.NEW_VERSION }}.tar.gz dist docs src cjs.js esm.js cjs.d.ts esm.d.ts README.md CHANGELOG.md package.json
+          zip -r rainlang-${{ env.NEW_VERSION }}.zip dist docs src cjs.js esm.js cjs.d.ts esm.d.ts README.md package.json
+          tar -czvf rainlang-${{ env.NEW_VERSION }}.tar.gz dist docs src cjs.js esm.js cjs.d.ts esm.d.ts README.md package.json
 
       # Create gitHub release with built package archives
       - name: Create GitHub Release
