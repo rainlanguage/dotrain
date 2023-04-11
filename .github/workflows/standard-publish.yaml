@@ -79,8 +79,8 @@ jobs:
         # configuration: 
         # - you can change the keyword to your desired one in the below "if" statement
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[major]')
-        # bump the major version with creating tag and commit and store the version in env
-        run: echo "NEW_VERSION=$(npm version major -m "Release v%s")" >> $GITHUB_ENV
+        # bump the major version without creating tag and commit and store the version in env
+        run: echo "NEW_VERSION=$(npm version major --no-git-tag-version)" >> $GITHUB_ENV
 
       # Minor Release
       - name: Bump Minor Version
@@ -90,8 +90,8 @@ jobs:
         # configuration: 
         # - you can change the keyword to your desired one in the below "if" statement
         if: steps.git.outcome == 'success' && endsWith(github.event.head_commit.message, '[minor]')
-        # bump the minor version with creating tag and commit and store the version in env
-        run: echo "NEW_VERSION=$(npm version minor -m "Release v%s")" >> $GITHUB_ENV
+        # bump the minor version without creating tag and commit and store the version in env
+        run: echo "NEW_VERSION=$(npm version minor --no-git-tag-version)" >> $GITHUB_ENV
 
       # Patch Release
       - name: Bump Patch Version
@@ -101,13 +101,23 @@ jobs:
         # configuration: 
         # - alternatively you can set a keyword for bumping patch version with specific keyword
         if: steps.git.outcome == 'success' && ! endsWith(github.event.head_commit.message, '[major]') && ! endsWith(github.event.head_commit.message, '[minor]')
-        # bump the patch version with creating tag and commit and store the version in env
-        run: echo "NEW_VERSION=$(npm version patch -m "Release v%s")" >> $GITHUB_ENV
+        # bump the patch version without creating tag and commit and store the version in env
+        run: echo "NEW_VERSION=$(npm version patch --no-git-tag-version)" >> $GITHUB_ENV
+
+      # Commit changes and tag
+      - name: Commit And Tag
+        id: commit
+        if: steps.major.outcome == 'success' || steps.minor.outcome == 'success' || steps.patch.outcome == 'success'
+        run: |
+          git add "package.json"
+          git add "package-lock.json"
+          git commit -m "Release ${{ env.NEW_VERSION }}"
+          git tag ${{ env.NEW_VERSION }}
 
       # Push changes and tag
       - name: Push Changes To Remote
         id: push
-        if: steps.major.outcome == 'success' || steps.minor.outcome == 'success' || steps.patch.outcome == 'success'
+        if: steps.commit.outcome == 'success'
         run: | 
           git push origin 
           git push -u origin ${{ env.NEW_VERSION }}
