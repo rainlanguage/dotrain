@@ -9,6 +9,8 @@ async function testDiagnostics(
 ) {
     const langServices = getLanguageService();
     const actualDiagnostics: Diagnostic[] = await langServices.doValidation(TextDocument.create("file", "rainlang", 1, text), opmeta);
+    if (actualDiagnostics.length == 0)
+        throw new Error(`No Diagnostics available for the expresion : \n${text}`);
     expectedDiagnostics.forEach((expectedDiagnostic, i) => {
         const actualDiagnostic = actualDiagnostics[i];
         assert.equal(actualDiagnostic.message, expectedDiagnostic.message);
@@ -152,6 +154,35 @@ describe("Rainlang Diagnostics Service tests", async function () {
             { message: 'expected ">"', range: toRange(0, 14, 0, 20), severity: DiagnosticSeverity.Error, code: ErrorCode.ExpectedClosingOperandArgBracket, source: 'rain' },
             { message: 'expected "("', range: toRange(0, 3, 0, 14), severity: DiagnosticSeverity.Error, code: ErrorCode.ExpectedOpeningParen, source: 'rain' },
         ]);
+
+        await testDiagnostics(rainlang`invalid_alias: add(1 20);`, opMeta, [
+            { message: 'invalid pattern for alias: invalid_alias', range: toRange(0, 0, 0, 13), severity: DiagnosticSeverity.Error, code: ErrorCode.InvalidWordPattern, source: 'rain' },
+        ]);
     });
 
+    it("multiple diagnostics", async () => {
+        const expression = rainlang`
+            allowed-counterparty: 23,
+            : ensure(eq(allowed-counterparty context<1 2>())),
+            
+            batch-start-info-k: context<1 65535>(),
+            batch-start-info: get(batch-start-info-k),
+            batch-start-time: decode-256<32 63>(batch-start-info),
+            _: ensure(gt(now() add(batch-start-time 86400))),
+            
+            batch-index batch-remaining: call<2 2>(0),
+            
+            io-multiplier: prb-powu(102e106 batch-index),
+            amount: max(batch-remaining 0),
+            
+            io-ratio: prb-mul(io_multiplier 3);`;
+
+        await testDiagnostics(expression, opMeta, [
+            { range: toRange(4, 42, 4, 47), message: 'out-of-range operand argument', severity: 1, code: ErrorCode.OutOfRangeOperandArgs, source: 'rain' },
+            { range: toRange(7, 12, 7, 13), message: 'no RHS item exists to match this LHS item: _', severity: 1, code: ErrorCode.MismatchRHS, source: 'rain' },
+            { range: toRange(11, 36, 11, 43), message: 'value greater than 32 bytes in size', severity: 1, code: ErrorCode.OutOfRangeValue, source: 'rain' },
+            { range: toRange(14, 30, 14, 43), message: '"io_multiplier" is not a valid rainlang word', severity: 1, code: ErrorCode.InvalidWordPattern, source: 'rain' },
+            { range: toRange(14, 29, 14, 46), message: 'out-of-range inputs', severity: 1, code: ErrorCode.OutOfRangeInputs, source: 'rain' },
+        ]);
+    });
 });
