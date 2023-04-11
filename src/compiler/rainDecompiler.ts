@@ -1,8 +1,8 @@
 import { OpMetaSchema } from "..";
 import { RainDocument } from '../parser/rainParser';
 import { TextDocument } from '../rainLanguageTypes';
-import { Equation, Expression, parse } from 'algebra.js';
 import { ExpressionConfig } from './expressionConfigTypes';
+import { Equation, Expression, parse } from '@nohns/algebra.js';
 import { OpMeta, InputMeta, OutputMeta, OperandArgs } from '../parser/opMetaTypes';
 import { 
     arrayify, 

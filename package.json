@@ -1,7 +1,7 @@
 {
     "name": "@rainprotocol/rainlang",
-    "description": "Rainlang standalone server, that encapsulates Rain Language Serivces (in LSP spec) and compiler for NodeJs and Browser environments",
-    "version": "1.2.3",
+    "description": "Rainlang standalone, that encapsulates Rain Language Serivces (in LSP spec) and compiler for NodeJs and Browser environments",
+    "version": "1.2.11",
     "author": "Rain Protocol",
     "license": "CAL-1.0",
     "repository": {
@@ -12,20 +12,18 @@
     "bugs": {
         "url": "https://github.com/rainprotocol/rainlang/issues"
     },
-    "homepage": "http://rainprotocol.github.io/rainlang/",
+    "homepage": "https://github.com/rainprotocol/rainlang#readme",
     "main": "./dist/cjs/index.js",
     "module": "./dist/esm/index.js",
     "browser": "./dist/esm/index.js",
     "files": [
-        "dist",
-        "src",
-        "docs",
-        "cjs.js",
-        "esm.js",
-        "cjs.d.ts",
-        "esm.d.ts",
-        "README.md",
-        "package.json"
+        "/dist",
+        "/src",
+        "/docs",
+        "/cjs.js",
+        "/esm.js",
+        "/cjs.d.ts",
+        "/esm.d.ts"
     ],
     "scripts": {
         "prepare": "npm run build",
@@ -41,7 +39,6 @@
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
         "@princjef/api-documenter": "^1.0.2",
-        "@types/algebra.js": "^0.2.2",
         "@types/chai": "^4.3.3",
         "@types/chai-as-promised": "^7.1.5",
         "@types/mocha": "^10.0.0",
@@ -63,10 +60,10 @@
         "typescript": "^4.8.4"
     },
     "dependencies": {
+        "@nohns/algebra.js": "^0.2.9",
         "ajv": "^8.12.0",
-        "algebra.js": "rouzwelt/algebra.js",
         "buffer": "^6.0.3",
-        "cbor-web": "https://gitpkg.now.sh/rouzwelt/node-cbor/packages/cbor-web?4f8d212f058a84ca40993e7db523b80ed6cefc19",
+        "cbor-web": "https://gitpkg.now.sh/hildjj/node-cbor/packages/cbor-web?e593ce09b34cc1420f402b27ab0dd38a1306cecd",
         "ethers": "^5.7.2",
         "graphql": "^16.6.0",
         "graphql-request": "^5.2.0",

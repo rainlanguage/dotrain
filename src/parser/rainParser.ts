@@ -82,11 +82,16 @@ export class RainDocument {
         newOpMeta?: BytesLike
     ) {
         if (newOpMeta && newTextDocument) {
-            this._rp.updateText(newTextDocument, false);
-            this._rp.updateOpMeta(newOpMeta);
+            if (newOpMeta !== this.getRawOpMeta()) {
+                this._rp.updateText(newTextDocument, false);
+                this._rp.updateOpMeta(newOpMeta);
+            }
+            else this._rp.updateText(newTextDocument);
         }
         else if (newOpMeta && !newTextDocument) {
-            this._rp.updateOpMeta(newOpMeta);
+            if (newOpMeta !== this.getRawOpMeta()) {
+                this._rp.updateOpMeta(newOpMeta);
+            }
         }
         else if (!newOpMeta && newTextDocument) {
             this._rp.updateText(newTextDocument);
