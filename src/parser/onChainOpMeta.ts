@@ -1,4 +1,4 @@
-import { GraphQLClient } from 'graphql-request';
+import { GraphQLClient } from "graphql-request";
 
 
 /**
@@ -72,7 +72,7 @@ export async function getOpMetaFromSg(
                 ? source
                 : new Error("no subgraph found");
     if (_url instanceof Error) throw _url;
-    const graphQLClient = new GraphQLClient(_url, {headers: {'Content-Type':'application/json'}});
+    const graphQLClient = new GraphQLClient(_url, {headers: {"Content-Type":"application/json"}});
     const _response = (await graphQLClient.request(_query)) as any;
     if (_response?.expressionDeployer?.opmeta) return _response.expressionDeployer.opmeta;
     else throw new Error("could not fetch the data from subgraph");

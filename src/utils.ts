@@ -6,7 +6,7 @@ import { decodeAllSync } from "cbor-web";
 import { format } from "prettier/standalone";
 import babelParser from "prettier/parser-babel";
 import { ExpressionConfig } from "./compiler/expressionConfigTypes";
-import { BigNumber, BigNumberish, utils, ethers, BytesLike } from 'ethers';
+import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
 
 /**
  * @public ethers constants
@@ -124,8 +124,8 @@ export const paddedUInt256 = (report: BigNumberish): string => {
         throw new Error(`${report} exceeds max uint256`);
     }
     return (
-        '0x' +
-        BigNumber.from(report).toHexString().substring(2).padStart(64, '0')
+        "0x" +
+        BigNumber.from(report).toHexString().substring(2).padStart(64, "0")
     );
 };
 
@@ -136,10 +136,10 @@ export const paddedUInt256 = (report: BigNumberish): string => {
  * @returns a 8 char hexString (without 0x prefix)
  */
 export const paddedUInt32 = (value: BigNumberish): string => {
-    if (BigNumber.from(value).gt('0xffffffff')) {
+    if (BigNumber.from(value).gt("0xffffffff")) {
         throw new Error(`${value} exceeds max uint32`);
     }
-    return BigNumber.from(value).toHexString().substring(2).padStart(8, '0');
+    return BigNumber.from(value).toHexString().substring(2).padStart(8, "0");
 };
 
 /**
@@ -149,10 +149,10 @@ export const paddedUInt32 = (value: BigNumberish): string => {
  * @returns a 16 character hexString (without 0x prefix)
  */
 export const paddedUInt64 = (value: BigNumberish): string => {
-    if (BigNumber.from(value).gt('0xffffffffffffffff')) {
+    if (BigNumber.from(value).gt("0xffffffffffffffff")) {
         throw new Error(`${value} exceeds max uint64`);
     }
-    return BigNumber.from(value).toHexString().substring(2).padStart(16, '0');
+    return BigNumber.from(value).toHexString().substring(2).padStart(16, "0");
 };
 
 /**
@@ -162,10 +162,10 @@ export const paddedUInt64 = (value: BigNumberish): string => {
  * @returns a 32 character hexString (without 0x prefix)
  */
 export const paddedUInt128 = (value: BigNumberish): string => {
-    if (BigNumber.from(value).gt('0xffffffffffffffffffffffffffffffff')) {
+    if (BigNumber.from(value).gt("0xffffffffffffffffffffffffffffffff")) {
         throw new Error(`${value} exceeds max uint128`);
     }
-    return BigNumber.from(value).toHexString().substring(2).padStart(32, '0');
+    return BigNumber.from(value).toHexString().substring(2).padStart(32, "0");
 };
 
 /**
@@ -177,13 +177,13 @@ export const paddedUInt128 = (value: BigNumberish): string => {
  */
 export const paddedUInt160 = (address: BigNumberish): string => {
     if (
-        BigNumber.from(address).gt('0xffffffffffffffffffffffffffffffffffffffff')
+        BigNumber.from(address).gt("0xffffffffffffffffffffffffffffffffffffffff")
     ) {
         throw new Error(`${address} exceeds max uint160`);
     }
     return (
-        '0x' +
-        BigNumber.from(address).toHexString().substring(2).padStart(40, '0')
+        "0x" +
+        BigNumber.from(address).toHexString().substring(2).padStart(40, "0")
     );
 };
 
@@ -198,10 +198,10 @@ export function isBigNumberish(value: any): boolean {
     return (
         value != null &&
         (BigNumber.isBigNumber(value) ||
-        (typeof value === 'number' && value % 1 === 0) ||
-        (typeof value === 'string' && !!value.match(/^-?[0-9]+$/)) ||
+        (typeof value === "number" && value % 1 === 0) ||
+        (typeof value === "string" && !!value.match(/^-?[0-9]+$/)) ||
         isHexString(value) ||
-        typeof value === 'bigint' ||
+        typeof value === "bigint" ||
         isBytes(value))
     );
 }
@@ -248,7 +248,7 @@ export function extractFromRecord<T extends string | number | symbol>(
     record: Record<T, any>,
     properties: string | string[]
 ): Record<T, any> {
-    if (typeof properties === 'string') {
+    if (typeof properties === "string") {
         for (const key in record) {
             for (const value in record[key]) {
                 if (properties.includes(value)) {
@@ -362,7 +362,7 @@ export const areEqualStateConfigs = (
  * @returns frozen object
  */
 export function deepFreeze(object: any) {
-    if (typeof object === 'object') {
+    if (typeof object === "object") {
         // Retrieve the property names defined on object
         const propNames = Object.getOwnPropertyNames(object);
     

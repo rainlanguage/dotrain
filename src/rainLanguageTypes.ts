@@ -1,4 +1,4 @@
-import { TextDocument, TextDocumentContentChangeEvent } from 'vscode-languageserver-textdocument';
+import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
 import {
     Range, Position, DocumentUri, MarkupContent, MarkupKind,
     Color, ColorInformation, ColorPresentation,
@@ -12,7 +12,7 @@ import {
     DocumentHighlight, DocumentLink, WorkspaceEdit,
     TextEdit, CodeActionKind,
     TextDocumentEdit, VersionedTextDocumentIdentifier, DocumentHighlightKind
-} from 'vscode-languageserver-types';
+} from "vscode-languageserver-types";
 
 export {
     TextDocument,

@@ -2,6 +2,15 @@ import { BigNumberish } from "../utils";
 
 
 /**
+ * @public
+ * Type for read-memory opcode
+ */
+export enum MemoryType {
+    Stack,
+    Constant,
+}
+
+/**
  * @public Type of position start and end indexes for RainDocument, inclusive at both ends
  */
 export type RDPosition = [number, number];
