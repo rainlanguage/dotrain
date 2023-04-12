@@ -713,7 +713,7 @@ class RainParser {
                                         name: words[k],
                                         position: positions[k]
                                     });
-                                    if (!words[k].match(/^[a-z][a-z0-9-]*$|_/)) {
+                                    if (!words[k].match(/^[a-z][a-z0-9-]*$|^_$/)) {
                                         this.problems.push({
                                             msg: `invalid LHS alias: ${words[k]}`,
                                             position: positions[k],

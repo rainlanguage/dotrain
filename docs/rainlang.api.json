@@ -813,7 +813,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "775"
+                  "text": "774"
                 }
               ],
               "initializerTokenRange": {
@@ -864,27 +864,6 @@
               },
               "releaseTag": "Public",
               "name": "ExpectedOpcode"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedOpeningOperandArgBracket:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExpectedOpeningOperandArgBracket = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "774"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExpectedOpeningOperandArgBracket"
             },
             {
               "kind": "EnumMember",
