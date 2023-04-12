@@ -346,7 +346,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should error if invalid operand brackets is provided", async () => {
         await assertError(
             async () => await rlc(rainlang`_: read-memory<10 1();`, opMeta),
-            '775',
+            '774',
             "Invalid Error"
         );
     });

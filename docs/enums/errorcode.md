@@ -14,10 +14,9 @@ enum ErrorCode
 
 |  Member | Value | Description |
 |  --- | --- | --- |
-|  ExpectedClosingOperandArgBracket | `775` |  |
+|  ExpectedClosingOperandArgBracket | `774` |  |
 |  ExpectedClosingParen | `772` |  |
 |  ExpectedOpcode | `769` |  |
-|  ExpectedOpeningOperandArgBracket | `774` |  |
 |  ExpectedOpeningParen | `773` |  |
 |  ExpectedOperandArgs | `771` |  |
 |  ExpectedSpace | `770` |  |

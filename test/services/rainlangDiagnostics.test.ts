@@ -130,7 +130,7 @@ describe("Rainlang Diagnostics Service tests", async function () {
         ]);
 
         await testDiagnostics(rainlang`addval_as: add(1 20), x: addval_as;`, opMeta, [
-            { message: 'invalid pattern for alias: addval_as', range: toRange(0, 25, 0, 34), severity: DiagnosticSeverity.Error, code: ErrorCode.InvalidWordPattern, source: 'rain' },
+            { message: 'invalid LHS alias: addval_as', range: toRange(0, 0, 0, 9), severity: DiagnosticSeverity.Error, code: ErrorCode.InvalidWordPattern, source: 'rain' },
         ]);
 
         await testDiagnostics(rainlang`x: add(1 20), x: x;`, opMeta, [
@@ -156,7 +156,7 @@ describe("Rainlang Diagnostics Service tests", async function () {
         ]);
 
         await testDiagnostics(rainlang`invalid_alias: add(1 20);`, opMeta, [
-            { message: 'invalid pattern for alias: invalid_alias', range: toRange(0, 0, 0, 13), severity: DiagnosticSeverity.Error, code: ErrorCode.InvalidWordPattern, source: 'rain' },
+            { message: 'invalid LHS alias: invalid_alias', range: toRange(0, 0, 0, 13), severity: DiagnosticSeverity.Error, code: ErrorCode.InvalidWordPattern, source: 'rain' },
         ]);
     });
 
