@@ -11,7 +11,7 @@ import assert from "assert";
 chai.use(chaiAsPromised);
 const expect: Chai.ExpectStatic = chai.expect;
 
-describe.only("Rainlang Compiler (rlc) tests", async function () {
+describe("Rainlang Compiler (rlc) tests", async function () {
     let opMeta: string;
 
     before(async () => {
