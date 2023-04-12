@@ -5,13 +5,13 @@ import { assertError, deployerAddress } from "../utils";
 import { rlc } from "../../src/compiler/rainCompiler";
 import { ExpressionConfig, getOpMetaFromSg } from "../../src";
 import { invalidOpMetas } from "../fixtures/opmeta";
+import assert from "assert";
 
 
 chai.use(chaiAsPromised);
-const assert: Chai.AssertStatic = chai.assert;
 const expect: Chai.ExpectStatic = chai.expect;
 
-describe("Rainlang Compiler (rlc) tests", async function () {
+describe.only("Rainlang Compiler (rlc) tests", async function () {
     let opMeta: string;
 
     before(async () => {
@@ -117,40 +117,40 @@ describe("Rainlang Compiler (rlc) tests", async function () {
 
         const result = await rlc(expression, opMeta + "thisIsAnInValidOpMeta")
             .catch((err) => {
-                assert(err.problems[0].msg === "invalid op meta");
+                assert.equal(err.problems[0].msg, "invalid op meta");
             });
-        assert(result == undefined, "was expecting to fail when no opmeta is specified");
+        assert.equal(result, undefined, "was expecting to fail when no opmeta is specified");
     });
 
     it("should accept valid rainlang fragment `_:;`", async () => {
         return expect(rlc(rainlang`_:;`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 0);
-                assert(response.sources.length == 1);
+                assert.equal(response.constants.length, 0);
+                assert.equal(response.sources.length, 1);
             });
     });
 
     it("should accept valid rainlang fragment `:;`", async () => {
         return expect(rlc(rainlang`:;`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 0);
-                assert(response.sources.length == 1);
+                assert.equal(response.constants.length, 0);
+                assert.equal(response.sources.length, 1);
             });
     });
 
     it("should accept valid rainlang fragment `_ _:;`", async () => {
         return expect(rlc(rainlang`_ _:;`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 0);
-                assert(response.sources.length == 1);
+                assert.equal(response.constants.length, 0);
+                assert.equal(response.sources.length, 1);
             });
     });
 
     it("should accept valid rainlang fragment `_:;`", async () => {
         return expect(rlc(rainlang`_:;`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 0);
-                assert(response.sources.length == 1);
+                assert.equal(response.constants.length, 0);
+                assert.equal(response.sources.length, 1);
             });
     });
 
@@ -159,8 +159,8 @@ describe("Rainlang Compiler (rlc) tests", async function () {
             rainlang`_:,
                     _:;`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 0);
-                assert(response.sources.length == 1);
+                assert.equal(response.constants.length, 0);
+                assert.equal(response.sources.length, 1);
             });
     });
 
@@ -168,8 +168,8 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         return expect(rlc(
             rainlang`_:, _:, _:, _:, _:, _:;`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 0);
-                assert(response.sources.length == 1);
+                assert.equal(response.constants.length, 0);
+                assert.equal(response.sources.length, 1);
             });
     });
 
@@ -178,8 +178,8 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         /* this is a comment */
         _:;`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 0);
-                assert(response.sources.length == 1);
+                assert.equal(response.constants.length, 0);
+                assert.equal(response.sources.length, 1);
             });
     });
 
@@ -188,49 +188,164 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         _:;
         _:;`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 0);
-                assert(response.sources.length == 2);
+                assert.equal(response.constants.length, 0);
+                assert.equal(response.sources.length, 2);
             });
     });
 
     it("should accept valid rainlang fragment `_:add(10 20);`", async () => {
         return expect(rlc(rainlang`_:add(10 20);`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 2);
+                assert.equal(response.constants.length, 2);
                 assert.deepEqual(response.constants, ["10", "20"]);
-                assert(response.sources.length == 1);
+                assert.equal(response.sources.length, 1);
             });
     });
 
     it("should accept valid rainlang fragment `_: add(10 20), _: block-timestamp();`", async () => {
         return expect(rlc(rainlang`_: add(10 20), _: block-timestamp();`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 2);
+                assert.equal(response.constants.length, 2);
                 assert.deepEqual(response.constants, ["10", "20"]);
-                assert(response.sources.length == 1);
+                assert.equal(response.sources.length, 1);
             });
     });
 
     it("should accept valid rainlang fragment `_ _: add(10 20) block-timestamp();`", async () => {
         return expect(rlc(rainlang`_ _: add(10 20) block-timestamp();`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 2);
+                assert.equal(response.constants.length, 2);
                 assert.deepEqual(response.constants, ["10", "20"]);
-                assert(response.sources.length == 1);
+                assert.equal(response.sources.length, 1);
             });
     });
 
     it("should accept valid rainlang fragment for multiline comment", async () => {
-        return expect(rlc(rainlang`
-        /**
-        * Stack the current block number.
-        * Is also the last value on the stack.
-        */
+        return expect(rlc(rainlang`       
        _: block-timestamp();
        `, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
-                assert(response.constants.length == 0);
-                assert(response.sources.length == 1);
+                assert.equal(response.constants.length, 0);
+                assert.equal(response.sources.length, 1);
+            });
+    });
+
+    it("should compile an expression referencing top stack items", async () => {
+        const expression = rainlang`
+            sentinel: infinity,
+            sentinel20: infinity,
+            you: context<0 0>(),
+            mintamount: 10,
+            burnamount: 20,
+            transfererc1155slist: sentinel,
+            transfererc721slist: sentinel,
+            transfererc20slist: sentinel,
+            transfernativeslist: sentinel,
+            burnslist: sentinel20,
+            burn-account burn-amount: you burnamount,
+            mintslist: sentinel20,
+            mint-account mint-amount: you mintamount;
+        `;
+        return expect(rlc(expression, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert.equal(response.constants.length, 3);
+                assert.deepEqual(response.constants, ["0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "10", "20"]);
+                assert.equal(response.sources.length, 1);
+            });
+    });
+
+    it("should successfully compile an expression with do-while opcode having multiple outputs", async () => {
+        const expression = rainlang`
+            c0: 1,
+            c1: 2,
+            condition: 1, 
+            _ _: do-while<1>(c0 c1 condition);
+            
+            s0 s1: ,
+            o0 o1: 1 2,
+            condition: 3; 
+    
+            s0: ,
+            _: less-than(s0 3);
+    
+            s0 s1: ,
+            _: add(s0 4),
+            _: add(s1 5);
+        `;
+        return expect(rlc(expression, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert.equal(response.constants.length, 5);
+                assert.deepEqual(response.constants, ["1", "2", "3", "4", "5"]);
+                assert.equal(response.sources.length, 4);
+            });
+    });
+
+    it("should successfully compile an expression with loop-n opcode having multiple outputs", async () => {
+        const expression = rainlang`
+            _ loopoutput _: loop-n<1 1 3>(
+                2
+                3
+                4
+            ),
+            _ _ _ _ _ _ _ _: explode-32(loopoutput);
+        
+            s0 s1 s2: ,
+            increment: add(s0 5),
+
+            shrval: call<3 1>(increment s1 s2),
+            
+            lvldcr: saturating-sub(s2 1);
+            
+            s0 s1 s2: ,
+            levelmul: mul(6 s2),
+            levelexp: exp(2 levelmul),
+            finalmul: mul(levelexp s0),
+
+            op: add(finalmul s1);
+        `;
+
+        return expect(rlc(expression, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert.equal(response.constants.length, 6);
+                assert.deepEqual(response.constants, ["2", "3", "4", "5", "1", "6"]);
+                assert.equal(response.sources.length, 3);
+            });
+    });
+
+    it("should successfully compile an expression with call opcode having multiple outputs", async () => {
+        const expression = rainlang`
+            _ _ _:  call<1 3>(2 2);
+        `;
+
+        return expect(rlc(expression, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert.equal(response.constants.length, 1);
+                assert.equal(response.sources.length, 1);
+            });
+    });
+
+    it("should successfully compile an expression with call opcode having multiple outputs", async () => {
+        const expression = rainlang`
+            _ _: fold-context<2 3 1>(0 1);
+        `;
+
+        return expect(rlc(expression, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert.equal(response.constants.length, 2);
+                assert.equal(response.sources.length, 1);
+            });
+    });
+
+    it("should successfully compile a decompiled expression", async () => {
+        const expression = rainlang`_ _ _ _ _: 0x01 0x02 0x01 do-while<1>(read-memory<0 0>() read-memory<1 0>() read-memory<2 0>());
+        _ _ _: 0x01 0x02 0x03;
+        _: less-than(read-memory<0 0>() 0x03);
+        _ _: add(read-memory<0 0>() 0x04) add(read-memory<1 0>() 0x05);`;
+
+        return expect(rlc(expression, opMeta)).to.eventually.be.fulfilled
+            .then((response: ExpressionConfig) => {
+                assert.equal(response.constants.length, 5);
+                assert.equal(response.sources.length, 4);
             });
     });
 
