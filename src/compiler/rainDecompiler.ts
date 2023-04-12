@@ -167,11 +167,11 @@ export function rld(
     const _finalStack: string[] = [];
 
     // start formatting
-
     for (let i = 0; i < expressionConfig.sources.length; i++) {
         const lhs: string[] = [];
         const src = arrayify(expressionConfig.sources[i], { allowMissingPrefix: true });
         let zeroOpCounter = 0;
+        let multiOpCounter = 0;
         for (let j = 0; j < src.length; j += 4) {
             const _op = (src[j] << 8) + src[j + 1];
             const _operand = (src[j + 2] << 8) + src[j + 3];
@@ -196,12 +196,15 @@ export function rld(
                 }
                 else {
                     let operandArgs = '';
-                    const _multiOutputs: string[] = [];
+                    // const _multiOutputs: string[] = [];
                     const inputs = calcInputs(_opmeta[_index].inputs, _operand);
                     const outputs = calcOutputs(_opmeta[_index].outputs, _operand);
 
                     // count zero output ops
                     if (outputs === 0) zeroOpCounter++;
+
+                    // count multi output ops
+                    if (outputs > 1) multiOpCounter += outputs - 1;
 
                     // construct operand arguments
                     if (typeof _opmeta[_index].operand !== "number") {
@@ -236,16 +239,11 @@ export function rld(
                         );
                     }
 
-                    // cache multi outputs to use when updating the formatter stack
-                    if (outputs > 1) {
-                        for (let k = 0; k < outputs - 1; k++) _multiOutputs.push('_');
-                    }
-
                     // update formatter stack with new formatted opcode i.e.
                     // take some items based on the formatted opcode and then
                     // push the appended string with the opcode back into the stack
                     _stack.push(
-                        ..._multiOutputs,
+                        // ..._multiOutputs,
                         _opmeta[_index].name +
                         operandArgs +
                         '(' +
@@ -257,7 +255,7 @@ export function rld(
         }
         
         // cache the LHS elements
-        for (let j = 0; j < _stack.length - zeroOpCounter; j++) lhs.push('_');
+        for (let j = 0; j < _stack.length + multiOpCounter - zeroOpCounter; j++) lhs.push('_');
 
         // construct the source expression at current index, both LHS and RHS
         _finalStack.push(

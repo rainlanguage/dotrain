@@ -71,7 +71,9 @@ describe("Rainlang Decompiler (rld) tests", async function () {
             mintslist: sentinel20,
             mint-account mint-amount: you mintamount;
         `;
+
         const expectedExpression1 = rainlang`_ _ _ _ _ _ _ _ _ _ _ _ _ _ _: max-uint256 max-uint256 context<0 0>() 0x0a 0x14 read-memory<0 0>() read-memory<0 0>() read-memory<0 0>() read-memory<0 0>() read-memory<1 0>() read-memory<2 0>() read-memory<4 0>() read-memory<1 0>() read-memory<2 0>() read-memory<3 0>();`;
+
         await testRainlangDecompiler(expression1, expectedExpression1, opMeta);
 
     });
@@ -94,10 +96,12 @@ describe("Rainlang Decompiler (rld) tests", async function () {
             _: add(s0 4),
             _: add(s1 5);
         `;
+
         const expectedExpression0 = rainlang`_ _ _ _ _: 0x01 0x02 0x01 do-while<1>(read-memory<0 0>() read-memory<1 0>() read-memory<2 0>());
-        _ _ _: 0x01 0x02 0x03;
-        _: less-than(read-memory<0 0>() 0x03);
-        _ _: add(read-memory<0 0>() 0x04) add(read-memory<1 0>() 0x05);`;
+_ _ _: 0x01 0x02 0x03;
+_: less-than(read-memory<0 0>() 0x03);
+_ _: add(read-memory<0 0>() 0x04) add(read-memory<1 0>() 0x05);`;
+
         await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
     });
 
@@ -124,9 +128,11 @@ describe("Rainlang Decompiler (rld) tests", async function () {
 
         op: add(finalmul s1);
         `;
+
         const expectedExpression0 = rainlang`_ _ _ _ _ _ _ _ _ _ _: loop-n<1 1 3>(0x02 0x03 0x04) explode-32(read-memory<1 0>());
-        _ _ _: add(read-memory<0 0>() 0x05) call<3 1>(read-memory<3 0>() read-memory<1 0>() read-memory<2 0>()) saturating-sub(read-memory<2 0>() 0x01);
-        _ _ _ _: mul(0x06 read-memory<2 0>()) exp(0x02 read-memory<3 0>()) mul(read-memory<4 0>() read-memory<0 0>()) add(read-memory<5 0>() read-memory<1 0>());`;
+_ _ _: add(read-memory<0 0>() 0x05) call<3 1>(read-memory<3 0>() read-memory<1 0>() read-memory<2 0>()) saturating-sub(read-memory<2 0>() 0x01);
+_ _ _ _: mul(0x06 read-memory<2 0>()) exp(0x02 read-memory<3 0>()) mul(read-memory<4 0>() read-memory<0 0>()) add(read-memory<5 0>() read-memory<1 0>());`;
+
         await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
     });
 
@@ -135,7 +141,9 @@ describe("Rainlang Decompiler (rld) tests", async function () {
             /* main source */
             _ _ _:  call<1 3>(2 2);
         `;
+
         const expectedExpression0 = rainlang`_ _ _: call<1 3>(0x02 0x02);`;
+
         await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
     });
 
@@ -145,11 +153,13 @@ describe("Rainlang Decompiler (rld) tests", async function () {
                 0x01
                 0x02
                 0x03
-                2
-                3
+                0x02
+                0x03
             );
         `;
+
         const expectedExpression0 = rainlang`_ _: erc-1155-balance-of-batch(0x01 0x02 0x03 0x02 0x03);`;
+
         await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
     });
 
@@ -157,13 +167,17 @@ describe("Rainlang Decompiler (rld) tests", async function () {
         const expression0 = rainlang`        
            _ _: fold-context<2 3 1>(0 0);
         `;
+
         const expectedExpression0 = rainlang`_ _: fold-context<2 3 1>(0x00 0x00);`;
+
         await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
     });
 
     it("should decompile an expression with existing stack items", async () => {
         const expression = rainlang`a:, b: 20, c: add(a b);`;
+
         const expectedText = rainlang`_ _: 0x14 add(read-memory<0 0>() read-memory<1 0>());`;
+        
         await testRainlangDecompiler(expression, expectedText, opMeta);
     });
 
