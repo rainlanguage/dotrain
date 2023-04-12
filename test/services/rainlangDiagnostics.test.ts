@@ -190,11 +190,14 @@ describe("Rainlang Diagnostics Service tests", async function () {
             c1: 2,
             condition: 1, 
             _ _: do-while<1 2 3>(c0 c1 condition);
+
             s0 s1: ,
             o0 o1: 1 2,
             condition: 3 3 4; 
+
             s0: ,
             _: less-than(s0 3 3);
+
             s0 s1: ,
             _: add(s0 4 infinity),
             _: add(s3 s1 5);
