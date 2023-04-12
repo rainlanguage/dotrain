@@ -164,7 +164,7 @@ export function getRainCompletion(
                         kind: _documentionType,
                         value: _documentionType === "markdown" 
                             ? [
-                                `LHS alias for:`,
+                                "LHS alias for:",
                                 "```rainlang",
                                 _text,
                                 "```"

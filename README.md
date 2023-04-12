@@ -11,11 +11,11 @@ If you find an issue or you want to propose an improvement, please feel free to 
 ## **Tutorial**
 To get started, install the package:
 ```bash
-npm install @rainprotcol/rainlang
+npm install @rainprotocol/rainlang
 ```
 or
 ```bash
-yarn add @rainprotcol/rainlang
+yarn add @rainprotocol/rainlang
 ```
 <br>
 

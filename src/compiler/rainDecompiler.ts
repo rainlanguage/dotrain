@@ -1,9 +1,9 @@
 import { OpMetaSchema } from "..";
-import { RainDocument } from '../parser/rainParser';
-import { TextDocument } from '../rainLanguageTypes';
-import { Equation, Expression, parse } from 'algebra.js';
-import { ExpressionConfig } from './expressionConfigTypes';
-import { OpMeta, InputMeta, OutputMeta, OperandArgs } from '../parser/opMetaTypes';
+import { RainDocument } from "../parser/rainParser";
+import { TextDocument } from "../rainLanguageTypes";
+import { ExpressionConfig } from "./expressionConfigTypes";
+import { Equation, Expression, parse } from "@nohns/algebra.js";
+import { OpMeta, InputMeta, OutputMeta, OperandArgs } from "../parser/opMetaTypes";
 import { 
     arrayify, 
     BytesLike, 
@@ -13,7 +13,7 @@ import {
     extractByBits, 
     metaFromBytes,
     isBigNumberish 
-} from '../utils';
+} from "../utils";
 
 
 /**
@@ -43,7 +43,7 @@ export function rld(
      */
     function rainFormat(_text: string): string {
         const n = 4;
-        const space = ' ';
+        const space = " ";
         let counter = 0;
         const _expressions: string[] = [];
 
@@ -60,35 +60,35 @@ export function rld(
         for (let j = 0; j < _expressions.length; j++) {
             const _lhsIndex = _expressions[j].search(/:/i);
             for (let i = _lhsIndex + 2; i < _expressions[j].length; i++) {
-                if ( _expressions[j][i] === ' ' && counter > 0) {
+                if ( _expressions[j][i] === " " && counter > 0) {
                     _expressions[j] =
                     _expressions[j].slice(0, i + 1) +
-                    '\n' +
+                    "\n" +
                     space.repeat(counter * n) +
                     _expressions[j].slice(i + 1);
                     i += (counter * n) + 2;
                 }
-                if (_expressions[j][i] === '(') {
+                if (_expressions[j][i] === "(") {
                     counter++;
                     _expressions[j] =
                     _expressions[j].slice(0, i + 1) +
-                    '\n' +
+                    "\n" +
                     space.repeat(counter * n) +
                     _expressions[j].slice(i + 1);
                     i += (counter * n) + 2;
                 }
-                if (_expressions[j][i] === ')') {
+                if (_expressions[j][i] === ")") {
                     counter--;
                     _expressions[j] =
                     _expressions[j].slice(0, i) +
-                    '\n' +
+                    "\n" +
                     space.repeat(counter * n) +
                     _expressions[j].slice(i);
                     i += (counter * n) + 1;
                 }
             }
         }
-        return _expressions.join('\n');
+        return _expressions.join("\n");
     }
 
 
@@ -190,12 +190,12 @@ export function rld(
                         BigNumber.from(
                             _constants[_operand >> 1]
                         ).eq(CONSTANTS.MaxUint256)
-                            ? 'max-uint256'
+                            ? "max-uint256"
                             : _constants[_operand >> 1]
                     );
                 }
                 else {
-                    let operandArgs = '';
+                    let operandArgs = "";
                     const _multiOutputs: string[] = [];
                     const inputs = calcInputs(_opmeta[_index].inputs, _operand);
                     const outputs = calcOutputs(_opmeta[_index].outputs, _operand);
@@ -227,7 +227,7 @@ export function rld(
                                 v => v.name === "inputs"
                             );
                             if (_i > -1) args.splice(_i, 1);
-                            if (args.length) operandArgs = '<' + args.join(" ") + ">";
+                            if (args.length) operandArgs = "<" + args.join(" ") + ">";
                         }
                         else return Promise.reject(
                             `decoder of opcode with enum "${
@@ -238,7 +238,7 @@ export function rld(
 
                     // cache multi outputs to use when updating the formatter stack
                     if (outputs > 1) {
-                        for (let k = 0; k < outputs - 1; k++) _multiOutputs.push('_');
+                        for (let k = 0; k < outputs - 1; k++) _multiOutputs.push("_");
                     }
 
                     // update formatter stack with new formatted opcode i.e.
@@ -248,32 +248,32 @@ export function rld(
                         ..._multiOutputs,
                         _opmeta[_index].name +
                         operandArgs +
-                        '(' +
-                        (inputs > 0 ? _stack.splice(-inputs).join(' ') : '') +
-                        ')'
+                        "(" +
+                        (inputs > 0 ? _stack.splice(-inputs).join(" ") : "") +
+                        ")"
                     );
                 }
             }
         }
         
         // cache the LHS elements
-        for (let j = 0; j < _stack.length - zeroOpCounter; j++) lhs.push('_');
+        for (let j = 0; j < _stack.length - zeroOpCounter; j++) lhs.push("_");
 
         // construct the source expression at current index, both LHS and RHS
         _finalStack.push(
-            lhs.join(' ').concat(': ') + 
-            _stack.join(' ').concat(';')
+            lhs.join(" ").concat(": ") + 
+            _stack.join(" ").concat(";")
         );
         _stack = [];
     }
 
     return Promise.resolve(prettyFormat 
         ? new RainDocument(
-            TextDocument.create("file", "rainlang", 1, rainFormat(_finalStack.join('\n'))), 
+            TextDocument.create("file", "rainlang", 1, rainFormat(_finalStack.join("\n"))), 
             opmeta
         )
         : new RainDocument(
-            TextDocument.create("file", "rainlang", 1, _finalStack.join('\n')),
+            TextDocument.create("file", "rainlang", 1, _finalStack.join("\n")),
             opmeta
         )
     );

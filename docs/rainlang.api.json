@@ -3475,7 +3475,7 @@
               "text": "export declare enum MemoryType "
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
+          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "MemoryType",
           "preserveMemberOrder": false,
