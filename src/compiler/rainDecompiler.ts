@@ -196,7 +196,6 @@ export function rld(
                 }
                 else {
                     let operandArgs = '';
-                    // const _multiOutputs: string[] = [];
                     const inputs = calcInputs(_opmeta[_index].inputs, _operand);
                     const outputs = calcOutputs(_opmeta[_index].outputs, _operand);
 
