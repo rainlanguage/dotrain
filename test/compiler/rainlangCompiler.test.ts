@@ -1,6 +1,6 @@
 import * as chai from "chai";
 import { rainlang } from "../../src/utils";
-import chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised from "chai-as-promised";
 import { assertError, deployerAddress } from "../utils";
 import { rlc } from "../../src/compiler/rainCompiler";
 import { ExpressionConfig, getOpMetaFromSg } from "../../src";
@@ -197,7 +197,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         return expect(rlc(rainlang`_:add(10 20);`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert(response.constants.length == 2);
-                assert.deepEqual(response.constants, ['10', '20']);
+                assert.deepEqual(response.constants, ["10", "20"]);
                 assert(response.sources.length == 1);
             });
     });
@@ -206,7 +206,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         return expect(rlc(rainlang`_: add(10 20), _: block-timestamp();`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert(response.constants.length == 2);
-                assert.deepEqual(response.constants, ['10', '20']);
+                assert.deepEqual(response.constants, ["10", "20"]);
                 assert(response.sources.length == 1);
             });
     });
@@ -215,7 +215,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         return expect(rlc(rainlang`_ _: add(10 20) block-timestamp();`, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert(response.constants.length == 2);
-                assert.deepEqual(response.constants, ['10', '20']);
+                assert.deepEqual(response.constants, ["10", "20"]);
                 assert(response.sources.length == 1);
             });
     });
@@ -323,14 +323,14 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         await assertError(
             async () =>
                 await rlc(rainlang`_: add(-10 20);`, opMeta),
-            'is not a valid rainlang word',
+            "is not a valid rainlang word",
             "Invalid Error"
         );
 
         await assertError(
             async () =>
                 await rlc(rainlang`_: sub(123941 -123941);`, opMeta),
-            'is not a valid rainlang word',
+            "is not a valid rainlang word",
             "Invalid Error"
         );
     });
@@ -338,7 +338,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should only accept ASCII characters", async () => {
         await assertError(
             async () => await rlc(rainlang`_: add(10² 20);`, opMeta),
-            'found non-printable-ASCII character',
+            "found non-printable-ASCII character",
             "Invalid Error"
         );
     });
@@ -346,7 +346,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should error if invalid operand brackets is provided", async () => {
         await assertError(
             async () => await rlc(rainlang`_: read-memory<10 1();`, opMeta),
-            '775',
+            "775",
             "Invalid Error"
         );
     });
@@ -354,12 +354,12 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should error if invalid parenthesis is provided", async () => {
         await assertError(
             async () => await rlc(rainlang`_: read-memory<10 1>;`, opMeta),
-            '773',
+            "773",
             "Invalid Error"
         );
         await assertError(
             async () => await rlc(rainlang`_: read-memory<10 1>(;`, opMeta),
-            '772',
+            "772",
             "Invalid Error"
         );
     });
@@ -367,7 +367,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should error if invalid word pattern is provided", async () => {
         await assertError(
             async () => await rlc(rainlang`_: <10 1>();`, opMeta),
-            '257',
+            "257",
             "Invalid Error"
         );
     });
@@ -375,7 +375,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should error if invalid opcode is passed in the rainlang fragment", async () => {
         await assertError(
             async () => await rlc(rainlang`_: readmemory<10 1>();`, opMeta),
-            '1536',
+            "1536",
             "Invalid Error"
         );
     });
@@ -383,19 +383,19 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should error if operand arguments are missing in the rainlang fragment", async () => {
         await assertError(
             async () => await rlc(rainlang`_: read-memory();`, opMeta),
-            '771',
+            "771",
             "Invalid Error"
         );
 
         await assertError(
             async () => await rlc(rainlang`_: read-memory<>();`, opMeta),
-            '1027',
+            "1027",
             "Invalid Error"
         );
 
         await assertError(
             async () => await rlc(rainlang`_: read-memory<1>();`, opMeta),
-            '1027',
+            "1027",
             "Invalid Error"
         );
     });
@@ -403,7 +403,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should error if out-of-range operand arguments is provided", async () => {
         await assertError(
             async () => await rlc(rainlang`_: read-memory<1 2>();`, opMeta),
-            '1282',
+            "1282",
             "Invalid Error"
         );
     });
@@ -411,7 +411,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should error if out-of-range operand arguments is provided", async () => {
         await assertError(
             async () => await rlc(rainlang`_: read-memory<1 2>();`, opMeta),
-            '1282',
+            "1282",
             "Invalid Error"
         );
 
@@ -420,7 +420,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
     it("should error if a word is undefined", async () => {
         await assertError(
             async () => await rlc(rainlang`ans: add(ans 1);`, opMeta),
-            'undefined word: ans',
+            "undefined word: ans",
             "Invalid Error"
         );
 

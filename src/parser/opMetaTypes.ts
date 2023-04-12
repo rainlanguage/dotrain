@@ -1,14 +1,5 @@
 /**
  * @public
- * Type for read-memory opcode
- */
-export enum MemoryType {
-    Stack,
-    Constant,
-}
-
-/**
- * @public
  * Type Definitions for opcodes metadata used by RainLang.
 */
 export type OpMeta = {

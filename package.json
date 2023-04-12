@@ -27,7 +27,7 @@
     ],
     "scripts": {
         "prepare": "npm run build",
-        "build": "npm run build-cjs && npm run build-esm",
+        "build": "rimraf ./dist && npm run build-cjs && npm run build-esm",
         "build-esm": "tsc -b ./tsconfig.esm.json",
         "build-cjs": "tsc -b ./tsconfig.json",
         "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
