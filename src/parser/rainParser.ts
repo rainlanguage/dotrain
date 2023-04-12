@@ -15,7 +15,7 @@ import {
     RDOpNode, 
     RDProblem, 
     RDComment, 
-    MemoryType,
+    MemoryType, 
     RDParseTree,
     RDAliasNode,
     RainParseState, 
