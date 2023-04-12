@@ -77,3 +77,5 @@ export async function getOpMetaFromSg(
     if (_response?.expressionDeployer?.opmeta) return _response.expressionDeployer.opmeta;
     else throw new Error("could not fetch the data from subgraph");
 }
+console.log("0x56EB744dd1600C0D7119ECfAe9ff77B56C98953e".toLowerCase());
+getOpMetaFromSg("0x56EB744dd1600C0D7119ECfAe9ff77B56C98953e", "polygon").then(v => console.log(v)).catch(v => console.log(v));
