@@ -161,7 +161,7 @@ describe("Rainlang Diagnostics Service tests", async function () {
     });
 
     it("multiple diagnostics", async () => {
-        const expression = rainlang`
+        const expression0 = rainlang`
             allowed-counterparty: 23,
             : ensure(eq(allowed-counterparty context<1 2>())),
             
@@ -177,12 +177,34 @@ describe("Rainlang Diagnostics Service tests", async function () {
             
             io-ratio: prb-mul(io_multiplier 3);`;
 
-        await testDiagnostics(expression, opMeta, [
-            { range: toRange(4, 42, 4, 47), message: "out-of-range operand argument", severity: 1, code: ErrorCode.OutOfRangeOperandArgs, source: "rain" },
-            { range: toRange(7, 12, 7, 13), message: "no RHS item exists to match this LHS item: _", severity: 1, code: ErrorCode.MismatchRHS, source: "rain" },
-            { range: toRange(11, 36, 11, 43), message: "value greater than 32 bytes in size", severity: 1, code: ErrorCode.OutOfRangeValue, source: "rain" },
-            { range: toRange(14, 30, 14, 43), message: "\"io_multiplier\" is not a valid rainlang word", severity: 1, code: ErrorCode.InvalidWordPattern, source: "rain" },
-            { range: toRange(14, 29, 14, 46), message: "out-of-range inputs", severity: 1, code: ErrorCode.OutOfRangeInputs, source: "rain" },
+        await testDiagnostics(expression0, opMeta, [
+            { range: toRange(4, 42, 4, 47), message: "out-of-range operand argument", severity: DiagnosticSeverity.Error, code: ErrorCode.OutOfRangeOperandArgs, source: "rain" },
+            { range: toRange(7, 12, 7, 13), message: "no RHS item exists to match this LHS item: _", severity: DiagnosticSeverity.Error, code: ErrorCode.MismatchRHS, source: "rain" },
+            { range: toRange(11, 36, 11, 43), message: "value greater than 32 bytes in size", severity: DiagnosticSeverity.Error, code: ErrorCode.OutOfRangeValue, source: "rain" },
+            { range: toRange(14, 30, 14, 43), message: "\"io_multiplier\" is not a valid rainlang word", severity: DiagnosticSeverity.Error, code: ErrorCode.InvalidWordPattern, source: "rain" },
+            { range: toRange(14, 29, 14, 46), message: "out-of-range inputs", severity: DiagnosticSeverity.Error, code: ErrorCode.OutOfRangeInputs, source: "rain" },
+        ]);
+
+        const expression1 = rainlang`
+            c0: 1,
+            c1: 2,
+            condition: 1, 
+            _ _: do-while<1 2 3>(c0 c1 condition);
+            s0 s1: ,
+            o0 o1: 1 2,
+            condition: 3 3 4; 
+            s0: ,
+            _: less-than(s0 3 3);
+            s0 s1: ,
+            _: add(s0 4 infinity),
+            _: add(s3 s1 5);
+        `;
+
+        await testDiagnostics(expression1, opMeta, [
+            { range: toRange(4, 30, 4, 31), message: "unexpected operand argument for do-while", severity: DiagnosticSeverity.Error, code: ErrorCode.MismatchOperandArgs, source: "rain" },
+            { range: toRange(4, 28, 4, 29), message: "unexpected operand argument for do-while", severity: DiagnosticSeverity.Error, code: ErrorCode.MismatchOperandArgs, source: "rain" },
+            { range: toRange(11, 24, 11, 32), message: "out-of-range inputs", severity: DiagnosticSeverity.Error, code: ErrorCode.OutOfRangeInputs, source: "rain" },
+            { range: toRange(15, 19, 15, 21), message: "undefined word: s3", severity: DiagnosticSeverity.Error, code: ErrorCode.UndefinedWord, source: "rain" }
         ]);
     });
 });
