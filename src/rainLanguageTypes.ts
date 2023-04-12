@@ -56,8 +56,7 @@ export enum ErrorCode {
     ExpectedOperandArgs = 0x303,
     ExpectedClosingParen = 0x304,
     ExpectedOpeningParen = 0x305,
-    ExpectedOpeningOperandArgBracket = 0x306,
-    ExpectedClosingOperandArgBracket = 0x307,
+    ExpectedClosingOperandArgBracket = 0x306,
 
     MismatchRHS = 0x401,
     MismatchLHS = 0x402,
