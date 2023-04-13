@@ -75,7 +75,7 @@ export function getRainCompletion(
                     position, 
                     { line: position.line, character: position.character + 1 }
                 )
-            ).match(/\w|-/)
+            ).match(/[a-zA-Z0-9-]/)
         ) {
             const _offset = _td.offsetAt(position);
             const _result = _rd.getOpMeta().map(v => {
@@ -205,8 +205,8 @@ export function getRainCompletion(
                 Range.create({ line: position.line, character: 0 }, position)
             );
             for (let i = 0; i < _prefixText.length; i++) {
-                if (_prefixText[_prefixText.length - 1].match(/\w|-/)) {
-                    _prefixMatch = _prefixText[_prefixText.length - 1] + _prefixMatch;
+                if (_prefixText[_prefixText.length - i - 1].match(/[a-zA-Z0-9-]/)) {
+                    _prefixMatch = _prefixText[_prefixText.length - i - 1] + _prefixMatch;
                 }
                 else break;
             }
