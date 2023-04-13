@@ -68,40 +68,29 @@ export function getRainCompletion(
         ?.documentationFormat;
     if (format && format[0]) _documentionType = format[0];
 
-    // const _text = _td.getText();
-    const _offset = _td.offsetAt(position);
     try {
-        // if (_offset === _text.length - 1 || _text[_offset + 1]?.match(/[<>(),;\s\r\n]/)) {
-        const _result = _rd.getOpMeta().map(v => {
-            return {
-                label: v.name,
-                kind: CompletionItemKind.Function,
-                detail: "opcode " + v.name + (
-                    v.operand === 0 
-                        ? "()" 
-                        : v.operand.find(i => i.name !== "inputs") 
-                            ? "<>()" 
-                            : "()"
-                ),
-                documentation: {
-                    kind: _documentionType,
-                    value: v.desc
-                },
-                insertText: v.name + (
-                    v.operand === 0 
-                        ? "()" 
-                        : v.operand.find(i => i.name !== "inputs") 
-                            ? "<>()" 
-                            : "()"
+        if (
+            !_td.getText(
+                Range.create(
+                    position, 
+                    { line: position.line, character: position.character + 1 }
                 )
-            } as CompletionItem;
-        });
-        _rd.getOpMeta().forEach(v => {
-            v.aliases?.forEach(e =>
-                _result.push({
-                    label: e,
+            ).match(/\w|-/)
+        ) {
+            const _offset = _td.offsetAt(position);
+            const _result = _rd.getOpMeta().map(v => {
+                return {
+                    label: v.name,
+                    labelDetails: {
+                        detail: v.operand === 0 
+                            ? "()" 
+                            : v.operand.find(i => i.name !== "inputs") 
+                                ? "<>()" 
+                                : "()",
+                        description: "opcode"
+                    },
                     kind: CompletionItemKind.Function,
-                    detail: "opcode " + e + (
+                    detail: "opcode " + v.name + (
                         v.operand === 0 
                             ? "()" 
                             : v.operand.find(i => i.name !== "inputs") 
@@ -119,63 +108,111 @@ export function getRainCompletion(
                                 ? "<>()" 
                                 : "()"
                     )
-                })
-            );
-        });
-        const _tree = _rd.getParseTree();
-        let _currentSource = 0;
-        for (let i = 0; i < _tree.length; i++) {
-            if (_tree[i].position[0] <= _offset && _tree[i].position[1] >= _offset) {
-                _currentSource = i;
-                break;
-            }
-        }
-        let _pos: [number, number] | undefined;
-        _rd.getLHSAliases()[_currentSource]
-            ?.filter(v => v.name !== "_")
-            .forEach(v => {
-                let _text = "";
-                _pos = _tree[_currentSource].tree.find(e => {
-                    if (e.lhs){
-                        if (Array.isArray(e.lhs)) {
-                            if (e.lhs.find(i => i.name === v.name)) return true; 
-                            else return false;
-                        }
-                        else {
-                            if (e.lhs.name === v.name) return true;
-                            else return false;
-                        }
-                    }
-                    else return false;
-                })?.position;
-                if (_pos) _text = `${
-                    _rd!.getTextDocument().getText(
-                        Range.create(
-                            _td.positionAt(_pos[0]),
-                            _td.positionAt(_pos[1] + 1)
-                        )
-                    )
-                }`;
-                _result.unshift({
-                    label: v.name,
-                    kind: CompletionItemKind.Variable,
-                    detail: v.name,
-                    documentation: {
-                        kind: _documentionType,
-                        value: _documentionType === "markdown" 
-                            ? [
-                                "LHS alias for:",
-                                "```rainlang",
-                                _text,
-                                "```"
-                            ].join("\n")
-                            : `LHS alias for: ${_text}`
-                    }
-                });
+                } as CompletionItem;
             });
-        return _result;
-        // }
-        // else return null;
+            _rd.getOpMeta().forEach(v => {
+                v.aliases?.forEach(e =>
+                    _result.push({
+                        label: e,
+                        labelDetails: {
+                            detail: v.operand === 0 
+                                ? "()" 
+                                : v.operand.find(i => i.name !== "inputs") 
+                                    ? "<>()" 
+                                    : "()",
+                            description: "opcode (alias)"
+                        },
+                        kind: CompletionItemKind.Function,
+                        detail: "opcode " + e + (
+                            v.operand === 0 
+                                ? "()" 
+                                : v.operand.find(i => i.name !== "inputs") 
+                                    ? "<>()" 
+                                    : "()"
+                        ),
+                        documentation: {
+                            kind: _documentionType,
+                            value: v.desc
+                        },
+                        insertText: v.name + (
+                            v.operand === 0 
+                                ? "()" 
+                                : v.operand.find(i => i.name !== "inputs") 
+                                    ? "<>()" 
+                                    : "()"
+                        )
+                    })
+                );
+            });
+            const _tree = _rd.getParseTree();
+            let _currentSource = 0;
+            for (let i = 0; i < _tree.length; i++) {
+                if (_tree[i].position[0] <= _offset && _tree[i].position[1] >= _offset) {
+                    _currentSource = i;
+                    break;
+                }
+            }
+            let _pos: [number, number] | undefined;
+            _rd.getLHSAliases()[_currentSource]
+                ?.filter(v => v.name !== "_")
+                .forEach(v => {
+                    let _text = "";
+                    _pos = _tree[_currentSource].tree.find(e => {
+                        if (e.lhs){
+                            if (Array.isArray(e.lhs)) {
+                                if (e.lhs.find(i => i.name === v.name)) return true; 
+                                else return false;
+                            }
+                            else {
+                                if (e.lhs.name === v.name) return true;
+                                else return false;
+                            }
+                        }
+                        else return false;
+                    })?.position;
+                    if (_pos) _text = `${
+                        _rd!.getTextDocument().getText(
+                            Range.create(
+                                _td.positionAt(_pos[0]),
+                                _td.positionAt(_pos[1] + 1)
+                            )
+                        )
+                    }`;
+                    _result.unshift({
+                        label: v.name,
+                        labelDetails: {
+                            description: "alias"
+                        },
+                        kind: CompletionItemKind.Variable,
+                        detail: v.name,
+                        documentation: {
+                            kind: _documentionType,
+                            value: _documentionType === "markdown" 
+                                ? [
+                                    "LHS alias for:",
+                                    "```rainlang",
+                                    _text,
+                                    "```"
+                                ].join("\n")
+                                : `LHS alias for: ${_text}`
+                        }
+                    });
+                });
+            
+            // filter the items based on previous characters
+            let _prefixMatch = "";
+            const _prefixText = _td.getText(
+                Range.create({ line: position.line, character: 0 }, position)
+            );
+            for (let i = 0; i < _prefixText.length; i++) {
+                if (_prefixText[_prefixText.length - 1].match(/\w|-/)) {
+                    _prefixMatch = _prefixText[_prefixText.length - 1] + _prefixMatch;
+                }
+                else break;
+            }
+            return _result.filter(v => v.label.includes(_prefixMatch));
+        }
+        else return null;
     }
     catch (err) {
         console.log(err);

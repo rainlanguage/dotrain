@@ -1,11 +1,8 @@
-import { rainlang } from "../../src/utils";
-import { assertError, deployerAddress } from "../utils";
-import { rlc } from "../../src/compiler/rainCompiler";
-import { rld } from "../../src/compiler/rainDecompiler";
-import { ExpressionConfig, getOpMetaFromSg } from "../../src";
-import { invalidOpMetas } from "../fixtures/opmeta";
-import { hexlify } from "ethers/lib/utils";
 import assert, { AssertionError } from "assert";
+import { invalidOpMetas } from "../fixtures/opmeta";
+import { assertError, deployerAddress } from "../utils";
+import { ExpressionConfig, getOpMetaFromSg, rainlang, hexlify, rld, rlc } from "../../src";
+
 
 async function testRainlangDecompiler(
     expression: string, expectedExpression: string, opMeta: string | Uint8Array
@@ -22,9 +19,19 @@ async function testRainlangDecompiler(
         if (e instanceof AssertionError)
             throw new Error(JSON.stringify(e, null, 2));
         else
-            throw new Error(`Failed to compile the decompiled text:\n\ndecompiledText = ${decompiledText}\n\nError: ${JSON.stringify(e, null, 2)}`);
+            throw new Error(
+                `Failed to compile the decompiled text:\n\ndecompiledText = ${
+                    decompiledText
+                }\n\nError: ${
+                    JSON.stringify(e, null, 2)
+                }`
+            );
     }
-    assert.equal(decompiledText, expectedExpression, `\nExpected: ${expectedExpression}\nActual: ${decompiledText}`);
+    assert.equal(
+        decompiledText, 
+        expectedExpression, 
+        `\nExpected: ${expectedExpression}\nActual: ${decompiledText}`
+    );
 }
 
 describe("Rainlang Decompiler (rld) tests", async function () {

@@ -73,7 +73,7 @@ export function getRainDiagnostics(
             }),
             DiagnosticSeverity.Error,
             v.code,
-            "rain",
+            "rainlang",
             [
                 {
                     location: {
@@ -97,7 +97,7 @@ export function getRainDiagnostics(
             v.msg,
             DiagnosticSeverity.Error,
             v.code,
-            "rain"
+            "rainlang"
         ))
     ); 
 }

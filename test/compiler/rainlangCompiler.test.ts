@@ -1,11 +1,9 @@
-import * as chai from "chai";
-import { rainlang } from "../../src/utils";
-import chaiAsPromised from "chai-as-promised";
-import { assertError, deployerAddress } from "../utils";
-import { rlc } from "../../src/compiler/rainCompiler";
-import { ExpressionConfig, getOpMetaFromSg } from "../../src";
-import { invalidOpMetas } from "../fixtures/opmeta";
 import assert from "assert";
+import * as chai from "chai";
+import chaiAsPromised from "chai-as-promised";
+import { invalidOpMetas } from "../fixtures/opmeta";
+import { assertError, deployerAddress } from "../utils";
+import { ExpressionConfig, getOpMetaFromSg, rainlang, rlc } from "../../src";
 
 
 chai.use(chaiAsPromised);
@@ -249,7 +247,10 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         return expect(rlc(expression, opMeta)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 3);
-                assert.deepEqual(response.constants, ["0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "10", "20"]);
+                assert.deepEqual(
+                    response.constants, 
+                    ["0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "10", "20"]
+                );
                 assert.equal(response.sources.length, 1);
             });
     });
