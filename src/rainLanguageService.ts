@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
-import { getRainHover } from "./services/rainHover";
 import { RainDocument } from "./parser/rainParser";
-import { getRainDiagnostics } from "./services/rainDiagnostics";
+import { getRainHover } from "./services/rainHover";
 import { getRainCompletion } from "./services/rainCompletion";
 import { RainDocumentResult } from "./parser/rainParserTypes";
+import { getRainDiagnostics } from "./services/rainDiagnostics";
 import {
     Hover, 
     Position, 

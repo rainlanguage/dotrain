@@ -71,8 +71,6 @@ export enum ErrorCode {
     RuntimeError = 0x700
 }
 
-//export const RainErrors
-
 /**
  * @public
  * Parameters for initiating Language Services

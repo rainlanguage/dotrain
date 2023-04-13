@@ -4058,42 +4058,6 @@
             },
             {
               "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getCurrentLHSAliases:member(1)",
-              "docComment": "/**\n * Get the current sub-exp aliases of this RainParser instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getCurrentLHSAliases(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "RDAliasNode",
-                  "canonicalReference": "@rainprotocol/rainlang!RDAliasNode:type"
-                },
-                {
-                  "kind": "Content",
-                  "text": "[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getCurrentLHSAliases"
-            },
-            {
-              "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#getExpressionConfig:member(1)",
               "docComment": "/**\n * Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used.\n *\n * @param item - Optional item to get the ExpressionConfig for\n *\n * @public\n */\n",
               "excerptTokens": [

@@ -92,6 +92,7 @@ export class RainDocument {
             if (newOpMeta !== this.getRawOpMeta()) {
                 this._rp.updateOpMeta(newOpMeta);
             }
+            else this._rp.parse();
         }
         else if (!newOpMeta && newTextDocument) {
             this._rp.updateText(newTextDocument);
@@ -168,13 +169,6 @@ export class RainDocument {
      */
     public getLHSAliases(): RDAliasNode[][] {
         return this._rp.getLHSAliases();
-    }
-    
-    /**
-     * @public Get the current sub-exp aliases of this RainParser instance
-     */
-    public getCurrentLHSAliases(): RDAliasNode[] {
-        return this._rp.getCurrentLHSAliases();
     }
 
     /**
@@ -427,13 +421,6 @@ class RainParser {
     }
 
     /**
-     * @public Get the current sub-exp aliases of this RainParser instance
-     */
-    public getCurrentLHSAliases(): RDAliasNode[] {
-        return deepCopy(this.state.parse.subExpAliases);
-    }
-
-    /**
      * @public Get the current parse result of this RainParser instance 
      * which consists of parse tree, problems, comments and expression aliases
      */
@@ -636,11 +623,11 @@ class RainParser {
                                 ],
                                 code: ErrorCode.InvalidExpression
                             });
-                            // _sourceExpPos.push([
-                            //     _doc.length - document.length,
-                            //     _doc.length - 1,
-                            // ]);
-                            // _sourceExp.push(document);
+                            _sourceExpPos.push([
+                                _doc.length - document.length,
+                                _doc.length - 1,
+                            ]);
+                            _sourceExp.push(document);
                         }
                         document = "";
                     }
@@ -679,7 +666,7 @@ class RainParser {
 
                         // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
                         // no or more than one delimitter was found, else start parsing LHS and RHS
-                        if (_subExp[j].match(/:/g)?.length === 1) {
+                        if (_subExp[j].match(/:/)) {
                             _lhs = _subExp[j].slice(0, _subExp[j].indexOf(":"));
                             this.exp = _subExp[j].slice(_subExp[j].indexOf(":") + 1);
 
@@ -908,17 +895,15 @@ class RainParser {
                                 }
                             }
                         }
-                        else {
-                            // if (_subExp[j].match(/[^\s+]/)) 
-                            this.problems.push({
-                                msg: "invalid rain expression",
-                                position: [
-                                    _positionOffset,
-                                    _positionOffset + _subExp[j].length - 1
-                                ],
-                                code: ErrorCode.InvalidExpression
-                            });
-                        }
+                        else this.problems.push({
+                            msg: "invalid rain expression",
+                            position: [
+                                _positionOffset,
+                                _positionOffset + _subExp[j].length - 1
+                            ],
+                            code: ErrorCode.InvalidExpression
+                        });
+
                         _currentSourceTree.push(
                             ...this.state.parse.tree.splice(
                                 -this.state.parse.tree.length
