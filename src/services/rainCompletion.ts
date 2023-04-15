@@ -79,70 +79,48 @@ export function getRainCompletion(
         ) {
             const _offset = _td.offsetAt(position);
             const _result = _rd.getOpMeta().map(v => {
+                const _following = v.operand === 0 
+                    ? "()" 
+                    : v.operand.find(i => i.name !== "inputs") 
+                        ? "<>()" 
+                        : "()";
                 return {
                     label: v.name,
                     labelDetails: {
-                        detail: v.operand === 0 
-                            ? "()" 
-                            : v.operand.find(i => i.name !== "inputs") 
-                                ? "<>()" 
-                                : "()",
+                        detail: _following,
                         description: "opcode"
                     },
                     kind: CompletionItemKind.Function,
-                    detail: "opcode " + v.name + (
-                        v.operand === 0 
-                            ? "()" 
-                            : v.operand.find(i => i.name !== "inputs") 
-                                ? "<>()" 
-                                : "()"
-                    ),
+                    detail: "opcode " + v.name + _following,
                     documentation: {
                         kind: _documentionType,
                         value: v.desc
                     },
-                    insertText: v.name + (
-                        v.operand === 0 
-                            ? "()" 
-                            : v.operand.find(i => i.name !== "inputs") 
-                                ? "<>()" 
-                                : "()"
-                    )
+                    insertText: v.name + _following
                 } as CompletionItem;
             });
             _rd.getOpMeta().forEach(v => {
-                v.aliases?.forEach(e =>
+                v.aliases?.forEach(e => {
+                    const _following = v.operand === 0 
+                        ? "()" 
+                        : v.operand.find(i => i.name !== "inputs") 
+                            ? "<>()" 
+                            : "()";
                     _result.push({
                         label: e,
                         labelDetails: {
-                            detail: v.operand === 0 
-                                ? "()" 
-                                : v.operand.find(i => i.name !== "inputs") 
-                                    ? "<>()" 
-                                    : "()",
+                            detail: _following, 
                             description: "opcode (alias)"
                         },
                         kind: CompletionItemKind.Function,
-                        detail: "opcode " + e + (
-                            v.operand === 0 
-                                ? "()" 
-                                : v.operand.find(i => i.name !== "inputs") 
-                                    ? "<>()" 
-                                    : "()"
-                        ),
+                        detail: "opcode " + e + _following,
                         documentation: {
                             kind: _documentionType,
                             value: v.desc
                         },
-                        insertText: v.name + (
-                            v.operand === 0 
-                                ? "()" 
-                                : v.operand.find(i => i.name !== "inputs") 
-                                    ? "<>()" 
-                                    : "()"
-                        )
-                    })
-                );
+                        insertText: v.name + _following
+                    });
+                });
             });
             const _tree = _rd.getParseTree();
             let _currentSource = 0;
