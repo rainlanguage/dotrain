@@ -65,15 +65,19 @@ export function getRainHover(
     const _tree = _rd.getParseTree().find(v =>
         v.position[0] <= _offset && v.position[1] >= _offset
     );
-    const search = (node: RDNode[]): Hover | null => {
-        for (let i = 0; i < node.length; i++) {
-            const _n = node[i];
+    const search = (nodes: RDNode[]): Hover | null => {
+        for (let i = 0; i < nodes.length; i++) {
+            const _n = nodes[i];
             if (_n.position[0] <= _offset && _n.position[1] >= _offset) {
                 if ("opcode" in _n) {
                     if (_n.parens[0] < _offset && _n.parens[1] > _offset) {
                         return search(_n.parameters);
                     }
                     else return {
+                        range: Range.create(
+                            _td.positionAt(_n.opcode.position[0]), 
+                            _td.positionAt(_n.parens[1] + 1)
+                        ),
                         contents: {
                             kind: _contentType,
                             value: _n.opcode.description
@@ -82,6 +86,10 @@ export function getRainHover(
                 }
                 else if ("value" in _n) {
                     return {
+                        range: Range.create(
+                            _td.positionAt(_n.position[0]), 
+                            _td.positionAt(_n.position[1] + 1)
+                        ),
                         contents: {
                             kind: _contentType,
                             value: "Value"
@@ -89,6 +97,10 @@ export function getRainHover(
                     } as Hover;
                 }
                 else return {
+                    range: Range.create(
+                        _td.positionAt(_n.position[0]), 
+                        _td.positionAt(_n.position[1] + 1)
+                    ),
                     contents: {
                         kind: _contentType,
                         value: _contentType === "markdown"
@@ -109,8 +121,7 @@ export function getRainHover(
                                     _td.positionAt(_n.position[1] + 1)
                                 ))
                             }`
-                    },
-                    range: Range.create(_td.positionAt(4), _td.positionAt(12))
+                    }
                 } as Hover;
             }
             else if (_n.lhs) {
@@ -120,6 +131,10 @@ export function getRainHover(
                     if (_lhs[j].position[0] <= _offset && _lhs[j].position[1] >= _offset) {
                         const _opener = _lhs[j].name === "_" ? "placeholder" : "alias";
                         return {
+                            range: Range.create(
+                                _td.positionAt(_lhs[j].position[0]),
+                                _td.positionAt(_lhs[j].position[1] + 1),
+                            ),
                             contents: {
                                 kind: _contentType,
                                 value: "opcode" in _n 
