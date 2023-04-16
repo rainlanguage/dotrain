@@ -1,3 +1,3 @@
-'use strict';
+"use strict";
 
-module.exports = require('./dist/cjs/index');
+module.exports = require("./dist/cjs/index");
