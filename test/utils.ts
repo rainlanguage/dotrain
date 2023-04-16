@@ -3,7 +3,7 @@ import { Position, Range } from "vscode-languageserver-types";
 /**
  * Deployer Address to fetch the opmeta from subgraph
  */
-export const deployerAddress = "0x225F36bEc16f5d78baa3462B53CC2A6C24FAAEc0";
+export const deployerAddress = "0x092Fce581457894FDa5cdAF6208fe3E823543fb7";
 /** 
  * Assert errors thrown by functions
 */
