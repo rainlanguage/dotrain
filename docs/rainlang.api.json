@@ -204,7 +204,7 @@
               "text": ") => boolean"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "areEqualStateConfigs",
@@ -232,7 +232,7 @@
               "canonicalReference": "@ethersproject/bytes!arrayify:function"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "arrayify",
@@ -278,7 +278,7 @@
               "canonicalReference": "@ethersproject/bytes!BytesLike:type"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "bytify",
@@ -297,7 +297,7 @@
               "text": "export interface ClientCapabilities "
             }
           ],
-          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
           "name": "ClientCapabilities",
           "preserveMemberOrder": false,
@@ -360,7 +360,7 @@
               "text": "export declare namespace ClientCapabilities "
             }
           ],
-          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
           "name": "ClientCapabilities",
           "preserveMemberOrder": false,
@@ -400,7 +400,7 @@
               "text": "export declare enum CompletionTriggerKind "
             }
           ],
-          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
           "name": "CompletionTriggerKind",
           "preserveMemberOrder": false,
@@ -489,7 +489,7 @@
               "canonicalReference": "@ethersproject/bytes!concat:function"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "concat",
@@ -517,7 +517,7 @@
               "canonicalReference": "ethers!constants"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "CONSTANTS",
@@ -552,7 +552,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 3,
             "endIndex": 4
@@ -597,7 +597,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 3,
             "endIndex": 4
@@ -655,7 +655,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 3,
             "endIndex": 4
@@ -684,7 +684,7 @@
               "text": "export declare enum ErrorCode "
             }
           ],
-          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
           "name": "ErrorCode",
           "preserveMemberOrder": false,
@@ -1294,7 +1294,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/compiler/expressionConfigTypes.d.ts",
+          "fileUrlPath": "dist/types/compiler/expressionConfigTypes.d.ts",
           "releaseTag": "Public",
           "name": "ExpressionConfig",
           "typeTokenRange": {
@@ -1352,7 +1352,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 9,
             "endIndex": 10
@@ -1439,7 +1439,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 6,
             "endIndex": 8
@@ -1518,7 +1518,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 8,
             "endIndex": 10
@@ -1586,7 +1586,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/rainLanguageService.d.ts",
+          "fileUrlPath": "dist/types/rainLanguageService.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 3,
             "endIndex": 4
@@ -1668,7 +1668,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/services/rainCompletion.d.ts",
+          "fileUrlPath": "dist/types/services/rainCompletion.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 10,
             "endIndex": 12
@@ -1761,7 +1761,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/services/rainCompletion.d.ts",
+          "fileUrlPath": "dist/types/services/rainCompletion.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 7,
             "endIndex": 9
@@ -1859,7 +1859,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/services/rainDiagnostics.d.ts",
+          "fileUrlPath": "dist/types/services/rainDiagnostics.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 8,
             "endIndex": 12
@@ -1944,7 +1944,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/services/rainDiagnostics.d.ts",
+          "fileUrlPath": "dist/types/services/rainDiagnostics.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 5,
             "endIndex": 9
@@ -2034,7 +2034,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/services/rainHover.d.ts",
+          "fileUrlPath": "dist/types/services/rainHover.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 10,
             "endIndex": 12
@@ -2127,7 +2127,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/services/rainHover.d.ts",
+          "fileUrlPath": "dist/types/services/rainHover.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 7,
             "endIndex": 9
@@ -2181,7 +2181,7 @@
               "canonicalReference": "@ethersproject/bytes!hexlify:function"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "hexlify",
@@ -2209,7 +2209,7 @@
               "canonicalReference": "@ethersproject/bytes!hexZeroPad:function"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "hexZeroPad",
@@ -2244,7 +2244,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 3,
             "endIndex": 4
@@ -2282,7 +2282,7 @@
               "canonicalReference": "@ethersproject/bytes!isBytes:function"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "isBytes",
@@ -2310,7 +2310,7 @@
               "canonicalReference": "@ethersproject/bytes!isBytesLike:function"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "isBytesLike",
@@ -2338,7 +2338,7 @@
               "canonicalReference": "@ethersproject/bytes!isHexString:function"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "isHexString",
@@ -2357,7 +2357,7 @@
               "text": "export interface LanguageService "
             }
           ],
-          "fileUrlPath": "dist/cjs/rainLanguageService.d.ts",
+          "fileUrlPath": "dist/types/rainLanguageService.d.ts",
           "releaseTag": "Public",
           "name": "LanguageService",
           "preserveMemberOrder": false,
@@ -2862,7 +2862,7 @@
               "text": "export interface LanguageServiceParams "
             }
           ],
-          "fileUrlPath": "dist/cjs/rainLanguageTypes.d.ts",
+          "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
           "name": "LanguageServiceParams",
           "preserveMemberOrder": false,
@@ -2950,7 +2950,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 8,
             "endIndex": 10
@@ -3024,7 +3024,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 5,
             "endIndex": 6
@@ -3061,7 +3061,7 @@
               "text": "export declare enum MemoryType "
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "MemoryType",
           "preserveMemberOrder": false,
@@ -3147,7 +3147,7 @@
               "canonicalReference": "!Uint8Array:interface"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "op",
@@ -3179,7 +3179,7 @@
               "text": ") => string"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "paddedUInt128",
@@ -3211,7 +3211,7 @@
               "text": ") => string"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "paddedUInt160",
@@ -3243,7 +3243,7 @@
               "text": ") => string"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "paddedUInt256",
@@ -3275,7 +3275,7 @@
               "text": ") => string"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "paddedUInt32",
@@ -3307,7 +3307,7 @@
               "text": ") => string"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "paddedUInt64",
@@ -3335,7 +3335,7 @@
               "canonicalReference": "@ethersproject/units!parseUnits:function"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "parseUnits",
@@ -3354,7 +3354,7 @@
               "text": "export declare class RainDocument "
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParser.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParser.d.ts",
           "releaseTag": "Public",
           "isAbstract": false,
           "name": "RainDocument",
@@ -3939,7 +3939,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RainDocumentResult",
           "typeTokenRange": {
@@ -3982,7 +3982,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 5,
             "endIndex": 6
@@ -4072,7 +4072,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RainParseState",
           "typeTokenRange": {
@@ -4116,7 +4116,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RDAliasNode",
           "typeTokenRange": {
@@ -4151,7 +4151,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RDComment",
           "typeTokenRange": {
@@ -4196,7 +4196,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RDNode",
           "typeTokenRange": {
@@ -4285,7 +4285,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RDOpNode",
           "typeTokenRange": {
@@ -4329,7 +4329,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RDParseTree",
           "typeTokenRange": {
@@ -4355,7 +4355,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RDPosition",
           "typeTokenRange": {
@@ -4390,7 +4390,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RDProblem",
           "typeTokenRange": {
@@ -4443,7 +4443,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/parser/rainParserTypes.d.ts",
+          "fileUrlPath": "dist/types/parser/rainParserTypes.d.ts",
           "releaseTag": "Public",
           "name": "RDValueNode",
           "typeTokenRange": {
@@ -4503,7 +4503,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 8,
             "endIndex": 10
@@ -4596,7 +4596,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/compiler/rainCompiler.d.ts",
+          "fileUrlPath": "dist/types/compiler/rainCompiler.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 6,
             "endIndex": 10
@@ -4677,7 +4677,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/compiler/rainCompiler.d.ts",
+          "fileUrlPath": "dist/types/compiler/rainCompiler.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 6,
             "endIndex": 10
@@ -4745,7 +4745,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/compiler/rainCompiler.d.ts",
+          "fileUrlPath": "dist/types/compiler/rainCompiler.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 3,
             "endIndex": 7
@@ -4826,7 +4826,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/cjs/compiler/rainDecompiler.d.ts",
+          "fileUrlPath": "dist/types/compiler/rainDecompiler.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 8,
             "endIndex": 12
@@ -4880,7 +4880,7 @@
               "canonicalReference": "@ethersproject/bytes!zeroPad:function"
             }
           ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
+          "fileUrlPath": "dist/types/utils.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
           "name": "zeroPad",

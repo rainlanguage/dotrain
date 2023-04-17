@@ -16,6 +16,7 @@
     "main": "./dist/cjs/index.js",
     "module": "./dist/esm/index.js",
     "browser": "./dist/esm/index.js",
+    "types": "./dist/types/index.d.ts",
     "files": [
         "/dist",
         "/src",
@@ -27,9 +28,10 @@
     ],
     "scripts": {
         "prepare": "npm run build",
-        "build": "rimraf ./dist && npm run build-cjs && npm run build-esm",
+        "build": "rimraf ./dist && npm run build-cjs && npm run build-esm && npm run build-types",
         "build-esm": "tsc -b ./tsconfig.esm.json",
         "build-cjs": "tsc -b ./tsconfig.json",
+        "build-types": "tsc -b ./tsconfig.types.json",
         "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
         "lint": "eslint \"src/**\" \"test/**\"",
         "lint-fix": "eslint \"src/**\" \"test/**\" --fix",
