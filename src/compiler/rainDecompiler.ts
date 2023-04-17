@@ -1,17 +1,22 @@
-import { OpMetaSchema } from "..";
 import { RainDocument } from "../parser/rainParser";
 import { TextDocument } from "../rainLanguageTypes";
 import { ExpressionConfig } from "./expressionConfigTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
-import { OpMeta, InputMeta, OutputMeta, OperandArgs } from "../parser/opMetaTypes";
+import { 
+    OpMeta, 
+    InputMeta, 
+    OutputMeta, 
+    OperandArgs, 
+    validateMeta, 
+    OpMetaSchema, 
+    metaFromBytes 
+} from "@rainprotocol/meta";
 import { 
     arrayify, 
     BytesLike, 
     BigNumber, 
     CONSTANTS, 
-    validateMeta, 
     extractByBits, 
-    metaFromBytes,
     isBigNumberish 
 } from "../utils";
 

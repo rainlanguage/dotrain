@@ -243,29 +243,6 @@
         },
         {
           "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!bytesFromMeta:var",
-          "docComment": "/**\n * Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment\n *\n * @param meta - A meta object or array of meta objects or stringified format of them\n *\n * @param schema - Json schema to validate as object (JSON.parsed) or stringified format\n *\n * @returns Bytes as HexString\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "bytesFromMeta: "
-            },
-            {
-              "kind": "Content",
-              "text": "(meta: object | object[] | string, schema: object | string) => string"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
-          "isReadonly": true,
-          "releaseTag": "Public",
-          "name": "bytesFromMeta",
-          "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
-        },
-        {
-          "kind": "Variable",
           "canonicalReference": "@rainprotocol/rainlang!bytify:var",
           "docComment": "/**\n * Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte, unless a desired `bytesLength` is specified.\n *\n * @param value - value to convert to raw bytes format\n *\n * @param bytesLength - (defaults to 1) number of bytes to left pad if `value` doesn't completely fill the desired amount of memory. Will throw `InvalidArgument` error if value already exceeds bytes length.\n *\n * @returns raw bytes representation as Uint8Array\n *\n * @public\n */\n",
           "excerptTokens": [
@@ -308,38 +285,6 @@
           "variableTypeTokenRange": {
             "startIndex": 1,
             "endIndex": 7
-          }
-        },
-        {
-          "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!cborDecode:var",
-          "docComment": "/**\n * Use CBOR to decode from a given value.\n *\n * This will try to decode all from the given value, allowing to decoded CBOR sequences. Always will return an array with the decoded results.\n *\n * @param dataEncoded_ - The data to be decoded\n *\n * @returns An array with the decoded data.\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "cborDecode: "
-            },
-            {
-              "kind": "Content",
-              "text": "(dataEncoded_: string) => "
-            },
-            {
-              "kind": "Reference",
-              "text": "Array",
-              "canonicalReference": "!Array:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<any>"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
-          "isReadonly": true,
-          "releaseTag": "Public",
-          "name": "cborDecode",
-          "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 4
           }
         },
         {
@@ -526,32 +471,6 @@
           ]
         },
         {
-          "kind": "TypeAlias",
-          "canonicalReference": "@rainprotocol/rainlang!ComputedOutput:type",
-          "docComment": "/**\n * Data type for computed output\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export type ComputedOutput = "
-            },
-            {
-              "kind": "Content",
-              "text": "{\n    bits: [number, number];\n    computation?: string;\n}"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
-          "releaseTag": "Public",
-          "name": "ComputedOutput",
-          "typeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
-        },
-        {
           "kind": "Variable",
           "canonicalReference": "@rainprotocol/rainlang!concat:var",
           "docComment": "/**\n * ethers concat\n *\n * @public\n */\n",
@@ -651,38 +570,6 @@
             }
           ],
           "name": "constructByBits"
-        },
-        {
-          "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!decodeRainMetaDocument:var",
-          "docComment": "/**\n * Use a given `dataEncoded_` as hex string and decoded it following the Rain enconding design.\n *\n * @param dataEncoded_ - The data to be decoded\n *\n * @returns An array with the values decoded.\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "decodeRainMetaDocument: "
-            },
-            {
-              "kind": "Content",
-              "text": "(dataEncoded_: string) => "
-            },
-            {
-              "kind": "Reference",
-              "text": "Array",
-              "canonicalReference": "!Array:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<any>"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
-          "isReadonly": true,
-          "releaseTag": "Public",
-          "name": "decodeRainMetaDocument",
-          "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 4
-          }
         },
         {
           "kind": "Function",
@@ -1720,227 +1607,6 @@
         },
         {
           "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!getOpMetaFromSg:function(1)",
-          "docComment": "/**\n * Get the op meta from sg\n *\n * @param deployerAddress - The address of the deployer to get the op met from its emitted DISpair event\n *\n * @param network - (optional) The network name, defaults to mumbai if not specified\n *\n * @returns The op meta bytes\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function getOpMetaFromSg(deployerAddress: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ", network?: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Reference",
-              "text": "Promise",
-              "canonicalReference": "!Promise:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<string>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 5,
-            "endIndex": 7
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 1,
-          "parameters": [
-            {
-              "parameterName": "deployerAddress",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "network",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": true
-            }
-          ],
-          "name": "getOpMetaFromSg"
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!getOpMetaFromSg:function(2)",
-          "docComment": "/**\n * Get the op meta from sg\n *\n * @param deployerAddress - The address of the deployer to get the op met from its emitted DISpair event\n *\n * @param chainId - (optional) The chain id of the network where the deployer is deployed at. default is Mumbai network\n *\n * @returns The op meta bytes\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function getOpMetaFromSg(deployerAddress: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ", chainId?: "
-            },
-            {
-              "kind": "Content",
-              "text": "number"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Reference",
-              "text": "Promise",
-              "canonicalReference": "!Promise:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<string>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 5,
-            "endIndex": 7
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 2,
-          "parameters": [
-            {
-              "parameterName": "deployerAddress",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "chainId",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": true
-            }
-          ],
-          "name": "getOpMetaFromSg"
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!getOpMetaFromSg:function(3)",
-          "docComment": "/**\n * Get the op meta from sg\n *\n * @param deployerAddress - The address of the deployer to get the op met from its emitted DISpair event\n *\n * @param sgUrl - The subgraph endpoint URL to query from\n *\n * @returns The op meta bytes\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function getOpMetaFromSg(deployerAddress: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ", sgUrl: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Reference",
-              "text": "Promise",
-              "canonicalReference": "!Promise:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<string>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 5,
-            "endIndex": 7
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 3,
-          "parameters": [
-            {
-              "parameterName": "deployerAddress",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "sgUrl",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": false
-            }
-          ],
-          "name": "getOpMetaFromSg"
-        },
-        {
-          "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!getQuery:var",
-          "docComment": "/**\n * Get the query content\n *\n * @param address - Address of the deployer\n *\n * @returns The query content\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "getQuery: "
-            },
-            {
-              "kind": "Content",
-              "text": "(address: string) => string"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
-          "isReadonly": true,
-          "releaseTag": "Public",
-          "name": "getQuery",
-          "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
-        },
-        {
-          "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!getRainCompletion:function(1)",
           "docComment": "/**\n * Provides completion items\n *\n * @param document - The TextDocuemnt\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param opmeta - The op meta\n *\n * @param setting - (optional) Language service params\n *\n * @returns Completion items and null if no completion items were available for that position\n *\n * @public\n */\n",
           "excerptTokens": [
@@ -2548,63 +2214,6 @@
           "releaseTag": "Public",
           "name": "hexZeroPad",
           "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 3
-          }
-        },
-        {
-          "kind": "TypeAlias",
-          "canonicalReference": "@rainprotocol/rainlang!InputArgs:type",
-          "docComment": "/**\n * Data type for input argguments\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export type InputArgs = "
-            },
-            {
-              "kind": "Content",
-              "text": "{\n    parameters: {\n        name: string;\n        desc?: string;\n        spread?: boolean;\n    }[];\n    bits?: [number, number];\n    computation?: string;\n}"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
-          "releaseTag": "Public",
-          "name": "InputArgs",
-          "typeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
-        },
-        {
-          "kind": "TypeAlias",
-          "canonicalReference": "@rainprotocol/rainlang!InputMeta:type",
-          "docComment": "/**\n * Data type of opcode's inputs that determines the number of inputs an opcode has and provide information about them\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export type InputMeta = "
-            },
-            {
-              "kind": "Content",
-              "text": "0 | "
-            },
-            {
-              "kind": "Reference",
-              "text": "InputArgs",
-              "canonicalReference": "@rainprotocol/rainlang!InputArgs:type"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
-          "releaseTag": "Public",
-          "name": "InputMeta",
-          "typeTokenRange": {
             "startIndex": 1,
             "endIndex": 3
           }
@@ -3290,29 +2899,6 @@
           "extendsTokenRanges": []
         },
         {
-          "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!MAGIC_NUMBERS:var",
-          "docComment": "/**\n * Magic numbers used to identify Rain documents. This use `BigInt` with their literal numbers.\n *\n * See more abour Magic numbers: https://github.com/rainprotocol/metadata-spec/blob/main/README.md\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "MAGIC_NUMBERS: "
-            },
-            {
-              "kind": "Content",
-              "text": "{\n    RAIN_META_DOCUMENT: bigint;\n    SOLIDITY_ABIV2: bigint;\n    OPS_META_V1: bigint;\n    CONTRACT_META_V1: bigint;\n}"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
-          "isReadonly": true,
-          "releaseTag": "Public",
-          "name": "MAGIC_NUMBERS",
-          "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
-        },
-        {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!mapToRecord:function(1)",
           "docComment": "/**\n * Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol.\n *\n * @param map - The Map to conver to Record\n *\n * @param properties - (optional) properties to pick from the second item of the Map's elements.\n *\n * @returns a new Record from Map\n *\n * @public\n */\n",
@@ -3526,38 +3112,6 @@
         },
         {
           "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!metaFromBytes:var",
-          "docComment": "/**\n * Decompress and convert bytes to meta\n *\n * @param bytes - Bytes to decompress and convert to json\n *\n * @param schema - Json schema to validate as object (JSON.parsed) or stringified format\n *\n * @returns meta content as object\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "metaFromBytes: "
-            },
-            {
-              "kind": "Content",
-              "text": "(bytes: "
-            },
-            {
-              "kind": "Reference",
-              "text": "BytesLike",
-              "canonicalReference": "@ethersproject/bytes!BytesLike:type"
-            },
-            {
-              "kind": "Content",
-              "text": ", schema: object | string) => any"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
-          "isReadonly": true,
-          "releaseTag": "Public",
-          "name": "metaFromBytes",
-          "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 4
-          }
-        },
-        {
-          "kind": "Variable",
           "canonicalReference": "@rainprotocol/rainlang!op:var",
           "docComment": "/**\n * Converts an opcode and operand to bytes, and returns their concatenation.\n *\n * @param code - the opcode\n *\n * @param erand - the operand, currently limited to 1 byte (defaults to 0)\n *\n * @public\n */\n",
           "excerptTokens": [
@@ -3600,170 +3154,6 @@
           "variableTypeTokenRange": {
             "startIndex": 1,
             "endIndex": 7
-          }
-        },
-        {
-          "kind": "TypeAlias",
-          "canonicalReference": "@rainprotocol/rainlang!OperandArgs:type",
-          "docComment": "/**\n * Data type for computed operand that consists of some arguments\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export type OperandArgs = "
-            },
-            {
-              "kind": "Content",
-              "text": "{\n    bits: [number, number];\n    name: \"inputs\" | string;\n    desc?: string;\n    computation?: string;\n    validRange?: ([number] | [number, number])[];\n}[]"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
-          "releaseTag": "Public",
-          "name": "OperandArgs",
-          "typeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
-        },
-        {
-          "kind": "TypeAlias",
-          "canonicalReference": "@rainprotocol/rainlang!OperandMeta:type",
-          "docComment": "/**\n * Data type of operand arguments, used only for non-constant operands\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export type OperandMeta = "
-            },
-            {
-              "kind": "Content",
-              "text": "0 | "
-            },
-            {
-              "kind": "Reference",
-              "text": "OperandArgs",
-              "canonicalReference": "@rainprotocol/rainlang!OperandArgs:type"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
-          "releaseTag": "Public",
-          "name": "OperandMeta",
-          "typeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 3
-          }
-        },
-        {
-          "kind": "TypeAlias",
-          "canonicalReference": "@rainprotocol/rainlang!OpMeta:type",
-          "docComment": "/**\n * Type Definitions for opcodes metadata used by RainLang.\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export type OpMeta = "
-            },
-            {
-              "kind": "Content",
-              "text": "{\n    name: string;\n    desc: string;\n    operand: "
-            },
-            {
-              "kind": "Reference",
-              "text": "OperandMeta",
-              "canonicalReference": "@rainprotocol/rainlang!OperandMeta:type"
-            },
-            {
-              "kind": "Content",
-              "text": ";\n    inputs: "
-            },
-            {
-              "kind": "Reference",
-              "text": "InputMeta",
-              "canonicalReference": "@rainprotocol/rainlang!InputMeta:type"
-            },
-            {
-              "kind": "Content",
-              "text": ";\n    outputs: "
-            },
-            {
-              "kind": "Reference",
-              "text": "OutputMeta",
-              "canonicalReference": "@rainprotocol/rainlang!OutputMeta:type"
-            },
-            {
-              "kind": "Content",
-              "text": ";\n    aliases?: string[];\n}"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
-          "releaseTag": "Public",
-          "name": "OpMeta",
-          "typeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 8
-          }
-        },
-        {
-          "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!OpMetaSchema:var",
-          "docComment": "/**\n * op meta schema used for validation\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "OpMetaSchema: "
-            },
-            {
-              "kind": "Content",
-              "text": "{\n    $schema: string;\n    $ref: string;\n    $comment: string;\n    definitions: {\n        OpMeta: {\n            type: string;\n            properties: {\n                name: {\n                    type: string;\n                    title: string;\n                    description: string;\n                    pattern: string;\n                };\n                desc: {\n                    type: string;\n                    title: string;\n                    description: string;\n                };\n                operand: {\n                    anyOf: ({\n                        type: string;\n                        const: number;\n                        $ref?: undefined;\n                    } | {\n                        $ref: string;\n                        type?: undefined;\n                        const?: undefined;\n                    })[];\n                    title: string;\n                    description: string;\n                };\n                inputs: {\n                    $ref: string;\n                    title: string;\n                    description: string;\n                };\n                outputs: {\n                    $ref: string;\n                    title: string;\n                    description: string;\n                };\n                aliases: {\n                    type: string;\n                    items: {\n                        type: string;\n                        pattern: string;\n                    };\n                    title: string;\n                    description: string;\n                };\n            };\n            required: string[];\n            additionalProperties: boolean;\n            title: string;\n            description: string;\n        };\n        OperandArgs: {\n            type: string;\n            items: {\n                type: string;\n                properties: {\n                    bits: {\n                        type: string;\n                        items: {\n                            type: string;\n                            minimum: number;\n                            maximum: number;\n                        };\n                        minItems: number;\n                        maxItems: number;\n                        title: string;\n                        description: string;\n                    };\n                    name: {\n                        type: string;\n                        title: string;\n                        description: string;\n                        pattern: string;\n                    };\n                    desc: {\n                        type: string;\n                        title: string;\n                        description: string;\n                    };\n                    computation: {\n                        type: string;\n                        title: string;\n                        description: string;\n                    };\n                    validRange: {\n                        type: string;\n                        items: {\n                            anyOf: {\n                                type: string;\n                                items: {\n                                    type: string;\n                                    minimum: number;\n                                    maximum: number;\n                                };\n                                minItems: number;\n                                maxItems: number;\n                            }[];\n                        };\n                        title: string;\n                        description: string;\n                    };\n                };\n                required: string[];\n                additionalProperties: boolean;\n            };\n            minItems: number;\n        };\n        InputMeta: {\n            anyOf: ({\n                type: string;\n                const: number;\n                properties?: undefined;\n                required?: undefined;\n                additionalProperties?: undefined;\n            } | {\n                type: string;\n                properties: {\n                    parameters: {\n                        type: string;\n                        items: {\n                            type: string;\n                            properties: {\n                                name: {\n                                    type: string;\n                                    title: string;\n                                    description: string;\n                                    pattern: string;\n                                };\n                                desc: {\n                                    type: string;\n                                    title: string;\n                                    description: string;\n                                };\n                                spread: {\n                                    type: string;\n                                    title: string;\n                                    description: string;\n                                };\n                            };\n                            required: string[];\n                            additionalProperties: boolean;\n                        };\n                        title: string;\n                        description: string;\n                    };\n                    bits: {\n                        type: string;\n                        items: {\n                            type: string;\n                            minimum: number;\n                            maximum: number;\n                        };\n                        minItems: number;\n                        maxItems: number;\n                        title: string;\n                        description: string;\n                    };\n                    computation: {\n                        type: string;\n                        title: string;\n                        description: string;\n                    };\n                };\n                required: string[];\n                additionalProperties: boolean;\n                const?: undefined;\n            })[];\n        };\n        OutputMeta: {\n            anyOf: ({\n                type: string;\n                minimum: number;\n                properties?: undefined;\n                additionalProperties?: undefined;\n            } | {\n                type: string;\n                properties: {\n                    bits: {\n                        type: string;\n                        items: {\n                            type: string;\n                            minimum: number;\n                            maximum: number;\n                        };\n                        minItems: number;\n                        maxItems: number;\n                        title: string;\n                        description: string;\n                    };\n                    computation: {\n                        type: string;\n                        title: string;\n                        description: string;\n                    };\n                };\n                additionalProperties: boolean;\n                minimum?: undefined;\n            })[];\n        };\n    };\n}"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/index.d.ts",
-          "isReadonly": true,
-          "releaseTag": "Public",
-          "name": "OpMetaSchema",
-          "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
-        },
-        {
-          "kind": "TypeAlias",
-          "canonicalReference": "@rainprotocol/rainlang!OutputMeta:type",
-          "docComment": "/**\n * Data type of opcode's outputs that determines the number of outputs an opcode has and provide information about them\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export type OutputMeta = "
-            },
-            {
-              "kind": "Content",
-              "text": "number | "
-            },
-            {
-              "kind": "Reference",
-              "text": "ComputedOutput",
-              "canonicalReference": "@rainprotocol/rainlang!ComputedOutput:type"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/opMetaTypes.d.ts",
-          "releaseTag": "Public",
-          "name": "OutputMeta",
-          "typeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 3
           }
         },
         {
@@ -4176,7 +3566,7 @@
                 {
                   "kind": "Reference",
                   "text": "OpMeta",
-                  "canonicalReference": "@rainprotocol/rainlang!OpMeta:type"
+                  "canonicalReference": "@rainprotocol/meta!OpMeta:type"
                 },
                 {
                   "kind": "Content",
@@ -5470,52 +4860,6 @@
             }
           ],
           "name": "rld"
-        },
-        {
-          "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!sgBook:var",
-          "docComment": "/**\n * Subgraph endpoints and their chain ids as key/value pairs\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "sgBook: "
-            },
-            {
-              "kind": "Content",
-              "text": "{\n    [chainId: number | string]: string;\n}"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/parser/onChainOpMeta.d.ts",
-          "isReadonly": true,
-          "releaseTag": "Public",
-          "name": "sgBook",
-          "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
-        },
-        {
-          "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!validateMeta:var",
-          "docComment": "/**\n * Validate a meta or array of metas against a schema\n *\n * @param meta - A meta object or array of meta objects or stringified format of them\n *\n * @param schema - Json schema to validate as object (JSON.parsed) or stringified format\n *\n * @returns boolean\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "validateMeta: "
-            },
-            {
-              "kind": "Content",
-              "text": "(meta: object | object[] | string, schema: object | string) => boolean"
-            }
-          ],
-          "fileUrlPath": "dist/cjs/utils.d.ts",
-          "isReadonly": true,
-          "releaseTag": "Public",
-          "name": "validateMeta",
-          "variableTypeTokenRange": {
-            "startIndex": 1,
-            "endIndex": 2
-          }
         },
         {
           "kind": "Variable",

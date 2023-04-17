@@ -2,8 +2,9 @@ import assert from "assert";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { invalidOpMetas } from "../fixtures/opmeta";
+import { getOpMetaFromSg } from "@rainprotocol/meta";
 import { assertError, deployerAddress } from "../utils";
-import { ExpressionConfig, getOpMetaFromSg, rainlang, rlc } from "../../src";
+import { ExpressionConfig, rainlang, rlc } from "../../src";
 
 
 chai.use(chaiAsPromised);

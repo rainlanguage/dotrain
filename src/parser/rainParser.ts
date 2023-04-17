@@ -1,4 +1,3 @@
-import { OpMetaSchema } from "..";
 import { ErrorCode, TextDocument } from "../rainLanguageTypes";
 import { ExpressionConfig } from "../compiler/expressionConfigTypes";
 import { 
@@ -8,8 +7,10 @@ import {
     OutputMeta,
     OperandArgs,
     OperandMeta,
+    OpMetaSchema, 
+    metaFromBytes, 
     ComputedOutput
-} from "./opMetaTypes";
+} from "@rainprotocol/meta";
 import { 
     RDNode, 
     RDOpNode, 
@@ -30,8 +31,7 @@ import {
     CONSTANTS,  
     isBytesLike, 
     BigNumberish, 
-    extractByBits,
-    metaFromBytes,
+    extractByBits, 
     memoryOperand,
     isBigNumberish,
     constructByBits,

@@ -1,8 +1,8 @@
 import { deployerAddress, toRange } from "../utils";
+import { getOpMetaFromSg } from "@rainprotocol/meta";
 import {
     rainlang,
     TextDocument,
-    getOpMetaFromSg,
     getLanguageService,
     Position,
     LanguageServiceParams,

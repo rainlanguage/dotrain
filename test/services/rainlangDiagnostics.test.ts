@@ -1,11 +1,11 @@
 import assert from "assert";
 import { deployerAddress, toRange } from "../utils";
+import { getOpMetaFromSg } from "@rainprotocol/meta";
 import { 
     rainlang, 
     ErrorCode,
     Diagnostic, 
     TextDocument, 
-    getOpMetaFromSg, 
     DiagnosticSeverity, 
     getLanguageService 
 } from "../../src";

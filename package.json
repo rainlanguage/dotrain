@@ -61,15 +61,8 @@
     },
     "dependencies": {
         "@nohns/algebra.js": "^0.2.9",
-        "ajv": "^8.12.0",
-        "buffer": "^6.0.3",
-        "cbor-web": "https://gitpkg.now.sh/hildjj/node-cbor/packages/cbor-web?e593ce09b34cc1420f402b27ab0dd38a1306cecd",
+        "@rainprotocol/meta": "^0.1.2",
         "ethers": "^5.7.2",
-        "graphql": "^16.6.0",
-        "graphql-request": "^5.2.0",
-        "pako": "^2.1.0",
-        "prettier": "^2.8.3",
-        "prettier-standalone": "^1.3.1-0",
         "string-math": "^1.2.2",
         "vscode-languageserver-textdocument": "^1.0.8",
         "vscode-languageserver-types": "^3.17.3"
