@@ -1,14 +1,14 @@
+import assert from "assert";
 import { deployerAddress, toRange } from "../utils";
 import {
+    Hover, 
+    Position,
     rainlang,
     TextDocument,
-    getOpMetaFromSg,
+    getOpMetaFromSg, 
     getLanguageService,
-    Position,
-    LanguageServiceParams,
-    Hover
+    LanguageServiceParams 
 } from "../../src";
-import assert from "assert";
 
 
 function testHover(

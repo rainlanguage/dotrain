@@ -27,9 +27,6 @@
 |  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properites from a Map as a new Map with same keys. |
 |  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
 |  [getLanguageService(params)](./variables/getlanguageservice_1.md) | Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services |
-|  [getOpMetaFromSg(deployerAddress, network)](./variables/getopmetafromsg_1.md) | Get the op meta from sg |
-|  [getOpMetaFromSg(deployerAddress, chainId)](./variables/getopmetafromsg_2.md) | Get the op meta from sg |
-|  [getOpMetaFromSg(deployerAddress, sgUrl)](./variables/getopmetafromsg_3.md) | Get the op meta from sg |
 |  [getRainCompletion(document, position, opmeta, setting)](./variables/getraincompletion_1.md) | Provides completion items |
 |  [getRainCompletion(document, position, setting)](./variables/getraincompletion_2.md) | Provides completion items |
 |  [getRainDiagnostics(document, opmeta, setting)](./variables/getraindiagnostics_1.md) | Provides diagnostics |
@@ -66,44 +63,28 @@
 |  --- | --- |
 |  [areEqualStateConfigs](./variables/areequalstateconfigs.md) | Checks 2 ExpressionConfig objects to see if they are equal or not |
 |  [arrayify](./variables/arrayify.md) | ethers arrayify |
-|  [bytesFromMeta](./variables/bytesfrommeta.md) | Convert meta or array of metas or a schema to bytes and compress them for on-chain deployment |
 |  [bytify](./variables/bytify.md) | Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte, unless a desired `bytesLength` is specified. |
-|  [cborDecode](./variables/cbordecode.md) | Use CBOR to decode from a given value.<br><br>This will try to decode all from the given value, allowing to decoded CBOR sequences. Always will return an array with the decoded results. |
 |  [concat](./variables/concat.md) | ethers concat |
 |  [CONSTANTS](./variables/constants.md) | ethers constants |
-|  [decodeRainMetaDocument](./variables/decoderainmetadocument.md) | Use a given `dataEncoded_` as hex string and decoded it following the Rain enconding design. |
-|  [getQuery](./variables/getquery.md) | Get the query content |
 |  [hexlify](./variables/hexlify.md) | ethers hexlify |
 |  [hexZeroPad](./variables/hexzeropad.md) | ethers hexZeroPad |
 |  [isBytes](./variables/isbytes.md) | ethers isBytes |
 |  [isBytesLike](./variables/isbyteslike.md) | ethers isBytesLike |
 |  [isHexString](./variables/ishexstring.md) | ethers isHexString |
-|  [MAGIC\_NUMBERS](./variables/magic_numbers.md) | Magic numbers used to identify Rain documents. This use `BigInt` with their literal numbers.<br><br>See more abour Magic numbers: https://github.com/rainprotocol/metadata-spec/blob/main/README.md |
-|  [metaFromBytes](./variables/metafrombytes.md) | Decompress and convert bytes to meta |
 |  [op](./variables/op.md) | Converts an opcode and operand to bytes, and returns their concatenation. |
-|  [OpMetaSchema](./variables/opmetaschema.md) | op meta schema used for validation |
 |  [paddedUInt128](./variables/paddeduint128.md) | Utility function to produce 128 bits size hexString |
 |  [paddedUInt160](./variables/paddeduint160.md) | Utility function that transforms a BigNumberish to an ether address (40 char length hexString) |
 |  [paddedUInt256](./variables/paddeduint256.md) | Utility function that transforms a BigNumberish from the output of the ITierV2 contract report |
 |  [paddedUInt32](./variables/paddeduint32.md) | Utility function to produce 32 bits size hexString |
 |  [paddedUInt64](./variables/paddeduint64.md) | Utility function to produce 64 bits size hexString |
 |  [parseUnits](./variables/parseunits.md) | ethers parseUnits |
-|  [sgBook](./variables/sgbook.md) | Subgraph endpoints and their chain ids as key/value pairs |
-|  [validateMeta](./variables/validatemeta.md) | Validate a meta or array of metas against a schema |
 |  [zeroPad](./variables/zeropad.md) | ethers zeroPad |
 
 ## Type Aliases
 
 |  Type Alias | Description |
 |  --- | --- |
-|  [ComputedOutput](./types/computedoutput.md) | Data type for computed output |
 |  [ExpressionConfig](./types/expressionconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
-|  [InputArgs](./types/inputargs.md) | Data type for input argguments |
-|  [InputMeta](./types/inputmeta.md) | Data type of opcode's inputs that determines the number of inputs an opcode has and provide information about them |
-|  [OperandArgs](./types/operandargs.md) | Data type for computed operand that consists of some arguments |
-|  [OperandMeta](./types/operandmeta.md) | Data type of operand arguments, used only for non-constant operands |
-|  [OpMeta](./types/opmeta.md) | Type Definitions for opcodes metadata used by RainLang. |
-|  [OutputMeta](./types/outputmeta.md) | Data type of opcode's outputs that determines the number of outputs an opcode has and provide information about them |
 |  [RainDocumentResult](./types/raindocumentresult.md) | Type of RainDocument's parse result |
 |  [RainParseState](./types/rainparsestate.md) | Type of Parser's State |
 |  [RDAliasNode](./types/rdaliasnode.md) | Type of RainDocument's lhs aliases |
