@@ -2,7 +2,6 @@ import stringMath from "string-math";
 import { ExpressionConfig } from "./compiler/expressionConfigTypes";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
 
-
 /**
  * @public ethers constants
  */

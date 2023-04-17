@@ -3,7 +3,7 @@ import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { invalidOpMetas } from "../fixtures/opmeta";
 import { assertError, deployerAddress } from "../utils";
-import { ExpressionConfig, rainlang, rlc, getOpMetaFromSg } from "../../src";
+import { ExpressionConfig, getOpMetaFromSg, rainlang, rlc } from "../../src";
 
 
 chai.use(chaiAsPromised);
