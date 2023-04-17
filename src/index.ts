@@ -10,3 +10,14 @@ export * from "./services/rainCompletion";
 export * from "./rainLanguageService";
 export * from "./rainLanguageTypes";
 export * from "./utils";
+
+// for backward compatibility @TODO remove on next major release
+export { 
+    OpMeta, 
+    InputMeta,
+    InputArgs, 
+    OutputMeta, 
+    OperandArgs, 
+    OperandMeta, 
+    ComputedOutput 
+} from "@rainprotocol/meta";

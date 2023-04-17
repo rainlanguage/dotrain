@@ -8,6 +8,20 @@ import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
  */
 export const CONSTANTS = ethers.constants;
 export { BytesLike, BigNumber, BigNumberish };
+
+// for backward compatibility @TODO remove on next major release
+export { 
+    sgBook, 
+    getQuery, 
+    cborDecode, 
+    OpMetaSchema, 
+    validateMeta, 
+    bytesFromMeta, 
+    metaFromBytes, 
+    MAGIC_NUMBERS, 
+    getOpMetaFromSg, 
+    decodeRainMetaDocument      
+} from "@rainprotocol/meta";
 export const {
     /**
      * @public ethers concat

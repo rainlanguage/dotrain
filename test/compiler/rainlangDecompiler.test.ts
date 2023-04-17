@@ -1,8 +1,7 @@
 import assert, { AssertionError } from "assert";
 import { invalidOpMetas } from "../fixtures/opmeta";
-import { getOpMetaFromSg } from "@rainprotocol/meta";
 import { assertError, deployerAddress } from "../utils";
-import { ExpressionConfig, rainlang, hexlify, rld, rlc } from "../../src";
+import { ExpressionConfig, rainlang, hexlify, rld, rlc, getOpMetaFromSg } from "../../src";
 
 
 async function testRainlangDecompiler(
