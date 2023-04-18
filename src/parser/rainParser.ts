@@ -707,6 +707,18 @@ class RainParser {
                                             code:ErrorCode.InvalidWordPattern
                                         });
                                     }
+                                    const _ops = [
+                                        ...this.names,
+                                        ...this.opAliases.filter(v => v !== undefined).flat(),
+                                        "max-uint-256",
+                                        "max-uint256",
+                                        "infinity"
+                                    ];
+                                    if (_ops.includes(words[k])) this.problems.push({
+                                        msg: `illigal alias, "${words[k]}" is reserved`,
+                                        position: positions[k],
+                                        code:ErrorCode.IlligalAlias
+                                    });
                                     this.state.track.char = positions[k][1];
                                 }
                             }
@@ -1220,9 +1232,12 @@ class RainParser {
         const _wordPos: [number, number] = [entry, entry + _word.length - 1];
         this.state.track.char = entry + _word.length - 1;
         this.exp = this.exp.replace(_word, "");
-        const _aliasIndex = this.state.parse.expAliases[
-            this.state.parse.expAliases.length - 1
+        const _aliasIndex = this.state.parse. expAliases[
+            this.state.parse. expAliases.length - 1
         ].findIndex(
+            v => v.name === _word
+        );
+        const _currentAliasIndex = this.state.parse.subExpAliases.findIndex(
             v => v.name === _word
         );
 
@@ -1292,20 +1307,18 @@ class RainParser {
                 });
             }
         }
-        else if (_aliasIndex > -1) {
+        else if (_aliasIndex > -1 || _currentAliasIndex > -1) {
             if (!_word.match(this.wordPattern)) this.problems.push({
                 msg: `invalid pattern for alias: ${_word}`,
                 position: [..._wordPos],
                 code: ErrorCode.InvalidWordPattern
             });
-            if (this.state.parse.subExpAliases.find(
-                v => v.name === _word
-            )) this.problems.push({
+            if (_currentAliasIndex > -1) this.problems.push({
                 msg: "cannot reference self",
                 position: [..._wordPos],
                 code: ErrorCode.InvalidSelfReferenceLHS
             });
-            else this.updateTree({
+            this.updateTree({
                 name: _word,
                 position: [..._wordPos],
             });
@@ -1336,17 +1349,29 @@ class RainParser {
                     position: [..._wordPos],
                 });
             }
-            else this.problems.push({
-                msg: `undefined word: ${_word}`,
+            else {
+                this.problems.push({
+                    msg: `undefined word: ${_word}`,
+                    position: [..._wordPos],
+                    code: ErrorCode.UndefinedWord
+                });
+                this.updateTree({
+                    name: _word,
+                    position: [..._wordPos],
+                });
+            }
+        }
+        else {
+            this.problems.push({
+                msg: `"${_word}" is not a valid rainlang word`,
                 position: [..._wordPos],
-                code: ErrorCode.UndefinedWord
+                code: ErrorCode.InvalidWordPattern
+            });
+            this.updateTree({
+                name: _word,
+                position: [..._wordPos],
             });
         }
-        else this.problems.push({
-            msg: `"${_word}" is not a valid rainlang word`,
-            position: [..._wordPos],
-            code: ErrorCode.InvalidWordPattern
-        });
     }
 
     /**

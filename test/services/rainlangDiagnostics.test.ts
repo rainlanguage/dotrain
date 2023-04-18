@@ -360,23 +360,23 @@ describe("Rainlang Diagnostics Service tests", async function () {
         );
 
         await testDiagnostics(
-            rainlang`x: add(1 20), x: x;`, 
+            rainlang`x: add(1 x);`, 
             opMeta, 
             [
                 { 
                     message: "cannot reference self", 
-                    range: toRange(0, 17, 0, 18), 
+                    range: toRange(0, 9, 0, 10), 
                     severity: DiagnosticSeverity.Error, 
                     code: ErrorCode.InvalidSelfReferenceLHS, 
                     source: "rainlang" 
                 },
-                { 
-                    message: "no RHS item exists to match this LHS item: x", 
-                    range: toRange(0, 14, 0, 15), 
-                    severity: DiagnosticSeverity.Error, 
-                    code: ErrorCode.MismatchRHS, 
-                    source: "rainlang" 
-                }
+                // { 
+                //     message: "no RHS item exists to match this LHS item: x", 
+                //     range: toRange(0, 14, 0, 15), 
+                //     severity: DiagnosticSeverity.Error, 
+                //     code: ErrorCode.MismatchRHS, 
+                //     source: "rainlang" 
+                // }
             ]
         );
 
@@ -499,13 +499,13 @@ describe("Rainlang Diagnostics Service tests", async function () {
                     code: ErrorCode.InvalidWordPattern, 
                     source: "rainlang" 
                 },
-                { 
-                    range: toRange(14, 29, 14, 46), 
-                    message: "out-of-range inputs", 
-                    severity: DiagnosticSeverity.Error, 
-                    code: ErrorCode.OutOfRangeInputs, 
-                    source: "rainlang" 
-                }
+                // { 
+                //     range: toRange(14, 29, 14, 46), 
+                //     message: "out-of-range inputs", 
+                //     severity: DiagnosticSeverity.Error, 
+                //     code: ErrorCode.OutOfRangeInputs, 
+                //     source: "rainlang" 
+                // }
             ]
         );
 

@@ -817,6 +817,27 @@
             },
             {
               "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.IlligalAlias:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "IlligalAlias = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "2048"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "IlligalAlias"
+            },
+            {
+              "kind": "EnumMember",
               "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidExpression:member",
               "docComment": "",
               "excerptTokens": [
