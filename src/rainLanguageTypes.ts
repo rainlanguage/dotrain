@@ -68,7 +68,9 @@ export enum ErrorCode {
 
     UnknownOp = 0x600,
 
-    RuntimeError = 0x700
+    RuntimeError = 0x700,
+
+    IlligalAlias = 0x800
 }
 
 /**

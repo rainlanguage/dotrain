@@ -20,6 +20,7 @@ enum ErrorCode
 |  ExpectedOpeningParen | `773` |  |
 |  ExpectedOperandArgs | `771` |  |
 |  ExpectedSpace | `770` |  |
+|  IlligalAlias | `2048` |  |
 |  InvalidExpression | `258` |  |
 |  InvalidInputsMeta | `259` |  |
 |  InvalidNestedNode | `261` |  |

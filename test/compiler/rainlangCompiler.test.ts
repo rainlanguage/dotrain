@@ -535,7 +535,7 @@ describe("Rainlang Compiler (rlc) tests", async function () {
 
     it("should error if a word is undefined", async () => {
         await assertError(
-            async () => await rlc(rainlang`ans: add(ans 1);`, opMeta),
+            async () => await rlc(rainlang`_: add(ans 1);`, opMeta),
             "undefined word: ans",
             "Invalid Error"
         );
