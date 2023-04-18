@@ -68,8 +68,13 @@ export function getRainCompletion(
         ?.documentationFormat;
     if (format && format[0]) _documentionType = format[0];
 
+    const _prefixText = _td.getText(
+        Range.create(Position.create(position.line, 0), position)
+    );
+
     try {
         if (
+            _prefixText.includes(":") && 
             !_td.getText(
                 Range.create(
                     position, 
@@ -179,9 +184,6 @@ export function getRainCompletion(
             
             // filter the items based on previous characters
             let _prefixMatch = "";
-            const _prefixText = _td.getText(
-                Range.create({ line: position.line, character: 0 }, position)
-            );
             for (let i = 0; i < _prefixText.length; i++) {
                 if (_prefixText[_prefixText.length - i - 1].match(/[a-zA-Z0-9-]/)) {
                     _prefixMatch = _prefixText[_prefixText.length - i - 1] + _prefixMatch;
