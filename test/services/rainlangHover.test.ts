@@ -23,14 +23,11 @@ function testHover(
 
 describe("Rainlang Hover Service tests", async function () {
     let opMeta: string;
+    let expression: string;
 
     before(async () => {
         opMeta = await getOpMetaFromSg(deployerAddress, "mumbai");
-    });
-
-    it("simple rainlang script", async () => {
-
-        const expression = rainlang`
+        expression = rainlang`
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,
 
@@ -61,7 +58,9 @@ mul(
     amount-per-batch)
 new-total-amount-sent);
 `;
+    });
 
+    it("should provide hover: \"alias for\" a value", async () => {
         assert.deepEqual(
             testHover(
                 expression,
@@ -76,7 +75,9 @@ new-total-amount-sent);
                 }
             }
         );
+    });
 
+    it("should provide hover: \"Value\"", async () => {    
         assert.deepEqual(
             testHover(
                 expression,
@@ -91,7 +92,9 @@ new-total-amount-sent);
                 }
             }
         );
+    });
 
+    it("should provide hover: \"alias for\" a opcode", async () => {    
         assert.deepEqual(
             testHover(
                 expression,
@@ -106,7 +109,9 @@ new-total-amount-sent);
                 }
             }
         );
+    });
 
+    it("should provide hover: dexcription of an opcode", async () => {    
         assert.deepEqual(
             testHover(
                 expression,
@@ -121,7 +126,9 @@ new-total-amount-sent);
                 }
             }
         );
+    });
 
+    it("should provide hover: description of an opcode", async () => {    
         assert.deepEqual(
             testHover(
                 expression,
@@ -136,7 +143,9 @@ new-total-amount-sent);
                 }
             }
         );
+    });
 
+    it("should provide hover: \"alias for\" an alias", async () => {    
         assert.deepEqual(
             testHover(
                 expression,
@@ -151,7 +160,9 @@ new-total-amount-sent);
                 }
             }
         );
+    });
 
+    it("should not provide hover", async () => {    
         assert.deepEqual(
             testHover(
                 expression,
@@ -160,6 +171,9 @@ new-total-amount-sent);
             ),
             undefined
         );
+    });
+
+    it("should provide hover: description of an opcode", async () => {    
         assert.deepEqual(
             testHover(
                 expression,

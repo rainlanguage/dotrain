@@ -36,7 +36,7 @@ describe("Rainlang Diagnostics Service tests", async function () {
         opMeta = await getOpMetaFromSg(deployerAddress, "mumbai");
     });
 
-    it("simple rainlang script", async () => {
+    it("should error: source item expressions must end with semi", async () => {
 
         await testDiagnostics(
             rainlang`_: add(1 2)`, 
@@ -49,7 +49,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: found non-printable-ASCII character with unicode: \"U+00a2\"", async () => {
         await testDiagnostics(
             rainlang`_: add(¢ 2)`, 
             opMeta, 
@@ -61,7 +63,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: unexpected end of comment", async () => {
         await testDiagnostics(
             "/* invalid comment  _: add(10 2);", 
             opMeta, 
@@ -73,7 +77,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: invalid RHS, comments are not allowed", async () => {
         await testDiagnostics(
             rainlang`_: add(10 20) /* invalid comment */;`, 
             opMeta, 
@@ -85,7 +91,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: invalid LHS alias: 123add123", async () => {
         await testDiagnostics(
             rainlang`123add123: add(10 20);`, 
             opMeta, 
@@ -97,7 +105,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis", async () => {
         await testDiagnostics(
             rainlang`x: ();`, 
             opMeta, 
@@ -109,7 +119,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: unexpected \")\"", async () => {
         await testDiagnostics(
             rainlang`x: );`, 
             opMeta, 
@@ -121,7 +133,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: expected to be seperated by space", async () => {
         await testDiagnostics(
             rainlang`x: sub(add(10 20)add(1 2));`, 
             opMeta, 
@@ -133,7 +147,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: no RHS item exists to match this LHS item: z", async () => {
         await testDiagnostics(
             rainlang`x: add(10 20), z: ;`, 
             opMeta, 
@@ -145,7 +161,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: no LHS item exists to match this RHS item", async () => {
         await testDiagnostics(
             rainlang`: add(10 20);`, 
             opMeta, 
@@ -157,7 +175,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: invalid rain expression", async () => {
         await testDiagnostics(
             rainlang`this-is-an-invalid-rain-expression;`, 
             opMeta, 
@@ -169,7 +189,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: invalid argument pattern", async () => {
         await testDiagnostics(
             rainlang`x: read-memory<error-argument>();`, 
             opMeta, 
@@ -181,7 +203,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: opcode mul doesn't have argumented operand", async () => {
         await testDiagnostics(
             rainlang`x: mul<10>(10 20);`, 
             opMeta, 
@@ -193,7 +217,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: unexpected operand argument for read-memory", async () => {
         await testDiagnostics(
             rainlang`x: read-memory<1 2 3>(1);`, 
             opMeta, 
@@ -205,7 +231,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: unexpected number of operand args for read-memory", async () => {
         await testDiagnostics(
             rainlang`x: read-memory<>();`, 
             opMeta, 
@@ -217,7 +245,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: out-of-range inputs", async () => {
         await testDiagnostics(
             rainlang`x: read-memory<0 1>(1);`, 
             opMeta, 
@@ -229,7 +259,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: out-of-range inputs", async () => {
         await testDiagnostics(
             rainlang`x: read-memory<0 1>(1);`, 
             opMeta, 
@@ -241,7 +273,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: out-of-range inputs", async () => {
         await testDiagnostics(
             rainlang`x: erc-20-balance-of(10 20 30);`, 
             opMeta, 
@@ -253,7 +287,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: out-of-range operand argument", async () => {
         await testDiagnostics(
             rainlang`_ _ _ _: do-while<1233>(1 2 3 1 3 );`, 
             opMeta, 
@@ -265,7 +301,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: zero output opcodes cannot be nested", async () => {
         await testDiagnostics(
             rainlang`_: add(ensure(2) add(10 20));`, 
             opMeta, 
@@ -277,7 +315,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: multi output opcodes cannot be nested", async () => {
         await testDiagnostics(
             rainlang`_: add(do-while<1>(1 2 3 1 3 ) add(10 20));`, 
             opMeta, 
@@ -289,7 +329,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: invalid word pattern and unknown opcode", async () => {
         await testDiagnostics(
             rainlang`_: read-mem.ory<1 1>();`, 
             opMeta, 
@@ -310,7 +352,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 },
             ]
         );
+    });
 
+    it("should error: expected operand arguments for opcode loop-n", async () => {
         await testDiagnostics(
             rainlang`_: loop-n();`, 
             opMeta, 
@@ -322,7 +366,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: expected \"(\"", async () => {
         await testDiagnostics(
             rainlang`_ _: loop-n<1 2 2>;`, 
             opMeta, 
@@ -334,7 +380,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: expected \")\"", async () => {
         await testDiagnostics(
             rainlang`_ _: loop-n<1 2 2>(;`, 
             opMeta, 
@@ -346,7 +394,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: invalid LHS alias: addval_as", async () => {
         await testDiagnostics(
             rainlang`addval_as: add(1 20), x: addval_as;`, 
             opMeta, 
@@ -358,7 +408,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: cannot reference self", async () => {
         await testDiagnostics(
             rainlang`x: add(1 x);`, 
             opMeta, 
@@ -379,7 +431,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 // }
             ]
         );
+    });
 
+    it("should error: value greater than 32 bytes in size", async () => {
         await testDiagnostics(
             rainlang`_: add(1 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);`, 
             opMeta, 
@@ -391,7 +445,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: undefined word: max-uint266", async () => {
         await testDiagnostics(
             rainlang`x: max-uint266;`, 
             opMeta, 
@@ -403,7 +459,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: \"_notdefined\" is not a valid rainlang word", async () => {
         await testDiagnostics(
             rainlang`_: add(10 20); x: _notdefined;`, 
             opMeta, 
@@ -415,7 +473,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 source: "rainlang" 
             }]
         );
+    });
 
+    it("should error: expected >(", async () => {
         await testDiagnostics(
             rainlang`_: read-memory<1 2();`, 
             opMeta, 
@@ -436,7 +496,9 @@ describe("Rainlang Diagnostics Service tests", async function () {
                 },
             ]
         );
+    });
 
+    it("should error: invalid LHS alias: invalid_alias", async () => {
         await testDiagnostics(
             rainlang`invalid_alias: add(1 20);`, 
             opMeta, 
