@@ -12,7 +12,9 @@ import {
 
 
 async function testDiagnostics(
-    text: string, opmeta: Uint8Array | string, expectedDiagnostics: Diagnostic[]
+    text: string, 
+    opmeta: Uint8Array | string, 
+    expectedDiagnostics: Diagnostic[]
 ) {
     const langServices = getLanguageService();
     const actualDiagnostics: Diagnostic[] = await langServices.doValidation(
@@ -29,7 +31,7 @@ async function testDiagnostics(
     });
 }
 
-describe("Rainlang Diagnostics Service tests", async function () {
+describe("Rainlang Diagnostics Service Tests", async function () {
     let opMeta: string;
 
     before(async () => {
