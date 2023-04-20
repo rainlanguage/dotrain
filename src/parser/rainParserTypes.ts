@@ -2,8 +2,7 @@ import { BigNumberish } from "../utils";
 
 
 /**
- * @public
- * Type for read-memory opcode
+ * @public Type for read-memory opcode
  */
 export enum MemoryType {
     Stack,
@@ -16,8 +15,7 @@ export enum MemoryType {
 export type RDPosition = [number, number];
 
 /**
- * @public
- * Type of RainDocument's problem (error)
+ * @public Type of RainDocument's problem (error)
  */
 export type RDProblem = {
     msg: string;
@@ -26,8 +24,7 @@ export type RDProblem = {
 };
 
 /**
- * @public
- * Type of RainDocument's Value node
+ * @public Type of RainDocument's Value node
  */
 export type RDValueNode = {
     value: BigNumberish;
@@ -36,8 +33,7 @@ export type RDValueNode = {
 };
 
 /**
- * @public
- * Type of RainDocument's Opcode node
+ * @public Type of RainDocument's Opcode node
  */
 export type RDOpNode = {
     opcode: {
@@ -63,8 +59,7 @@ export type RDOpNode = {
 };
 
 /**
- * @public
- * Type of RainDocument's lhs aliases
+ * @public Type of RainDocument's lhs aliases
  */
 export type RDAliasNode = {
     name: string;
@@ -73,8 +68,7 @@ export type RDAliasNode = {
 }
 
 /**
- * @public
- * Type of RainDocument's comments
+ * @public Type of RainDocument's comments
  */
 export type RDComment = {
     comment: string;
@@ -82,26 +76,30 @@ export type RDComment = {
 }
 
 /**
- * @public
- * Type of RainDocument's prase node
+ * @public Type of meta hash specified in a Rain Document
+ */
+export type MetaHash = {
+    hash: string;
+    position: RDPosition;
+}
+
+/**
+ * @public Type of RainDocument's prase node
  */
 export type RDNode = RDValueNode | RDOpNode | RDAliasNode;
 
 /**
-* @public
-* Type of a RainDocument parse tree object
+* @public Type of a RainDocument parse tree object
 */
 export type RDParseTree = { tree: RDNode[]; position: RDPosition; }[];
 
 /**
- * @public
- * Type of Parser's State
+ * @public Type of Parser's State
  */
 export type RainParseState = {
     parse: {
         tree: RDNode[];
-        expAliases: RDAliasNode[][]
-        subExpAliases: RDAliasNode[];
+        aliases: RDAliasNode[];
     };
     track: {
         char: number;
@@ -113,17 +111,4 @@ export type RainParseState = {
     depthLevel: number;
     operandArgsErr: boolean;
     runtimeError: Error | undefined;
-    opMetaError: Error | undefined;
 };
-
-/**
- * @public
- * Type of RainDocument's parse result
- */
-export type RainDocumentResult = {
-    parseTree: RDParseTree;
-    comments: RDComment[];
-    problems: RDProblem[];
-}
-
-

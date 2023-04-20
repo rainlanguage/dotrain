@@ -13,14 +13,14 @@ import {
 } from "@rainprotocol/meta";
 import { 
     RDNode, 
+    MetaHash, 
     RDOpNode, 
     RDProblem, 
     RDComment, 
     MemoryType, 
     RDParseTree,
     RDAliasNode,
-    RainParseState, 
-    RainDocumentResult
+    RainParseState 
 } from "./rainParserTypes";
 import {
     op,
@@ -28,14 +28,14 @@ import {
     hexlify,
     deepCopy,
     BytesLike,
-    CONSTANTS,  
-    isBytesLike, 
+    CONSTANTS, 
     BigNumberish, 
     extractByBits, 
     memoryOperand,
     isBigNumberish,
     constructByBits,
 } from "../utils";
+import { OpMetaStore } from "./opMetaStore";
 
 
 /**
@@ -66,45 +66,35 @@ export class RainDocument {
     /**
      * @public constructor of RainDocument object
      * @param textDocument - Raw text to parse (can be updated at any time after instantiation)
-     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array
+     * @param opMetaStore - (optional) OpMetaStore class object that holds k/v opmeta pairs and subgraphs urls
      */
-    constructor(textDocument: TextDocument, opmeta: BytesLike) {
-        this._rp = new RainParser(textDocument, opmeta);
+    private constructor(textDocument: TextDocument, opMetaStore?: OpMetaStore) {
+        this._rp = new RainParser(textDocument, opMetaStore);
+    }
+
+    public static async create(
+        textDocument: TextDocument, 
+        opMetaStore?: OpMetaStore
+    ): Promise<RainDocument> {
+        const rainDocument = new RainDocument(textDocument, opMetaStore);
+        await rainDocument.update();
+        return rainDocument;
     }
 
     /**
      * @public Method to update the RainDocument with new text or opmeta and get the parse results
-     * @param newTextDocument - (optional) Raw text to parse
-     * @param newOpMeta - (optional) Ops meta as bytes ie hex string or Uint8Array
+     * @param newTextDocument - Raw text to parse
      */
-    public update(
-        newTextDocument?: TextDocument,
-        newOpMeta?: BytesLike
-    ) {
-        if (newOpMeta && newTextDocument) {
-            if (newOpMeta !== this.getRawOpMeta()) {
-                this._rp.updateText(newTextDocument, false);
-                this._rp.updateOpMeta(newOpMeta);
-            }
-            else this._rp.updateText(newTextDocument);
-        }
-        else if (newOpMeta && !newTextDocument) {
-            if (newOpMeta !== this.getRawOpMeta()) {
-                this._rp.updateOpMeta(newOpMeta);
-            }
-            else this._rp.parse();
-        }
-        else if (!newOpMeta && newTextDocument) {
-            this._rp.updateText(newTextDocument);
-        }
-        else this._rp.parse();
+    public async update(newTextDocument?: TextDocument) {
+        if (newTextDocument) this._rp.updateText(newTextDocument);
+        await this._rp.parse();
     }
 
     /**
      * @public Get the current raw op meta of this RainDocument instance in hex string
      */
-    public getRawOpMeta(): string {
-        return this._rp.getRawOpMeta();
+    public getOpMetaBytes(): string {
+        return this._rp.getOpMetaBytes();
     }
 
     /**
@@ -143,14 +133,6 @@ export class RainDocument {
     }
 
     /**
-     * @public Get the current parse result of this RainDocument instance 
-     * which consists of parse tree, problems, comments and expression aliases
-     */
-    public getResult(): RainDocumentResult {
-        return this._rp.getParseResult();
-    }
-
-    /**
      * @public Get the current runtime error of this RainDocument instance
      */
     public getRuntimeError(): Error | undefined {
@@ -158,10 +140,10 @@ export class RainDocument {
     }
 
     /**
-     * @public Get the current runtime error of this RainDocument instance
+     * @public Get the OpMetaStore object instance of this RainDocument instance
      */
-    public getOpMetaError(): Error | undefined {
-        return this._rp.getOpMetaError();
+    public getOpMetaStore(): OpMetaStore {
+        return this._rp.getOpMetaStore();
     }
 
     /**
@@ -184,7 +166,6 @@ export class RainDocument {
     ): ExpressionConfig | undefined {
         return this._rp.compile(item);
     }
-
 }
 
 
@@ -199,11 +180,14 @@ class RainParser {
     public readonly numericPattern = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
     
     private textDocument: TextDocument;
-    private rawOpMeta = "";
+    private opMetaBytes = "";
     private opmeta: OpMeta[] = [];
+    private opMetaStore: OpMetaStore;
     private parseTree: RDParseTree = [];
     private problems: RDProblem[] = [];
     private comments: RDComment[] = [];
+    private parseAliases: RDAliasNode[][] = [];
+    private hashes: MetaHash[] = [];
 
     private names: string[] = [];
     private pops: InputMeta[] = [];
@@ -215,8 +199,7 @@ class RainParser {
     private state: RainParseState = {
         parse: {
             tree: [],
-            expAliases: [],
-            subExpAliases: []
+            aliases: []
         },
         track: {
             char: 0,
@@ -227,8 +210,7 @@ class RainParser {
         },
         depthLevel: 0,
         operandArgsErr: false,
-        runtimeError: undefined,
-        opMetaError: undefined
+        runtimeError: undefined
     };
 
     /**
@@ -236,20 +218,20 @@ class RainParser {
      * @param textDocument - (optional) Raw text to parse (can be updated at any time after instantiation)
      * @param opmeta - Ops meta as bytes ie hex string or Uint8Array
      */
-    constructor(textDocument: TextDocument, opmeta: BytesLike) {
-        // @TODO - add extract opmeta from text
+    constructor(textDocument: TextDocument, opMetaStore?: OpMetaStore) {
         this.textDocument = textDocument;
-        this.updateOpMeta(opmeta);
+        if (opMetaStore) this.opMetaStore = opMetaStore;
+        else this.opMetaStore = new OpMetaStore();
     }
 
     /**
      * @public
      * Parses this instance of RainParser
      */
-    public parse() {
-        if (this.textDocument.getText()) {
+    public async parse() {
+        if (!this.textDocument.getText().match(/^\s+$/)) {
             try {
-                this._parse();
+                await this._parse();
             }
             catch (runtimeError) {
                 this.state.runtimeError = {
@@ -269,99 +251,47 @@ class RainParser {
                 });
             }
         }
-    }
-
-    /**
-     * @public 
-     * Updates the op meta of this RainParser instance if the provided op meta was different than existing one
-     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array
-     * @param parse - Parse if the provided op meta vas valid
-     * @return true if the new opmeta is valid and different than existing one
-     */
-    public updateOpMeta(opmeta: BytesLike, parse = true) {
-        let _newOpMetaBytes = "";
-        if (isBytesLike(opmeta)) _newOpMetaBytes = hexlify(
-            opmeta, 
-            { allowMissingPrefix: true }
-        );
         else {
             this.exp = "";
-            this.resetState();
+            this._resetState();
             this.parseTree = [];
             this.problems = [];
             this.comments = [];
-            this.rawOpMeta = "";
-            this.opmeta = [];
-            this.names = [];
-            this.opAliases = [];
-            this.pops = [];
-            this.pushes = [];
-            this.operand = [];
-            this.opAliases = [];
+            this.parseAliases = [];
             this.state.track.char = 0;
-            this.state.parse.expAliases = [];
-            this.state.opMetaError = new Error("op meta must be in valid bytes form");
+            this.state.runtimeError = undefined;
         }
-        if (_newOpMetaBytes && _newOpMetaBytes !== this.rawOpMeta) {
-            try {
-                this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
-                this.rawOpMeta = _newOpMetaBytes;
-                this.state.opMetaError = undefined;
-                this.names = this.opmeta.map(v => v.name);
-                this.opAliases = this.opmeta.map(v => v.aliases);
-                this.pops = this.opmeta.map(v => v.inputs);
-                this.pushes = this.opmeta.map(v => v.outputs);
-                this.operand = this.opmeta.map(v => v.operand);
-                this.opAliases = this.opmeta.map(v => v.aliases);
-            }
-            catch (_err) {
-                this.exp = "";
-                this.resetState();
-                this.parseTree = [];
-                this.problems = [];
-                this.comments = [];
-                this.opmeta = [];
-                this.names = [];
-                this.opAliases = [];
-                this.pops = [];
-                this.pushes = [];
-                this.operand = [];
-                this.opAliases = [];
-                this.state.track.char = 0;
-                this.state.parse.expAliases = [];
-                this.rawOpMeta = _newOpMetaBytes;
-                this.state.opMetaError = typeof _err === "string"
-                    ? new Error(_err)
-                    : _err as Error;
-            }
-        }
-        if (parse) this.parse();
     }
+
+    private _resetOpMeta = () => {
+        // this.exp = "";
+        // this._resetState();
+        // this.parseTree = [];
+        // this.problems = [];
+        // this.comments = [];
+        this.opmeta = [];
+        this.names = [];
+        this.opAliases = [];
+        this.pops = [];
+        this.pushes = [];
+        this.operand = [];
+        // this.state.track.char = 0;
+        // this.parseAliases = [];
+    };
 
     /**
      * @public Update the text of this RainParser instance
      * @param text - The new text document to update
-     * @param parse - Parse if the provided op meta vas valid
      */
-    public updateText(textDocument: TextDocument, parse = true) {
+    public updateText(textDocument: TextDocument) {
         this.textDocument = textDocument;
-        if (this.textDocument.getText() === "") {
-            this.exp = "";
-            this.resetState();
-            this.parseTree = [];
-            this.problems = [];
-            this.comments = [];
-            this.state.track.char = 0;
-            this.state.parse.expAliases = [];
-        }
-        if (parse) this.parse();
     }
 
     /**
      * @public Get the current raw op meta of this RainParser instance
      */
-    public getRawOpMeta(): string {
-        return this.rawOpMeta;
+    public getOpMetaBytes(): string {
+        return this.opMetaBytes;
     }
 
     /**
@@ -407,29 +337,17 @@ class RainParser {
     }
 
     /**
-     * @public Get the current runtime error of this RainParser instance
+     * @public Get the OpMetaStore object instance
      */
-    public getOpMetaError(): Error | undefined {
-        return deepCopy(this.state.opMetaError);
+    public getOpMetaStore(): OpMetaStore {
+        return this.opMetaStore;
     }
 
     /**
      * @public Get the parsed exp aliases of this RainParser instance
      */
     public getLHSAliases(): RDAliasNode[][] {
-        return deepCopy(this.state.parse.expAliases);
-    }
-
-    /**
-     * @public Get the current parse result of this RainParser instance 
-     * which consists of parse tree, problems, comments and expression aliases
-     */
-    public getParseResult(): RainDocumentResult {
-        return {
-            parseTree: deepCopy(this.parseTree),
-            comments: deepCopy(this.comments),
-            problems: deepCopy(this.problems)
-        };
+        return deepCopy(this.parseAliases);
     }
 
     /**
@@ -453,9 +371,9 @@ class RainParser {
     /**
      * Method to reset the parser state
      */
-    private resetState = () => {
+    private _resetState = () => {
         this.state.parse.tree = [];
-        this.state.parse.subExpAliases = [];
+        this.state.parse.aliases = [];
         this.state.track.parens.open = [];
         this.state.track.parens.close = [];
         this.state.depthLevel = 0;
@@ -475,57 +393,166 @@ class RainParser {
     private simpleParse = (str: string, offset: number) => {
         const _words: string[] = [];
         const _wordsPos: [number, number][] = [];
-        let counter = 0;
-        while (str.length) {
-            if (str.startsWith(" ")) {
-                str = str.slice(1);
-                counter++;
-            }
-            else {
-                const _i = str.indexOf(" ") > -1 
-                    ? str.indexOf(" ")
-                    : str.length;
-                _words.push(str.slice(0, _i));
-                _wordsPos.push([offset + counter, NaN]);
-                counter = counter + _words[_words.length - 1].length;
-                _wordsPos[_wordsPos.length - 1].pop();
-                _wordsPos[_wordsPos.length - 1][1] = offset + counter - 1;
-                str = str.slice(_i);
-            }
-        }
+        // let counter = 0;
+        // while (str.length) {
+        //     if (str.startsWith(" ")) {
+        //         str = str.slice(1);
+        //         counter++;
+        //     }
+        //     else {
+        //         const _i = str.indexOf(" ") > -1 
+        //             ? str.indexOf(" ")
+        //             : str.length;
+        //         _words.push(str.slice(0, _i));
+        //         _wordsPos.push([offset + counter, NaN]);
+        //         counter = counter + _words[_words.length - 1].length;
+        //         _wordsPos[_wordsPos.length - 1].pop();
+        //         _wordsPos[_wordsPos.length - 1][1] = offset + counter - 1;
+        //         str = str.slice(_i);
+        //     }
+        // }
+        const _matches = Array.from(
+            str.matchAll(/\S+/g)
+        ).map(v => {
+            if (v.index !== undefined) return [v[0], v.index];
+            else return undefined;
+        }).filter(
+            v => v !== undefined
+        ) as [string, number][];
+
+        _matches.forEach(v => {
+            _words.push(v[0]);
+            _wordsPos.push([
+                offset + v[1],
+                offset + v[1] + v[0].length - 1
+            ]);
+        });
+
         return {
             words: _words, 
             positions: _wordsPos
         };
     };
 
+    // private parseComments = () => {
+    //     let document = this.workingDoc.getText();
+    //     if(document.includes("/*")) {
+    //         while(document.includes("/*")) {
+    //             const _startCmPos = document.indexOf("/*");
+    //             this.state.track.char = _startCmPos;
+    //             let _endCmPos = document.length - 1;
+    //             let _cm = document.slice(_startCmPos);
+    //             let _notEnded = true;
+    //             if (_cm.includes("*/")) {
+    //                 _endCmPos = _cm.indexOf("*/") + _startCmPos;
+    //                 this.state.track.char = _endCmPos;
+    //                 _cm = document.slice(_startCmPos, _endCmPos + 2);
+    //                 _notEnded = false;
+    //             }
+    //             document = _notEnded 
+    //                 ? document.slice(0, _startCmPos) 
+    //                     + " " .repeat(_cm.length) 
+    //                 : document.slice(0, _startCmPos) 
+    //                     + " " .repeat(_cm.length) 
+    //                     + document.slice(_endCmPos + 2);
+            
+    //             if (_notEnded) {
+    //                 this.problems.push({
+    //                     msg: "unexpected end of comment",
+    //                     position: [_startCmPos, _endCmPos],
+    //                     code: ErrorCode.UnexpectedEndOfComment
+    //                 });
+    //             }
+    //             else {
+    //                 this.comments.push({
+    //                     comment: _cm,
+    //                     position: [_startCmPos, _endCmPos + 1]
+    //                 });
+    //             }
+    //         }
+    //     }
+    // };
+
+    /**
+     * Settles the op meta of this RainParser instance from a parsed meta hash
+     */
+    private resolveOpMeta = async(hash: [string, number]) => {
+        let _hash = "";
+        if (hash[0].match(/^@0x[a-zA-F0-9]{64}$/)) {
+            _hash = hash[0].slice(1);
+            // console.log(_hash);
+            if (this.opMetaStore.cache[_hash]) {
+                const _newOpMetaBytes = this.opMetaStore.cache[_hash];
+                if (_newOpMetaBytes !== this.opMetaBytes) {
+                    this.opMetaBytes = _newOpMetaBytes;
+                    try {
+                        this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
+                        this.names = this.opmeta.map(v => v.name);
+                        this.opAliases = this.opmeta.map(v => v.aliases);
+                        this.pops = this.opmeta.map(v => v.inputs);
+                        this.pushes = this.opmeta.map(v => v.outputs);
+                        this.operand = this.opmeta.map(v => v.operand);
+                        this.opAliases = this.opmeta.map(v => v.aliases);
+                    }
+                    catch (_err) {
+                        this._resetOpMeta();
+                        this.problems.push({
+                            msg: _err instanceof Error ? _err.message : _err as string,
+                            position: [hash[1], hash[1] + hash[0].length - 1],
+                            code: ErrorCode.UndefinedOpMeta
+                        });
+                    }
+                }
+            }
+            else {
+                let _newOpMetaBytes = "";
+                try {
+                    await this.opMetaStore.updateOpMeta(_hash);
+                    _newOpMetaBytes = this.opMetaStore.cache[_hash];
+                    this.opMetaBytes = _newOpMetaBytes;
+                    this.opmeta = metaFromBytes(this.opMetaBytes, OpMetaSchema) as OpMeta[];
+                    this.names = this.opmeta.map(v => v.name);
+                    this.opAliases = this.opmeta.map(v => v.aliases);
+                    this.pops = this.opmeta.map(v => v.inputs);
+                    this.pushes = this.opmeta.map(v => v.outputs);
+                    this.operand = this.opmeta.map(v => v.operand);
+                    this.opAliases = this.opmeta.map(v => v.aliases);
+                }
+                catch (_err) {
+                    if (!_newOpMetaBytes) this.opMetaBytes = "";
+                    this._resetOpMeta();
+                    this.problems.push({
+                        msg: _err instanceof Error ? _err.message : _err as string,
+                        position: [hash[1], hash[1] + hash[0].length - 1],
+                        code: ErrorCode.UndefinedOpMeta
+                    });
+                }
+            }
+        }
+        else this.problems.push({
+            msg: "invalid meta hash, must be 32 bytes",
+            position: [hash[1], hash[1] + hash[0].length - 1],
+            code: ErrorCode.InvalidMetaHash
+        });
+    };
+
     /**
      * The main workhorse of RainParser which parses the words used in an
      * expression and is responsible for building the parse tree and collect problems
      */
-    private _parse() {
+    private async _parse() {
         this.exp = "";
-        this.resetState();
+        this.hashes = [];
+        this._resetState();
         this.parseTree = [];
         this.problems = [];
         this.comments = [];
+        this.parseAliases = [];
         this.state.track.char = 0;
-        this.state.parse.expAliases = [];
+        this.state.runtimeError = undefined;
         let document = this.textDocument.getText();
 
-        if (this.state.opMetaError) {
-            this.problems.push({
-                msg: "invalid op meta",
-                position: [0, this.textDocument.getText().length - 1],
-                code: ErrorCode.UndefinedOpMeta
-            });
-            this.problems.push({
-                msg: `Op Meta Error: ${this.state.opMetaError.message}`,
-                position: [0, this.textDocument.getText().length - 1],
-                code: ErrorCode.UndefinedOpMeta
-            });
-        }
-        else if (document.search(/[^ -~\s]/) > -1) {
+        if (document.search(/[^ -~\s]/) > -1) {
             let _i = document.search(/[^ -~\s]/);
             while (_i > -1) {
                 const _charCode = document.codePointAt(_i)!.toString(16).padStart(4, "0");
@@ -553,389 +580,461 @@ class RainParser {
             }
         }
         else {
-            // start parsing if the string is not empty
-            if (document.length) {
+            
+            // ----------- remove indents and tabs -----------
+            document = document.replace(/\t/g, " ");
+            document = document.replace(/\r\n/g, "  ");
+            document = document.replace(/\r/g, " ");
+            document = document.replace(/\n/g, " ");
 
-                // ----------- remove indents and tabs -----------
-                document = document.replace(/\t/g, " ");
-                document = document.replace(/\r\n/g, "  ");
-                document = document.replace(/\r/g, " ");
-                document = document.replace(/\n/g, " ");
-
-                // ----------- extract comments if any exists -----------
-                if(document.includes("/*")) {
-                    while(document.includes("/*")) {
-                        const _startCmPos = document.indexOf("/*");
-                        this.state.track.char = _startCmPos;
-                        let _endCmPos = document.length - 1;
-                        let _cm = document.slice(_startCmPos);
-                        let _notEnded = true;
-                        if (_cm.includes("*/")) {
-                            _endCmPos = _cm.indexOf("*/") + _startCmPos;
-                            this.state.track.char = _endCmPos;
-                            _cm = document.slice(_startCmPos, _endCmPos + 2);
-                            _notEnded = false;
-                        }
-                        document = _notEnded 
-                            ? document.slice(0, _startCmPos) 
-                                + " " .repeat(_cm.length) 
-                            : document.slice(0, _startCmPos) 
-                                + " " .repeat(_cm.length) 
-                                + document.slice(_endCmPos + 2);
-                    
-                        if (_notEnded) {
-                            this.problems.push({
-                                msg: "unexpected end of comment",
-                                position: [_startCmPos, _endCmPos],
-                                code: ErrorCode.UnexpectedEndOfComment
-                            });
-                        }
-                        else {
-                            this.comments.push({
-                                comment: _cm,
-                                position: [_startCmPos, _endCmPos + 1]
-                            });
-                        }
+            // ----------- extract comments if any exists -----------
+            // const _cms = Array.from(
+            //     document.matchAll(/\/\*[^]*\*\//g)
+            // ).map(v => {
+            //     if (v.index) return [v[0], v.index];
+            //     else return undefined;
+            // }).filter(v => v !== undefined) as [string, number][];
+            if(document.includes("/*")) {
+                while(document.includes("/*")) {
+                    const _startCmPos = document.indexOf("/*");
+                    this.state.track.char = _startCmPos;
+                    let _endCmPos = document.length - 1;
+                    let _cm = document.slice(_startCmPos);
+                    let _notEnded = true;
+                    if (_cm.includes("*/")) {
+                        _endCmPos = _cm.indexOf("*/") + _startCmPos;
+                        this.state.track.char = _endCmPos;
+                        _cm = document.slice(_startCmPos, _endCmPos + 2);
+                        _notEnded = false;
                     }
-                }
-
-                // ----------- begin caching expression sources -----------
-                const _doc = document;
-                const _sourceExp: string[] = [];
-                const _sourceExpPos: [number, number][] = [];
-                while (document.length) {
-                    if (document.includes(";")) {
-                        const tmp = document.slice(0, document.indexOf(";"));
-                        _sourceExpPos.push([
-                            _doc.length - document.length,
-                            _doc.length - document.length + document.indexOf(";"),
-                        ]);
-                        document = document.slice(document.indexOf(";") + 1);
-                        _sourceExp.push(tmp);
+                    document = _notEnded 
+                        ? document.slice(0, _startCmPos) 
+                            + " " .repeat(_cm.length) 
+                        : document.slice(0, _startCmPos) 
+                            + " " .repeat(_cm.length) 
+                            + document.slice(_endCmPos + 2);
+                
+                    if (_notEnded) {
+                        this.problems.push({
+                            msg: "unexpected end of comment",
+                            position: [_startCmPos, _endCmPos],
+                            code: ErrorCode.UnexpectedEndOfComment
+                        });
                     }
                     else {
-                        if (document.match(/[^\s+]/)) {
-                            this.problems.push({
-                                msg: "source item expressions must end with semi",
-                                position: [
-                                    _doc.length - document.length,
-                                    _doc.length - 1,
-                                ],
-                                code: ErrorCode.InvalidExpression
-                            });
-                            _sourceExpPos.push([
-                                _doc.length - document.length,
-                                _doc.length - 1,
-                            ]);
-                            _sourceExp.push(document);
-                        }
-                        document = "";
+                        this.comments.push({
+                            comment: _cm,
+                            position: [_startCmPos, _endCmPos + 1]
+                        });
                     }
                 }
+            }
 
-                // ----------- begin parsing expression sentences -----------
-                for (let i = 0; i < _sourceExp.length; i++) {
-                    this.resetState();
-                    this.state.parse.expAliases.push([]);
-                    const _subExp: string[] = [];
-                    const _subExpEntry: number[] = [];
-                    const _currentSourceTree: RDNode[] = [];
-                    let _exp = _sourceExp[i];
-                    let _lhs: string;
+            // ----------- parse op meta -----------
+            const _hashes = Array.from(
+                document.matchAll(/@0x[a-fA-F0-9]+/g)
+            ).map(v => {
+                if (v.index !== undefined) return [v[0], v.index];
+                else return undefined;
+            }).filter(v => v !== undefined) as [string, number][];
+            if (_hashes.length) {
+                await this.resolveOpMeta(_hashes[0]);
+                for (let i = 0; i < _hashes.length; i++) {
+                    this.hashes.push({
+                        hash: _hashes[i][0],
+                        position: [
+                            _hashes[i][1], 
+                            _hashes[i][1] + _hashes[i][0].length - 1
+                        ],
+                    });
+                    if (i !== 0) this.problems.push({
+                        msg: "unexpected meta hash, cannot include more than 1 meta hash per document",
+                        position: [
+                            _hashes[i][1], 
+                            _hashes[i][1] + _hashes[i][0].length - 1
+                        ],
+                        code: ErrorCode.UnexpectedMetaHash
+                    });
+                    document = 
+                        document.slice(0, _hashes[i][1]) +
+                        " ".repeat(_hashes[i][0].length) +
+                        document.slice(_hashes[i][1] + _hashes[i][0].length);
+                }
+            }
+            else this.problems.push({
+                msg: "cannot find op meta hash, please specify an op meta hash",
+                position: [0, 0],
+                code: ErrorCode.UndefinedOpMeta
+            });
 
-                    // ----------- cache the sub-expressions -----------
-                    if (!_exp.includes(",")) {
-                        _subExp.push(_exp);
-                        _subExpEntry.push(_sourceExp[i].length - _exp.length);
-                    }
-                    while (_exp.includes(",")) {
-                        _subExp.push(_exp.slice(0, _exp.indexOf(",")));
-                        _subExpEntry.push(_sourceExp[i].length - _exp.length);
-                        _exp = _exp.slice(_exp.indexOf(",") + 1);
-                        if (!_exp.includes(",")) {
-                            _subExp.push(_exp);
-                            _subExpEntry.push(_sourceExp[i].length - _exp.length);
-                        }
-                    }
-
-                    // ----------- begin parsing sub-expressions -----------
-                    for (let j = 0; j < _subExp.length; j++) {
-                        this.resetState();
-                        const _positionOffset = _sourceExpPos[i][0] + _subExpEntry[j];
-                        this.state.track.char = _positionOffset;
-
-                        // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
-                        // no or more than one delimitter was found, else start parsing LHS and RHS
-                        if (_subExp[j].match(/:/)) {
-                            _lhs = _subExp[j].slice(0, _subExp[j].indexOf(":"));
-                            this.exp = _subExp[j].slice(_subExp[j].indexOf(":") + 1);
-
-                            // ----------- check for invalid RHS comments -----------
-                            for (let k = 0; k < this.comments.length; k++) {
-                                if (
-                                    this.comments[k].position[0] > _positionOffset + 
-                                        _subExp[j].indexOf(":") &&
-                                    this.comments[k].position[0] < _positionOffset + 
-                                        _subExp[j].length
-                                ) {
-                                    this.problems.push({
-                                        msg: "invalid RHS, comments are not allowed",
-                                        position: [
-                                            _positionOffset + _subExp[j].indexOf(":") + 1,
-                                            _positionOffset + _subExp[j].length - 1
-                                        ],
-                                        code: ErrorCode.UnexpectedRHSComment
-                                    });
-                                }
-                            }
-
-                            // ----------- begin parsing LHS -----------
-                            if (_lhs.length > 0) {
-                                const { words, positions } = this.simpleParse(
-                                    _lhs, 
-                                    _positionOffset
-                                );
-                                for (let k = 0; k < words.length; k++) {
-                                    this.state.parse.subExpAliases.push({
-                                        name: words[k],
-                                        position: positions[k]
-                                    });
-                                    if (!words[k].match(/^[a-z][a-z0-9-]*$|^_$/)) {
-                                        this.problems.push({
-                                            msg: `invalid LHS alias: ${words[k]}`,
-                                            position: positions[k],
-                                            code:ErrorCode.InvalidWordPattern
-                                        });
-                                    }
-                                    const _ops = [
-                                        ...this.names,
-                                        ...this.opAliases.filter(v => v !== undefined).flat(),
-                                        "max-uint-256",
-                                        "max-uint256",
-                                        "infinity"
-                                    ];
-                                    if (_ops.includes(words[k])) this.problems.push({
-                                        msg: `illigal alias, "${words[k]}" is reserved`,
-                                        position: positions[k],
-                                        code:ErrorCode.IlligalAlias
-                                    });
-                                    this.state.track.char = positions[k][1];
-                                }
-                            }
-
-                            // ----------- begin parsing RHS -----------
-                            while (this.exp.length > 0) {
-                                const _currentPosition = 
-                                    _positionOffset + 
-                                    _subExp[j].length - 
-                                    this.exp.length;
-                                this.state.track.char = _currentPosition;
-                                
-                                if (this.exp.startsWith(" ")) {
-                                    this.exp = this.exp.slice(1);
-                                    this.state.track.char++;
-                                }
-                                else if (this.exp.startsWith("(")) {
-                                    this.exp = this.exp.slice(1);
-                                    this.state.track.char++;
-                                    let __exp = this.exp;
-                                    const _pos: number[] = [];
-                                    let _index = -1;
-                                    let _check = true;
-                                    while (_check && (__exp.includes("(") || __exp.includes(")"))) {
-                                        const _i = __exp.search(/\(|\)/);
-                                        if (__exp[_i] === "(") _pos.push(_i);
-                                        else {
-                                            const _x = _pos.pop();
-                                            if (!_x) {
-                                                _index = _i;
-                                                _check = false;
-                                            }
-                                        }
-                                        __exp = __exp.slice(_i + 1);
-                                    }
-                                    this.problems.push({
-                                        msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
-                                        position: [
-                                            _currentPosition,
-                                            _index > -1 
-                                                ? _currentPosition + _index + 1 
-                                                : _currentPosition + this.exp.length
-                                        ],
-                                        code: ErrorCode.ExpectedOpcode
-                                    });
-                                    if (_index === -1) {
-                                        this.state.track.char += (this.exp.length);
-                                        this.exp = "";
-                                    }
-                                    else {
-                                        this.exp = this.exp.slice(_index + 1);
-                                        this.state.track.char +=  _index;
-                                    }
-                                }
-                                else if (this.exp.startsWith(")")) {
-                                    if (this.state.track.parens.open.length > 0) {
-                                        this.state.track.parens.close.push(_currentPosition);
-                                        this.resolveOpNode();
-                                        this.state.depthLevel--;
-                                    }
-                                    else this.problems.push({
-                                        msg: "unexpected \")\"",
-                                        position: [_currentPosition, _currentPosition],
-                                        code: ErrorCode.UnexpectedClosingParen
-                                    });
-                                    this.exp = this.exp.slice(1);
-                                    this.state.track.char++;
-                                    if (
-                                        this.exp.length &&
-                                        !this.exp.startsWith(" ") && 
-                                        !this.exp.startsWith(")") && 
-                                        !this.exp.startsWith(";") && 
-                                        !this.exp.startsWith(",")
-                                    ) this.problems.push({
-                                        msg: "expected to be seperated by space",
-                                        position: [_currentPosition, _currentPosition + 1],
-                                        code: ErrorCode.ExpectedSpace
-                                    });
-                                }
-                                else this.consume(_currentPosition);
-                            }
-
-                            // ----------- validating RHS against LHS -----------
-                            const _outputCount = this.countOutputs(
-                                [...this.state.parse.tree]
-                            );
-                            if (!isNaN(_outputCount)) {
-                                const _tagsCount = this.state.parse.subExpAliases.length;
-                                const _treeCount = this.state.parse.tree.length;
-                                const _diff = _tagsCount - _outputCount;
-                                const _tags = [...this.state.parse.subExpAliases];
-                                this.state.track.char = _positionOffset;
-                                if (!(_currentSourceTree.length === 0 && _treeCount === 0)) {
-                                    if (_diff === 0) {
-                                        for (let k = 0; k < _treeCount; k++) {
-                                            const _node = this.state.parse.tree[
-                                                this.state.parse.tree.length - 1 - k
-                                            ];
-                                            this.state.track.char = _node.position[1];
-                                            if ("opcode" in _node) {
-                                                if (_node.output > 0) {
-                                                    _node.lhs = [];
-                                                    _tags.splice(-_node.output).forEach(v => {
-                                                        _node.lhs?.push(v);
-                                                    });
-                                                }
-                                            }
-                                            else _tags.splice(-1).forEach(v => {
-                                                _node.lhs = v;
-                                            });
-                                        }
-                                    }
-                                    else if (_diff > 0) {
-                                        for (let k = 0; k < _diff; k++) {
-                                            const _tag = _tags.pop()!;
-                                            this.problems.push({
-                                                msg: `no RHS item exists to match this LHS item: ${_tag.name}`,
-                                                position: _tag.position,
-                                                code: ErrorCode.MismatchRHS
-                                            });
-                                        }
-                                        for (let k = 0; k < _treeCount; k++) {
-                                            const _node = this.state.parse.tree[
-                                                this.state.parse.tree.length - 1 - k
-                                            ];
-                                            this.state.track.char = _node.position[1];
-                                            if ("opcode" in _node) {
-                                                if (_node.output > 0) {
-                                                    _node.lhs = [];
-                                                    _tags.splice(-_node.output).forEach(v => {
-                                                        _node.lhs?.push(v);
-                                                    }); 
-                                                }
-                                            }
-                                            else _tags.splice(-1).forEach(v => {
-                                                _node.lhs = v;
-                                            });
-                                        }
-                                    }
-                                    else {
-                                        let _c = -_diff;
-                                        const _nodes = [...this.state.parse.tree];
-                                        for (let k = 0; k < -_diff; k++) {
-                                            if ("opcode" in _nodes[k]) {
-                                                if ((_nodes[k] as RDOpNode).output > 0) {
-                                                    const _node = _nodes[_nodes.length - 1];
-                                                    this.problems.push({
-                                                        msg: "no LHS item exists to match this RHS item",
-                                                        position: _node.position,
-                                                        code: ErrorCode.MismatchLHS
-                                                    });
-                                                    if ((_nodes[k] as RDOpNode).output > 1) {
-                                                        if (_c >= (_nodes[k] as RDOpNode).output) {
-                                                            _nodes.pop();
-                                                            _c -= (_nodes[k] as RDOpNode).output;
-                                                        }
-                                                        k += ((_nodes[k] as RDOpNode).output - 1);
-                                                    }
-                                                    else {
-                                                        _nodes.pop();
-                                                        _c--;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        for (let k = 0; k < _nodes.length; k++) {
-                                            const _node = this.state.parse.tree[
-                                                _nodes.length - 1 - k
-                                            ];
-                                            this.state.track.char = _node.position[1];
-                                            if (_node) {
-                                                if ("opcode" in _node) {
-                                                    if (_node.output > 0) {
-                                                        _node.lhs = [];
-                                                        _tags.slice(-_node.output).forEach(v => {
-                                                            _node.lhs?.push(v);
-                                                        });
-                                                    }
-                                                }
-                                                else _tags.slice(-1).forEach(v => {
-                                                    _node.lhs = v;
-                                                });
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else this.problems.push({
-                            msg: "invalid rain expression",
+            // ----------- begin parsing expression sources -----------
+            const _doc = document;
+            const _sourceExp: string[] = [];
+            const _sourceExpPos: [number, number][] = [];
+            while (document.length) {
+                if (document.includes(";")) {
+                    let tmp = document.slice(0, document.indexOf(";"));
+                    let _trimLeft = tmp.match(/^\s+/)?.[0].length;
+                    if (_trimLeft == undefined) _trimLeft = 0;
+                    let _trimRight = tmp.match(/\s+$/)?.[0].length;
+                    if (_trimRight == undefined) _trimRight = 0;
+                    tmp = tmp.slice(_trimLeft, _trimRight ? -_trimRight : tmp.length);
+                    _sourceExpPos.push([
+                        _doc.length - document.length + _trimLeft,
+                        _doc.length - document.length + document.indexOf(";") - _trimRight,
+                    ]);
+                    document = document.slice(document.indexOf(";") + 1);
+                    _sourceExp.push(tmp);
+                }
+                else {
+                    if (document.match(/[^\s+]/)) {
+                        let _trimLeft = document.match(/^\s+/)?.[0].length;
+                        if (_trimLeft == undefined) _trimLeft = 0;
+                        let _trimRight = document.match(/\s+$/)?.[0].length;
+                        if (_trimRight == undefined) _trimRight = 0;
+                        this.problems.push({
+                            msg: "source item expressions must end with semi",
                             position: [
-                                _positionOffset,
-                                _positionOffset + _subExp[j].length - 1
+                                _doc.length - document.length + _trimLeft,
+                                _doc.length - 1 - _trimRight,
                             ],
                             code: ErrorCode.InvalidExpression
                         });
-
-                        _currentSourceTree.push(
-                            ...this.state.parse.tree.splice(
-                                -this.state.parse.tree.length
-                            )
-                        );
-                        this.state.parse.expAliases[
-                            this.state.parse.expAliases.length - 1
-                        ].push(
-                            ...[...this.state.parse.subExpAliases.splice(
-                                -this.state.parse.subExpAliases.length
-                            )]
+                        _sourceExpPos.push([
+                            _doc.length - document.length,
+                            _doc.length - 1,
+                        ]);
+                        _sourceExp.push(
+                            document.slice(_trimLeft, _trimRight ? -_trimRight : document.length)
                         );
                     }
-
-                    // ----------- constructing final parse tree -----------
-                    this.parseTree.push({
-                        position: _sourceExpPos[i],
-                        tree: _currentSourceTree.splice(-_currentSourceTree.length)
-                    });
+                    document = "";
                 }
+            }
+
+            // ----------- begin parsing expression sentences -----------
+            for (let i = 0; i < _sourceExp.length; i++) {
+                this._resetState();
+                this.parseAliases.push([]);
+                const _subExp: string[] = [];
+                const _subExpEntry: number[] = [];
+                const _currentSourceTree: RDNode[] = [];
+                let _exp = _sourceExp[i];
+                let _lhs: string;
+
+                // ----------- cache the sub-expressions -----------
+                if (!_exp.includes(",")) {
+                    let _trimLeft = _exp.match(/^\s+/)?.[0].length;
+                    if (_trimLeft == undefined) _trimLeft = 0;
+                    let _trimRight = _exp.match(/\s+$/)?.[0].length;
+                    if (_trimRight == undefined) _trimRight = 0;
+                    _subExp.push(
+                        _exp.slice(_trimLeft, _trimRight ? -_trimRight : _exp.length)
+                    );
+                    _subExpEntry.push(_sourceExp[i].length - _exp.length + _trimLeft);
+                }
+                while (_exp.includes(",")) {
+                    const tmp = _exp.slice(0, _exp.indexOf(","));
+                    let _trimLeft = tmp.match(/^\s+/)?.[0].length;
+                    if (_trimLeft == undefined) _trimLeft = 0;
+                    let _trimRight = tmp.match(/\s+$/)?.[0].length;
+                    if (_trimRight == undefined) _trimRight = 0;
+                    _subExp.push(
+                        tmp.slice(_trimLeft, _trimRight ? -_trimRight : tmp.length)
+                    );
+                    _subExpEntry.push(
+                        _sourceExp[i].length - _exp.length + _trimLeft
+                    );
+                    _exp = _exp.slice(_exp.indexOf(",") + 1);
+                    if (!_exp.includes(",")) {
+                        let _trimLeft = _exp.match(/^\s+/)?.[0].length;
+                        if (_trimLeft == undefined) _trimLeft = 0;
+                        let _trimRight = _exp.match(/\s+$/)?.[0].length;
+                        if (_trimRight == undefined) _trimRight = 0;
+                        _subExp.push(
+                            _exp.slice(_trimLeft, _trimRight ? -_trimRight : _exp.length)
+                        );
+                        _subExpEntry.push(_sourceExp[i].length - _exp.length + _trimLeft);
+                    }
+                }
+
+                // ----------- begin parsing sub-expressions -----------
+                for (let j = 0; j < _subExp.length; j++) {
+                    this._resetState();
+                    const _positionOffset = _sourceExpPos[i][0] + _subExpEntry[j];
+                    this.state.track.char = _positionOffset;
+
+                    // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
+                    // no or more than one delimitter was found, else start parsing LHS and RHS
+                    if (_subExp[j].match(/:/)) {
+                        _lhs = _subExp[j].slice(0, _subExp[j].indexOf(":"));
+                        this.exp = _subExp[j].slice(_subExp[j].indexOf(":") + 1);
+
+                        // ----------- check for invalid RHS comments -----------
+                        for (let k = 0; k < this.comments.length; k++) {
+                            if (
+                                this.comments[k].position[0] > _positionOffset + 
+                                    _subExp[j].indexOf(":") &&
+                                this.comments[k].position[0] < _positionOffset + 
+                                    _subExp[j].length
+                            ) {
+                                this.problems.push({
+                                    msg: "invalid RHS, comments are not allowed",
+                                    position: [
+                                        _positionOffset + _subExp[j].indexOf(":") + 1,
+                                        _positionOffset + _subExp[j].length - 1
+                                    ],
+                                    code: ErrorCode.UnexpectedRHSComment
+                                });
+                            }
+                        }
+
+                        // ----------- begin parsing LHS -----------
+                        if (_lhs.length > 0) {
+                            const { words, positions } = this.simpleParse(
+                                _lhs, 
+                                _positionOffset
+                            );
+                            for (let k = 0; k < words.length; k++) {
+                                this.state.parse.aliases.push({
+                                    name: words[k],
+                                    position: positions[k]
+                                });
+                                if (!words[k].match(/^[a-z][a-z0-9-]*$|^_$/)) {
+                                    this.problems.push({
+                                        msg: `invalid LHS alias: ${words[k]}`,
+                                        position: positions[k],
+                                        code:ErrorCode.InvalidWordPattern
+                                    });
+                                }
+                                const _ops = [
+                                    ...this.names,
+                                    ...this.opAliases.filter(v => v !== undefined).flat(),
+                                    "max-uint-256",
+                                    "max-uint256",
+                                    "infinity"
+                                ];
+                                if (_ops.includes(words[k])) this.problems.push({
+                                    msg: `illigal alias, "${words[k]}" is reserved`,
+                                    position: positions[k],
+                                    code:ErrorCode.IlligalAlias
+                                });
+                                this.state.track.char = positions[k][1];
+                            }
+                        }
+
+                        // ----------- begin parsing RHS -----------
+                        while (this.exp.length > 0) {
+                            const _currentPosition = 
+                                _positionOffset + 
+                                _subExp[j].length - 
+                                this.exp.length;
+                            this.state.track.char = _currentPosition;
+                            
+                            if (this.exp.startsWith(" ")) {
+                                this.exp = this.exp.slice(1);
+                                this.state.track.char++;
+                            }
+                            else if (this.exp.startsWith("(")) {
+                                this.exp = this.exp.slice(1);
+                                this.state.track.char++;
+                                let __exp = this.exp;
+                                const _pos: number[] = [];
+                                let _index = -1;
+                                let _check = true;
+                                while (_check && (__exp.includes("(") || __exp.includes(")"))) {
+                                    const _i = __exp.search(/\(|\)/);
+                                    if (__exp[_i] === "(") _pos.push(_i);
+                                    else {
+                                        const _x = _pos.pop();
+                                        if (!_x) {
+                                            _index = _i;
+                                            _check = false;
+                                        }
+                                    }
+                                    __exp = __exp.slice(_i + 1);
+                                }
+                                this.problems.push({
+                                    msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
+                                    position: [
+                                        _currentPosition,
+                                        _index > -1 
+                                            ? _currentPosition + _index + 1 
+                                            : _currentPosition + this.exp.length
+                                    ],
+                                    code: ErrorCode.ExpectedOpcode
+                                });
+                                if (_index === -1) {
+                                    this.state.track.char += (this.exp.length);
+                                    this.exp = "";
+                                }
+                                else {
+                                    this.exp = this.exp.slice(_index + 1);
+                                    this.state.track.char +=  _index;
+                                }
+                            }
+                            else if (this.exp.startsWith(")")) {
+                                if (this.state.track.parens.open.length > 0) {
+                                    this.state.track.parens.close.push(_currentPosition);
+                                    this.resolveOpNode();
+                                    this.state.depthLevel--;
+                                }
+                                else this.problems.push({
+                                    msg: "unexpected \")\"",
+                                    position: [_currentPosition, _currentPosition],
+                                    code: ErrorCode.UnexpectedClosingParen
+                                });
+                                this.exp = this.exp.slice(1);
+                                this.state.track.char++;
+                                if (
+                                    this.exp.length &&
+                                    !this.exp.startsWith(" ") && 
+                                    !this.exp.startsWith(")") && 
+                                    !this.exp.startsWith(";") && 
+                                    !this.exp.startsWith(",")
+                                ) this.problems.push({
+                                    msg: "expected to be seperated by space",
+                                    position: [_currentPosition, _currentPosition + 1],
+                                    code: ErrorCode.ExpectedSpace
+                                });
+                            }
+                            else this.consume(_currentPosition);
+                        }
+
+                        // ----------- validating RHS against LHS -----------
+                        const _outputCount = this.countOutputs(
+                            [...this.state.parse.tree]
+                        );
+                        if (!isNaN(_outputCount)) {
+                            const _tagsCount = this.state.parse.aliases.length;
+                            const _treeCount = this.state.parse.tree.length;
+                            const _diff = _tagsCount - _outputCount;
+                            const _tags = [...this.state.parse.aliases];
+                            this.state.track.char = _positionOffset;
+                            if (!(_currentSourceTree.length === 0 && _treeCount === 0)) {
+                                if (_diff === 0) {
+                                    for (let k = 0; k < _treeCount; k++) {
+                                        const _node = this.state.parse.tree[
+                                            this.state.parse.tree.length - 1 - k
+                                        ];
+                                        this.state.track.char = _node.position[1];
+                                        if ("opcode" in _node) {
+                                            if (_node.output > 0) {
+                                                _node.lhs = [];
+                                                _tags.splice(-_node.output).forEach(v => {
+                                                    _node.lhs?.push(v);
+                                                });
+                                            }
+                                        }
+                                        else _tags.splice(-1).forEach(v => {
+                                            _node.lhs = v;
+                                        });
+                                    }
+                                }
+                                else if (_diff > 0) {
+                                    for (let k = 0; k < _diff; k++) {
+                                        const _tag = _tags.pop()!;
+                                        this.problems.push({
+                                            msg: `no RHS item exists to match this LHS item: ${_tag.name}`,
+                                            position: _tag.position,
+                                            code: ErrorCode.MismatchRHS
+                                        });
+                                    }
+                                    for (let k = 0; k < _treeCount; k++) {
+                                        const _node = this.state.parse.tree[
+                                            this.state.parse.tree.length - 1 - k
+                                        ];
+                                        this.state.track.char = _node.position[1];
+                                        if ("opcode" in _node) {
+                                            if (_node.output > 0) {
+                                                _node.lhs = [];
+                                                _tags.splice(-_node.output).forEach(v => {
+                                                    _node.lhs?.push(v);
+                                                }); 
+                                            }
+                                        }
+                                        else _tags.splice(-1).forEach(v => {
+                                            _node.lhs = v;
+                                        });
+                                    }
+                                }
+                                else {
+                                    let _c = -_diff;
+                                    const _nodes = [...this.state.parse.tree];
+                                    for (let k = 0; k < -_diff; k++) {
+                                        if ("opcode" in _nodes[k]) {
+                                            if ((_nodes[k] as RDOpNode).output > 0) {
+                                                const _node = _nodes[_nodes.length - 1];
+                                                this.problems.push({
+                                                    msg: "no LHS item exists to match this RHS item",
+                                                    position: _node.position,
+                                                    code: ErrorCode.MismatchLHS
+                                                });
+                                                if ((_nodes[k] as RDOpNode).output > 1) {
+                                                    if (_c >= (_nodes[k] as RDOpNode).output) {
+                                                        _nodes.pop();
+                                                        _c -= (_nodes[k] as RDOpNode).output;
+                                                    }
+                                                    k += ((_nodes[k] as RDOpNode).output - 1);
+                                                }
+                                                else {
+                                                    _nodes.pop();
+                                                    _c--;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    for (let k = 0; k < _nodes.length; k++) {
+                                        const _node = this.state.parse.tree[
+                                            _nodes.length - 1 - k
+                                        ];
+                                        this.state.track.char = _node.position[1];
+                                        if (_node) {
+                                            if ("opcode" in _node) {
+                                                if (_node.output > 0) {
+                                                    _node.lhs = [];
+                                                    _tags.slice(-_node.output).forEach(v => {
+                                                        _node.lhs?.push(v);
+                                                    });
+                                                }
+                                            }
+                                            else _tags.slice(-1).forEach(v => {
+                                                _node.lhs = v;
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else this.problems.push({
+                        msg: "invalid rain expression",
+                        position: [
+                            _positionOffset,
+                            _positionOffset + _subExp[j].length - 1
+                        ],
+                        code: ErrorCode.InvalidExpression
+                    });
+
+                    _currentSourceTree.push(
+                        ...this.state.parse.tree.splice(
+                            -this.state.parse.tree.length
+                        )
+                    );
+                    this.parseAliases[
+                        this.parseAliases.length - 1
+                    ].push(
+                        ...[...this.state.parse.aliases.splice(
+                            -this.state.parse.aliases.length
+                        )]
+                    );
+                }
+
+                // ----------- constructing final parse tree -----------
+                this.parseTree.push({
+                    position: _sourceExpPos[i],
+                    tree: _currentSourceTree.splice(-_currentSourceTree.length)
+                });
             }
         }
     }
@@ -1232,12 +1331,12 @@ class RainParser {
         const _wordPos: [number, number] = [entry, entry + _word.length - 1];
         this.state.track.char = entry + _word.length - 1;
         this.exp = this.exp.replace(_word, "");
-        const _aliasIndex = this.state.parse. expAliases[
-            this.state.parse. expAliases.length - 1
+        const _aliasIndex = this.parseAliases[
+            this.parseAliases.length - 1
         ].findIndex(
             v => v.name === _word
         );
-        const _currentAliasIndex = this.state.parse.subExpAliases.findIndex(
+        const _currentAliasIndex = this.state.parse.aliases.findIndex(
             v => v.name === _word
         );
 
@@ -1501,7 +1600,7 @@ class RainParser {
                     }
                 }
                 else if ("name" in _node && !("opcode" in _node)) {
-                    const _i = this.state.parse.expAliases[sourceIndex].findIndex(
+                    const _i = this.parseAliases[sourceIndex].findIndex(
                         v => v.name === _node.name
                     );
                     if (_i > -1) _sourcesCache.push(
@@ -1540,3 +1639,10 @@ class RainParser {
         };
     }
 }
+// let x: RainDocument;
+RainDocument.create(TextDocument.create("1", "1", 1, "_: add(1 2)     ;@0x273a2d7f5b24df6d3c09a363f75b2c795d987d87d86da855b7483892c7906e81")).then(v => {
+    console.log(JSON.stringify(v.getParseTree()));
+});
+
+// x.update(TextDocument.create("1", "1", 1, "@0x273a2d7f5b24df6d3c09a363f75b2c795d987d87d86da855b7483892c7906e81 _: add(1 2);"));
+// setTimeout(() => console.log(JSON.stringify(x.getResult())), 10000);
