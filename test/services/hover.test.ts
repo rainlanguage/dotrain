@@ -12,16 +12,20 @@ import {
 
 
 function testHover(
-    text: string, position: Position, opmeta: Uint8Array | string,
+    text: string, 
+    position: Position, 
+    opmeta: Uint8Array | string,
     serviceParams?: LanguageServiceParams
 ): Hover | null {
     const langServices = getLanguageService(serviceParams);
-    return (langServices.doHover(
-        TextDocument.create("file", "rainlang", 1, text), position, opmeta
-    ));
+    return langServices.doHover(
+        TextDocument.create("file", "rainlang", 1, text), 
+        position, 
+        opmeta
+    );
 }
 
-describe("Rainlang Hover Service tests", async function () {
+describe("Rainlang Hover Service Tests", async function () {
     let opMeta: string;
     let expression: string;
 
