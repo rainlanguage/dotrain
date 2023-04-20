@@ -1,3 +1,4 @@
+import { OpMetaStore } from "./opMetaStore";
 import { ErrorCode, TextDocument } from "../rainLanguageTypes";
 import { ExpressionConfig } from "../compiler/expressionConfigTypes";
 import { 
@@ -13,11 +14,11 @@ import {
 } from "@rainprotocol/meta";
 import { 
     RDNode, 
-    MetaHash, 
     RDOpNode, 
     RDProblem, 
     RDComment, 
     MemoryType, 
+    RDMetaHash, 
     RDParseTree,
     RDAliasNode,
     RainParseState 
@@ -35,7 +36,6 @@ import {
     isBigNumberish,
     constructByBits,
 } from "../utils";
-import { OpMetaStore } from "./opMetaStore";
 
 
 /**
@@ -51,13 +51,13 @@ import { OpMetaStore } from "./opMetaStore";
  * import { Raindocument } from 'rainlang';
  *
  * // to create a new instance of the RainDocument object which parses right after instantiation
- * const myRainDocument = new RainDocument(text, opmeta)
+ * const myRainDocument = await RainDocument.create(text)
  *
- * // to get the parse results after instantiation
- * const results = myRainDocument.getResult()
+ * // to get the parse tree after instantiation
+ * const parseTree = myRainDocument.getParseTree()
  *
- * // to get the parse results with new text or opmeta
- * const newResult = myRainDocument.update(newText, newOpmeta)
+ * // to update the text
+ * myRainDocument.update(newText)
  * ```
  */
 export class RainDocument {
@@ -72,6 +72,14 @@ export class RainDocument {
         this._rp = new RainParser(textDocument, opMetaStore);
     }
 
+    /**
+     * @public
+     * Creates a new instance of RainDocument
+     * 
+     * @param textDocument - The text document
+     * @param opMetaStore - The OpMetaStore object that caches k/v pairs of hashes and opmetas
+     * @returns A new instance of RainDocument
+     */
     public static async create(
         textDocument: TextDocument, 
         opMetaStore?: OpMetaStore
@@ -154,6 +162,13 @@ export class RainDocument {
     }
 
     /**
+     * @public Get the specified meta hashes of this RainParser instance
+     */
+    public getMetaHashes(): RDMetaHash[] {
+        return this._rp.getMetaHashes();
+    }
+
+    /**
      * @public Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance.
      * This method should not be used directly, insteda the RainCompiler (rlc) should be used.
      * @param item - Optional item to get the ExpressionConfig for
@@ -187,7 +202,7 @@ class RainParser {
     private problems: RDProblem[] = [];
     private comments: RDComment[] = [];
     private parseAliases: RDAliasNode[][] = [];
-    private hashes: MetaHash[] = [];
+    private hashes: RDMetaHash[] = [];
 
     private names: string[] = [];
     private pops: InputMeta[] = [];
@@ -229,7 +244,7 @@ class RainParser {
      * Parses this instance of RainParser
      */
     public async parse() {
-        if (!this.textDocument.getText().match(/^\s+$/)) {
+        if (this.textDocument.getText().match(/[^\s]/)) {
             try {
                 await this._parse();
             }
@@ -262,22 +277,6 @@ class RainParser {
             this.state.runtimeError = undefined;
         }
     }
-
-    private _resetOpMeta = () => {
-        // this.exp = "";
-        // this._resetState();
-        // this.parseTree = [];
-        // this.problems = [];
-        // this.comments = [];
-        this.opmeta = [];
-        this.names = [];
-        this.opAliases = [];
-        this.pops = [];
-        this.pushes = [];
-        this.operand = [];
-        // this.state.track.char = 0;
-        // this.parseAliases = [];
-    };
 
     /**
      * @public Update the text of this RainParser instance
@@ -351,6 +350,13 @@ class RainParser {
     }
 
     /**
+     * @public Get the specified meta hases of this RainParser instance
+     */
+    public getMetaHashes(): RDMetaHash[] {
+        return deepCopy(this.hashes);
+    }
+
+    /**
      * @public
      * Method to get ExpressionConfig (bytes) from RDNode or parse tree object
      *
@@ -381,10 +387,33 @@ class RainParser {
     };
 
     /**
+     * Resets op meta related arrays
+     */
+    private _resetOpMeta = () => {
+        this.opmeta = [];
+        this.names = [];
+        this.opAliases = [];
+        this.pops = [];
+        this.pushes = [];
+        this.operand = [];
+    };
+
+    /**
      * Method to find index of next element within the text
      */
     private findIndex = (str: string): number => {
         return str.search(/[()<> ]/g);
+    };
+
+    /**
+     * Trims the trailing and leading whitespaces and newline characters from a string
+     */
+    private trim = (str: string): {text: string, startDelCount: number, endDelCount: number} => {
+        return {
+            text: str.trim(),
+            startDelCount: str.length - str.trimStart().length,
+            endDelCount: str.length - str.trimEnd().length
+        };
     };
 
     /**
@@ -434,45 +463,6 @@ class RainParser {
         };
     };
 
-    // private parseComments = () => {
-    //     let document = this.workingDoc.getText();
-    //     if(document.includes("/*")) {
-    //         while(document.includes("/*")) {
-    //             const _startCmPos = document.indexOf("/*");
-    //             this.state.track.char = _startCmPos;
-    //             let _endCmPos = document.length - 1;
-    //             let _cm = document.slice(_startCmPos);
-    //             let _notEnded = true;
-    //             if (_cm.includes("*/")) {
-    //                 _endCmPos = _cm.indexOf("*/") + _startCmPos;
-    //                 this.state.track.char = _endCmPos;
-    //                 _cm = document.slice(_startCmPos, _endCmPos + 2);
-    //                 _notEnded = false;
-    //             }
-    //             document = _notEnded 
-    //                 ? document.slice(0, _startCmPos) 
-    //                     + " " .repeat(_cm.length) 
-    //                 : document.slice(0, _startCmPos) 
-    //                     + " " .repeat(_cm.length) 
-    //                     + document.slice(_endCmPos + 2);
-            
-    //             if (_notEnded) {
-    //                 this.problems.push({
-    //                     msg: "unexpected end of comment",
-    //                     position: [_startCmPos, _endCmPos],
-    //                     code: ErrorCode.UnexpectedEndOfComment
-    //                 });
-    //             }
-    //             else {
-    //                 this.comments.push({
-    //                     comment: _cm,
-    //                     position: [_startCmPos, _endCmPos + 1]
-    //                 });
-    //             }
-    //         }
-    //     }
-    // };
-
     /**
      * Settles the op meta of this RainParser instance from a parsed meta hash
      */
@@ -507,7 +497,7 @@ class RainParser {
             else {
                 let _newOpMetaBytes = "";
                 try {
-                    await this.opMetaStore.updateOpMeta(_hash);
+                    await this.opMetaStore.updateStore(_hash);
                     _newOpMetaBytes = this.opMetaStore.cache[_hash];
                     this.opMetaBytes = _newOpMetaBytes;
                     this.opmeta = metaFromBytes(this.opMetaBytes, OpMetaSchema) as OpMeta[];
@@ -580,14 +570,13 @@ class RainParser {
             }
         }
         else {
-            
-            // ----------- remove indents and tabs -----------
+            // remove indents and tabs
             document = document.replace(/\t/g, " ");
             document = document.replace(/\r\n/g, "  ");
             document = document.replace(/\r/g, " ");
             document = document.replace(/\n/g, " ");
 
-            // ----------- extract comments if any exists -----------
+            // extract comments if any exists
             // const _cms = Array.from(
             //     document.matchAll(/\/\*[^]*\*\//g)
             // ).map(v => {
@@ -630,7 +619,7 @@ class RainParser {
                 }
             }
 
-            // ----------- parse op meta -----------
+            // parse op meta
             const _hashes = Array.from(
                 document.matchAll(/@0x[a-fA-F0-9]+/g)
             ).map(v => {
@@ -667,52 +656,44 @@ class RainParser {
                 code: ErrorCode.UndefinedOpMeta
             });
 
-            // ----------- begin parsing expression sources -----------
+            // begin parsing expression sources
             const _doc = document;
             const _sourceExp: string[] = [];
             const _sourceExpPos: [number, number][] = [];
             while (document.length) {
                 if (document.includes(";")) {
-                    let tmp = document.slice(0, document.indexOf(";"));
-                    let _trimLeft = tmp.match(/^\s+/)?.[0].length;
-                    if (_trimLeft == undefined) _trimLeft = 0;
-                    let _trimRight = tmp.match(/\s+$/)?.[0].length;
-                    if (_trimRight == undefined) _trimRight = 0;
-                    tmp = tmp.slice(_trimLeft, _trimRight ? -_trimRight : tmp.length);
+                    const _trimmed = this.trim(document.slice(0, document.indexOf(";")));
+                    console.log(_trimmed.endDelCount);
                     _sourceExpPos.push([
-                        _doc.length - document.length + _trimLeft,
-                        _doc.length - document.length + document.indexOf(";") - _trimRight,
+                        _doc.length - document.length + _trimmed.startDelCount,
+                        _doc.length - document.length - 1 + document.indexOf(";") - _trimmed.endDelCount,
                     ]);
                     document = document.slice(document.indexOf(";") + 1);
-                    _sourceExp.push(tmp);
+                    _sourceExp.push(_trimmed.text);
+                    
                 }
                 else {
                     if (document.match(/[^\s+]/)) {
-                        let _trimLeft = document.match(/^\s+/)?.[0].length;
-                        if (_trimLeft == undefined) _trimLeft = 0;
-                        let _trimRight = document.match(/\s+$/)?.[0].length;
-                        if (_trimRight == undefined) _trimRight = 0;
+                        const _trimmed = this.trim(document);
                         this.problems.push({
                             msg: "source item expressions must end with semi",
                             position: [
-                                _doc.length - document.length + _trimLeft,
-                                _doc.length - 1 - _trimRight,
+                                _doc.length - document.length + _trimmed.startDelCount,
+                                _doc.length - 1 - _trimmed.endDelCount,
                             ],
                             code: ErrorCode.InvalidExpression
                         });
                         _sourceExpPos.push([
-                            _doc.length - document.length,
-                            _doc.length - 1,
+                            _doc.length - document.length + _trimmed.startDelCount,
+                            _doc.length - 1 - _trimmed.endDelCount,
                         ]);
-                        _sourceExp.push(
-                            document.slice(_trimLeft, _trimRight ? -_trimRight : document.length)
-                        );
+                        _sourceExp.push(_trimmed.text);
                     }
                     document = "";
                 }
             }
 
-            // ----------- begin parsing expression sentences -----------
+            // begin parsing expression sentences
             for (let i = 0; i < _sourceExp.length; i++) {
                 this._resetState();
                 this.parseAliases.push([]);
@@ -722,43 +703,31 @@ class RainParser {
                 let _exp = _sourceExp[i];
                 let _lhs: string;
 
-                // ----------- cache the sub-expressions -----------
+                // cache the sub-expressions
                 if (!_exp.includes(",")) {
-                    let _trimLeft = _exp.match(/^\s+/)?.[0].length;
-                    if (_trimLeft == undefined) _trimLeft = 0;
-                    let _trimRight = _exp.match(/\s+$/)?.[0].length;
-                    if (_trimRight == undefined) _trimRight = 0;
-                    _subExp.push(
-                        _exp.slice(_trimLeft, _trimRight ? -_trimRight : _exp.length)
+                    const _trimmed = this.trim(_exp);
+                    _subExp.push(_trimmed.text);
+                    _subExpEntry.push(
+                        _sourceExp[i].length - _exp.length + _trimmed.startDelCount
                     );
-                    _subExpEntry.push(_sourceExp[i].length - _exp.length + _trimLeft);
                 }
                 while (_exp.includes(",")) {
-                    const tmp = _exp.slice(0, _exp.indexOf(","));
-                    let _trimLeft = tmp.match(/^\s+/)?.[0].length;
-                    if (_trimLeft == undefined) _trimLeft = 0;
-                    let _trimRight = tmp.match(/\s+$/)?.[0].length;
-                    if (_trimRight == undefined) _trimRight = 0;
-                    _subExp.push(
-                        tmp.slice(_trimLeft, _trimRight ? -_trimRight : tmp.length)
-                    );
+                    const _trimmed_1 = this.trim(_exp.slice(0, _exp.indexOf(",")));
+                    _subExp.push(_trimmed_1.text);
                     _subExpEntry.push(
-                        _sourceExp[i].length - _exp.length + _trimLeft
+                        _sourceExp[i].length - _exp.length + _trimmed_1.startDelCount
                     );
                     _exp = _exp.slice(_exp.indexOf(",") + 1);
                     if (!_exp.includes(",")) {
-                        let _trimLeft = _exp.match(/^\s+/)?.[0].length;
-                        if (_trimLeft == undefined) _trimLeft = 0;
-                        let _trimRight = _exp.match(/\s+$/)?.[0].length;
-                        if (_trimRight == undefined) _trimRight = 0;
-                        _subExp.push(
-                            _exp.slice(_trimLeft, _trimRight ? -_trimRight : _exp.length)
+                        const _trimmed_2 = this.trim(_exp);
+                        _subExp.push(_trimmed_2.text);
+                        _subExpEntry.push(
+                            _sourceExp[i].length - _exp.length + _trimmed_2.startDelCount
                         );
-                        _subExpEntry.push(_sourceExp[i].length - _exp.length + _trimLeft);
                     }
                 }
 
-                // ----------- begin parsing sub-expressions -----------
+                // begin parsing sub-expressions
                 for (let j = 0; j < _subExp.length; j++) {
                     this._resetState();
                     const _positionOffset = _sourceExpPos[i][0] + _subExpEntry[j];
@@ -770,7 +739,7 @@ class RainParser {
                         _lhs = _subExp[j].slice(0, _subExp[j].indexOf(":"));
                         this.exp = _subExp[j].slice(_subExp[j].indexOf(":") + 1);
 
-                        // ----------- check for invalid RHS comments -----------
+                        // check for invalid RHS comments
                         for (let k = 0; k < this.comments.length; k++) {
                             if (
                                 this.comments[k].position[0] > _positionOffset + 
@@ -789,12 +758,19 @@ class RainParser {
                             }
                         }
 
-                        // ----------- begin parsing LHS -----------
+                        // begin parsing LHS
                         if (_lhs.length > 0) {
                             const { words, positions } = this.simpleParse(
                                 _lhs, 
                                 _positionOffset
                             );
+                            const _ops = [
+                                ...this.names,
+                                ...this.opAliases.filter(v => v !== undefined).flat(),
+                                "max-uint-256",
+                                "max-uint256",
+                                "infinity"
+                            ];
                             for (let k = 0; k < words.length; k++) {
                                 this.state.parse.aliases.push({
                                     name: words[k],
@@ -807,13 +783,6 @@ class RainParser {
                                         code:ErrorCode.InvalidWordPattern
                                     });
                                 }
-                                const _ops = [
-                                    ...this.names,
-                                    ...this.opAliases.filter(v => v !== undefined).flat(),
-                                    "max-uint-256",
-                                    "max-uint256",
-                                    "infinity"
-                                ];
                                 if (_ops.includes(words[k])) this.problems.push({
                                     msg: `illigal alias, "${words[k]}" is reserved`,
                                     position: positions[k],
@@ -823,7 +792,7 @@ class RainParser {
                             }
                         }
 
-                        // ----------- begin parsing RHS -----------
+                        // begin parsing RHS
                         while (this.exp.length > 0) {
                             const _currentPosition = 
                                 _positionOffset + 
@@ -901,7 +870,7 @@ class RainParser {
                             else this.consume(_currentPosition);
                         }
 
-                        // ----------- validating RHS against LHS -----------
+                        // validating RHS against LHS
                         const _outputCount = this.countOutputs(
                             [...this.state.parse.tree]
                         );
@@ -1030,7 +999,7 @@ class RainParser {
                     );
                 }
 
-                // ----------- constructing final parse tree -----------
+                // constructing final parse tree
                 this.parseTree.push({
                     position: _sourceExpPos[i],
                     tree: _currentSourceTree.splice(-_currentSourceTree.length)
@@ -1639,10 +1608,7 @@ class RainParser {
         };
     }
 }
-// let x: RainDocument;
-RainDocument.create(TextDocument.create("1", "1", 1, "_: add(1 2)     ;@0x273a2d7f5b24df6d3c09a363f75b2c795d987d87d86da855b7483892c7906e81")).then(v => {
+
+RainDocument.create(TextDocument.create("1", "1", 1, "_: add(1 2)     ; _: mul(1 2)  ;@0x273a2d7f5b24df6d3c09a363f75b2c795d987d87d86da855b7483892c7906e81")).then(v => {
     console.log(JSON.stringify(v.getParseTree()));
 });
-
-// x.update(TextDocument.create("1", "1", 1, "@0x273a2d7f5b24df6d3c09a363f75b2c795d987d87d86da855b7483892c7906e81 _: add(1 2);"));
-// setTimeout(() => console.log(JSON.stringify(x.getResult())), 10000);

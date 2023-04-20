@@ -78,7 +78,7 @@ export type RDComment = {
 /**
  * @public Type of meta hash specified in a Rain Document
  */
-export type MetaHash = {
+export type RDMetaHash = {
     hash: string;
     position: RDPosition;
 }
