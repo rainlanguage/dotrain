@@ -1,4 +1,4 @@
-import { RainDocument } from "../parser/rainParser";
+import { RainDocument } from "../parser/rainDocument";
 import { 
     Range, 
     Position,

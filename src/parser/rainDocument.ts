@@ -1,6 +1,5 @@
 import { OpMetaStore } from "./opMetaStore";
 import { ErrorCode, TextDocument } from "../rainLanguageTypes";
-import { ExpressionConfig } from "../compiler/expressionConfigTypes";
 import { 
     OpMeta,
     InputMeta,
@@ -21,8 +20,9 @@ import {
     RDMetaHash, 
     RDParseTree,
     RDAliasNode,
-    RainParseState 
-} from "./rainParserTypes";
+    RainParseState, 
+    ExpressionConfig 
+} from "../rainLanguageTypes";
 import {
     op,
     concat,
@@ -57,7 +57,7 @@ import {
  * const parseTree = myRainDocument.getParseTree()
  *
  * // to update the text
- * myRainDocument.update(newText)
+ * await myRainDocument.update(newText)
  * ```
  */
 export class RainDocument {
@@ -420,8 +420,8 @@ class RainParser {
      * Parse and extract words from a 1 liner string
      */
     private simpleParse = (str: string, offset: number) => {
-        const _words: string[] = [];
-        const _wordsPos: [number, number][] = [];
+        const words: string[] = [];
+        const positions: [number, number][] = [];
         // let counter = 0;
         // while (str.length) {
         //     if (str.startsWith(" ")) {
@@ -432,35 +432,31 @@ class RainParser {
         //         const _i = str.indexOf(" ") > -1 
         //             ? str.indexOf(" ")
         //             : str.length;
-        //         _words.push(str.slice(0, _i));
-        //         _wordsPos.push([offset + counter, NaN]);
-        //         counter = counter + _words[_words.length - 1].length;
-        //         _wordsPos[_wordsPos.length - 1].pop();
-        //         _wordsPos[_wordsPos.length - 1][1] = offset + counter - 1;
+        //         words.push(str.slice(0, _i));
+        //         positions.push([offset + counter, NaN]);
+        //         counter = counter + words[words.length - 1].length;
+        //         positions[positions.length - 1].pop();
+        //         positions[positions.length - 1][1] = offset + counter - 1;
         //         str = str.slice(_i);
         //     }
         // }
-        const _matches = Array.from(
+        (Array.from(
             str.matchAll(/\S+/g)
         ).map(v => {
             if (v.index !== undefined) return [v[0], v.index];
             else return undefined;
         }).filter(
             v => v !== undefined
-        ) as [string, number][];
-
-        _matches.forEach(v => {
-            _words.push(v[0]);
-            _wordsPos.push([
-                offset + v[1],
-                offset + v[1] + v[0].length - 1
-            ]);
-        });
-
-        return {
-            words: _words, 
-            positions: _wordsPos
-        };
+        ) as [string, number][]).forEach(
+            v => {
+                words.push(v[0]);
+                positions.push([
+                    offset + v[1],
+                    offset + v[1] + v[0].length - 1
+                ]);
+            }
+        );
+        return { words, positions };
     };
 
     /**
@@ -1608,7 +1604,3 @@ class RainParser {
         };
     }
 }
-
-RainDocument.create(TextDocument.create("1", "1", 1, "_: add(1 2)     ; _: mul(1 2)  ;@0x273a2d7f5b24df6d3c09a363f75b2c795d987d87d86da855b7483892c7906e81")).then(v => {
-    console.log(JSON.stringify(v.getParseTree()));
-});

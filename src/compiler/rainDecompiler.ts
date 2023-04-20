@@ -1,23 +1,24 @@
-import { RainDocument } from "../parser/rainParser";
 import { TextDocument } from "../rainLanguageTypes";
-import { ExpressionConfig } from "./expressionConfigTypes";
+import { OpMetaStore } from "../parser/opMetaStore";
+import { RainDocument } from "../parser/rainDocument";
+import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
 import { 
     OpMeta, 
     InputMeta, 
     OutputMeta, 
     OperandArgs, 
-    validateMeta, 
+    getMetaHash, 
     OpMetaSchema, 
     metaFromBytes 
 } from "@rainprotocol/meta";
 import { 
+    hexlify, 
     arrayify, 
-    BytesLike, 
     BigNumber, 
     CONSTANTS, 
-    extractByBits, 
-    isBigNumberish 
+    isBytesLike,
+    extractByBits 
 } from "../utils";
 
 
@@ -26,13 +27,37 @@ import {
  * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document
  * 
  * @param expressionConfig - ExpressionConfig to decompile
- * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string
+ * @param metaHash - the meta hash
+ * @param subgraphs - (optional) Additional subgraph endpoints to include when searching for op meta
  * @param prettyFormat - (optional) Format the output document
- * @returns a Raindocument promise
+ * @returns A promise that resolves with a RainDocument
  */
-export function rld(
+export async function rld(
+    expressionConfig: ExpressionConfig, 
+    metaHash: string, 
+    subgraphs?: string[],
+    prettyFormat?: boolean
+): Promise<RainDocument>
+
+/**
+ * @public 
+ * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document
+ * 
+ * @param expressionConfig - ExpressionConfig to decompile
+ * @param opmeta - The op meta bytes
+ * @param prettyFormat - (optional) Format the output document
+ * @returns A promise that resolves with a RainDocument
+ */
+export async function rld(
     expressionConfig: ExpressionConfig, 
     opmeta: Uint8Array | string, 
+    prettyFormat?: boolean
+): Promise<RainDocument>
+
+export async function rld(
+    expressionConfig: ExpressionConfig, 
+    meta: Uint8Array | string, 
+    subgraphsOrPretty?: string[] | boolean,
     prettyFormat = true
 ): Promise<RainDocument> {
 
@@ -145,24 +170,33 @@ export function rld(
 
 
     let _opmeta: OpMeta[];
-    if (isBigNumberish(opmeta)) {
+    const _sgs: string[] = [];
+    if (subgraphsOrPretty) {
+        if (typeof subgraphsOrPretty === "boolean") prettyFormat = subgraphsOrPretty;
+        else _sgs.push(...subgraphsOrPretty);
+    }
+    const _opMetaStore = new OpMetaStore({subgraphs: _sgs});
+    if (isBytesLike(meta)) {
+        let _hash;
+        const _hex = typeof meta === "string" 
+            ? meta 
+            : hexlify(meta, { allowMissingPrefix: true });
+        if (_hex.match(/^0x[a-fA-F0-9]{64}$/)) {
+            _hash = _hex;
+            await _opMetaStore.updateStore(_hex);
+        }
+        else {
+            _hash = getMetaHash(_hex, "op");
+            await _opMetaStore.updateStore(_hash, _hex);
+        }
         try {
-            _opmeta = metaFromBytes(opmeta as BytesLike, OpMetaSchema) as OpMeta[];
+            _opmeta = metaFromBytes(_opMetaStore.cache[_hash], OpMetaSchema) as OpMeta[];
         }
         catch (err) {
             return Promise.reject("invalid op meta");
         }
     }
-    else {
-        try {
-            const _meta = typeof opmeta === "string" ? JSON.parse(opmeta) : opmeta;
-            if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta as OpMeta[];
-            else return Promise.reject("invalid op meta");
-        }
-        catch (err) {
-            return Promise.reject("invalid op meta");
-        }
-    }
+    else return Promise.reject("invalid op meta");
 
     const _constants: string[] = [];
     for (const item of expressionConfig.constants) {
@@ -269,15 +303,16 @@ export function rld(
         _stack = [];
     }
 
-    return Promise.resolve(prettyFormat 
-        ? new RainDocument(
-            TextDocument.create("file", "rainlang", 1, rainFormat(_finalStack.join("\n"))), 
-            opmeta
-        )
-        : new RainDocument(
-            TextDocument.create("file", "rainlang", 1, _finalStack.join("\n")),
-            opmeta
-        )
+    return Promise.resolve(
+        prettyFormat 
+            ? await RainDocument.create(
+                TextDocument.create("file", "rainlang", 1, rainFormat(_finalStack.join("\n"))), 
+                _opMetaStore
+            )
+            : await RainDocument.create(
+                TextDocument.create("file", "rainlang", 1, _finalStack.join("\n")),
+                _opMetaStore
+            )
     );
 }
 

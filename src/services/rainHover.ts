@@ -1,5 +1,5 @@
-import { RDNode } from "../parser/rainParserTypes";
-import { RainDocument } from "../parser/rainParser";
+import { RDNode } from "../rainLanguageTypes";
+import { RainDocument } from "../parser/rainDocument";
 import { LanguageServiceParams, MarkupKind, TextDocument, Position, Hover, Range } from "../rainLanguageTypes";
 
 

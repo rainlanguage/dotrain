@@ -1,34 +1,9 @@
+import { BigNumberish, BytesLike } from "./utils";
+import { MarkupKind } from "vscode-languageserver-types";
 import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
-import {
-    Range, Position, DocumentUri, MarkupContent, MarkupKind,
-    Color, ColorInformation, ColorPresentation,
-    FoldingRange, FoldingRangeKind, SelectionRange,
-    Diagnostic, DiagnosticSeverity,
-    CompletionItem, CompletionItemKind, CompletionList, CompletionItemTag,
-    InsertTextFormat,
-    SymbolInformation, SymbolKind, DocumentSymbol, Location, Hover, MarkedString, 
-    FormattingOptions, DefinitionLink,
-    CodeActionContext, Command, CodeAction,
-    DocumentHighlight, DocumentLink, WorkspaceEdit,
-    TextEdit, CodeActionKind,
-    TextDocumentEdit, VersionedTextDocumentIdentifier, DocumentHighlightKind
-} from "vscode-languageserver-types";
 
-export {
-    TextDocument,
-    TextDocumentContentChangeEvent,
-    Range, Position, DocumentUri, MarkupContent, MarkupKind,
-    Color, ColorInformation, ColorPresentation,
-    FoldingRange, FoldingRangeKind, SelectionRange,
-    Diagnostic, DiagnosticSeverity,
-    CompletionItem, CompletionItemKind, CompletionList, CompletionItemTag,
-    InsertTextFormat, FormattingOptions, DefinitionLink,
-    SymbolInformation, SymbolKind, DocumentSymbol, Location, Hover, MarkedString,
-    CodeActionContext, Command, CodeAction,
-    DocumentHighlight, DocumentLink, WorkspaceEdit,
-    TextEdit, CodeActionKind,
-    TextDocumentEdit, VersionedTextDocumentIdentifier, DocumentHighlightKind
-};
+export * from "vscode-languageserver-types";
+export { TextDocument, TextDocumentContentChangeEvent };
 
 /**
  * @public
@@ -174,3 +149,130 @@ export enum CompletionTriggerKind {
      */
     TriggerForIncompleteCompletions = 3,
 }
+
+/**
+ * @public
+ * Type of valid parsed expression, i.e. compiled bytes 
+ */
+export type ExpressionConfig = {
+    /**
+     * Sources verbatim.
+     */
+    sources: BytesLike[];
+    /**
+     * Constants verbatim.
+     */
+    constants: BigNumberish[];
+}
+
+/**
+ * @public Type for read-memory opcode
+ */
+export enum MemoryType {
+    Stack,
+    Constant,
+}
+
+/**
+ * @public Type of position start and end indexes for RainDocument, inclusive at both ends
+ */
+export type RDPosition = [number, number];
+
+/**
+ * @public Type of RainDocument's problem
+ */
+export type RDProblem = {
+    msg: string;
+    position: RDPosition;
+    code: number;
+};
+
+/**
+ * @public Type of RainDocument's Value node
+ */
+export type RDValueNode = {
+    value: BigNumberish;
+    position: RDPosition;
+    lhs?: RDAliasNode;
+};
+
+/**
+ * @public Type of RainDocument's Opcode node
+ */
+export type RDOpNode = {
+    opcode: {
+        name: string;
+        description: string;
+        position: RDPosition;
+    };
+    operand: number;
+    output: number;
+    position: RDPosition;
+    parens: RDPosition;
+    parameters: RDNode[];
+    operandArgs?: {
+        position: RDPosition;
+        args: {
+            value: number;
+            name: string;
+            position: RDPosition;
+            description?: string;
+        }[];
+    };
+    lhs?: RDAliasNode[];
+};
+
+/**
+ * @public Type of RainDocument's lhs aliases
+ */
+export type RDAliasNode = {
+    name: string;
+    position: RDPosition;
+    lhs?: RDAliasNode;
+}
+
+/**
+ * @public Type of RainDocument's comments
+ */
+export type RDComment = {
+    comment: string;
+    position: RDPosition;
+}
+
+/**
+ * @public Type of meta hash specified in a RainDocument
+ */
+export type RDMetaHash = {
+    hash: string;
+    position: RDPosition;
+}
+
+/**
+ * @public Type of RainDocument's parse node
+ */
+export type RDNode = RDValueNode | RDOpNode | RDAliasNode;
+
+/**
+* @public Type of a RainDocument parse tree
+*/
+export type RDParseTree = { tree: RDNode[]; position: RDPosition; }[];
+
+/**
+ * @public Type of RainParser state
+ */
+export type RainParseState = {
+    parse: {
+        tree: RDNode[];
+        aliases: RDAliasNode[];
+    };
+    track: {
+        char: number;
+        parens: {
+            open: number[];
+            close: number[];
+        };
+    };
+    depthLevel: number;
+    operandArgsErr: boolean;
+    runtimeError: Error | undefined;
+};

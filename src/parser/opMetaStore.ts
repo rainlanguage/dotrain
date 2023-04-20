@@ -57,9 +57,14 @@ export class OpMetaStore {
                 if (hash.match(/^0x[a-fA-F0-9]{64}$/)) {
                     if (isBytesLike(options.initialCache[hash])) {
                         const _opmeta = typeof options.initialCache[hash] === "string"
-                            ? options.initialCache[hash] as string
-                            : hexlify(options.initialCache[hash], { allowMissingPrefix: true });
-                        if (checkOpMetaHash(_opmeta, hash)) this.cache[hash] = _opmeta;
+                            ? (options.initialCache[hash] as string).toLowerCase()
+                            : hexlify(
+                                options.initialCache[hash], 
+                                { allowMissingPrefix: true }
+                            ).toLowerCase();
+                        if (checkOpMetaHash(_opmeta, hash.toLowerCase())) this.cache[
+                            hash.toLowerCase()
+                        ] = _opmeta;
                     }
                 }
             }
@@ -81,14 +86,16 @@ export class OpMetaStore {
         if (opmeta) {
             if (!isBytesLike(opmeta)) throw new Error("invalid op meta!");
             const _opmeta = typeof opmeta === "string" 
-                ? opmeta 
-                : hexlify(opmeta, { allowMissingPrefix: true });
-            if (checkOpMetaHash(_opmeta, metaHash)) this.cache[metaHash] = _opmeta;
+                ? opmeta.toLowerCase()
+                : hexlify(opmeta, { allowMissingPrefix: true }).toLowerCase();
+            if (checkOpMetaHash(_opmeta, metaHash.toLowerCase())) this.cache[
+                metaHash.toLowerCase()
+            ] = _opmeta;
             else throw new Error("provided meta hash and opmeta don't match");
         }
         else {
             const _opmeta = await searchOpMeta(metaHash);
-            this.cache[metaHash] = _opmeta;
+            this.cache[metaHash.toLowerCase()] = _opmeta;
         }
     }
 
