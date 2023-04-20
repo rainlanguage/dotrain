@@ -96,7 +96,7 @@ describe("Rainlang Code Completion Service Tests", async function () {
         );
     });
 
-    it("should provide correct suggestions based on previous word", async () => {
+    it("should provide correct suggestions based on trailing characters", async () => {
         await testCompletion(
             rainlang`_: ad`, 
             opMeta, 
@@ -114,7 +114,7 @@ describe("Rainlang Code Completion Service Tests", async function () {
         );
     });
 
-    it("should provide correct suggestions if ahead character is non-word", async () => {
+    it("should provide correct suggestions if leading character is non-word", async () => {
         await testCompletion(
             rainlang`_: add(1 2)`, 
             opMeta, 
