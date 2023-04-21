@@ -8,16 +8,14 @@ import { LanguageServiceParams, MarkupKind, TextDocument, Position, Hover, Range
  * 
  * @param document - The TextDocuemnt
  * @param position - Position of the textDocument to get the completion items for
- * @param opmeta - The op meta
  * @param setting - (optional) Language service params
  * @returns Promise of hover item and null if no item was available for that position
  */
-export function getRainHover(
+export async function getRainHover(
     document: TextDocument,
     position: Position,
-    opmeta: Uint8Array | string,
     setting?: LanguageServiceParams
-): Hover | null
+): Promise<Hover | null>
 
 /**
  * @public Provides hover items
@@ -27,33 +25,30 @@ export function getRainHover(
  * @param setting - (optional) Language service params
  * @returns Promise of hover item and null if no item was available for that position
  */
-export function getRainHover(
+export async function getRainHover(
     document: RainDocument,
     position: Position,
     setting?: LanguageServiceParams
-): Hover | null
+): Promise<Hover | null>
 
-export function getRainHover(
+export async function getRainHover(
     document: RainDocument | TextDocument,
     position: Position,
-    settingOrOpemta?: Uint8Array | string | LanguageServiceParams,
     setting?: LanguageServiceParams 
-): Hover | null {
+): Promise<Hover | null> {
     let _contentType: MarkupKind = "plaintext";
-    let _setting: LanguageServiceParams | undefined;
     let _rd: RainDocument;
     let _td: TextDocument;
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.getTextDocument();
-        if (settingOrOpemta) _setting = settingOrOpemta as LanguageServiceParams;
+        if (setting?.opMetaStore) _rd.getOpMetaStore().updateStore(setting.opMetaStore);
     }
     else {
-        _rd = new RainDocument(document, settingOrOpemta as Uint8Array | string);
         _td = document;
-        if (setting) _setting = setting;
+        _rd = await RainDocument.create(document, setting?.opMetaStore);
     }
-    const format = _setting
+    const format = setting
         ?.clientCapabilities
         ?.textDocument
         ?.completion

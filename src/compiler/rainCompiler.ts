@@ -35,16 +35,25 @@ export async function rlc(
  * Rain Language Compiler (rlc), compiles Rain Documents into valid ExpressionConfig (deployable bytes)
  *
  * @param rainDocument - The RainDocument to compile
+ * @param opMetaStore - (optional) OpMetaStore object to add to the RainDocument's OpMetaStore
  * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text
  */
-export async function rlc(rainDocument: RainDocument): Promise<ExpressionConfig>
+export async function rlc(
+    rainDocument: RainDocument,
+    opMetaStore?: OpMetaStore
+): Promise<ExpressionConfig>
 
 export async function rlc(
     document: RainDocument | TextDocument | string,
     opMetaStore?: OpMetaStore
 ): Promise<ExpressionConfig> {
     let _rainDocument: RainDocument;
-    if (document instanceof RainDocument) _rainDocument = document;
+    if (document instanceof RainDocument) {
+        _rainDocument = document;
+        if (opMetaStore) {
+            _rainDocument.getOpMetaStore().updateStore(opMetaStore);
+        }
+    }
     else {
         if (typeof document === "string") _rainDocument = await RainDocument.create(
             TextDocument.create("file", "rainlang", 1, document),

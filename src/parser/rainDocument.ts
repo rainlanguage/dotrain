@@ -466,9 +466,8 @@ class RainParser {
         let _hash = "";
         if (hash[0].match(/^@0x[a-zA-F0-9]{64}$/)) {
             _hash = hash[0].slice(1);
-            // console.log(_hash);
-            if (this.opMetaStore.cache[_hash]) {
-                const _newOpMetaBytes = this.opMetaStore.cache[_hash];
+            const _newOpMetaBytes = this.opMetaStore.getOpMeta(_hash);
+            if (_newOpMetaBytes) {
                 if (_newOpMetaBytes !== this.opMetaBytes) {
                     this.opMetaBytes = _newOpMetaBytes;
                     try {
@@ -494,7 +493,7 @@ class RainParser {
                 let _newOpMetaBytes = "";
                 try {
                     await this.opMetaStore.updateStore(_hash);
-                    _newOpMetaBytes = this.opMetaStore.cache[_hash];
+                    _newOpMetaBytes = this.opMetaStore.getOpMeta(_hash)!;
                     this.opMetaBytes = _newOpMetaBytes;
                     this.opmeta = metaFromBytes(this.opMetaBytes, OpMetaSchema) as OpMeta[];
                     this.names = this.opmeta.map(v => v.name);

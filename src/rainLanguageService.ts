@@ -1,8 +1,8 @@
 /* eslint-disable max-len */
-import { RainDocument } from "./parser/rainDocument";
+import { OpMetaStore } from "./parser/opMetaStore";
 import { getRainHover } from "./services/rainHover";
+import { RainDocument } from "./parser/rainDocument";
 import { getRainCompletion } from "./services/rainCompletion";
-import { RainDocumentResult } from "./types/rainParserTypes";
 import { getRainDiagnostics } from "./services/rainDiagnostics";
 import {
     Hover, 
@@ -20,11 +20,10 @@ import {
  */
 export interface LanguageService {
     rainDocuments: Map<string, RainDocument>;
-	newRainDocument(textDocument: TextDocument, opmeta: Uint8Array | string): RainDocument;
-    parseRainDocument(textDocument: TextDocument, opmeta?: Uint8Array | string): RainDocumentResult;
-    doValidation(textDocument: TextDocument, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): Promise<Diagnostic[]>;
-	doComplete(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): CompletionItem[] | null;
-    doHover(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): Hover | null;
+	newRainDocument(textDocument: TextDocument, opMetaStore?: OpMetaStore): Promise<RainDocument>;
+    doValidation(textDocument: TextDocument): Promise<Diagnostic[]>;
+	doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
+    doHover(textDocument: TextDocument, position: Position): Promise<Hover | null>;
     // doResolve(item: CompletionItem): Promise<CompletionItem>;
 }
 
@@ -47,52 +46,45 @@ export interface LanguageService {
 export function getLanguageService(params?: LanguageServiceParams): LanguageService {
 
     const rainDocuments: Map<string, RainDocument> = new Map();
+    const store = params?.opMetaStore ? params.opMetaStore : new OpMetaStore();
 
     return {
         rainDocuments,
-        newRainDocument: (textDocument, opmeta) => {
+        newRainDocument: async(textDocument, opMetaStore) => {
             let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
-                rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta));
+                if (opMetaStore) store.updateStore(opMetaStore);
+                rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
                 _rainDoc = rainDocuments.get(textDocument.uri)!;
             }
-            else _rainDoc.update(textDocument, opmeta);
+            else _rainDoc.update(textDocument);
             return _rainDoc;
         },
-        parseRainDocument: (textDocument, opmeta) => {
+        doValidation: async(textDocument) => {
             let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
-                rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta ?? ""));
+                rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
                 _rainDoc = rainDocuments.get(textDocument.uri)!;
             }
-            else _rainDoc.update(textDocument, opmeta);
-            return _rainDoc.getResult();
-        },
-        doValidation: (textDocument, opmeta) => {
-            let _rainDoc = rainDocuments.get(textDocument.uri);
-            if (!_rainDoc) {
-                rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta ?? ""));
-                _rainDoc = rainDocuments.get(textDocument.uri)!;
-            }
-            else _rainDoc.update(textDocument, opmeta);
+            else _rainDoc.update(textDocument);
             return getRainDiagnostics(_rainDoc, params);
         },
-        doComplete: (textDocument, position, opmeta) => {
+        doComplete: async(textDocument, position) => {
             let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
-                rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta ?? ""));
+                rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
                 _rainDoc = rainDocuments.get(textDocument.uri)!;
             }
-            else _rainDoc.update(textDocument, opmeta);
+            else _rainDoc.update(textDocument);
             return getRainCompletion(_rainDoc, position, params);
         },
-        doHover: (textDocument, position, opmeta) => {
+        doHover: async(textDocument, position) => {
             let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
-                rainDocuments.set(textDocument.uri, new RainDocument(textDocument, opmeta ?? ""));
+                rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
                 _rainDoc = rainDocuments.get(textDocument.uri)!;
             }
-            else _rainDoc.update(textDocument, opmeta);
+            else _rainDoc.update(textDocument);
             return getRainHover(_rainDoc, position, params);
         },
         // doResolve: rainCompletion.doResolve.bind(rainCompletion),

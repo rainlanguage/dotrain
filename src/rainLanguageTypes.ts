@@ -1,9 +1,11 @@
 import { BigNumberish, BytesLike } from "./utils";
 import { MarkupKind } from "vscode-languageserver-types";
 import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
+import { OpMetaStore } from "./parser/opMetaStore";
 
 export * from "vscode-languageserver-types";
 export { TextDocument, TextDocumentContentChangeEvent };
+
 
 /**
  * @public
@@ -59,6 +61,10 @@ export interface LanguageServiceParams {
      * Describes the LSP capabilities the client supports.
      */
     clientCapabilities?: ClientCapabilities;
+    /**
+     * Object that keeps cache of op metas
+     */
+    opMetaStore?: OpMetaStore;
 }
 
 /**

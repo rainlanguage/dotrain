@@ -15,16 +15,15 @@ import {
  * 
  * @param document - The TextDocuemnt
  * @param position - Position of the textDocument to get the completion items for
- * @param opmeta - The op meta
  * @param setting - (optional) Language service params
- * @returns Completion items and null if no completion items were available for that position
+ * @returns A promise that resolves with Completion items or null if no completion 
+ * items were available for that position
  */
-export function getRainCompletion(
+export async function getRainCompletion(
     document: TextDocument, 
     position: Position,
-    opmeta: Uint8Array | string,
     setting?: LanguageServiceParams
-): CompletionItem[] | null
+): Promise<CompletionItem[] | null>
 
 /**
  * @public Provides completion items
@@ -32,35 +31,33 @@ export function getRainCompletion(
  * @param document - The RainDocument object instance
  * @param position - Position of the textDocument to get the completion items for
  * @param setting - (optional) Language service params
- * @returns Completion items and null if no completion items were available for that position
+  * @returns A promise that resolves with Completion items or null if no completion 
+ * items were available for that position
  */
-export function getRainCompletion(
+export async function getRainCompletion(
     document: RainDocument, 
     position: Position,
     setting?: LanguageServiceParams
-): CompletionItem[] | null
+): Promise<CompletionItem[] | null>
 
-export function getRainCompletion(
+export async function getRainCompletion(
     document: TextDocument | RainDocument,
     position: Position,
-    settingOrOpemta?: Uint8Array | string | LanguageServiceParams,
     setting?: LanguageServiceParams 
-): CompletionItem[] | null {
+): Promise<CompletionItem[] | null> {
     let _documentionType: MarkupKind = "plaintext";
-    let _setting: LanguageServiceParams | undefined;
     let _rd: RainDocument;
     let _td: TextDocument;
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.getTextDocument();
-        if (settingOrOpemta) _setting = settingOrOpemta as LanguageServiceParams;
+        if (setting?.opMetaStore) _rd.getOpMetaStore().updateStore(setting.opMetaStore);
     }
     else {
-        _rd = new RainDocument(document, settingOrOpemta as Uint8Array | string);
         _td = document;
-        if (setting) _setting = setting;
+        _rd = await RainDocument.create(document, setting?.opMetaStore);
     }
-    const format = _setting
+    const format = setting
         ?.clientCapabilities
         ?.textDocument
         ?.completion

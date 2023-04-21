@@ -187,10 +187,10 @@ export async function rld(
         }
         else {
             _hash = getMetaHash(_hex, "op");
-            await _opMetaStore.updateStore(_hash, _hex);
+            _opMetaStore.updateStore(_hash, _hex);
         }
         try {
-            _opmeta = metaFromBytes(_opMetaStore.cache[_hash], OpMetaSchema) as OpMeta[];
+            _opmeta = metaFromBytes(_opMetaStore.getOpMeta(_hash)!, OpMetaSchema) as OpMeta[];
         }
         catch (err) {
             return Promise.reject("invalid op meta");

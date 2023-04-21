@@ -13,13 +13,11 @@ import {
  * @public Provides diagnostics
  * 
  * @param document - The TextDocument
- * @param opmeta - The op meta
  * @param setting - (optional) Language service params
- * @returns Diagnostics promise
+ * @returns A promise that resolves with diagnostics
  */
-export function getRainDiagnostics(
+export async function getRainDiagnostics(
     document: TextDocument, 
-    opmeta: Uint8Array | string,
     setting?: LanguageServiceParams
 ): Promise<Diagnostic[]>
 
@@ -28,33 +26,30 @@ export function getRainDiagnostics(
  * 
  * @param document - The RainDocument
  * @param setting - (optional) Language service params
- * @returns Diagnostics promise
+ * @returns A promise that resolves with diagnostics
  */
-export function getRainDiagnostics(
+export async function getRainDiagnostics(
     document: RainDocument,
     setting?: LanguageServiceParams
 ): Promise<Diagnostic[]>
 
-export function getRainDiagnostics(
+export async function getRainDiagnostics(
     document: RainDocument | TextDocument, 
-    settingOrOpemta?: Uint8Array | string | LanguageServiceParams,
     setting?: LanguageServiceParams 
 ): Promise<Diagnostic[]> {
     let _hasRelatedInformation = false;
-    let _setting: LanguageServiceParams | undefined;
     let _rd: RainDocument;
     let _td: TextDocument;
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.getTextDocument();
-        if (settingOrOpemta) _setting = settingOrOpemta as LanguageServiceParams;
+        if (setting?.opMetaStore) _rd.getOpMetaStore().updateStore(setting.opMetaStore);
     }
     else {
-        _rd = new RainDocument(document, settingOrOpemta as Uint8Array | string);
         _td = document;
-        if (setting) _setting = setting;
+        _rd = await RainDocument.create(document, setting?.opMetaStore);
     }
-    const option = _setting
+    const option = setting
         ?.clientCapabilities
         ?.textDocument
         ?.publishDiagnostics

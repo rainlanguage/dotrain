@@ -1,11 +1,12 @@
-import { isBytesLike, BytesLike, hexlify } from "../utils";
+import { isBytesLike, BytesLike, hexlify, deepCopy } from "../utils";
 import { sgBook, searchOpMeta, checkOpMetaHash } from "@rainprotocol/meta";
 
 
 /**
  * @public 
  * Stores k/v pairs of meta hash and op metas, as well as subgraph endpoint urls that will
- * be used to query, given a meta hash. Hashes must 32 bytes (in hex string format).
+ * be used to query, given a meta hash. Hashes must 32 bytes (in hex string format) and will 
+ * be stored as lower case (same with op meta bytes, they will be stored as hex string lower case).
  * 
  * Subgraph endpoint URLs specified in "sgBook" from 
  * [rainlang-meta](https://github.com/rainprotocol/meta/blob/master/src/subgraphBook.ts) 
@@ -17,6 +18,9 @@ import { sgBook, searchOpMeta, checkOpMetaHash } from "@rainprotocol/meta";
  * Given a k/v pair of meta hash and op meta either at instantiation or when using `updateStore()`,
  * it regenrates the hash from the op meta to check the validity of the k/v pair and if the check
  * fails they will be ignored.
+ * 
+ * All k/v pairs will be stored as **lower case**. So for reading op meta from the `cache`, make sure 
+ * the keys is in lower case. (use `toLowerCase()`)
  * 
  * @example
  * ```typescript
@@ -31,11 +35,22 @@ import { sgBook, searchOpMeta, checkOpMetaHash } from "@rainprotocol/meta";
  * 
  * // updates the store with a new op meta (checks the validity, ignores if doesn;t pass the check)
  * await opMetaStore.updateStore(metaHash, opMeta)
+ * 
+ * // to read an op meta of a meta hash (important to provide the key as lower case)
+ * const opmeta = opMetaStore.cache[metaHash.toLowerCase()];
  * ```
  */
 export class OpMetaStore {
+    /**
+     * @public Subgraph endpoint URLs of this store instance
+     */
     public readonly subgraphs: string[] = [];
-    public readonly cache: { [hash: string]: string } = {};
+    /**
+     * @private Meta Hash/Op Meta kv pairs of this store instance.
+     * 
+     * **IMPORTANT** - Make sure to use `toLowerCase()` for keys when reading.
+     */
+    private cache: { [hash: string]: string } = {};
 
     constructor(
         options?: {
@@ -71,31 +86,69 @@ export class OpMetaStore {
         }
     }
 
+    /**
+     * @public Get op meta for a given meta hash
+     * @param metaHash - The meta hash
+     * @returns The op meta bytes as hex string if it exists in the store and `undefined` if it doesn't
+     */
+    public getOpMeta(metaHash: string): string | undefined {
+        return this.cache[metaHash.toLowerCase()];
+    }
+
+    /**
+     * @public Get the whole k/v store object
+     * @returns This instance's cache
+     */
+    public getStore(): { [hash: string]: string } {
+        return deepCopy(this.cache);
+    }
+
+    /**
+     * @public Updates the store with the given OpMetaStore instance
+     * @param opMetaStore - An OpMetaStore object instance
+     */
+    public updateStore(opMetaStore: OpMetaStore): void
 
     /**
      * @public Updates the store for the given meta hash and op meta
      * @param metaHash - The meta hash (32 bytes hex string)
-     * @param opmeta - (optional) The op meta bytes, 
-     * if not provided will fetch from subgraphs,
-     * if provided will check its validity
+     * @param opmeta - The op meta bytes, 
      */
-    public async updateStore(metaHash: string, opmeta: BytesLike = "") {
-        if (!metaHash.match(/^0x[a-fA-F0-9]{64}$/)) throw new Error(
-            "invalid meta hash!"
-        );
-        if (opmeta) {
-            if (!isBytesLike(opmeta)) throw new Error("invalid op meta!");
-            const _opmeta = typeof opmeta === "string" 
-                ? opmeta.toLowerCase()
-                : hexlify(opmeta, { allowMissingPrefix: true }).toLowerCase();
-            if (checkOpMetaHash(_opmeta, metaHash.toLowerCase())) this.cache[
-                metaHash.toLowerCase()
-            ] = _opmeta;
-            else throw new Error("provided meta hash and opmeta don't match");
+    public updateStore(metaHash: string, opmeta: BytesLike): void
+
+    /**
+     * @public Updates the store for the given meta hash by reading from subgraphs
+     * @param metaHash - The meta hash (32 bytes hex string)
+     */
+    public async updateStore(metaHash: string): Promise<void>
+
+    public async updateStore(hashOrStore: string | OpMetaStore, opmeta: BytesLike = "") {
+        if (hashOrStore instanceof OpMetaStore) {
+            const _kv = hashOrStore.getStore();
+            this.cache = {
+                ...this.cache,
+                ..._kv
+            };
+            for (const sg of hashOrStore.subgraphs) {
+                if (!this.subgraphs.includes(sg)) this.subgraphs.push(sg);
+            }
         }
         else {
-            const _opmeta = await searchOpMeta(metaHash);
-            this.cache[metaHash.toLowerCase()] = _opmeta;
+            if (hashOrStore.match(/^0x[a-fA-F0-9]{64}$/)) {
+                if (opmeta) {
+                    if (!isBytesLike(opmeta)) throw new Error("invalid op meta!");
+                    const _opmeta = typeof opmeta === "string" 
+                        ? opmeta.toLowerCase()
+                        : hexlify(opmeta, { allowMissingPrefix: true }).toLowerCase();
+                    if (checkOpMetaHash(_opmeta, hashOrStore.toLowerCase())) this.cache[
+                        hashOrStore.toLowerCase()
+                    ] = _opmeta;
+                }
+                else {
+                    const _opmeta = await searchOpMeta(hashOrStore);
+                    this.cache[hashOrStore.toLowerCase()] = _opmeta;
+                }
+            }
         }
     }
 
@@ -104,10 +157,9 @@ export class OpMetaStore {
      * @param subgraphUrl - The subgraph endpoint URL
      */
     public addSubgraph(subgraphUrl: string) {
-        if (!subgraphUrl.startsWith("https://api.thegraph.com/subgraphs/name/")) throw new Error(
-            "invalid subgraph endpoint url!"
-        );
-        if (!this.subgraphs.includes(subgraphUrl)) this.subgraphs.push(subgraphUrl);
+        if (!subgraphUrl.startsWith("https://api.thegraph.com/subgraphs/name/")) {
+            if (!this.subgraphs.includes(subgraphUrl)) this.subgraphs.push(subgraphUrl);
+        }
     }
 
 }
