@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 import { OpMetaStore } from "./parser/opMetaStore";
 import { getRainHover } from "./services/rainHover";
 import { RainDocument } from "./parser/rainDocument";
@@ -29,7 +28,8 @@ export interface LanguageService {
 
 /**
  * @public
- * Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services
+ * Main function to get Rain language services initiated and ready to recieve 
+ * TextDocuments to provide the desired language services
  * 
  * @example
  * ```ts
