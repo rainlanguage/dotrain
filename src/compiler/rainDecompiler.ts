@@ -1,14 +1,14 @@
 import { TextDocument } from "../rainLanguageTypes";
-import { OpMetaStore } from "../parser/opMetaStore";
+import { MetaStore } from "../parser/metaStore";
 import { RainDocument } from "../parser/rainDocument";
 import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
 import { 
     OpMeta, 
+    keccak256, 
     InputMeta, 
     OutputMeta, 
     OperandArgs, 
-    getMetaHash, 
     OpMetaSchema, 
     metaFromBytes 
 } from "@rainprotocol/meta";
@@ -44,19 +44,19 @@ export async function rld(
  * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document
  * 
  * @param expressionConfig - ExpressionConfig to decompile
- * @param opmeta - The op meta bytes
+ * @param metaBytes - The meta bytes
  * @param prettyFormat - (optional) Format the output document
  * @returns A promise that resolves with a RainDocument
  */
 export async function rld(
     expressionConfig: ExpressionConfig, 
-    opmeta: Uint8Array | string, 
+    metaBytes: string, 
     prettyFormat?: boolean
 ): Promise<RainDocument>
 
 export async function rld(
     expressionConfig: ExpressionConfig, 
-    meta: Uint8Array | string, 
+    bytesOrHash: string, 
     subgraphsOrPretty?: string[] | boolean,
     prettyFormat = true
 ): Promise<RainDocument> {
@@ -175,22 +175,22 @@ export async function rld(
         if (typeof subgraphsOrPretty === "boolean") prettyFormat = subgraphsOrPretty;
         else _sgs.push(...subgraphsOrPretty);
     }
-    const _opMetaStore = new OpMetaStore({subgraphs: _sgs});
-    if (isBytesLike(meta)) {
+    const _metaStore = new MetaStore();
+    if (isBytesLike(bytesOrHash)) {
         let _hash;
-        const _hex = typeof meta === "string" 
-            ? meta 
-            : hexlify(meta, { allowMissingPrefix: true });
+        const _hex = typeof bytesOrHash === "string" 
+            ? bytesOrHash 
+            : hexlify(bytesOrHash, { allowMissingPrefix: true });
         if (_hex.match(/^0x[a-fA-F0-9]{64}$/)) {
             _hash = _hex;
-            await _opMetaStore.updateStore(_hex);
+            await _metaStore.updateOpMetaStore(_hex);
         }
         else {
-            _hash = getMetaHash(_hex, "op");
-            _opMetaStore.updateStore(_hash, _hex);
+            _hash = keccak256(_hex);
+            _metaStore.updateOpMetaStore(_hash, _hex);
         }
         try {
-            _opmeta = metaFromBytes(_opMetaStore.getOpMeta(_hash)!, OpMetaSchema) as OpMeta[];
+            _opmeta = metaFromBytes(_metaStore.getOpMeta(_hash)!, OpMetaSchema) as OpMeta[];
         }
         catch (err) {
             return Promise.reject("invalid op meta");
@@ -307,11 +307,11 @@ export async function rld(
         prettyFormat 
             ? await RainDocument.create(
                 TextDocument.create("file", "rainlang", 1, rainFormat(_finalStack.join("\n"))), 
-                _opMetaStore
+                _metaStore
             )
             : await RainDocument.create(
                 TextDocument.create("file", "rainlang", 1, _finalStack.join("\n")),
-                _opMetaStore
+                _metaStore
             )
     );
 }

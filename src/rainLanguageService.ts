@@ -1,4 +1,4 @@
-import { OpMetaStore } from "./parser/opMetaStore";
+import { MetaStore } from "./parser/metaStore";
 import { getRainHover } from "./services/rainHover";
 import { RainDocument } from "./parser/rainDocument";
 import { getRainCompletion } from "./services/rainCompletion";
@@ -19,7 +19,7 @@ import {
  */
 export interface LanguageService {
     rainDocuments: Map<string, RainDocument>;
-	newRainDocument(textDocument: TextDocument, opMetaStore?: OpMetaStore): Promise<RainDocument>;
+	newRainDocument(textDocument: TextDocument, opMetaStore?: MetaStore): Promise<RainDocument>;
     doValidation(textDocument: TextDocument): Promise<Diagnostic[]>;
 	doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
     doHover(textDocument: TextDocument, position: Position): Promise<Hover | null>;
@@ -46,14 +46,14 @@ export interface LanguageService {
 export function getLanguageService(params?: LanguageServiceParams): LanguageService {
 
     const rainDocuments: Map<string, RainDocument> = new Map();
-    const store = params?.opMetaStore ? params.opMetaStore : new OpMetaStore();
+    const store = params?.metaStore ? params.metaStore : new MetaStore();
 
     return {
         rainDocuments,
         newRainDocument: async(textDocument, opMetaStore) => {
             let _rainDoc = rainDocuments.get(textDocument.uri);
             if (!_rainDoc) {
-                if (opMetaStore) store.updateStore(opMetaStore);
+                if (opMetaStore) store.updateOpMetaStore(opMetaStore);
                 rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
                 _rainDoc = rainDocuments.get(textDocument.uri)!;
             }

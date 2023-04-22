@@ -1,4 +1,4 @@
-import { OpMetaStore } from "./opMetaStore";
+import { MetaStore } from "./metaStore";
 import { ErrorCode, TextDocument } from "../rainLanguageTypes";
 import { 
     OpMeta,
@@ -66,10 +66,10 @@ export class RainDocument {
     /**
      * @public constructor of RainDocument object
      * @param textDocument - Raw text to parse (can be updated at any time after instantiation)
-     * @param opMetaStore - (optional) OpMetaStore class object that holds k/v opmeta pairs and subgraphs urls
+     * @param metaStore - (optional) MetaStore class object
      */
-    private constructor(textDocument: TextDocument, opMetaStore?: OpMetaStore) {
-        this._rp = new RainParser(textDocument, opMetaStore);
+    private constructor(textDocument: TextDocument, metaStore?: MetaStore) {
+        this._rp = new RainParser(textDocument, metaStore);
     }
 
     /**
@@ -77,14 +77,14 @@ export class RainDocument {
      * Creates a new instance of RainDocument
      * 
      * @param textDocument - The text document
-     * @param opMetaStore - The OpMetaStore object that caches k/v pairs of hashes and opmetas
+     * @param metaStore - The MetaStore object
      * @returns A new instance of RainDocument
      */
     public static async create(
         textDocument: TextDocument, 
-        opMetaStore?: OpMetaStore
+        metaStore?: MetaStore
     ): Promise<RainDocument> {
-        const rainDocument = new RainDocument(textDocument, opMetaStore);
+        const rainDocument = new RainDocument(textDocument, metaStore);
         await rainDocument.update();
         return rainDocument;
     }
@@ -148,10 +148,10 @@ export class RainDocument {
     }
 
     /**
-     * @public Get the OpMetaStore object instance of this RainDocument instance
+     * @public Get the MetaStore object instance of this RainDocument instance
      */
-    public getOpMetaStore(): OpMetaStore {
-        return this._rp.getOpMetaStore();
+    public getMetaStore(): MetaStore {
+        return this._rp.getMetaStore();
     }
 
     /**
@@ -197,7 +197,7 @@ class RainParser {
     private textDocument: TextDocument;
     private opMetaBytes = "";
     private opmeta: OpMeta[] = [];
-    private opMetaStore: OpMetaStore;
+    private metaStore: MetaStore;
     private parseTree: RDParseTree = [];
     private problems: RDProblem[] = [];
     private comments: RDComment[] = [];
@@ -230,13 +230,13 @@ class RainParser {
 
     /**
      * @public Constructs a new RainParser object
-     * @param textDocument - (optional) Raw text to parse (can be updated at any time after instantiation)
-     * @param opmeta - Ops meta as bytes ie hex string or Uint8Array
+     * @param textDocument - TextDocument
+     * @param metaStore - (optional) MetaStore object
      */
-    constructor(textDocument: TextDocument, opMetaStore?: OpMetaStore) {
+    constructor(textDocument: TextDocument, metaStore?: MetaStore) {
         this.textDocument = textDocument;
-        if (opMetaStore) this.opMetaStore = opMetaStore;
-        else this.opMetaStore = new OpMetaStore();
+        if (metaStore) this.metaStore = metaStore;
+        else this.metaStore = new MetaStore();
     }
 
     /**
@@ -336,10 +336,10 @@ class RainParser {
     }
 
     /**
-     * @public Get the OpMetaStore object instance
+     * @public Get the MetaStore object instance
      */
-    public getOpMetaStore(): OpMetaStore {
-        return this.opMetaStore;
+    public getMetaStore(): MetaStore {
+        return this.metaStore;
     }
 
     /**
@@ -466,7 +466,7 @@ class RainParser {
         let _hash = "";
         if (hash[0].match(/^@0x[a-zA-F0-9]{64}$/)) {
             _hash = hash[0].slice(1);
-            const _newOpMetaBytes = this.opMetaStore.getOpMeta(_hash);
+            const _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
             if (_newOpMetaBytes) {
                 if (_newOpMetaBytes !== this.opMetaBytes) {
                     this.opMetaBytes = _newOpMetaBytes;
@@ -490,11 +490,9 @@ class RainParser {
                 }
             }
             else {
-                let _newOpMetaBytes = "";
                 try {
-                    await this.opMetaStore.updateStore(_hash);
-                    _newOpMetaBytes = this.opMetaStore.getOpMeta(_hash)!;
-                    this.opMetaBytes = _newOpMetaBytes;
+                    await this.metaStore.updateOpMetaStore(_hash);
+                    this.opMetaBytes = this.metaStore.getOpMeta(_hash) ?? "";
                     this.opmeta = metaFromBytes(this.opMetaBytes, OpMetaSchema) as OpMeta[];
                     this.names = this.opmeta.map(v => v.name);
                     this.opAliases = this.opmeta.map(v => v.aliases);
@@ -504,7 +502,7 @@ class RainParser {
                     this.opAliases = this.opmeta.map(v => v.aliases);
                 }
                 catch (_err) {
-                    if (!_newOpMetaBytes) this.opMetaBytes = "";
+                    this.opMetaBytes = "";
                     this._resetOpMeta();
                     this.problems.push({
                         msg: _err instanceof Error ? _err.message : _err as string,

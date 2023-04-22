@@ -42,11 +42,11 @@ export async function getRainHover(
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.getTextDocument();
-        if (setting?.opMetaStore) _rd.getOpMetaStore().updateStore(setting.opMetaStore);
+        if (setting?.metaStore) _rd.getMetaStore().updateStore(setting.metaStore);
     }
     else {
         _td = document;
-        _rd = await RainDocument.create(document, setting?.opMetaStore);
+        _rd = await RainDocument.create(document, setting?.metaStore);
     }
     const format = setting
         ?.clientCapabilities
