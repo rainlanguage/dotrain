@@ -1645,7 +1645,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!getLanguageService:function(1)",
-          "docComment": "/**\n * Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services\n *\n * @example\n * ```ts\n * // importing\n * import { getLanguageService } from \"@rainprotocol/rainlang\";\n *\n * // initiating the services\n * const langServices = getLanguageService(clientCapabilities);\n *\n * // getting validation results (lsp Diagnostics)\n * const errors = await langServices.doValidate(myDocument, opmeta);\n * ```\n *\n * @public\n */\n",
+          "docComment": "/**\n * Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services\n *\n * @example\n * ```ts\n * // importing\n * import { getLanguageService } from \"@rainprotocol/rainlang\";\n *\n * // initiating the services\n * const langServices = getLanguageService({clientCapabilities, metastore});\n *\n * // getting validation results (lsp Diagnostics)\n * const errors = await langServices.doValidate(myTextDocument);\n * ```\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",

@@ -18,10 +18,10 @@ function getLanguageService(params?: LanguageServiceParams): LanguageService;
 import { getLanguageService } from "@rainprotocol/rainlang";
 
 // initiating the services
-const langServices = getLanguageService(clientCapabilities);
+const langServices = getLanguageService({clientCapabilities, metastore});
 
 // getting validation results (lsp Diagnostics)
-const errors = await langServices.doValidate(myDocument, opmeta);
+const errors = await langServices.doValidate(myTextDocument);
 
 ```
 

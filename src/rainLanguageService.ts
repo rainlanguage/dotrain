@@ -18,7 +18,6 @@ import {
  * Interface for Rain language services
  */
 export interface LanguageService {
-    // rainDocuments: Map<string, RainDocument>;
 	newRainDocument(textDocument: TextDocument): Promise<RainDocument>;
     doValidation(textDocument: TextDocument): Promise<Diagnostic[]>;
 	doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
@@ -36,15 +35,14 @@ export interface LanguageService {
  * import { getLanguageService } from "@rainprotocol/rainlang";
  * 
  * // initiating the services
- * const langServices = getLanguageService(clientCapabilities);
+ * const langServices = getLanguageService({clientCapabilities, metastore});
  * 
  * // getting validation results (lsp Diagnostics)
- * const errors = await langServices.doValidate(myDocument, opmeta);
+ * const errors = await langServices.doValidate(myTextDocument);
  * ```
  */
 export function getLanguageService(params?: LanguageServiceParams): LanguageService {
 
-    // const rainDocuments: Map<string, RainDocument> = new Map();
     if (!params) params = {
         metaStore: new MetaStore()
     };
@@ -53,45 +51,16 @@ export function getLanguageService(params?: LanguageServiceParams): LanguageServ
     }
 
     return {
-        // rainDocuments,
         newRainDocument: async(textDocument) => {
-            // let _rainDoc = rainDocuments.get(textDocument.uri);
-            // if (!_rainDoc) {
-            //     if (metaStore) store.updateStore(metaStore);
-            //     rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
-            //     _rainDoc = rainDocuments.get(textDocument.uri)!;
-            // }
-            // else _rainDoc.update(textDocument);
             return await RainDocument.create(textDocument, params?.metaStore);
         },
         doValidation: async(textDocument) => {
-            // let _rainDoc = rainDocuments.get(textDocument.uri);
-            // if (!_rainDoc) {
-            //     rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
-            //     _rainDoc = rainDocuments.get(textDocument.uri)!;
-            // }
-            // else _rainDoc.update(textDocument);
-            // return getRainDiagnostics(_rainDoc, params);
             return getRainDiagnostics(textDocument, params);
         },
         doComplete: async(textDocument, position) => {
-            // let _rainDoc = rainDocuments.get(textDocument.uri);
-            // if (!_rainDoc) {
-            //     rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
-            //     _rainDoc = rainDocuments.get(textDocument.uri)!;
-            // }
-            // else _rainDoc.update(textDocument);
-            // return getRainCompletion(_rainDoc, position, params);
             return getRainCompletion(textDocument, position, params);
         },
         doHover: async(textDocument, position) => {
-            // let _rainDoc = rainDocuments.get(textDocument.uri);
-            // if (!_rainDoc) {
-            //     rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
-            //     _rainDoc = rainDocuments.get(textDocument.uri)!;
-            // }
-            // else _rainDoc.update(textDocument);
-            // return getRainHover(_rainDoc, position, params);
             return getRainHover(textDocument, position, params);
         }
     };
