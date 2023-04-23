@@ -27,13 +27,13 @@ yarn add @rainprotocol/rainlang
 Rain Language Services provide validation of a Rain docuemtn and services like completion, hover, etc.
 ```typescript
 // importing
-import { getLanguageService } from "@rainprotocol/rainlang";
+import { getRainLanguageServices } from "@rainprotocol/rainlang";
 
-// initiating the services
-const langServices = getLanguageService(clientCapabilities);
+// initiating the services (clientCapabilities and metaStore are optional arguments)
+const langServices = getRainLanguageServices({clientCapabilities, metaStore});
 
 // getting validation results (lsp Diagnostics)
-const diagnostics = await langServices.doValidate(myDocument, opmeta);
+const diagnostics = await langServices.doValidate(myTextDocument);
 ```
 <br>
 
@@ -44,10 +44,10 @@ Rain Language compiler/decompiler, compiles a Rain document to a valid Expressio
 import { rlc, rld } from "@rainprotocol/rainlang";
 
 // compiling a Rain document to get ExpressionConfig aka deployable bytes
-const expressionConfig = await rlc(myDocument, opmeta);
+const expressionConfig = await rlc(myDocument, metaStore?);
 
 // decompiling an ExpressionConfig to a valid Rain document
-const rainDocument = await rld(expressionConfig, opmeta);
+const rainDocument = await rld(expressionConfig, metaStore?);
 ```
 
 <br>
