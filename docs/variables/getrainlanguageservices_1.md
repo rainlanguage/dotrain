@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [getLanguageService](./getlanguageservice_1.md)
+[Home](../index.md) &gt; [getRainLanguageServices](./getrainlanguageservices_1.md)
 
-# Function getLanguageService()
+# Function getRainLanguageServices()
 
 Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services
 
 <b>Signature:</b>
 
 ```typescript
-function getLanguageService(params?: LanguageServiceParams): LanguageService;
+function getRainLanguageServices(params?: LanguageServiceParams): RainLanguageServices;
 ```
 
 ## Example
@@ -15,10 +15,10 @@ function getLanguageService(params?: LanguageServiceParams): LanguageService;
 
 ```ts
 // importing
-import { getLanguageService } from "@rainprotocol/rainlang";
+import { getRainLanguageServices } from "@rainprotocol/rainlang";
 
 // initiating the services
-const langServices = getLanguageService({clientCapabilities, metastore});
+const langServices = getRainLanguageServices({clientCapabilities, metastore});
 
 // getting validation results (lsp Diagnostics)
 const errors = await langServices.doValidate(myTextDocument);
@@ -33,5 +33,5 @@ const errors = await langServices.doValidate(myTextDocument);
 
 <b>Returns:</b>
 
-`LanguageService`
+`RainLanguageServices`
 

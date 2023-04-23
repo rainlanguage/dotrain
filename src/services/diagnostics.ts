@@ -16,7 +16,7 @@ import {
  * @param setting - (optional) Language service params
  * @returns A promise that resolves with diagnostics
  */
-export async function getRainDiagnostics(
+export async function getRainlangDiagnostics(
     document: TextDocument, 
     setting?: LanguageServiceParams
 ): Promise<Diagnostic[]>
@@ -28,12 +28,12 @@ export async function getRainDiagnostics(
  * @param setting - (optional) Language service params
  * @returns A promise that resolves with diagnostics
  */
-export async function getRainDiagnostics(
+export async function getRainlangDiagnostics(
     document: RainDocument,
     setting?: LanguageServiceParams
 ): Promise<Diagnostic[]>
 
-export async function getRainDiagnostics(
+export async function getRainlangDiagnostics(
     document: RainDocument | TextDocument, 
     setting?: LanguageServiceParams 
 ): Promise<Diagnostic[]> {

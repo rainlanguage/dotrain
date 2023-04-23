@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [getRainDiagnostics](./getraindiagnostics_1.md)
+[Home](../index.md) &gt; [getRainlangDiagnostics](./getrainlangdiagnostics_1.md)
 
-# Function getRainDiagnostics()
+# Function getRainlangDiagnostics()
 
 Provides diagnostics
 
 <b>Signature:</b>
 
 ```typescript
-function getRainDiagnostics(document: TextDocument, setting?: LanguageServiceParams): Promise<Diagnostic[]>;
+function getRainlangDiagnostics(document: TextDocument, setting?: LanguageServiceParams): Promise<Diagnostic[]>;
 ```
 
 ## Parameters

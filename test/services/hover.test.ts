@@ -6,8 +6,8 @@ import {
     rainlang,
     MetaStore, 
     TextDocument,
-    getLanguageService,
-    LanguageServiceParams 
+    LanguageServiceParams, 
+    getRainLanguageServices 
 } from "../../src";
 
 
@@ -16,7 +16,7 @@ async function testHover(
     position: Position, 
     serviceParams?: LanguageServiceParams
 ): Promise<Hover | null> {
-    const langServices = getLanguageService(serviceParams);
+    const langServices = getRainLanguageServices(serviceParams);
     return await (langServices.doHover(
         TextDocument.create("file", "rainlang", 1, text), 
         position

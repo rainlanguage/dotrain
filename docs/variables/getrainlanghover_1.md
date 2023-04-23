@@ -1,20 +1,20 @@
-[Home](../index.md) &gt; [getRainHover](./getrainhover_2.md)
+[Home](../index.md) &gt; [getRainlangHover](./getrainlanghover_1.md)
 
-# Function getRainHover()
+# Function getRainlangHover()
 
 Provides hover items
 
 <b>Signature:</b>
 
 ```typescript
-function getRainHover(document: RainDocument, position: Position, setting?: LanguageServiceParams): Promise<Hover | null>;
+function getRainlangHover(document: TextDocument, position: Position, setting?: LanguageServiceParams): Promise<Hover | null>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  document | [RainDocument](../classes/raindocument.md) | The RainDocument object instance |
+|  document | `TextDocument` | The TextDocuemnt |
 |  position | `Position` | Position of the textDocument to get the completion items for |
 |  setting | [LanguageServiceParams](../interfaces/languageserviceparams.md) | (optional) Language service params |
 

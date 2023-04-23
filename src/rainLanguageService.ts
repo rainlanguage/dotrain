@@ -1,8 +1,8 @@
 import { MetaStore } from "./parser/metaStore";
-import { getRainHover } from "./services/rainHover";
+import { getRainlangHover } from "./services/hover";
 import { RainDocument } from "./parser/rainDocument";
-import { getRainCompletion } from "./services/rainCompletion";
-import { getRainDiagnostics } from "./services/rainDiagnostics";
+import { getRainlangCompletion } from "./services/completion";
+import { getRainlangDiagnostics } from "./services/diagnostics";
 import {
     Hover, 
     Position, 
@@ -17,7 +17,7 @@ import {
  * @public
  * Interface for Rain language services
  */
-export interface LanguageService {
+export interface RainLanguageServices {
 	newRainDocument(textDocument: TextDocument): Promise<RainDocument>;
     doValidation(textDocument: TextDocument): Promise<Diagnostic[]>;
 	doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
@@ -32,16 +32,16 @@ export interface LanguageService {
  * @example
  * ```ts
  * // importing
- * import { getLanguageService } from "@rainprotocol/rainlang";
+ * import { getRainLanguageServices } from "@rainprotocol/rainlang";
  * 
  * // initiating the services
- * const langServices = getLanguageService({clientCapabilities, metastore});
+ * const langServices = getRainLanguageServices({clientCapabilities, metastore});
  * 
  * // getting validation results (lsp Diagnostics)
  * const errors = await langServices.doValidate(myTextDocument);
  * ```
  */
-export function getLanguageService(params?: LanguageServiceParams): LanguageService {
+export function getRainLanguageServices(params?: LanguageServiceParams): RainLanguageServices {
 
     if (!params) params = {
         metaStore: new MetaStore()
@@ -55,13 +55,13 @@ export function getLanguageService(params?: LanguageServiceParams): LanguageServ
             return await RainDocument.create(textDocument, params?.metaStore);
         },
         doValidation: async(textDocument) => {
-            return getRainDiagnostics(textDocument, params);
+            return getRainlangDiagnostics(textDocument, params);
         },
         doComplete: async(textDocument, position) => {
-            return getRainCompletion(textDocument, position, params);
+            return getRainlangCompletion(textDocument, position, params);
         },
         doHover: async(textDocument, position) => {
-            return getRainHover(textDocument, position, params);
+            return getRainlangHover(textDocument, position, params);
         }
     };
 }

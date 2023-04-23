@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [getRainCompletion](./getraincompletion_1.md)
+[Home](../index.md) &gt; [getRainlangCompletion](./getrainlangcompletion_1.md)
 
-# Function getRainCompletion()
+# Function getRainlangCompletion()
 
 Provides completion items
 
 <b>Signature:</b>
 
 ```typescript
-function getRainCompletion(document: TextDocument, position: Position, setting?: LanguageServiceParams): Promise<CompletionItem[] | null>;
+function getRainlangCompletion(document: TextDocument, position: Position, setting?: LanguageServiceParams): Promise<CompletionItem[] | null>;
 ```
 
 ## Parameters

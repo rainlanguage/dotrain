@@ -11,7 +11,7 @@ import { LanguageServiceParams, MarkupKind, TextDocument, Position, Hover, Range
  * @param setting - (optional) Language service params
  * @returns Promise of hover item and null if no item was available for that position
  */
-export async function getRainHover(
+export async function getRainlangHover(
     document: TextDocument,
     position: Position,
     setting?: LanguageServiceParams
@@ -25,13 +25,13 @@ export async function getRainHover(
  * @param setting - (optional) Language service params
  * @returns Promise of hover item and null if no item was available for that position
  */
-export async function getRainHover(
+export async function getRainlangHover(
     document: RainDocument,
     position: Position,
     setting?: LanguageServiceParams
 ): Promise<Hover | null>
 
-export async function getRainHover(
+export async function getRainlangHover(
     document: RainDocument | TextDocument,
     position: Position,
     setting?: LanguageServiceParams 

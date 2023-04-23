@@ -7,14 +7,14 @@ import {
     Diagnostic, 
     TextDocument, 
     DiagnosticSeverity, 
-    getLanguageService, 
+    getRainLanguageServices, 
 } from "../../src";
 
 
 async function testDiagnostics(
     text: string, metaStore: MetaStore, expectedDiagnostics: Diagnostic[]
 ) {
-    const langServices = getLanguageService({ metaStore });
+    const langServices = getRainLanguageServices({ metaStore });
     const actualDiagnostics: Diagnostic[] = await langServices.doValidation(
         TextDocument.create("file", "rainlang", 1, text), 
     );

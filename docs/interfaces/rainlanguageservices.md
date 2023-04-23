@@ -1,23 +1,23 @@
-[Home](../index.md) &gt; [LanguageService](./languageservice.md)
+[Home](../index.md) &gt; [RainLanguageServices](./rainlanguageservices.md)
 
-# Interface LanguageService
+# Interface RainLanguageServices
 
 Interface for Rain language services
 
 <b>Signature:</b>
 
 ```typescript
-interface LanguageService 
+interface RainLanguageServices 
 ```
 
 ## Methods
 
 |  Method | Description |
 |  --- | --- |
-|  [doComplete(textDocument, position)](./languageservice.md#doComplete-method-1) |  |
-|  [doHover(textDocument, position)](./languageservice.md#doHover-method-1) |  |
-|  [doValidation(textDocument)](./languageservice.md#doValidation-method-1) |  |
-|  [newRainDocument(textDocument)](./languageservice.md#newRainDocument-method-1) |  |
+|  [doComplete(textDocument, position)](./rainlanguageservices.md#doComplete-method-1) |  |
+|  [doHover(textDocument, position)](./rainlanguageservices.md#doHover-method-1) |  |
+|  [doValidation(textDocument)](./rainlanguageservices.md#doValidation-method-1) |  |
+|  [newRainDocument(textDocument)](./rainlanguageservices.md#newRainDocument-method-1) |  |
 
 ## Method Details
 

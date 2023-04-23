@@ -8,8 +8,8 @@ import {
     TextDocument,
     CompletionItem,
     CompletionItemKind, 
-    getLanguageService,
-    LanguageServiceParams 
+    LanguageServiceParams, 
+    getRainLanguageServices 
 } from "../../src";
 
 
@@ -19,7 +19,7 @@ async function testCompletion(
     expectedCompletions: CompletionItem[] | null,
     serviceParams?: LanguageServiceParams
 ) {
-    const actualCompletions = await getLanguageService(serviceParams).doComplete(
+    const actualCompletions = await getRainLanguageServices(serviceParams).doComplete(
         TextDocument.create("file", "rainlang", 1, text), 
         position
     );

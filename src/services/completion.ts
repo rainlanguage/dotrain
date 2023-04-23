@@ -19,7 +19,7 @@ import {
  * @returns A promise that resolves with Completion items or null if no completion 
  * items were available for that position
  */
-export async function getRainCompletion(
+export async function getRainlangCompletion(
     document: TextDocument, 
     position: Position,
     setting?: LanguageServiceParams
@@ -34,13 +34,13 @@ export async function getRainCompletion(
   * @returns A promise that resolves with Completion items or null if no completion 
  * items were available for that position
  */
-export async function getRainCompletion(
+export async function getRainlangCompletion(
     document: RainDocument, 
     position: Position,
     setting?: LanguageServiceParams
 ): Promise<CompletionItem[] | null>
 
-export async function getRainCompletion(
+export async function getRainlangCompletion(
     document: TextDocument | RainDocument,
     position: Position,
     setting?: LanguageServiceParams 
