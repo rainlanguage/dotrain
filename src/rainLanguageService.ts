@@ -18,12 +18,11 @@ import {
  * Interface for Rain language services
  */
 export interface LanguageService {
-    rainDocuments: Map<string, RainDocument>;
-	newRainDocument(textDocument: TextDocument, opMetaStore?: MetaStore): Promise<RainDocument>;
+    // rainDocuments: Map<string, RainDocument>;
+	newRainDocument(textDocument: TextDocument): Promise<RainDocument>;
     doValidation(textDocument: TextDocument): Promise<Diagnostic[]>;
 	doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
     doHover(textDocument: TextDocument, position: Position): Promise<Hover | null>;
-    // doResolve(item: CompletionItem): Promise<CompletionItem>;
 }
 
 /**
@@ -45,48 +44,55 @@ export interface LanguageService {
  */
 export function getLanguageService(params?: LanguageServiceParams): LanguageService {
 
-    const rainDocuments: Map<string, RainDocument> = new Map();
-    const store = params?.metaStore ? params.metaStore : new MetaStore();
+    // const rainDocuments: Map<string, RainDocument> = new Map();
+    if (!params) params = {
+        metaStore: new MetaStore()
+    };
+    else {
+        if (!params.metaStore) params.metaStore = new MetaStore();
+    }
 
     return {
-        rainDocuments,
-        newRainDocument: async(textDocument, opMetaStore) => {
-            let _rainDoc = rainDocuments.get(textDocument.uri);
-            if (!_rainDoc) {
-                if (opMetaStore) store.updateOpMetaStore(opMetaStore);
-                rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
-                _rainDoc = rainDocuments.get(textDocument.uri)!;
-            }
-            else _rainDoc.update(textDocument);
-            return _rainDoc;
+        // rainDocuments,
+        newRainDocument: async(textDocument) => {
+            // let _rainDoc = rainDocuments.get(textDocument.uri);
+            // if (!_rainDoc) {
+            //     if (metaStore) store.updateStore(metaStore);
+            //     rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
+            //     _rainDoc = rainDocuments.get(textDocument.uri)!;
+            // }
+            // else _rainDoc.update(textDocument);
+            return await RainDocument.create(textDocument, params?.metaStore);
         },
         doValidation: async(textDocument) => {
-            let _rainDoc = rainDocuments.get(textDocument.uri);
-            if (!_rainDoc) {
-                rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
-                _rainDoc = rainDocuments.get(textDocument.uri)!;
-            }
-            else _rainDoc.update(textDocument);
-            return getRainDiagnostics(_rainDoc, params);
+            // let _rainDoc = rainDocuments.get(textDocument.uri);
+            // if (!_rainDoc) {
+            //     rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
+            //     _rainDoc = rainDocuments.get(textDocument.uri)!;
+            // }
+            // else _rainDoc.update(textDocument);
+            // return getRainDiagnostics(_rainDoc, params);
+            return getRainDiagnostics(textDocument, params);
         },
         doComplete: async(textDocument, position) => {
-            let _rainDoc = rainDocuments.get(textDocument.uri);
-            if (!_rainDoc) {
-                rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
-                _rainDoc = rainDocuments.get(textDocument.uri)!;
-            }
-            else _rainDoc.update(textDocument);
-            return getRainCompletion(_rainDoc, position, params);
+            // let _rainDoc = rainDocuments.get(textDocument.uri);
+            // if (!_rainDoc) {
+            //     rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
+            //     _rainDoc = rainDocuments.get(textDocument.uri)!;
+            // }
+            // else _rainDoc.update(textDocument);
+            // return getRainCompletion(_rainDoc, position, params);
+            return getRainCompletion(textDocument, position, params);
         },
         doHover: async(textDocument, position) => {
-            let _rainDoc = rainDocuments.get(textDocument.uri);
-            if (!_rainDoc) {
-                rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
-                _rainDoc = rainDocuments.get(textDocument.uri)!;
-            }
-            else _rainDoc.update(textDocument);
-            return getRainHover(_rainDoc, position, params);
-        },
-        // doResolve: rainCompletion.doResolve.bind(rainCompletion),
+            // let _rainDoc = rainDocuments.get(textDocument.uri);
+            // if (!_rainDoc) {
+            //     rainDocuments.set(textDocument.uri, await RainDocument.create(textDocument, store));
+            //     _rainDoc = rainDocuments.get(textDocument.uri)!;
+            // }
+            // else _rainDoc.update(textDocument);
+            // return getRainHover(_rainDoc, position, params);
+            return getRainHover(textDocument, position, params);
+        }
     };
 }

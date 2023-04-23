@@ -1,33 +1,35 @@
 import assert from "assert";
-import { deployerAddress, toRange } from "../utils";
+import { opMetaHash, toRange } from "../utils";
 import {
     Hover, 
     Position,
     rainlang,
+    MetaStore, 
     TextDocument,
-    getOpMetaFromSg, 
     getLanguageService,
     LanguageServiceParams 
 } from "../../src";
 
 
-function testHover(
-    text: string, position: Position, opmeta: Uint8Array | string,
+async function testHover(
+    text: string, 
+    position: Position, 
     serviceParams?: LanguageServiceParams
-): Hover | null {
+): Promise<Hover | null> {
     const langServices = getLanguageService(serviceParams);
-    return (langServices.doHover(
-        TextDocument.create("file", "rainlang", 1, text), position, opmeta
+    return await (langServices.doHover(
+        TextDocument.create("file", "rainlang", 1, text), 
+        position
     ));
 }
 
 describe("Rainlang Hover Service tests", async function () {
-    let opMeta: string;
     let expression: string;
+    const store = new MetaStore();
 
     before(async () => {
-        opMeta = await getOpMetaFromSg(deployerAddress, "mumbai");
-        expression = rainlang`
+        await store.updateStore(opMetaHash);
+        expression = rainlang`@${opMetaHash} 
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,
 
@@ -62,10 +64,10 @@ new-total-amount-sent);
 
     it("should provide hover: \"alias for\" a value", async () => {
         assert.deepEqual(
-            testHover(
+            await testHover(
                 expression,
                 Position.create(1, 1),
-                opMeta,
+                { metaStore: store },
             ),
             {
                 range: toRange(1, 0, 1, 12),
@@ -79,10 +81,10 @@ new-total-amount-sent);
 
     it("should provide hover: \"Value\"", async () => {    
         assert.deepEqual(
-            testHover(
+            await testHover(
                 expression,
                 Position.create(2, 52),
-                opMeta,
+                { metaStore: store },
             ),
             {
                 range: toRange(2, 20, 2, 86),
@@ -96,10 +98,10 @@ new-total-amount-sent);
 
     it("should provide hover: \"alias for\" a opcode", async () => {    
         assert.deepEqual(
-            testHover(
+            await testHover(
                 expression,
                 Position.create(4, 5),
-                opMeta,
+                { metaStore: store },
             ),
             {
                 range: toRange(4, 0, 4, 16),
@@ -113,10 +115,10 @@ new-total-amount-sent);
 
     it("should provide hover: dexcription of an opcode", async () => {    
         assert.deepEqual(
-            testHover(
+            await testHover(
                 expression,
                 Position.create(6, 37),
-                opMeta,
+                { metaStore: store },
             ),
             {
                 range: toRange(6, 34, 6, 103),
@@ -130,10 +132,10 @@ new-total-amount-sent);
 
     it("should provide hover: description of an opcode", async () => {    
         assert.deepEqual(
-            testHover(
+            await testHover(
                 expression,
                 Position.create(8, 20),
-                opMeta,
+                { metaStore: store },
             ),
             {
                 range: toRange(8, 18, 8, 41),
@@ -147,10 +149,10 @@ new-total-amount-sent);
 
     it("should provide hover: \"alias for\" an alias", async () => {    
         assert.deepEqual(
-            testHover(
+            await testHover(
                 expression,
                 Position.create(13, 10),
-                opMeta,
+                { metaStore: store },
             ),
             {
                 range: toRange(13, 0, 13, 18),
@@ -164,10 +166,10 @@ new-total-amount-sent);
 
     it("should not provide hover", async () => {    
         assert.deepEqual(
-            testHover(
+            await testHover(
                 expression,
                 Position.create(20, 6),
-                opMeta,
+                { metaStore: store },
             ),
             undefined
         );
@@ -175,10 +177,10 @@ new-total-amount-sent);
 
     it("should provide hover: description of an opcode", async () => {    
         assert.deepEqual(
-            testHover(
+            await testHover(
                 expression,
                 Position.create(29, 21),
-                opMeta,
+                { metaStore: store },
             ),
             {
                 range: toRange(25, 21, 29, 22),

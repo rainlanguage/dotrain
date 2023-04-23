@@ -1,18 +1,22 @@
 import assert, { AssertionError } from "assert";
 import { invalidOpMetas } from "../fixtures/opmeta";
-import { assertError, deployerAddress } from "../utils";
-import { ExpressionConfig, getOpMetaFromSg, rainlang, hexlify, rld, rlc } from "../../src";
+import { assertError, opMetaHash } from "../utils";
+import { ExpressionConfig, rainlang, hexlify, rld, rlc, MetaStore } from "../../src";
 
 
 async function testRainlangDecompiler(
-    expression: string, expectedExpression: string, opMeta: string | Uint8Array
+    expression: string, expectedExpression: string, metaHash: string, metaStore: MetaStore
 ) {
-    const expressionConfig = await rlc(expression, opMeta);
-    const decompiledText = (await rld(expressionConfig, opMeta, false)).getTextDocument()
-        .getText();
+    const expressionConfig = await rlc(expression, metaStore);
+    const decompiledText = (await rld(
+        expressionConfig, 
+        metaHash,
+        metaStore,
+        false
+    )).getTextDocument().getText();
     // Passing decompiled text to compiler again to check for errors
     try {
-        const recompiledExpression = await rlc(decompiledText, opMeta);
+        const recompiledExpression = await rlc(decompiledText, metaStore);
         assert.deepEqual(recompiledExpression.sources, expressionConfig.sources);
     }
     catch (e) {
@@ -35,35 +39,35 @@ async function testRainlangDecompiler(
 }
 
 describe("Rainlang Decompiler (rld) tests", async function () {
-    let opMeta: string;
+    const store = new MetaStore();
 
     before(async () => {
-        opMeta = await getOpMetaFromSg(deployerAddress, "mumbai");
+        await store.updateStore(opMetaHash);
     });
 
     it("should fail if an invalid bytes opmeta is specified", async () => {
 
-        const expression = rainlang`_: add(0x0a 0x14);`;
-        const expressionConfig = await rlc(expression, opMeta);
+        const expression = rainlang`@${opMetaHash} _: add(0x0a 0x14);`;
+        const expressionConfig = await rlc(expression, store);
         await assertError(
             async () =>
-                await rld(expressionConfig, invalidOpMetas.invalid_bytes, false),
-            "invalid op meta",
+                await rld(expressionConfig, invalidOpMetas.invalid_bytes, store, false),
+            "invalid meta hash, must be in hex string",
             "Invalid Error"
         );
     });
 
     it("should decompile a valid expressionConfig", async () => {
-        const expression = rainlang`_: add(0x0a 0x14);`;
-        await testRainlangDecompiler(expression, expression, opMeta);
+        const expression = rainlang`@${opMetaHash} _: add(0x0a 0x14);`;
+        await testRainlangDecompiler(expression, expression, opMetaHash, store);
     });
 
     it("should decompile an expression referencing top stack items", async () => {
-        const expression0 = rainlang`a: 10, b: 20, c: b;`;
-        const expectedExpression0 = rainlang`_ _ _: 0x0a 0x14 read-memory<1 0>();`;
-        await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
+        const expression0 = rainlang`@${opMetaHash} a: 10, b: 20, c: b;`;
+        const expectedExpression0 = rainlang`@${opMetaHash} _ _ _: 0x0a 0x14 read-memory<1 0>();`;
+        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store);
 
-        const expression1 = rainlang`
+        const expression1 = rainlang`@${opMetaHash} 
             sentinel: infinity,
             sentinel20: infinity,
             you: context<0 0>(),
@@ -79,14 +83,14 @@ describe("Rainlang Decompiler (rld) tests", async function () {
             mint-account mint-amount: you mintamount;
         `;
 
-        const expectedExpression1 = rainlang`_ _ _ _ _ _ _ _ _ _ _ _ _ _ _: max-uint256 max-uint256 context<0 0>() 0x0a 0x14 read-memory<0 0>() read-memory<0 0>() read-memory<0 0>() read-memory<0 0>() read-memory<1 0>() read-memory<2 0>() read-memory<4 0>() read-memory<1 0>() read-memory<2 0>() read-memory<3 0>();`;
+        const expectedExpression1 = rainlang`@${opMetaHash} _ _ _ _ _ _ _ _ _ _ _ _ _ _ _: max-uint256 max-uint256 context<0 0>() 0x0a 0x14 read-memory<0 0>() read-memory<0 0>() read-memory<0 0>() read-memory<0 0>() read-memory<1 0>() read-memory<2 0>() read-memory<4 0>() read-memory<1 0>() read-memory<2 0>() read-memory<3 0>();`;
 
-        await testRainlangDecompiler(expression1, expectedExpression1, opMeta);
+        await testRainlangDecompiler(expression1, expectedExpression1, opMetaHash, store);
 
     });
 
     it("should decompile an expression with do-while opcode having multiple outputs", async () => {
-        const expression0 = rainlang`
+        const expression0 = rainlang`@${opMetaHash} 
             c0: 1,
             c1: 2,
             condition: 1, 
@@ -104,16 +108,16 @@ describe("Rainlang Decompiler (rld) tests", async function () {
             _: add(s1 5);
         `;
 
-        const expectedExpression0 = rainlang`_ _ _ _ _: 0x01 0x02 0x01 do-while<1>(read-memory<0 0>() read-memory<1 0>() read-memory<2 0>());
+        const expectedExpression0 = rainlang`@${opMetaHash} _ _ _ _ _: 0x01 0x02 0x01 do-while<1>(read-memory<0 0>() read-memory<1 0>() read-memory<2 0>());
 _ _ _: 0x01 0x02 0x03;
 _: less-than(read-memory<0 0>() 0x03);
 _ _: add(read-memory<0 0>() 0x04) add(read-memory<1 0>() 0x05);`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
+        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store);
     });
 
     it("should decompile an expression with loop-n opcode having multiple outputs", async () => {
-        const expression0 = rainlang`
+        const expression0 = rainlang`@${opMetaHash} 
         _ loopoutput _: loop-n<1 1 3>(
             2
             3
@@ -136,26 +140,26 @@ _ _: add(read-memory<0 0>() 0x04) add(read-memory<1 0>() 0x05);`;
         op: add(finalmul s1);
         `;
 
-        const expectedExpression0 = rainlang`_ _ _ _ _ _ _ _ _ _ _: loop-n<1 1 3>(0x02 0x03 0x04) explode-32(read-memory<1 0>());
+        const expectedExpression0 = rainlang`@${opMetaHash} _ _ _ _ _ _ _ _ _ _ _: loop-n<1 1 3>(0x02 0x03 0x04) explode-32(read-memory<1 0>());
 _ _ _: add(read-memory<0 0>() 0x05) call<3 1>(read-memory<3 0>() read-memory<1 0>() read-memory<2 0>()) saturating-sub(read-memory<2 0>() 0x01);
 _ _ _ _: mul(0x06 read-memory<2 0>()) exp(0x02 read-memory<3 0>()) mul(read-memory<4 0>() read-memory<0 0>()) add(read-memory<5 0>() read-memory<1 0>());`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
+        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store);
     });
 
     it("should decompile an expression with call opcode having multiple outputs", async () => {
-        const expression0 = rainlang`
+        const expression0 = rainlang`@${opMetaHash} 
             /* main source */
             _ _ _:  call<1 3>(2 2);
         `;
 
-        const expectedExpression0 = rainlang`_ _ _: call<1 3>(0x02 0x02);`;
+        const expectedExpression0 = rainlang`@${opMetaHash} _ _ _: call<1 3>(0x02 0x02);`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
+        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store);
     });
 
     it("should decompile an expression with an opcode having multiple outputs", async () => {
-        const expression0 = rainlang`        
+        const expression0 = rainlang`@${opMetaHash}         
             _ _: erc-1155-balance-of-batch(
                 0x01
                 0x02
@@ -165,27 +169,27 @@ _ _ _ _: mul(0x06 read-memory<2 0>()) exp(0x02 read-memory<3 0>()) mul(read-memo
             );
         `;
 
-        const expectedExpression0 = rainlang`_ _: erc-1155-balance-of-batch(0x01 0x02 0x03 0x02 0x03);`;
+        const expectedExpression0 = rainlang`@${opMetaHash} _ _: erc-1155-balance-of-batch(0x01 0x02 0x03 0x02 0x03);`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
+        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store);
     });
 
     it("should decompile an expression with fold-context opcode having multiple outputs", async () => {
-        const expression0 = rainlang`        
+        const expression0 = rainlang`@${opMetaHash}         
            _ _: fold-context<2 3 1>(0 0);
         `;
 
-        const expectedExpression0 = rainlang`_ _: fold-context<2 3 1>(0x00 0x00);`;
+        const expectedExpression0 = rainlang`@${opMetaHash} _ _: fold-context<2 3 1>(0x00 0x00);`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMeta);
+        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store);
     });
 
     it("should decompile an expression with existing stack items", async () => {
-        const expression = rainlang`a:, b: 20, c: add(a b);`;
+        const expression = rainlang`@${opMetaHash} a:, b: 20, c: add(a b);`;
 
-        const expectedText = rainlang`_ _: 0x14 add(read-memory<0 0>() read-memory<1 0>());`;
+        const expectedText = rainlang`@${opMetaHash} _ _: 0x14 add(read-memory<0 0>() read-memory<1 0>());`;
         
-        await testRainlangDecompiler(expression, expectedText, opMeta);
+        await testRainlangDecompiler(expression, expectedText, opMetaHash, store);
     });
 
     it("should fail if an opcode is not found in opmeta", async () => {
@@ -196,7 +200,7 @@ _ _ _ _: mul(0x06 read-memory<2 0>()) exp(0x02 read-memory<3 0>()) mul(read-memo
         };
         await assertError(
             async () =>
-                await rld(expressionConfig, opMeta, false),
+                await rld(expressionConfig, opMetaHash, store, false),
             "opcode with enum \\\"1337\\\" does not exist on OpMeta",
             "Invalid Error"
         );

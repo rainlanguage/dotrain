@@ -491,8 +491,9 @@ class RainParser {
             }
             else {
                 try {
-                    await this.metaStore.updateOpMetaStore(_hash);
+                    await this.metaStore.updateStore(_hash);
                     this.opMetaBytes = this.metaStore.getOpMeta(_hash) ?? "";
+                    if (this.opMetaBytes === "") throw `no meta found for hash: ${_hash}`;
                     this.opmeta = metaFromBytes(this.opMetaBytes, OpMetaSchema) as OpMeta[];
                     this.names = this.opmeta.map(v => v.name);
                     this.opAliases = this.opmeta.map(v => v.aliases);
@@ -613,8 +614,9 @@ class RainParser {
             }
 
             // parse op meta
+
             const _hashes = Array.from(
-                document.matchAll(/@0x[a-fA-F0-9]+/g)
+                document.matchAll(/(?<=\s|^)@0x[a-fA-F0-9]+(?=\s|$)/g)
             ).map(v => {
                 if (v.index !== undefined) return [v[0], v.index];
                 else return undefined;
@@ -656,7 +658,6 @@ class RainParser {
             while (document.length) {
                 if (document.includes(";")) {
                     const _trimmed = this.trim(document.slice(0, document.indexOf(";")));
-                    console.log(_trimmed.endDelCount);
                     _sourceExpPos.push([
                         _doc.length - document.length + _trimmed.startDelCount,
                         _doc.length - document.length - 1 + document.indexOf(";") - _trimmed.endDelCount,
@@ -742,10 +743,7 @@ class RainParser {
                             ) {
                                 this.problems.push({
                                     msg: "invalid RHS, comments are not allowed",
-                                    position: [
-                                        _positionOffset + _subExp[j].indexOf(":") + 1,
-                                        _positionOffset + _subExp[j].length - 1
-                                    ],
+                                    position: [...this.comments[k].position],
                                     code: ErrorCode.UnexpectedRHSComment
                                 });
                             }

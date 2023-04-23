@@ -5,7 +5,6 @@ import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
 import { 
     OpMeta, 
-    keccak256, 
     InputMeta, 
     OutputMeta, 
     OperandArgs, 
@@ -13,7 +12,6 @@ import {
     metaFromBytes 
 } from "@rainprotocol/meta";
 import { 
-    hexlify, 
     arrayify, 
     BigNumber, 
     CONSTANTS, 
@@ -27,37 +25,15 @@ import {
  * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document
  * 
  * @param expressionConfig - ExpressionConfig to decompile
- * @param metaHash - the meta hash
- * @param subgraphs - (optional) Additional subgraph endpoints to include when searching for op meta
+ * @param metaHash - The meta hash
+ * @param metaStore - (optional) MetaStore object instance
  * @param prettyFormat - (optional) Format the output document
  * @returns A promise that resolves with a RainDocument
  */
 export async function rld(
     expressionConfig: ExpressionConfig, 
     metaHash: string, 
-    subgraphs?: string[],
-    prettyFormat?: boolean
-): Promise<RainDocument>
-
-/**
- * @public 
- * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document
- * 
- * @param expressionConfig - ExpressionConfig to decompile
- * @param metaBytes - The meta bytes
- * @param prettyFormat - (optional) Format the output document
- * @returns A promise that resolves with a RainDocument
- */
-export async function rld(
-    expressionConfig: ExpressionConfig, 
-    metaBytes: string, 
-    prettyFormat?: boolean
-): Promise<RainDocument>
-
-export async function rld(
-    expressionConfig: ExpressionConfig, 
-    bytesOrHash: string, 
-    subgraphsOrPretty?: string[] | boolean,
+    metaStore = new MetaStore(),
     prettyFormat = true
 ): Promise<RainDocument> {
 
@@ -170,33 +146,25 @@ export async function rld(
 
 
     let _opmeta: OpMeta[];
-    const _sgs: string[] = [];
-    if (subgraphsOrPretty) {
-        if (typeof subgraphsOrPretty === "boolean") prettyFormat = subgraphsOrPretty;
-        else _sgs.push(...subgraphsOrPretty);
-    }
-    const _metaStore = new MetaStore();
-    if (isBytesLike(bytesOrHash)) {
-        let _hash;
-        const _hex = typeof bytesOrHash === "string" 
-            ? bytesOrHash 
-            : hexlify(bytesOrHash, { allowMissingPrefix: true });
-        if (_hex.match(/^0x[a-fA-F0-9]{64}$/)) {
-            _hash = _hex;
-            await _metaStore.updateOpMetaStore(_hex);
+    if (isBytesLike(metaHash)) {
+        let _opMetaBytes: string | undefined;
+        if (metaHash.match(/^0x[a-fA-F0-9]{64}$/)) {
+            _opMetaBytes = metaStore.getOpMeta(metaHash);
+            if (!_opMetaBytes) {
+                await metaStore.updateStore(metaHash);
+                _opMetaBytes = metaStore.getOpMeta(metaHash);
+                if (!_opMetaBytes) throw new Error(`cannot find settlement for hash: ${metaHash}`);
+            }
         }
-        else {
-            _hash = keccak256(_hex);
-            _metaStore.updateOpMetaStore(_hash, _hex);
-        }
+        else throw new Error(" invalid meta hash, must be 32 bytes");
         try {
-            _opmeta = metaFromBytes(_metaStore.getOpMeta(_hash)!, OpMetaSchema) as OpMeta[];
+            _opmeta = metaFromBytes(_opMetaBytes!, OpMetaSchema) as OpMeta[];
         }
         catch (err) {
-            return Promise.reject("invalid op meta");
+            return Promise.reject(err);
         }
     }
-    else return Promise.reject("invalid op meta");
+    else return Promise.reject("invalid meta hash, must be in hex string");
 
     const _constants: string[] = [];
     for (const item of expressionConfig.constants) {
@@ -306,12 +274,12 @@ export async function rld(
     return Promise.resolve(
         prettyFormat 
             ? await RainDocument.create(
-                TextDocument.create("file", "rainlang", 1, rainFormat(_finalStack.join("\n"))), 
-                _metaStore
+                TextDocument.create("file", "rainlang", 1, rainFormat(`@${metaHash}\n` + _finalStack.join("\n"))), 
+                metaStore
             )
             : await RainDocument.create(
-                TextDocument.create("file", "rainlang", 1, _finalStack.join("\n")),
-                _metaStore
+                TextDocument.create("file", "rainlang", 1, `@${metaHash} ` + _finalStack.join("\n")),
+                metaStore
             )
     );
 }
