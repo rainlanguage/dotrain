@@ -2,7 +2,7 @@
 
 # Type RainParseState
 
-Type of Parser's State
+Type of RainParser state
 
 <b>Signature:</b>
 
@@ -10,8 +10,7 @@ Type of Parser's State
 type RainParseState = {
     parse: {
         tree: RDNode[];
-        expAliases: RDAliasNode[][];
-        subExpAliases: RDAliasNode[];
+        aliases: RDAliasNode[];
     };
     track: {
         char: number;
@@ -23,6 +22,5 @@ type RainParseState = {
     depthLevel: number;
     operandArgsErr: boolean;
     runtimeError: Error | undefined;
-    opMetaError: Error | undefined;
 };
 ```

@@ -2,7 +2,7 @@
 
 # Type RDNode
 
-Type of RainDocument's prase node
+Type of RainDocument's parse node
 
 <b>Signature:</b>
 

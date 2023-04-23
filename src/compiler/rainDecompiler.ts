@@ -1,23 +1,22 @@
-import { RainDocument } from "../parser/rainParser";
 import { TextDocument } from "../rainLanguageTypes";
-import { ExpressionConfig } from "./expressionConfigTypes";
+import { MetaStore } from "../parser/metaStore";
+import { RainDocument } from "../parser/rainDocument";
+import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
 import { 
     OpMeta, 
     InputMeta, 
     OutputMeta, 
     OperandArgs, 
-    validateMeta, 
     OpMetaSchema, 
     metaFromBytes 
 } from "@rainprotocol/meta";
 import { 
     arrayify, 
-    BytesLike, 
     BigNumber, 
     CONSTANTS, 
-    extractByBits, 
-    isBigNumberish 
+    isBytesLike,
+    extractByBits 
 } from "../utils";
 
 
@@ -26,13 +25,15 @@ import {
  * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document
  * 
  * @param expressionConfig - ExpressionConfig to decompile
- * @param opmeta - Ops meta as bytes ie hex string or Uint8Array or json content as string
+ * @param metaHash - The meta hash
+ * @param metaStore - (optional) MetaStore object instance
  * @param prettyFormat - (optional) Format the output document
- * @returns a Raindocument promise
+ * @returns A promise that resolves with a RainDocument
  */
-export function rld(
+export async function rld(
     expressionConfig: ExpressionConfig, 
-    opmeta: Uint8Array | string, 
+    metaHash: string, 
+    metaStore = new MetaStore(),
     prettyFormat = true
 ): Promise<RainDocument> {
 
@@ -145,24 +146,25 @@ export function rld(
 
 
     let _opmeta: OpMeta[];
-    if (isBigNumberish(opmeta)) {
+    if (isBytesLike(metaHash)) {
+        let _opMetaBytes: string | undefined;
+        if (metaHash.match(/^0x[a-fA-F0-9]{64}$/)) {
+            _opMetaBytes = metaStore.getOpMeta(metaHash);
+            if (!_opMetaBytes) {
+                await metaStore.updateStore(metaHash);
+                _opMetaBytes = metaStore.getOpMeta(metaHash);
+                if (!_opMetaBytes) throw new Error(`cannot find settlement for hash: ${metaHash}`);
+            }
+        }
+        else throw new Error(" invalid meta hash, must be 32 bytes");
         try {
-            _opmeta = metaFromBytes(opmeta as BytesLike, OpMetaSchema) as OpMeta[];
+            _opmeta = metaFromBytes(_opMetaBytes!, OpMetaSchema) as OpMeta[];
         }
         catch (err) {
-            return Promise.reject("invalid op meta");
+            return Promise.reject(err);
         }
     }
-    else {
-        try {
-            const _meta = typeof opmeta === "string" ? JSON.parse(opmeta) : opmeta;
-            if (validateMeta(_meta, OpMetaSchema)) _opmeta = _meta as OpMeta[];
-            else return Promise.reject("invalid op meta");
-        }
-        catch (err) {
-            return Promise.reject("invalid op meta");
-        }
-    }
+    else return Promise.reject("invalid meta hash, must be in hex string");
 
     const _constants: string[] = [];
     for (const item of expressionConfig.constants) {
@@ -269,15 +271,16 @@ export function rld(
         _stack = [];
     }
 
-    return Promise.resolve(prettyFormat 
-        ? new RainDocument(
-            TextDocument.create("file", "rainlang", 1, rainFormat(_finalStack.join("\n"))), 
-            opmeta
-        )
-        : new RainDocument(
-            TextDocument.create("file", "rainlang", 1, _finalStack.join("\n")),
-            opmeta
-        )
+    return Promise.resolve(
+        prettyFormat 
+            ? await RainDocument.create(
+                TextDocument.create("file", "rainlang", 1, rainFormat(`@${metaHash}\n` + _finalStack.join("\n"))), 
+                metaStore
+            )
+            : await RainDocument.create(
+                TextDocument.create("file", "rainlang", 1, `@${metaHash} ` + _finalStack.join("\n")),
+                metaStore
+            )
     );
 }
 

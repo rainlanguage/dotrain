@@ -7,7 +7,7 @@ Provides completion items
 <b>Signature:</b>
 
 ```typescript
-function getRainCompletion(document: RainDocument, position: Position, setting?: LanguageServiceParams): CompletionItem[] | null;
+function getRainCompletion(document: RainDocument, position: Position, setting?: LanguageServiceParams): Promise<CompletionItem[] | null>;
 ```
 
 ## Parameters
@@ -20,7 +20,7 @@ function getRainCompletion(document: RainDocument, position: Position, setting?:
 
 <b>Returns:</b>
 
-`CompletionItem[] | null`
+`Promise<CompletionItem[] | null>`
 
-Completion items and null if no completion items were available for that position
+A promise that resolves with Completion items or null if no completion items were available for that position
 

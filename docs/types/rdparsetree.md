@@ -2,7 +2,7 @@
 
 # Type RDParseTree
 
-Type of a RainDocument parse tree object
+Type of a RainDocument parse tree
 
 <b>Signature:</b>
 

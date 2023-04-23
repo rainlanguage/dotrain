@@ -7,7 +7,7 @@ Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid R
 <b>Signature:</b>
 
 ```typescript
-function rld(expressionConfig: ExpressionConfig, opmeta: Uint8Array | string, prettyFormat?: boolean): Promise<RainDocument>;
+function rld(expressionConfig: ExpressionConfig, metaHash: string, metaStore?: MetaStore, prettyFormat?: boolean): Promise<RainDocument>;
 ```
 
 ## Parameters
@@ -15,12 +15,13 @@ function rld(expressionConfig: ExpressionConfig, opmeta: Uint8Array | string, pr
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expressionConfig | [ExpressionConfig](../types/expressionconfig.md) | ExpressionConfig to decompile |
-|  opmeta | `Uint8Array \| string` | Ops meta as bytes ie hex string or Uint8Array or json content as string |
+|  metaHash | `string` | The meta hash |
+|  metaStore | [MetaStore](../classes/metastore.md) | (optional) MetaStore object instance |
 |  prettyFormat | `boolean` | (optional) Format the output document |
 
 <b>Returns:</b>
 
 `Promise<RainDocument>`
 
-a Raindocument promise
+A promise that resolves with a RainDocument
 

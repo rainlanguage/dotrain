@@ -2,12 +2,12 @@
 
 # Function rlc()
 
-Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes)
+Rain Language Compiler (rlc), compiles Text Documents into valid ExpressionConfig (deployable bytes)
 
 <b>Signature:</b>
 
 ```typescript
-function rlc(document: TextDocument, opmeta: Uint8Array | string): Promise<ExpressionConfig>;
+function rlc(document: TextDocument, metaStore?: MetaStore): Promise<ExpressionConfig>;
 ```
 
 ## Parameters
@@ -15,11 +15,11 @@ function rlc(document: TextDocument, opmeta: Uint8Array | string): Promise<Expre
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  document | `TextDocument` | The TextDocument to compile |
-|  opmeta | `Uint8Array \| string` | Ops meta as bytes ie hex string or Uint8Array |
+|  metaStore | [MetaStore](../classes/metastore.md) | (optional) Initial MetaStore object |
 
 <b>Returns:</b>
 
 `Promise<ExpressionConfig>`
 
-ExpressionConfig promise
+A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text
 

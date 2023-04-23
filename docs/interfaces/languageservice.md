@@ -10,44 +10,25 @@ Interface for Rain language services
 interface LanguageService 
 ```
 
-## Properties
-
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [rainDocuments](./languageservice.md#rainDocuments-property) | `Map<string, RainDocument>` |  |
-
 ## Methods
 
 |  Method | Description |
 |  --- | --- |
-|  [doComplete(textDocument, position, opmeta, setting)](./languageservice.md#doComplete-method-1) |  |
-|  [doHover(textDocument, position, opmeta, setting)](./languageservice.md#doHover-method-1) |  |
-|  [doValidation(textDocument, opmeta, setting)](./languageservice.md#doValidation-method-1) |  |
-|  [newRainDocument(textDocument, opmeta)](./languageservice.md#newRainDocument-method-1) |  |
-|  [parseRainDocument(textDocument, opmeta)](./languageservice.md#parseRainDocument-method-1) |  |
-
-## Property Details
-
-<a id="rainDocuments-property"></a>
-
-### rainDocuments
-
-<b>Signature:</b>
-
-```typescript
-rainDocuments: Map<string, RainDocument>;
-```
+|  [doComplete(textDocument, position)](./languageservice.md#doComplete-method-1) |  |
+|  [doHover(textDocument, position)](./languageservice.md#doHover-method-1) |  |
+|  [doValidation(textDocument)](./languageservice.md#doValidation-method-1) |  |
+|  [newRainDocument(textDocument)](./languageservice.md#newRainDocument-method-1) |  |
 
 ## Method Details
 
 <a id="doComplete-method-1"></a>
 
-### doComplete(textDocument, position, opmeta, setting)
+### doComplete(textDocument, position)
 
 <b>Signature:</b>
 
 ```typescript
-doComplete(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): CompletionItem[] | null;
+doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
 ```
 
 #### Parameters
@@ -56,21 +37,19 @@ doComplete(textDocument: TextDocument, position: Position, opmeta?: Uint8Array |
 |  --- | --- | --- |
 |  textDocument | `TextDocument` |  |
 |  position | `Position` |  |
-|  opmeta | `Uint8Array \| string` |  |
-|  setting | [LanguageServiceParams](./languageserviceparams.md) |  |
 
 <b>Returns:</b>
 
-`CompletionItem[] | null`
+`Promise<CompletionItem[] | null>`
 
 <a id="doHover-method-1"></a>
 
-### doHover(textDocument, position, opmeta, setting)
+### doHover(textDocument, position)
 
 <b>Signature:</b>
 
 ```typescript
-doHover(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): Hover | null;
+doHover(textDocument: TextDocument, position: Position): Promise<Hover | null>;
 ```
 
 #### Parameters
@@ -79,21 +58,19 @@ doHover(textDocument: TextDocument, position: Position, opmeta?: Uint8Array | st
 |  --- | --- | --- |
 |  textDocument | `TextDocument` |  |
 |  position | `Position` |  |
-|  opmeta | `Uint8Array \| string` |  |
-|  setting | [LanguageServiceParams](./languageserviceparams.md) |  |
 
 <b>Returns:</b>
 
-`Hover | null`
+`Promise<Hover | null>`
 
 <a id="doValidation-method-1"></a>
 
-### doValidation(textDocument, opmeta, setting)
+### doValidation(textDocument)
 
 <b>Signature:</b>
 
 ```typescript
-doValidation(textDocument: TextDocument, opmeta?: Uint8Array | string, setting?: LanguageServiceParams): Promise<Diagnostic[]>;
+doValidation(textDocument: TextDocument): Promise<Diagnostic[]>;
 ```
 
 #### Parameters
@@ -101,8 +78,6 @@ doValidation(textDocument: TextDocument, opmeta?: Uint8Array | string, setting?:
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  textDocument | `TextDocument` |  |
-|  opmeta | `Uint8Array \| string` |  |
-|  setting | [LanguageServiceParams](./languageserviceparams.md) |  |
 
 <b>Returns:</b>
 
@@ -110,12 +85,12 @@ doValidation(textDocument: TextDocument, opmeta?: Uint8Array | string, setting?:
 
 <a id="newRainDocument-method-1"></a>
 
-### newRainDocument(textDocument, opmeta)
+### newRainDocument(textDocument)
 
 <b>Signature:</b>
 
 ```typescript
-newRainDocument(textDocument: TextDocument, opmeta: Uint8Array | string): RainDocument;
+newRainDocument(textDocument: TextDocument): Promise<RainDocument>;
 ```
 
 #### Parameters
@@ -123,30 +98,8 @@ newRainDocument(textDocument: TextDocument, opmeta: Uint8Array | string): RainDo
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  textDocument | `TextDocument` |  |
-|  opmeta | `Uint8Array \| string` |  |
 
 <b>Returns:</b>
 
-`RainDocument`
-
-<a id="parseRainDocument-method-1"></a>
-
-### parseRainDocument(textDocument, opmeta)
-
-<b>Signature:</b>
-
-```typescript
-parseRainDocument(textDocument: TextDocument, opmeta?: Uint8Array | string): RainDocumentResult;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  textDocument | `TextDocument` |  |
-|  opmeta | `Uint8Array \| string` |  |
-
-<b>Returns:</b>
-
-`RainDocumentResult`
+`Promise<RainDocument>`
 

@@ -23,7 +23,9 @@ enum ErrorCode
 |  IlligalAlias | `2048` |  |
 |  InvalidExpression | `258` |  |
 |  InvalidInputsMeta | `259` |  |
+|  InvalidMetaHash | `263` |  |
 |  InvalidNestedNode | `261` |  |
+|  InvalidOpMeta | `264` |  |
 |  InvalidOutputsMeta | `260` |  |
 |  InvalidSelfReferenceLHS | `262` |  |
 |  InvalidWordPattern | `257` |  |
@@ -40,6 +42,7 @@ enum ErrorCode
 |  UndefinedWord | `1` |  |
 |  UnexpectedClosingParen | `514` |  |
 |  UnexpectedEndOfComment | `513` |  |
+|  UnexpectedMetaHash | `516` |  |
 |  UnexpectedRHSComment | `515` |  |
 |  UnknownOp | `1536` |  |
 
