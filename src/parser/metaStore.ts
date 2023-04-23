@@ -242,7 +242,7 @@ export class MetaStore {
      * @param subgraphUrl - The subgraph endpoint URL
      */
     public addSubgraph(subgraphUrl: string) {
-        if (!subgraphUrl.startsWith("https://api.thegraph.com/subgraphs/name/")) {
+        if (subgraphUrl.startsWith("https://api.thegraph.com/subgraphs/name/")) {
             if (!this.subgraphs.includes(subgraphUrl)) this.subgraphs.push(subgraphUrl);
         }
     }
