@@ -27,7 +27,7 @@ export const assertError = async (f: any, s: string, e: string) => {
 };
 
 /**
- * Creates Range for vscode Diagnostic
+ * Creates Range
  * @param sLine Starting line number
  * @param sChar Starting character position
  * @param eLine Ending line number
