@@ -7,7 +7,7 @@ Provides hover items
 <b>Signature:</b>
 
 ```typescript
-function getRainHover(document: RainDocument, position: Position, setting?: LanguageServiceParams): Hover | null;
+function getRainHover(document: RainDocument, position: Position, setting?: LanguageServiceParams): Promise<Hover | null>;
 ```
 
 ## Parameters
@@ -20,7 +20,7 @@ function getRainHover(document: RainDocument, position: Position, setting?: Lang
 
 <b>Returns:</b>
 
-`Hover | null`
+`Promise<Hover | null>`
 
 Promise of hover item and null if no item was available for that position
 

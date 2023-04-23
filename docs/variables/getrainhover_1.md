@@ -7,7 +7,7 @@ Provides hover items
 <b>Signature:</b>
 
 ```typescript
-function getRainHover(document: TextDocument, position: Position, opmeta: Uint8Array | string, setting?: LanguageServiceParams): Hover | null;
+function getRainHover(document: TextDocument, position: Position, setting?: LanguageServiceParams): Promise<Hover | null>;
 ```
 
 ## Parameters
@@ -16,12 +16,11 @@ function getRainHover(document: TextDocument, position: Position, opmeta: Uint8A
 |  --- | --- | --- |
 |  document | `TextDocument` | The TextDocuemnt |
 |  position | `Position` | Position of the textDocument to get the completion items for |
-|  opmeta | `Uint8Array \| string` | The op meta |
 |  setting | [LanguageServiceParams](../interfaces/languageserviceparams.md) | (optional) Language service params |
 
 <b>Returns:</b>
 
-`Hover | null`
+`Promise<Hover | null>`
 
 Promise of hover item and null if no item was available for that position
 

@@ -6,6 +6,7 @@
 
 |  Class | Description |
 |  --- | --- |
+|  [MetaStore](./classes/metastore.md) | Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities to easliy utilize them. Hashes must 32 bytes (in hex string format) and will be stored as lower case. Meta bytes must be valid cbor encoded that emitted by the contract.<br><br>Subgraph endpoint URLs specified in "sgBook" from \[rainlang-meta\](https://github.com/rainprotocol/meta/blob/master/src/subgraphBook.ts) are included by default as subgraph endpoint URLs to search for metas.<br><br>Subgraphs URLs can also be provided, either at instantiation or when using `addSubgraph()`<!-- -->, which must be valid starting with `https"//api.thegraph.com/subgraphs/name/`<!-- -->, else they will be ignored.<br><br>Given a k/v pair of meta hash and meta bytes either at instantiation or when using `updateStore()`<!-- -->, it regenrates the hash from the meta to check the validity of the k/v pair and if the check fails it tries to read the meta from subgraphs and store the result if it finds any. |
 |  [RainDocument](./classes/raindocument.md) | RainDocument is a class object that provides data and functionalities in order to be used later on to provide Rain Language Services or in Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work. |
 
 ## Enumerations
@@ -27,21 +28,21 @@
 |  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properites from a Map as a new Map with same keys. |
 |  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
 |  [getLanguageService(params)](./variables/getlanguageservice_1.md) | Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services |
-|  [getRainCompletion(document, position, opmeta, setting)](./variables/getraincompletion_1.md) | Provides completion items |
+|  [getRainCompletion(document, position, setting)](./variables/getraincompletion_1.md) | Provides completion items |
 |  [getRainCompletion(document, position, setting)](./variables/getraincompletion_2.md) | Provides completion items |
-|  [getRainDiagnostics(document, opmeta, setting)](./variables/getraindiagnostics_1.md) | Provides diagnostics |
+|  [getRainDiagnostics(document, setting)](./variables/getraindiagnostics_1.md) | Provides diagnostics |
 |  [getRainDiagnostics(document, setting)](./variables/getraindiagnostics_2.md) | Provides diagnostics |
-|  [getRainHover(document, position, opmeta, setting)](./variables/getrainhover_1.md) | Provides hover items |
+|  [getRainHover(document, position, setting)](./variables/getrainhover_1.md) | Provides hover items |
 |  [getRainHover(document, position, setting)](./variables/getrainhover_2.md) | Provides hover items |
 |  [isBigNumberish(value)](./variables/isbignumberish_1.md) | function to check if the a value is of type BigNumberish, from EthersJS library |
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [memoryOperand(offset, type)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
 |  [rainlang(stringChunks, vars)](./variables/rainlang_1.md) | Method to be used as Tagged Templates to activate embedded rainlang in javascript to typescript that highlights the rainlang syntax. Requires rainlang vscode extension to be installed. |
 |  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
-|  [rlc(text, opmeta)](./variables/rlc_1.md) | Rain Language Compiler (rlc), compiles documents into valid ExpressionConfig (deployable bytes) |
-|  [rlc(document, opmeta)](./variables/rlc_2.md) | Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes) |
-|  [rlc(rainDocument)](./variables/rlc_3.md) | Rain Language Compiler (rlc), compiles Rain documents into valid ExpressionConfig (deployable bytes) |
-|  [rld(expressionConfig, opmeta, prettyFormat)](./variables/rld_1.md) | Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document |
+|  [rlc(text, metaStore)](./variables/rlc_1.md) | Rain Language Compiler (rlc), compiles a text into valid ExpressionConfig (deployable bytes) |
+|  [rlc(document, metaStore)](./variables/rlc_2.md) | Rain Language Compiler (rlc), compiles Text Documents into valid ExpressionConfig (deployable bytes) |
+|  [rlc(rainDocument, metaStore)](./variables/rlc_3.md) | Rain Language Compiler (rlc), compiles Rain Documents into valid ExpressionConfig (deployable bytes) |
+|  [rld(expressionConfig, metaHash, metaStore, prettyFormat)](./variables/rld_1.md) | Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document |
 
 ## Interfaces
 
@@ -85,14 +86,14 @@
 |  Type Alias | Description |
 |  --- | --- |
 |  [ExpressionConfig](./types/expressionconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
-|  [RainDocumentResult](./types/raindocumentresult.md) | Type of RainDocument's parse result |
-|  [RainParseState](./types/rainparsestate.md) | Type of Parser's State |
+|  [RainParseState](./types/rainparsestate.md) | Type of RainParser state |
 |  [RDAliasNode](./types/rdaliasnode.md) | Type of RainDocument's lhs aliases |
 |  [RDComment](./types/rdcomment.md) | Type of RainDocument's comments |
-|  [RDNode](./types/rdnode.md) | Type of RainDocument's prase node |
+|  [RDMetaHash](./types/rdmetahash.md) | Type of meta hash specified in a RainDocument |
+|  [RDNode](./types/rdnode.md) | Type of RainDocument's parse node |
 |  [RDOpNode](./types/rdopnode.md) | Type of RainDocument's Opcode node |
-|  [RDParseTree](./types/rdparsetree.md) | Type of a RainDocument parse tree object |
+|  [RDParseTree](./types/rdparsetree.md) | Type of a RainDocument parse tree |
 |  [RDPosition](./types/rdposition.md) | Type of position start and end indexes for RainDocument, inclusive at both ends |
-|  [RDProblem](./types/rdproblem.md) | Type of RainDocument's problem (error) |
+|  [RDProblem](./types/rdproblem.md) | Type of RainDocument's problem |
 |  [RDValueNode](./types/rdvaluenode.md) | Type of RainDocument's Value node |
 

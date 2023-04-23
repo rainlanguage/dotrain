@@ -18,15 +18,21 @@ class RainDocument
 import { Raindocument } from 'rainlang';
 
 // to create a new instance of the RainDocument object which parses right after instantiation
-const myRainDocument = new RainDocument(text, opmeta)
+const myRainDocument = await RainDocument.create(text)
 
-// to get the parse results after instantiation
-const results = myRainDocument.getResult()
+// to get the parse tree after instantiation
+const parseTree = myRainDocument.getParseTree()
 
-// to get the parse results with new text or opmeta
-const newResult = myRainDocument.update(newText, newOpmeta)
+// to update the text
+await myRainDocument.update(newText)
 
 ```
+
+## Static Methods
+
+|  Method | Description |
+|  --- | --- |
+|  [create(textDocument, metaStore)](./raindocument.md#create-method-static-1) | Creates a new instance of RainDocument |
 
 ## Methods
 
@@ -35,15 +41,42 @@ const newResult = myRainDocument.update(newText, newOpmeta)
 |  [getComments()](./raindocument.md#getComments-method-1) | Get the current comments inside of the text of this RainDocument instance |
 |  [getExpressionConfig(item)](./raindocument.md#getExpressionConfig-method-1) | Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used. |
 |  [getLHSAliases()](./raindocument.md#getLHSAliases-method-1) | Get the parsed exp aliases of this RainParser instance |
+|  [getMetaHashes()](./raindocument.md#getMetaHashes-method-1) | Get the specified meta hashes of this RainParser instance |
+|  [getMetaStore()](./raindocument.md#getMetaStore-method-1) | Get the MetaStore object instance of this RainDocument instance |
 |  [getOpMeta()](./raindocument.md#getOpMeta-method-1) | Get the current op meta of this RainDocument instance |
-|  [getOpMetaError()](./raindocument.md#getOpMetaError-method-1) | Get the current runtime error of this RainDocument instance |
+|  [getOpMetaBytes()](./raindocument.md#getOpMetaBytes-method-1) | Get the current raw op meta of this RainDocument instance in hex string |
 |  [getParseTree()](./raindocument.md#getParseTree-method-1) | Get the current parse tree of this RainDocument instance |
 |  [getProblems()](./raindocument.md#getProblems-method-1) | Get the current problems of this RainDocument instance |
-|  [getRawOpMeta()](./raindocument.md#getRawOpMeta-method-1) | Get the current raw op meta of this RainDocument instance in hex string |
-|  [getResult()](./raindocument.md#getResult-method-1) | Get the current parse result of this RainDocument instance which consists of parse tree, problems, comments and expression aliases |
 |  [getRuntimeError()](./raindocument.md#getRuntimeError-method-1) | Get the current runtime error of this RainDocument instance |
 |  [getTextDocument()](./raindocument.md#getTextDocument-method-1) | Get the current text of this RainDocument instance |
-|  [update(newTextDocument, newOpMeta)](./raindocument.md#update-method-1) | Method to update the RainDocument with new text or opmeta and get the parse results |
+|  [update(newTextDocument)](./raindocument.md#update-method-1) | Method to update the RainDocument with new text or opmeta and get the parse results |
+
+## Static Method Details
+
+<a id="create-method-static-1"></a>
+
+### create(textDocument, metaStore)
+
+Creates a new instance of RainDocument
+
+<b>Signature:</b>
+
+```typescript
+static create(textDocument: TextDocument, metaStore?: MetaStore): Promise<RainDocument>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  textDocument | `TextDocument` | The text document |
+|  metaStore | [MetaStore](./metastore.md) | The MetaStore object |
+
+<b>Returns:</b>
+
+`Promise<RainDocument>`
+
+A new instance of RainDocument
 
 ## Method Details
 
@@ -99,6 +132,36 @@ getLHSAliases(): RDAliasNode[][];
 
 `RDAliasNode[][]`
 
+<a id="getMetaHashes-method-1"></a>
+
+### getMetaHashes()
+
+Get the specified meta hashes of this RainParser instance
+
+<b>Signature:</b>
+
+```typescript
+getMetaHashes(): RDMetaHash[];
+```
+<b>Returns:</b>
+
+`RDMetaHash[]`
+
+<a id="getMetaStore-method-1"></a>
+
+### getMetaStore()
+
+Get the MetaStore object instance of this RainDocument instance
+
+<b>Signature:</b>
+
+```typescript
+getMetaStore(): MetaStore;
+```
+<b>Returns:</b>
+
+`MetaStore`
+
 <a id="getOpMeta-method-1"></a>
 
 ### getOpMeta()
@@ -114,20 +177,20 @@ getOpMeta(): OpMeta[];
 
 `OpMeta[]`
 
-<a id="getOpMetaError-method-1"></a>
+<a id="getOpMetaBytes-method-1"></a>
 
-### getOpMetaError()
+### getOpMetaBytes()
 
-Get the current runtime error of this RainDocument instance
+Get the current raw op meta of this RainDocument instance in hex string
 
 <b>Signature:</b>
 
 ```typescript
-getOpMetaError(): Error | undefined;
+getOpMetaBytes(): string;
 ```
 <b>Returns:</b>
 
-`Error | undefined`
+`string`
 
 <a id="getParseTree-method-1"></a>
 
@@ -158,36 +221,6 @@ getProblems(): RDProblem[];
 <b>Returns:</b>
 
 `RDProblem[]`
-
-<a id="getRawOpMeta-method-1"></a>
-
-### getRawOpMeta()
-
-Get the current raw op meta of this RainDocument instance in hex string
-
-<b>Signature:</b>
-
-```typescript
-getRawOpMeta(): string;
-```
-<b>Returns:</b>
-
-`string`
-
-<a id="getResult-method-1"></a>
-
-### getResult()
-
-Get the current parse result of this RainDocument instance which consists of parse tree, problems, comments and expression aliases
-
-<b>Signature:</b>
-
-```typescript
-getResult(): RainDocumentResult;
-```
-<b>Returns:</b>
-
-`RainDocumentResult`
 
 <a id="getRuntimeError-method-1"></a>
 
@@ -221,24 +254,23 @@ getTextDocument(): TextDocument;
 
 <a id="update-method-1"></a>
 
-### update(newTextDocument, newOpMeta)
+### update(newTextDocument)
 
 Method to update the RainDocument with new text or opmeta and get the parse results
 
 <b>Signature:</b>
 
 ```typescript
-update(newTextDocument?: TextDocument, newOpMeta?: BytesLike): void;
+update(newTextDocument?: TextDocument): Promise<void>;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  newTextDocument | `TextDocument` | (optional) Raw text to parse |
-|  newOpMeta | `BytesLike` | (optional) Ops meta as bytes ie hex string or Uint8Array |
+|  newTextDocument | `TextDocument` | Raw text to parse |
 
 <b>Returns:</b>
 
-`void`
+`Promise<void>`
 

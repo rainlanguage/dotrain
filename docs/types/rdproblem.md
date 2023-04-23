@@ -2,7 +2,7 @@
 
 # Type RDProblem
 
-Type of RainDocument's problem (error)
+Type of RainDocument's problem
 
 <b>Signature:</b>
 

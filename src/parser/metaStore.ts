@@ -49,15 +49,15 @@ import { sgBook, searchMeta, MAGIC_NUMBERS, decodeRainMetaDocument, keccak256 } 
  */
 export class MetaStore {
     /**
-     * @public Subgraph endpoint URLs of this store instance
+     * Subgraph endpoint URLs of this store instance
      */
     public readonly subgraphs: string[] = [];
     /**
-     * @private Meta Hash/Op Meta kv pairs of this store instance.
+     * @internal Meta Hash/Op Meta kv pairs of this store instance.
      */
     private opCache: { [hash: string]: string | undefined } = {};
     /**
-     * @private Meta Hash/contract Meta kv pairs of this store instance.
+     * @internal Meta Hash/contract Meta kv pairs of this store instance.
      */
     private contCache: { [hash: string]: string | undefined } = {};
 

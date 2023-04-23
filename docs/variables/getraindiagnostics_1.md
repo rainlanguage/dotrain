@@ -7,7 +7,7 @@ Provides diagnostics
 <b>Signature:</b>
 
 ```typescript
-function getRainDiagnostics(document: TextDocument, opmeta: Uint8Array | string, setting?: LanguageServiceParams): Promise<Diagnostic[]>;
+function getRainDiagnostics(document: TextDocument, setting?: LanguageServiceParams): Promise<Diagnostic[]>;
 ```
 
 ## Parameters
@@ -15,12 +15,11 @@ function getRainDiagnostics(document: TextDocument, opmeta: Uint8Array | string,
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  document | `TextDocument` | The TextDocument |
-|  opmeta | `Uint8Array \| string` | The op meta |
 |  setting | [LanguageServiceParams](../interfaces/languageserviceparams.md) | (optional) Language service params |
 
 <b>Returns:</b>
 
 `Promise<Diagnostic[]>`
 
-Diagnostics promise
+A promise that resolves with diagnostics
 

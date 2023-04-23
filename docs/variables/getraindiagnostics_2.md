@@ -21,5 +21,5 @@ function getRainDiagnostics(document: RainDocument, setting?: LanguageServicePar
 
 `Promise<Diagnostic[]>`
 
-Diagnostics promise
+A promise that resolves with diagnostics
 
