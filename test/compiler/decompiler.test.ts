@@ -38,7 +38,7 @@ async function testRainlangDecompiler(
     );
 }
 
-describe("Rainlang Decompiler (rld) tests", async function () {
+describe("Rainlang Decompiler (rld) Tests", async function () {
     const store = new MetaStore();
 
     before(async () => {

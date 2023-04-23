@@ -29,7 +29,7 @@ async function testDiagnostics(
     });
 }
 
-describe("Rainlang Diagnostics Service tests", async function () {
+describe("Rainlang Diagnostics Service Tests", async function () {
     const store = new MetaStore();
 
     before(async () => {

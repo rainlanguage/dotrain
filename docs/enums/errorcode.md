@@ -25,6 +25,7 @@ enum ErrorCode
 |  InvalidInputsMeta | `259` |  |
 |  InvalidMetaHash | `263` |  |
 |  InvalidNestedNode | `261` |  |
+|  InvalidOpMeta | `264` |  |
 |  InvalidOutputsMeta | `260` |  |
 |  InvalidSelfReferenceLHS | `262` |  |
 |  InvalidWordPattern | `257` |  |

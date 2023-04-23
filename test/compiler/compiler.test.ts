@@ -8,7 +8,7 @@ import { ExpressionConfig, MetaStore, rainlang, rlc } from "../../src";
 chai.use(chaiAsPromised);
 const expect: Chai.ExpectStatic = chai.expect;
 
-describe("Rainlang Compiler (rlc) tests", async function () {
+describe("Rainlang Compiler (rlc) Tests", async function () {
     const store = new MetaStore();
 
     before(async () => {

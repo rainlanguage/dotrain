@@ -23,7 +23,7 @@ async function testHover(
     ));
 }
 
-describe("Rainlang Hover Service tests", async function () {
+describe("Rainlang Hover Service Tests", async function () {
     let expression: string;
     const store = new MetaStore();
 

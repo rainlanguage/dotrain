@@ -24,6 +24,7 @@ export enum ErrorCode {
     InvalidNestedNode = 0x105,
     InvalidSelfReferenceLHS = 0x106,
     InvalidMetaHash = 0x107,
+    InvalidOpMeta = 0x108,
 
     UnexpectedEndOfComment = 0x201,
     UnexpectedClosingParen = 0x202,

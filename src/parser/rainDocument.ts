@@ -375,7 +375,7 @@ class RainParser {
     }
 
     /**
-     * Method to reset the parser state
+     * @internal Method to reset the parser state
      */
     private _resetState = () => {
         this.state.parse.tree = [];
@@ -387,7 +387,7 @@ class RainParser {
     };
 
     /**
-     * Resets op meta related arrays
+     * @internal Resets op meta related arrays
      */
     private _resetOpMeta = () => {
         this.opmeta = [];
@@ -399,14 +399,14 @@ class RainParser {
     };
 
     /**
-     * Method to find index of next element within the text
+     * @internal Method to find index of next element within the text
      */
     private findIndex = (str: string): number => {
         return str.search(/[()<> ]/g);
     };
 
     /**
-     * Trims the trailing and leading whitespaces and newline characters from a string
+     * @internal Trims the trailing and leading whitespaces and newline characters from a string
      */
     private trim = (str: string): {text: string, startDelCount: number, endDelCount: number} => {
         return {
@@ -417,7 +417,7 @@ class RainParser {
     };
 
     /**
-     * Parse and extract words from a 1 liner string
+     * @internal Parse and extract words from a 1 liner string
      */
     private simpleParse = (str: string, offset: number) => {
         const words: string[] = [];
@@ -460,67 +460,81 @@ class RainParser {
     };
 
     /**
-     * Settles the op meta of this RainParser instance from a parsed meta hash
+     * @internal Settles the op meta of this RainParser instance from a parsed meta hashes
+     * First valid opmeta of a meta hash will win.
+     * @returns The index of the meta hash and -1 if no valid settlement is found
      */
-    private resolveOpMeta = async(hash: [string, number]) => {
-        let _hash = "";
-        if (hash[0].match(/^@0x[a-zA-F0-9]{64}$/)) {
-            _hash = hash[0].slice(1);
-            const _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
-            if (_newOpMetaBytes) {
-                if (_newOpMetaBytes !== this.opMetaBytes) {
-                    this.opMetaBytes = _newOpMetaBytes;
+    private resolveOpMeta = async(hashes: [string, number][]): Promise<number> => {
+        for (let i = 0; i < hashes.length; i++) {
+            let _hash = "";
+            if (hashes[i][0].match(/^@0x[a-zA-F0-9]{64}$/)) {
+                _hash = hashes[i][0].slice(1);
+                const _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
+                if (_newOpMetaBytes) {
+                    if (_newOpMetaBytes !== this.opMetaBytes) {
+                        this.opMetaBytes = _newOpMetaBytes;
+                        try {
+                            this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
+                            this.names = this.opmeta.map(v => v.name);
+                            this.opAliases = this.opmeta.map(v => v.aliases);
+                            this.pops = this.opmeta.map(v => v.inputs);
+                            this.pushes = this.opmeta.map(v => v.outputs);
+                            this.operand = this.opmeta.map(v => v.operand);
+                            this.opAliases = this.opmeta.map(v => v.aliases);
+                            return i;
+                        }
+                        catch (_err) {
+                            this._resetOpMeta();
+                            this.problems.push({
+                                msg: _err instanceof Error ? _err.message : _err as string,
+                                position: [hashes[i][1], hashes[i][1] + hashes[i][0].length - 1],
+                                code: ErrorCode.InvalidOpMeta
+                            });
+                        }
+                    }
+                    else return i;
+                }
+                else {
                     try {
-                        this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
+                        await this.metaStore.updateStore(_hash);
+                        this.opMetaBytes = this.metaStore.getOpMeta(_hash) ?? "";
+                        if (this.opMetaBytes === "") throw `no meta found for hash: ${_hash}`;
+                        this.opmeta = metaFromBytes(this.opMetaBytes, OpMetaSchema) as OpMeta[];
                         this.names = this.opmeta.map(v => v.name);
                         this.opAliases = this.opmeta.map(v => v.aliases);
                         this.pops = this.opmeta.map(v => v.inputs);
                         this.pushes = this.opmeta.map(v => v.outputs);
                         this.operand = this.opmeta.map(v => v.operand);
                         this.opAliases = this.opmeta.map(v => v.aliases);
+                        return i;
                     }
                     catch (_err) {
+                        this.opMetaBytes = "";
                         this._resetOpMeta();
                         this.problems.push({
                             msg: _err instanceof Error ? _err.message : _err as string,
-                            position: [hash[1], hash[1] + hash[0].length - 1],
-                            code: ErrorCode.UndefinedOpMeta
+                            position: [hashes[i][1], hashes[i][1] + hashes[i][0].length - 1],
+                            code: ErrorCode.InvalidOpMeta
                         });
                     }
                 }
             }
-            else {
-                try {
-                    await this.metaStore.updateStore(_hash);
-                    this.opMetaBytes = this.metaStore.getOpMeta(_hash) ?? "";
-                    if (this.opMetaBytes === "") throw `no meta found for hash: ${_hash}`;
-                    this.opmeta = metaFromBytes(this.opMetaBytes, OpMetaSchema) as OpMeta[];
-                    this.names = this.opmeta.map(v => v.name);
-                    this.opAliases = this.opmeta.map(v => v.aliases);
-                    this.pops = this.opmeta.map(v => v.inputs);
-                    this.pushes = this.opmeta.map(v => v.outputs);
-                    this.operand = this.opmeta.map(v => v.operand);
-                    this.opAliases = this.opmeta.map(v => v.aliases);
-                }
-                catch (_err) {
-                    this.opMetaBytes = "";
-                    this._resetOpMeta();
-                    this.problems.push({
-                        msg: _err instanceof Error ? _err.message : _err as string,
-                        position: [hash[1], hash[1] + hash[0].length - 1],
-                        code: ErrorCode.UndefinedOpMeta
-                    });
-                }
-            }
+            else this.problems.push({
+                msg: "invalid meta hash, must be 32 bytes",
+                position: [hashes[i][1], hashes[i][1] + hashes[i][0].length - 1],
+                code: ErrorCode.InvalidMetaHash
+            });
         }
-        else this.problems.push({
-            msg: "invalid meta hash, must be 32 bytes",
-            position: [hash[1], hash[1] + hash[0].length - 1],
-            code: ErrorCode.InvalidMetaHash
+        this.problems.push({
+            msg: `cannot find any valid settlement for specified ${hashes.length > 1 ? "hashes" : "hash"}`,
+            position: [0, -1],
+            code: ErrorCode.UndefinedOpMeta
         });
+        return -1;
     };
 
     /**
+     * @internal 
      * The main workhorse of RainParser which parses the words used in an
      * expression and is responsible for building the parse tree and collect problems
      */
@@ -614,7 +628,6 @@ class RainParser {
             }
 
             // parse op meta
-
             const _hashes = Array.from(
                 document.matchAll(/(?<=\s|^)@0x[a-fA-F0-9]+(?=\s|$)/g)
             ).map(v => {
@@ -622,7 +635,7 @@ class RainParser {
                 else return undefined;
             }).filter(v => v !== undefined) as [string, number][];
             if (_hashes.length) {
-                await this.resolveOpMeta(_hashes[0]);
+                await this.resolveOpMeta(_hashes);
                 for (let i = 0; i < _hashes.length; i++) {
                     this.hashes.push({
                         hash: _hashes[i][0],
@@ -631,14 +644,14 @@ class RainParser {
                             _hashes[i][1] + _hashes[i][0].length - 1
                         ],
                     });
-                    if (i !== 0) this.problems.push({
-                        msg: "unexpected meta hash, cannot include more than 1 meta hash per document",
-                        position: [
-                            _hashes[i][1], 
-                            _hashes[i][1] + _hashes[i][0].length - 1
-                        ],
-                        code: ErrorCode.UnexpectedMetaHash
-                    });
+                    // if (i !== _i) this.problems.push({
+                    //     msg: "unexpected meta hash, cannot include more than 1 meta hash per document",
+                    //     position: [
+                    //         _hashes[i][1], 
+                    //         _hashes[i][1] + _hashes[i][0].length - 1
+                    //     ],
+                    //     code: ErrorCode.UnexpectedMetaHash
+                    // });
                     document = 
                         document.slice(0, _hashes[i][1]) +
                         " ".repeat(_hashes[i][0].length) +
@@ -1000,7 +1013,7 @@ class RainParser {
     }
 
     /**
-     * Method to resolve a valid closed node at current state of parsing
+     * @internal Method to resolve a valid closed node at current state of parsing
      */
     private resolveOpNode() {
         this.state.track.parens.open.pop();
@@ -1022,7 +1035,7 @@ class RainParser {
     }
 
     /**
-     * Method to update the parse tree
+     * @internal Method to update the parse tree
      */
     private updateTree(node: RDNode, replace?: boolean) {
         let _nodes: RDNode[] = this.state.parse.tree;
@@ -1041,7 +1054,7 @@ class RainParser {
     }
 
     /**
-     * Method to handle operand arguments
+     * @internal Method to handle operand arguments
      */
     private resolveOperand(pos: number, op?: RDOpNode, count = 0): RDOpNode | undefined {
         if (!this.exp.includes(">")) {
@@ -1146,7 +1159,7 @@ class RainParser {
     }
 
     /**
-     * Method that resolves the RDOpNode once its respective closing paren has consumed
+     * @internal Method that resolves the RDOpNode once its respective closing paren has consumed
      */
     private resolveOp = (node: RDOpNode): RDOpNode => {
         const _index = this.names.indexOf(node.opcode.name);
@@ -1282,7 +1295,7 @@ class RainParser {
     };
 
     /**
-     * Method that consumes the words from the text and updates the parse tree
+     * @internal Method that consumes the words from the text and updates the parse tree
      */
     private consume(entry: number): void {
         const _tmp = this.findIndex(this.exp);
@@ -1434,7 +1447,7 @@ class RainParser {
     }
 
     /**
-     * Method to check for errors in parse tree once an expression is fully parsed
+     * @internal Method to check for errors in parse tree once an expression is fully parsed
      */
     private _errorCheck(node: RDNode): boolean {
         if (this.problems.length) return false;
@@ -1451,7 +1464,7 @@ class RainParser {
     }
 
     /**
-     * Method to count outputs of nodes in a parse tree
+     * @internal Method to count outputs of nodes in a parse tree
      */
     private countOutputs(nodes: RDNode[], skip?: number): number {
         let _count = 0;
@@ -1468,7 +1481,7 @@ class RainParser {
     }
 
     /**
-     * Method to get ExpressionConfig (bytes) from RDNode or parse tree object
+     * @internal Method to get ExpressionConfig (bytes) from RDNode or parse tree object
      */
     private _compile(
         parseTree:

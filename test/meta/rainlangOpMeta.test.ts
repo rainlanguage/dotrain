@@ -3,7 +3,7 @@ import { assertError, opMetaHash } from "../utils";
 import { MetaStore, rainlang, rlc } from "../../src";
 
 
-describe("Rainlang Compiler (rlc) tests", async function () {
+describe("Rainlang Op Meta Tests", async function () {
     const store = new MetaStore();
 
     before(async () => {
@@ -37,11 +37,11 @@ describe("Rainlang Compiler (rlc) tests", async function () {
         );
     });
 
-    it("should fail if multiple opmeta is specified", async () => {
+    it("should fail if no settlement is found for multiple meta hashes", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash + "ab"} @${opMetaHash + "ab"} _: add(1 2);`, store),
-            "unexpected meta hash, cannot include more than 1 meta hash per document",
+                await rlc(rainlang`@${opMetaHash.slice(0, -1) + "a"} @${opMetaHash.slice(0, -1) + "a"} _: add(1 2);`, store),
+            "cannot find any valid settlement for specified hashes",
             "Invalid Error"
         );
     });

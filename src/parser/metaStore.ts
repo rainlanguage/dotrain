@@ -202,7 +202,7 @@ export class MetaStore {
                 }
                 else {
                     try {
-                        const _res = await searchMeta(hashOrStore);
+                        const _res = await searchMeta(hashOrStore, this.subgraphs);
                         try {
                             if (
                                 decodeRainMetaDocument(_res).find(
@@ -248,7 +248,7 @@ export class MetaStore {
     }
 
     /**
-     * Extracts the compressed meta bytes out of a cbor encoded bytes
+     * @internal Extracts the compressed meta bytes out of a cbor encoded bytes
      */
     private exctractMeta(
         metaBytes: string | undefined, 
