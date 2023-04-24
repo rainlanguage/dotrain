@@ -467,8 +467,8 @@ class RainParser {
     private resolveOpMeta = async(hashes: [string, number][]): Promise<number> => {
         for (let i = 0; i < hashes.length; i++) {
             let _hash = "";
-            if (hashes[i][0].match(/^@0x[a-zA-F0-9]{64}$/)) {
-                _hash = hashes[i][0].slice(1);
+            if (hashes[i][0].match(/^\s?@0x[a-zA-F0-9]{64}$/)) {
+                _hash = hashes[i][0].slice(hashes[i][0].match(/^\s/) ? 2 : 1);
                 const _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
                 if (_newOpMetaBytes) {
                     if (_newOpMetaBytes !== this.opMetaBytes) {
@@ -487,7 +487,10 @@ class RainParser {
                             this._resetOpMeta();
                             this.problems.push({
                                 msg: _err instanceof Error ? _err.message : _err as string,
-                                position: [hashes[i][1], hashes[i][1] + hashes[i][0].length - 1],
+                                position: [
+                                    hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
+                                    hashes[i][1] + hashes[i][0].length - 1
+                                ],
                                 code: ErrorCode.InvalidOpMeta
                             });
                         }
@@ -513,7 +516,10 @@ class RainParser {
                         this._resetOpMeta();
                         this.problems.push({
                             msg: _err instanceof Error ? _err.message : _err as string,
-                            position: [hashes[i][1], hashes[i][1] + hashes[i][0].length - 1],
+                            position: [
+                                hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
+                                hashes[i][1] + hashes[i][0].length - 1
+                            ],
                             code: ErrorCode.InvalidOpMeta
                         });
                     }
@@ -521,7 +527,10 @@ class RainParser {
             }
             else this.problems.push({
                 msg: "invalid meta hash, must be 32 bytes",
-                position: [hashes[i][1], hashes[i][1] + hashes[i][0].length - 1],
+                position: [
+                    hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
+                    hashes[i][1] + hashes[i][0].length - 1
+                ],
                 code: ErrorCode.InvalidMetaHash
             });
         }
@@ -629,7 +638,7 @@ class RainParser {
 
             // parse op meta
             const _hashes = Array.from(
-                document.matchAll(/(?<=\s|^)@0x[a-fA-F0-9]+(?=\s|$)/g)
+                document.matchAll(/(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/g)
             ).map(v => {
                 if (v.index !== undefined) return [v[0], v.index];
                 else return undefined;
@@ -640,7 +649,7 @@ class RainParser {
                     this.hashes.push({
                         hash: _hashes[i][0],
                         position: [
-                            _hashes[i][1], 
+                            _hashes[i][1] + (_hashes[i][0].match(/^\s/) ? 1 : 0), 
                             _hashes[i][1] + _hashes[i][0].length - 1
                         ],
                     });
