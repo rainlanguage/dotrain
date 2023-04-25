@@ -572,6 +572,32 @@
           "name": "constructByBits"
         },
         {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!ContextAlias:type",
+          "docComment": "/**\n * Type for context cell alias\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type ContextAlias = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    name: string;\n    column: number;\n    row: number;\n    desc: string;\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "ContextAlias",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!deepCopy:function(1)",
           "docComment": "/**\n * Deep copy an item in a way that all of its properties get new reference\n *\n * @param variable - The variable to copy\n *\n * @returns a new deep copy of the variable\n *\n * @public\n */\n",
@@ -691,12 +717,33 @@
           "members": [
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedClosingOperandArgBracket:member",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.DuplicateAlias:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "ExpectedClosingOperandArgBracket = "
+                  "text": "DuplicateAlias = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "2048"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "DuplicateAlias"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedClosingAngleBracket:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedClosingAngleBracket = "
                 },
                 {
                   "kind": "Content",
@@ -708,7 +755,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "ExpectedClosingOperandArgBracket"
+              "name": "ExpectedClosingAngleBracket"
             },
             {
               "kind": "EnumMember",
@@ -817,16 +864,16 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.IlligalAlias:member",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidContractMeta:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "IlligalAlias = "
+                  "text": "InvalidContractMeta = "
                 },
                 {
                   "kind": "Content",
-                  "text": "2048"
+                  "text": "265"
                 }
               ],
               "initializerTokenRange": {
@@ -834,7 +881,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "IlligalAlias"
+              "name": "InvalidContractMeta"
             },
             {
               "kind": "EnumMember",
@@ -1192,6 +1239,27 @@
               },
               "releaseTag": "Public",
               "name": "RuntimeError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UndefinedMeta:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UndefinedMeta = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "4"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UndefinedMeta"
             },
             {
               "kind": "EnumMember",
@@ -3561,6 +3629,42 @@
             },
             {
               "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getContextAliases:member(1)",
+              "docComment": "/**\n * Get the context aliases of specified meta hashes in this RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getContextAliases(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "ContextAlias",
+                  "canonicalReference": "@rainprotocol/rainlang!ContextAlias:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getContextAliases"
+            },
+            {
+              "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#getExpressionConfig:member(1)",
               "docComment": "/**\n * Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used.\n *\n * @param item - Optional item to get the ExpressionConfig for\n *\n * @public\n */\n",
               "excerptTokens": [
@@ -3634,7 +3738,7 @@
             {
               "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#getLHSAliases:member(1)",
-              "docComment": "/**\n * Get the parsed exp aliases of this RainParser instance\n *\n * @public\n */\n",
+              "docComment": "/**\n * Get the parsed exp aliases of this RainDocument instance\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -3670,7 +3774,7 @@
             {
               "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#getMetaHashes:member(1)",
-              "docComment": "/**\n * Get the specified meta hashes of this RainParser instance\n *\n * @public\n */\n",
+              "docComment": "/**\n * Get the specified meta hashes of this RainDocument instance\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4979,7 +5083,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!rlc:function(2)",
-          "docComment": "/**\n * Rain Language Compiler (rlc), compiles Text Documents into valid ExpressionConfig (deployable bytes)\n *\n * @param document - The TextDocument to compile\n *\n * @param metaStore - (optional) Initial MetaStore object\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
+          "docComment": "/**\n * Rain Language Compiler (rlc), compiles Text Documents into valid ExpressionConfig (deployable bytes)\n *\n * @param document - The TextDocument to compile\n *\n * @param metaStore - (optional) MetaStore object\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",

@@ -39,9 +39,10 @@ await myRainDocument.update(newText)
 |  Method | Description |
 |  --- | --- |
 |  [getComments()](./raindocument.md#getComments-method-1) | Get the current comments inside of the text of this RainDocument instance |
+|  [getContextAliases()](./raindocument.md#getContextAliases-method-1) | Get the context aliases of specified meta hashes in this RainDocument instance |
 |  [getExpressionConfig(item)](./raindocument.md#getExpressionConfig-method-1) | Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used. |
-|  [getLHSAliases()](./raindocument.md#getLHSAliases-method-1) | Get the parsed exp aliases of this RainParser instance |
-|  [getMetaHashes()](./raindocument.md#getMetaHashes-method-1) | Get the specified meta hashes of this RainParser instance |
+|  [getLHSAliases()](./raindocument.md#getLHSAliases-method-1) | Get the parsed exp aliases of this RainDocument instance |
+|  [getMetaHashes()](./raindocument.md#getMetaHashes-method-1) | Get the specified meta hashes of this RainDocument instance |
 |  [getMetaStore()](./raindocument.md#getMetaStore-method-1) | Get the MetaStore object instance of this RainDocument instance |
 |  [getOpMeta()](./raindocument.md#getOpMeta-method-1) | Get the current op meta of this RainDocument instance |
 |  [getOpMetaBytes()](./raindocument.md#getOpMetaBytes-method-1) | Get the current raw op meta of this RainDocument instance in hex string |
@@ -95,6 +96,21 @@ getComments(): RDComment[];
 
 `RDComment[]`
 
+<a id="getContextAliases-method-1"></a>
+
+### getContextAliases()
+
+Get the context aliases of specified meta hashes in this RainDocument instance
+
+<b>Signature:</b>
+
+```typescript
+getContextAliases(): ContextAlias[];
+```
+<b>Returns:</b>
+
+`ContextAlias[]`
+
 <a id="getExpressionConfig-method-1"></a>
 
 ### getExpressionConfig(item)
@@ -121,7 +137,7 @@ getExpressionConfig(item?: RDNode | RDNode[][] | RDParseTree): ExpressionConfig 
 
 ### getLHSAliases()
 
-Get the parsed exp aliases of this RainParser instance
+Get the parsed exp aliases of this RainDocument instance
 
 <b>Signature:</b>
 
@@ -136,7 +152,7 @@ getLHSAliases(): RDAliasNode[][];
 
 ### getMetaHashes()
 
-Get the specified meta hashes of this RainParser instance
+Get the specified meta hashes of this RainDocument instance
 
 <b>Signature:</b>
 

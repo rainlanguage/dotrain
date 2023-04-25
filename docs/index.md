@@ -85,6 +85,7 @@
 
 |  Type Alias | Description |
 |  --- | --- |
+|  [ContextAlias](./types/contextalias.md) | Type for context cell alias |
 |  [ExpressionConfig](./types/expressionconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
 |  [RainParseState](./types/rainparsestate.md) | Type of RainParser state |
 |  [RDAliasNode](./types/rdaliasnode.md) | Type of RainDocument's lhs aliases |

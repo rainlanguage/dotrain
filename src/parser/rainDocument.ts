@@ -713,7 +713,7 @@ class RainParser {
                 });
                 this.names.push(this.ctxAliases[i].name);
                 this.pops.push(0);
-                this.pushes.push(0);
+                this.pushes.push(1);
                 this.operand.push(0);
             }
         }
