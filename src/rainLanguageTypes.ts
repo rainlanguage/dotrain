@@ -16,6 +16,7 @@ export enum ErrorCode {
     UndefinedWord = 1,
     NonASCIICharacter = 2,
     NonPrintableASCIICharacter = 3,
+    UndefinedMeta = 4,
 
     InvalidWordPattern = 0x101,
     InvalidExpression = 0x102,
@@ -25,6 +26,7 @@ export enum ErrorCode {
     InvalidSelfReferenceLHS = 0x106,
     InvalidMetaHash = 0x107,
     InvalidOpMeta = 0x108,
+    InvalidContractMeta = 0x109,
 
     UnexpectedEndOfComment = 0x201,
     UnexpectedClosingParen = 0x202,
@@ -36,7 +38,7 @@ export enum ErrorCode {
     ExpectedOperandArgs = 0x303,
     ExpectedClosingParen = 0x304,
     ExpectedOpeningParen = 0x305,
-    ExpectedClosingOperandArgBracket = 0x306,
+    ExpectedClosingAngleBracket = 0x306,
 
     MismatchRHS = 0x401,
     MismatchLHS = 0x402,
@@ -50,7 +52,7 @@ export enum ErrorCode {
 
     RuntimeError = 0x700,
 
-    IlligalAlias = 0x800
+    DuplicateAlias = 0x800
 }
 
 /**
@@ -283,3 +285,13 @@ export type RainParseState = {
     operandArgsErr: boolean;
     runtimeError: Error | undefined;
 };
+
+/**
+ * @public Type for context cell alias
+ */
+export type ContextAlias = {
+    name: string;
+    column: number;
+    row: number;
+    desc: string;
+}

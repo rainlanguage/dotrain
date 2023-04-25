@@ -22,7 +22,7 @@ export function rlc(
  * Rain Language Compiler (rlc), compiles Text Documents into valid ExpressionConfig (deployable bytes)
  *
  * @param document - The TextDocument to compile
- * @param metaStore - (optional) Initial MetaStore object
+ * @param metaStore - (optional) MetaStore object
  * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text
  */
 export async function rlc(
@@ -65,14 +65,26 @@ export async function rlc(
         const _bytes = _rainDocument.getExpressionConfig();
         if (_bytes) return Promise.resolve(_bytes);
         else {
-            if (_rainDocument.getRuntimeError()) return Promise.reject({
-                problems: _rainDocument.getProblems(),
-                runtimeError: _rainDocument.getRuntimeError()
-            });
-            else return Promise.reject({
-                problems: _rainDocument.getProblems()
-            });
+            if (_rainDocument.getRuntimeError()) {
+                // console.log({
+                //     problems: _rainDocument.getProblems(),
+                //     runtimeError: _rainDocument.getRuntimeError()
+                // });
+                return Promise.reject({
+                    problems: _rainDocument.getProblems(),
+                    runtimeError: _rainDocument.getRuntimeError()
+                });
+            }
+            else {
+                // console.log({
+                //     problems: _rainDocument.getProblems()
+                // });
+                return Promise.reject({
+                    problems: _rainDocument.getProblems()
+                });
+            }
         }
+
     }
     catch (err) {
         return Promise.reject(err);

@@ -477,7 +477,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
                     message: "expected \">\"", 
                     range: toRange(0, 82, 0, 88), 
                     severity: DiagnosticSeverity.Error, 
-                    code: ErrorCode.ExpectedClosingOperandArgBracket, 
+                    code: ErrorCode.ExpectedClosingAngleBracket, 
                     source: "rainlang" 
                 },
                 { 

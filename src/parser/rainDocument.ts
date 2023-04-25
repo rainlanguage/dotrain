@@ -1,5 +1,5 @@
 import { MetaStore } from "./metaStore";
-import { ErrorCode, TextDocument } from "../rainLanguageTypes";
+import { ContextAlias, ErrorCode, TextDocument } from "../rainLanguageTypes";
 import { 
     OpMeta,
     InputMeta,
@@ -9,7 +9,9 @@ import {
     OperandMeta,
     OpMetaSchema, 
     metaFromBytes, 
-    ComputedOutput
+    ComputedOutput,
+    ContractMeta,
+    ContractMetaSchema
 } from "@rainprotocol/meta";
 import { 
     RDNode, 
@@ -155,17 +157,24 @@ export class RainDocument {
     }
 
     /**
-     * @public Get the parsed exp aliases of this RainParser instance
+     * @public Get the parsed exp aliases of this RainDocument instance
      */
     public getLHSAliases(): RDAliasNode[][] {
         return this._rp.getLHSAliases();
     }
 
     /**
-     * @public Get the specified meta hashes of this RainParser instance
+     * @public Get the specified meta hashes of this RainDocument instance
      */
     public getMetaHashes(): RDMetaHash[] {
         return this._rp.getMetaHashes();
+    }
+
+    /**
+     * @public Get the context aliases of specified meta hashes in this RainDocument instance
+     */
+    public getContextAliases(): ContextAlias[] {
+        return this._rp.getContextAliases();
     }
 
     /**
@@ -203,12 +212,14 @@ class RainParser {
     private comments: RDComment[] = [];
     private parseAliases: RDAliasNode[][] = [];
     private hashes: RDMetaHash[] = [];
+    private ctxAliases: ContextAlias[] = []; 
 
     private names: string[] = [];
     private pops: InputMeta[] = [];
     private pushes: OutputMeta[] = [];
     private operand: OperandMeta[] = [];
     private opAliases: (string[] | undefined)[] = [];
+    private opmetaLength = 0;
     
     private exp = "";
     private state: RainParseState = {
@@ -350,10 +361,17 @@ class RainParser {
     }
 
     /**
-     * @public Get the specified meta hases of this RainParser instance
+     * @public Get the specified meta hahses of this RainParser instance
      */
     public getMetaHashes(): RDMetaHash[] {
         return deepCopy(this.hashes);
+    }
+
+    /**
+     * @public Get the context aliases of specified meta hashes in this RainParser instance
+     */
+    public getContextAliases(): ContextAlias[] {
+        return deepCopy(this.ctxAliases);
     }
 
     /**
@@ -396,6 +414,7 @@ class RainParser {
         this.pops = [];
         this.pushes = [];
         this.operand = [];
+        this.opmetaLength = 0;
     };
 
     /**
@@ -460,31 +479,32 @@ class RainParser {
     };
 
     /**
-     * @internal Settles the op meta of this RainParser instance from a parsed meta hashes
-     * First valid opmeta of a meta hash will win.
-     * @returns The index of the meta hash and -1 if no valid settlement is found
+     * @internal Resolves and settles the metas of this RainParser instance from parsed meta hashes
+     * First valid opmeta of a meta hash will be used for parsing and all context metas of all valid 
+     * contract metas will be cached for parsing.
+     * @returns The index of the meta hash that is settled for op meta and -1 no valid settlement is found for op meta
      */
-    private resolveOpMeta = async(hashes: [string, number][]): Promise<number> => {
+    private resolveMeta = async(hashes: [string, number][]): Promise<number> => {
+        let index = -1;
         for (let i = 0; i < hashes.length; i++) {
             let _hash = "";
             if (hashes[i][0].match(/^\s?@0x[a-zA-F0-9]{64}$/)) {
                 _hash = hashes[i][0].slice(hashes[i][0].match(/^\s/) ? 2 : 1);
-                const _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
-                if (_newOpMetaBytes) {
+                let _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
+                let _newContMetaBytes = this.metaStore.getContractMeta(_hash);
+                if (index === -1 && _newOpMetaBytes) {
                     if (_newOpMetaBytes !== this.opMetaBytes) {
                         this.opMetaBytes = _newOpMetaBytes;
                         try {
                             this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
                             this.names = this.opmeta.map(v => v.name);
-                            this.opAliases = this.opmeta.map(v => v.aliases);
                             this.pops = this.opmeta.map(v => v.inputs);
                             this.pushes = this.opmeta.map(v => v.outputs);
                             this.operand = this.opmeta.map(v => v.operand);
                             this.opAliases = this.opmeta.map(v => v.aliases);
-                            return i;
+                            index = i;
                         }
                         catch (_err) {
-                            this._resetOpMeta();
                             this.problems.push({
                                 msg: _err instanceof Error ? _err.message : _err as string,
                                 position: [
@@ -495,32 +515,156 @@ class RainParser {
                             });
                         }
                     }
-                    else return i;
+                    else index = i;
                 }
-                else {
+                if (_newContMetaBytes) {
                     try {
-                        await this.metaStore.updateStore(_hash);
-                        this.opMetaBytes = this.metaStore.getOpMeta(_hash) ?? "";
-                        if (this.opMetaBytes === "") throw `no meta found for hash: ${_hash}`;
-                        this.opmeta = metaFromBytes(this.opMetaBytes, OpMetaSchema) as OpMeta[];
-                        this.names = this.opmeta.map(v => v.name);
-                        this.opAliases = this.opmeta.map(v => v.aliases);
-                        this.pops = this.opmeta.map(v => v.inputs);
-                        this.pushes = this.opmeta.map(v => v.outputs);
-                        this.operand = this.opmeta.map(v => v.operand);
-                        this.opAliases = this.opmeta.map(v => v.aliases);
-                        return i;
+                        const _contractMeta = metaFromBytes(
+                            _newContMetaBytes, 
+                            ContractMetaSchema
+                        ) as ContractMeta;
+                        _contractMeta.methods.forEach(method => {
+                            method.expressions.forEach(exp => {
+                                exp.contextColumns?.forEach(ctxCol => {
+                                    // const colIndex = this.ctxAliases.findIndex(
+                                    //     e => e.name === ctxCol.alias
+                                    // );
+                                    // if (colIndex > -1) this.ctxAliases[colIndex] = {
+                                    //     name: ctxCol.alias,
+                                    //     column: ctxCol.columnIndex,
+                                    //     row: NaN
+                                    // };
+                                    // else this.ctxAliases.push({
+                                    //     name: ctxCol.alias,
+                                    //     column: ctxCol.columnIndex,
+                                    //     row: NaN
+                                    // });
+                                    ctxCol.cells?.forEach(ctxCell => {
+                                        const cellIndex = this.ctxAliases.findIndex(
+                                            e => e.name === ctxCell.alias
+                                        );
+                                        if (cellIndex > -1) this.ctxAliases[cellIndex] = {
+                                            name: ctxCell.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: ctxCell.cellIndex,
+                                            desc: ctxCell.desc ?? ""
+                                        };
+                                        this.ctxAliases.push({
+                                            name: ctxCell.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: ctxCell.cellIndex,
+                                            desc: ctxCell.desc ?? ""
+                                        });
+                                    });
+                                });
+                            });
+                        });
                     }
                     catch (_err) {
-                        this.opMetaBytes = "";
-                        this._resetOpMeta();
                         this.problems.push({
                             msg: _err instanceof Error ? _err.message : _err as string,
                             position: [
                                 hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
                                 hashes[i][1] + hashes[i][0].length - 1
                             ],
-                            code: ErrorCode.InvalidOpMeta
+                            code: ErrorCode.InvalidContractMeta
+                        });
+                    }
+                }
+                if (!_newContMetaBytes && !_newOpMetaBytes) {
+                    await this.metaStore.updateStore(_hash);
+                    _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
+                    _newContMetaBytes = this.metaStore.getContractMeta(_hash);
+                    if (index === -1 && _newOpMetaBytes) {
+                        if (_newContMetaBytes !== this.opMetaBytes) {
+                            try {
+                                this.opMetaBytes = _newOpMetaBytes;
+                                this.opmeta = metaFromBytes(
+                                    _newOpMetaBytes, 
+                                    OpMetaSchema
+                                ) as OpMeta[];
+                                this.names = this.opmeta.map(v => v.name);
+                                this.pops = this.opmeta.map(v => v.inputs);
+                                this.pushes = this.opmeta.map(v => v.outputs);
+                                this.operand = this.opmeta.map(v => v.operand);
+                                this.opAliases = this.opmeta.map(v => v.aliases);
+                                index = i;
+                            }
+                            catch (_err) {
+                                this.problems.push({
+                                    msg: _err instanceof Error ? _err.message : _err as string,
+                                    position: [
+                                        hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
+                                        hashes[i][1] + hashes[i][0].length - 1
+                                    ],
+                                    code: ErrorCode.InvalidOpMeta
+                                });
+                            }
+                        }
+                        else index = i;
+                    }
+                    if (_newContMetaBytes) {
+                        try {
+                            const _contractMeta = metaFromBytes(
+                                _newContMetaBytes, 
+                                ContractMetaSchema
+                            ) as ContractMeta;
+                            _contractMeta.methods.forEach(method => {
+                                method.expressions.forEach(exp => {
+                                    exp.contextColumns?.forEach(ctxCol => {
+                                        // const colIndex = this.ctxAliases.findIndex(
+                                        //     e => e.name === ctxCol.alias
+                                        // );
+                                        // if (colIndex > -1) this.ctxAliases[colIndex] = {
+                                        //     name: ctxCol.alias,
+                                        //     column: ctxCol.columnIndex,
+                                        //     row: NaN
+                                        // };
+                                        // else this.ctxAliases.push({
+                                        //     name: ctxCol.alias,
+                                        //     column: ctxCol.columnIndex,
+                                        //     row: NaN
+                                        // });
+                                        ctxCol.cells?.forEach(ctxCell => {
+                                            const cellIndex = this.ctxAliases.findIndex(
+                                                e => e.name === ctxCell.alias
+                                            );
+                                            if (cellIndex > -1) this.ctxAliases[cellIndex] = {
+                                                name: ctxCell.alias,
+                                                column: ctxCol.columnIndex,
+                                                row: ctxCell.cellIndex,
+                                                desc: ctxCell.desc ?? ""
+                                            };
+                                            this.ctxAliases.push({
+                                                name: ctxCell.alias,
+                                                column: ctxCol.columnIndex,
+                                                row: ctxCell.cellIndex,
+                                                desc: ctxCell.desc ?? ""
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        }
+                        catch (_err) {
+                            this.problems.push({
+                                msg: _err instanceof Error ? _err.message : _err as string,
+                                position: [
+                                    hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
+                                    hashes[i][1] + hashes[i][0].length - 1
+                                ],
+                                code: ErrorCode.InvalidContractMeta
+                            });
+                        }
+                    }
+                    if (!_newContMetaBytes && !_newOpMetaBytes) {
+                        this.problems.push({
+                            msg: `cannot find any settlement for hash: ${_hash}`,
+                            position: [
+                                hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
+                                hashes[i][1] + hashes[i][0].length - 1
+                            ],
+                            code: ErrorCode.UndefinedMeta
                         });
                     }
                 }
@@ -534,12 +678,46 @@ class RainParser {
                 code: ErrorCode.InvalidMetaHash
             });
         }
-        this.problems.push({
-            msg: `cannot find any valid settlement for specified ${hashes.length > 1 ? "hashes" : "hash"}`,
-            position: [0, -1],
-            code: ErrorCode.UndefinedOpMeta
-        });
-        return -1;
+        if (index === -1) {
+            this.problems.push({
+                msg: `cannot find any valid settlement for op meta from specified ${
+                    hashes.length > 1 ? "hashes" : "hash"
+                }`,
+                position: [0, -1],
+                code: ErrorCode.UndefinedOpMeta
+            });
+            this._resetOpMeta();
+            this.opMetaBytes = "";
+        }
+        else {
+            this.opmetaLength = this.opmeta.length;
+            const _ops = [
+                ...this.names,
+                ...this.opAliases.filter(v => v !== undefined).flat(),
+                "max-uint-256",
+                "max-uint256",
+                "infinity"
+            ];
+            for (let i = 0; i < this.ctxAliases.length; i++) {
+                if (_ops.includes(this.ctxAliases[i].name)) this.problems.push({
+                    msg: `duplicate alias for contract context and opcode: ${this.ctxAliases[i].name}`,
+                    position: this.hashes[index].position,
+                    code: ErrorCode.DuplicateAlias
+                });
+                this.opmeta.push({
+                    name: this.ctxAliases[i].name,
+                    desc: this.ctxAliases[i].desc,
+                    operand: 0,
+                    inputs: 0,
+                    outputs: 1
+                });
+                this.names.push(this.ctxAliases[i].name);
+                this.pops.push(0);
+                this.pushes.push(0);
+                this.operand.push(0);
+            }
+        }
+        return index;
     };
 
     /**
@@ -554,6 +732,7 @@ class RainParser {
         this.parseTree = [];
         this.problems = [];
         this.comments = [];
+        this.ctxAliases = [];
         this.parseAliases = [];
         this.state.track.char = 0;
         this.state.runtimeError = undefined;
@@ -644,7 +823,7 @@ class RainParser {
                 else return undefined;
             }).filter(v => v !== undefined) as [string, number][];
             if (_hashes.length) {
-                await this.resolveOpMeta(_hashes);
+                await this.resolveMeta(_hashes);
                 for (let i = 0; i < _hashes.length; i++) {
                     this.hashes.push({
                         hash: _hashes[i][0],
@@ -797,9 +976,9 @@ class RainParser {
                                     });
                                 }
                                 if (_ops.includes(words[k])) this.problems.push({
-                                    msg: `illigal alias, "${words[k]}" is reserved`,
+                                    msg: `duplicate alias: ${words[k]}`,
                                     position: positions[k],
-                                    code:ErrorCode.IlligalAlias
+                                    code:ErrorCode.DuplicateAlias
                                 });
                                 this.state.track.char = positions[k][1];
                             }
@@ -858,7 +1037,7 @@ class RainParser {
                             else if (this.exp.startsWith(")")) {
                                 if (this.state.track.parens.open.length > 0) {
                                     this.state.track.parens.close.push(_currentPosition);
-                                    this.resolveOpNode();
+                                    this.resolveParen();
                                     this.state.depthLevel--;
                                 }
                                 else this.problems.push({
@@ -868,13 +1047,7 @@ class RainParser {
                                 });
                                 this.exp = this.exp.slice(1);
                                 this.state.track.char++;
-                                if (
-                                    this.exp.length &&
-                                    !this.exp.startsWith(" ") && 
-                                    !this.exp.startsWith(")") && 
-                                    !this.exp.startsWith(";") && 
-                                    !this.exp.startsWith(",")
-                                ) this.problems.push({
+                                if (this.exp && !this.exp.match(/^[\s);,]/)) this.problems.push({
                                     msg: "expected to be seperated by space",
                                     position: [_currentPosition, _currentPosition + 1],
                                     code: ErrorCode.ExpectedSpace
@@ -1022,9 +1195,9 @@ class RainParser {
     }
 
     /**
-     * @internal Method to resolve a valid closed node at current state of parsing
+     * @internal Method to resolve a valid closed paren node at current state of parsing
      */
-    private resolveOpNode() {
+    private resolveParen() {
         this.state.track.parens.open.pop();
         const _endPosition = this.state.track.parens.close.pop()!;
         let _nodes: RDNode[] = this.state.parse.tree;
@@ -1071,7 +1244,7 @@ class RainParser {
             this.problems.push({
                 msg: "expected \">\"",
                 position: [pos, pos + this.exp.length - 1],
-                code: ErrorCode.ExpectedClosingOperandArgBracket
+                code: ErrorCode.ExpectedClosingAngleBracket
             });
             if (op) if (!op.operandArgs) op.operandArgs = {
                 position: [pos, pos + this.exp.length - 1],
@@ -1168,7 +1341,7 @@ class RainParser {
     }
 
     /**
-     * @internal Method that resolves the RDOpNode once its respective closing paren has consumed
+     * @internal Method that resolves the RDOpNode once its respective closing paren has been consumed
      */
     private resolveOp = (node: RDOpNode): RDOpNode => {
         const _index = this.names.indexOf(node.opcode.name);
@@ -1204,7 +1377,11 @@ class RainParser {
                 else {
                     let _argIndex = 0;
                     let _inputsIndex = -1;
-                    const _argsLength = (this.operand[_index] as OperandArgs).find(v => v.name === "inputs")
+                    const _argsLength = (
+                        this.operand[_index] as OperandArgs
+                    ).find(
+                        v => v.name === "inputs"
+                    )
                         ? (this.operand[_index] as OperandArgs).length - 1
                         : (this.operand[_index] as OperandArgs).length;
                     if (_argsLength === (node.operandArgs?.args.length ?? 0)) {
@@ -1323,6 +1500,8 @@ class RainParser {
         );
 
         if (this.exp.startsWith("(") || this.exp.startsWith("<")) {
+            let _op: RDOpNode;
+            // let _ctx: ContextAlias | undefined;
             if (!_word.match(this.wordPattern)) this.problems.push({
                 msg: `invalid word pattern: "${_word}"`,
                 position: [..._wordPos],
@@ -1330,20 +1509,16 @@ class RainParser {
             });
             let _enum = this.names.indexOf(_word);
             if (_enum === -1) _enum = this.opAliases.findIndex(v => v?.includes(_word));
-            let count = 0;
-            if (_enum > -1 && typeof this.operand[_enum] !== "number") {
-                (this.operand[_enum] as OperandArgs).forEach(v => {
-                    if (v.name !== "inputs") count++;
-                });
-            }
-            if (_enum === -1) {
-                this.problems.push({
-                    msg: `unknown opcode: "${_word}"`,
-                    position: [..._wordPos],
-                    code: ErrorCode.UnknownOp
-                });
-            }
-            let _op: RDOpNode = {
+            // if (_enum === -1) {
+            //     _ctx = this.ctxAliases.find(v => v.name === _word);
+            //     if (_ctx) _enum = this.names.indexOf("context");
+            // }
+            if (_enum === -1) this.problems.push({
+                msg: `unknown opcode: "${_word}"`,
+                position: [..._wordPos],
+                code: ErrorCode.UnknownOp
+            });
+            _op = {
                 opcode: {
                     name: _enum > -1 ? this.names[_enum] : "unknown opcode",
                     description: _enum > -1 ? this.opmeta[_enum].desc : "",
@@ -1355,8 +1530,42 @@ class RainParser {
                 parens: [NaN, NaN],
                 parameters: []
             };
-            if (this.exp.startsWith("<")) _op = 
-                this.resolveOperand(entry + _word.length, _op, count)!;
+            // if (_ctx) {
+            //     _op.opcode = {
+            //         name: _enum > -1 ? this.names[_enum] : "unknown opcode",
+            //         description: _ctx.desc ? _ctx.desc : this.opmeta[_enum]?.desc ?? "",
+            //         position: [..._wordPos],
+            //     };
+            //     _op.operandArgs = {
+            //         position: [..._wordPos],
+            //         args: [
+            //             {
+            //                 value: _ctx.column,
+            //                 name:  (this.opmeta[_enum]?.operand as OperandArgs)[0].name ?? "Column Index",
+            //                 position: [..._wordPos]
+            //             },
+            //             {
+            //                 value: _ctx.row,
+            //                 name:  (this.opmeta[_enum]?.operand as OperandArgs)[1].name ?? "Row Index",
+            //                 position: [..._wordPos]
+            //             }
+            //         ]
+            //     };
+            // }
+            let count = 0;
+            if (_enum > -1 && typeof this.operand[_enum] !== "number") {
+                (this.operand[_enum] as OperandArgs).forEach(v => {
+                    if (v.name !== "inputs") count++;
+                });
+            }
+            if (this.exp.startsWith("<")) {
+                // if (_ctx) this.problems.push({
+                //     msg: "unexpected \"<\"",
+                //     position: [_wordPos[1] + 1, _wordPos[1] + 1],
+                //     code: ErrorCode.UnexpectedOpeningAngleBracket
+                // });
+                _op = this.resolveOperand(entry + _word.length, _op, count)!;
+            }
             else if (count) {
                 this.problems.push({
                     msg: `expected operand arguments for opcode ${_op.opcode.name}`,
@@ -1458,13 +1667,13 @@ class RainParser {
     /**
      * @internal Method to check for errors in parse tree once an expression is fully parsed
      */
-    private _errorCheck(node: RDNode): boolean {
+    private errorCheck(node: RDNode): boolean {
         if (this.problems.length) return false;
         if ("opcode" in node) {
             if (isNaN(node.operand) || isNaN(node.output)) return false;
             else {
                 for (let i = 0; i < node.parameters.length; i++) {
-                    if (!this._errorCheck(node.parameters[i])) return false;
+                    if (!this.errorCheck(node.parameters[i])) return false;
                 }
                 return true;
             }
@@ -1523,101 +1732,125 @@ class RainParser {
         // check for errors
         for (let i = 0; i < _nodes.length; i++) {
             for (let j = 0; j < _nodes[i].length; j++) {
-                if (!this._errorCheck(_nodes[i][j])) return undefined;
+                if (!this.errorCheck(_nodes[i][j])) return undefined;
             }
         }
 
         // compile from parsed tree
-        for (let i = 0; i < _nodes.length; i++) {
-            if (_nodes[i].length === 0) _sourcesCache = [];
-            for (let j = 0; j < _nodes[i].length; j++) {
-                if (i > sourceIndex) sourceIndex = i;
-                const _node = _nodes[i][j];
-                if ("value" in _node) {
-                    if (isBigNumberish(_node.value)) {
-                        if (constants.includes(_node.value)) {
-                            _sourcesCache.push(
-                                op(
-                                    this.names.indexOf("read-memory"),
-                                    memoryOperand(
-                                        constants.indexOf(_node.value),
-                                        MemoryType.Constant,
+        try {
+            for (let i = 0; i < _nodes.length; i++) {
+                if (_nodes[i].length === 0) _sourcesCache = [];
+                for (let j = 0; j < _nodes[i].length; j++) {
+                    if (i > sourceIndex) sourceIndex = i;
+                    const _node = _nodes[i][j];
+                    if ("value" in _node) {
+                        if (isBigNumberish(_node.value)) {
+                            if (constants.includes(_node.value)) {
+                                _sourcesCache.push(
+                                    op(
+                                        this.names.indexOf("read-memory"),
+                                        memoryOperand(
+                                            constants.indexOf(_node.value),
+                                            MemoryType.Constant,
+                                        )
                                     )
-                                )
-                            );
+                                );
+                            }
+                            else {
+                                _sourcesCache.push(
+                                    op(
+                                        this.names.indexOf("read-memory"),
+                                        memoryOperand(constants.length, MemoryType.Constant)
+                                    )
+                                );
+                                constants.push(_node.value);
+                            }
                         }
-                        else {
-                            _sourcesCache.push(
-                                op(
-                                    this.names.indexOf("read-memory"),
-                                    memoryOperand(constants.length, MemoryType.Constant)
-                                )
+                        else if ((_node.value as string).match(/max-uint-?256|infinity/)) {
+                            const _i = constants.findIndex(
+                                v => CONSTANTS.MaxUint256.eq(v)
                             );
-                            constants.push(_node.value);
+                            if (_i > -1) {
+                                _sourcesCache.push(
+                                    op(
+                                        this.names.indexOf("read-memory"),
+                                        memoryOperand(_i, MemoryType.Constant)
+                                    )
+                                );
+                            }
+                            else {
+                                _sourcesCache.push(
+                                    op(
+                                        this.names.indexOf("read-memory"),
+                                        memoryOperand(constants.length, MemoryType.Constant)
+                                    )
+                                );
+                                constants.push(
+                                    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                                );
+                            }
                         }
                     }
-                    else if (_node.value === "max-uint256" || _node.value === "infinity") {
-                        const _i = constants.findIndex(
-                            v => CONSTANTS.MaxUint256.eq(v)
+                    else if ("name" in _node) {
+                        const _i = this.parseAliases[sourceIndex].findIndex(
+                            v => v.name === _node.name
                         );
-                        if (_i > -1) {
-                            _sourcesCache.push(
-                                op(
-                                    this.names.indexOf("read-memory"),
-                                    memoryOperand(_i, MemoryType.Constant)
-                                )
+                        if (_i > -1) _sourcesCache.push(
+                            op(
+                                this.names.indexOf("read-memory"),
+                                memoryOperand(_i, MemoryType.Stack)
+                            )
+                        );
+                        else throw new Error(`cannot find "${_node.name}"`);
+                    }
+                    else {
+                        for (let i = 0; i < _node.parameters.length; i++) {
+                            const _expConf = this._compile(
+                                _node.parameters[i],
+                                constants,
+                                sourceIndex
                             );
-                        }
-                        else {
-                            _sourcesCache.push(
-                                op(
-                                    this.names.indexOf("read-memory"),
-                                    memoryOperand(constants.length, MemoryType.Constant)
-                                )
-                            );
-                            constants.push(
-                                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-                            );
-                        }
+                            _sourcesCache.push(..._expConf!.sources);
+                        } 
+                        let _ctx: ContextAlias | undefined;
+                        const _index = this.names.indexOf(_node.opcode.name);
+                        if (_index >= this.opmetaLength) _ctx = this.ctxAliases.find(
+                            v => v.name === _node.opcode.name
+                        );
+                        _sourcesCache.push(
+                            op(
+                                _ctx ? this.names.indexOf("context") : _index, 
+                                _ctx
+                                    ? constructByBits([
+                                        {
+                                            value: _ctx.column,
+                                            bits: [8, 15]
+                                        },
+                                        {
+                                            value: _ctx.row,
+                                            bits: [0, 7]
+                                        }
+                                    ])
+                                    : _node.operand 
+                            )
+                        );
                     }
                 }
-                else if ("name" in _node && !("opcode" in _node)) {
-                    const _i = this.parseAliases[sourceIndex].findIndex(
-                        v => v.name === _node.name
-                    );
-                    if (_i > -1) _sourcesCache.push(
-                        op(
-                            this.names.indexOf("read-memory"),
-                            memoryOperand(_i, MemoryType.Stack)
-                        )
-                    );
-                    else throw new Error(`cannot find "${_node.name}"`);
-                }
-                else {
-                    for (let i = 0; i < (_node as RDOpNode).parameters.length; i++) {
-                        const _expConf = this._compile(
-                            (_node as RDOpNode).parameters[i],
-                            constants,
-                            sourceIndex
-                        );
-                        _sourcesCache.push(..._expConf!.sources);
-                    } 
-                    _sourcesCache.push(op(
-                        this.names.indexOf((_node as RDOpNode).opcode.name),
-                        (_node as RDOpNode).operand
-                    ));
-                }
+                _sources.push(concat(_sourcesCache));
+                _sourcesCache = [];
             }
-            _sources.push(concat(_sourcesCache));
-            _sourcesCache = [];
+            return {
+                constants,
+                sources: _sources.length 
+                    ? _sources.map(
+                        v => hexlify(v, { allowMissingPrefix: true })
+                    ) 
+                    : []
+            };
         }
-        return {
-            constants,
-            sources: _sources.length 
-                ? _sources.map(
-                    v => hexlify(v, { allowMissingPrefix: true })
-                ) 
-                : []
-        };
+        catch (_err) {
+            console.log(_err);
+            return undefined;
+        }
     }
 }

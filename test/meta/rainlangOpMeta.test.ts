@@ -32,7 +32,7 @@ describe("Rainlang Op Meta Tests", async function () {
         await assertError(
             async () =>
                 await rlc(rainlang`@${opMetaHash.slice(0, -1) + "a"} _: add(1 2);`, store),
-            "no meta found for hash",
+            "cannot find any valid settlement for op meta from specified hash",
             "Invalid Error"
         );
     });
@@ -41,7 +41,7 @@ describe("Rainlang Op Meta Tests", async function () {
         await assertError(
             async () =>
                 await rlc(rainlang`@${opMetaHash.slice(0, -1) + "a"} @${opMetaHash.slice(0, -1) + "a"} _: add(1 2);`, store),
-            "cannot find any valid settlement for specified hashes",
+            "cannot find any valid settlement for op meta from specified hashes",
             "Invalid Error"
         );
     });
