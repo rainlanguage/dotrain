@@ -4482,7 +4482,7 @@
             },
             {
               "kind": "Content",
-              "text": "[];\n    };\n    track: {\n        char: number;\n        parens: {\n            open: number[];\n            close: number[];\n        };\n    };\n    depthLevel: number;\n    operandArgsErr: boolean;\n    runtimeError: "
+              "text": "[];\n    };\n    track: {\n        char: number;\n        parens: {\n            open: number[];\n            close: number[];\n        };\n    };\n    depthLevel: number;\n    runtimeError: "
             },
             {
               "kind": "Reference",

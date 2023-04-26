@@ -282,7 +282,7 @@ export type RainParseState = {
         };
     };
     depthLevel: number;
-    operandArgsErr: boolean;
+    // operandArgsErr: boolean;
     runtimeError: Error | undefined;
 };
 

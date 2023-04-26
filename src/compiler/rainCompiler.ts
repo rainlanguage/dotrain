@@ -65,13 +65,25 @@ export async function rlc(
         const _bytes = _rainDocument.getExpressionConfig();
         if (_bytes) return Promise.resolve(_bytes);
         else {
-            if (_rainDocument.getRuntimeError()) return Promise.reject({
-                problems: _rainDocument.getProblems(),
-                runtimeError: _rainDocument.getRuntimeError()
-            });
-            else return Promise.reject({
-                problems: _rainDocument.getProblems()
-            });
+            if (_rainDocument.getRuntimeError()) {
+                // console.log({
+                //     problems: _rainDocument.getProblems(),
+                //     runtimeError: _rainDocument.getRuntimeError()
+                // });
+                return Promise.reject({
+                    problems: _rainDocument.getProblems(),
+                    runtimeError: _rainDocument.getRuntimeError()
+                });
+            }
+            else {
+                // console.log(JSON.stringify(_rainDocument.getParseTree()));
+                // console.log(JSON.stringify({
+                //     problems: _rainDocument.getProblems()
+                // }));
+                return Promise.reject({
+                    problems: _rainDocument.getProblems()
+                });
+            }
         }
 
     }

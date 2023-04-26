@@ -200,7 +200,9 @@ export class RainDocument {
  * which later will be used in RainDocument object and Rain Language Services and Compiler
  */
 class RainParser {
+    public readonly illigalChar = /[^ -~\s]/gd;
     public readonly wordPattern = /^[a-z][0-9a-z-]*$/;
+    public readonly hashPattern = /^0x[a-zA-F0-9]{64}$/;
     public readonly numericPattern = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
     
     private textDocument: TextDocument;
@@ -235,7 +237,7 @@ class RainParser {
             }
         },
         depthLevel: 0,
-        operandArgsErr: false,
+        // operandArgsErr: false,
         runtimeError: undefined
     };
 
@@ -255,7 +257,7 @@ class RainParser {
      * Parses this instance of RainParser
      */
     public async parse() {
-        if (this.textDocument.getText().match(/[^\s]/)) {
+        if (/[^\s]/.test(this.textDocument.getText())) {
             try {
                 await this._parse();
             }
@@ -401,7 +403,7 @@ class RainParser {
         this.state.track.parens.open = [];
         this.state.track.parens.close = [];
         this.state.depthLevel = 0;
-        this.state.operandArgsErr = false;
+        // this.state.operandArgsErr = false;
     };
 
     /**
@@ -438,9 +440,13 @@ class RainParser {
     /**
      * @internal Parse and extract words from a 1 liner string
      */
-    private simpleParse = (str: string, offset: number) => {
-        const words: string[] = [];
-        const positions: [number, number][] = [];
+    private simpleParse = (
+        str: string, 
+        pattern: RegExp,
+        offset = 0
+    ): [string, [number, number]][] => {
+        // const words: string[] = [];
+        // const positions: [number, number][] = [];
         // let counter = 0;
         // while (str.length) {
         //     if (str.startsWith(" ")) {
@@ -459,23 +465,31 @@ class RainParser {
         //         str = str.slice(_i);
         //     }
         // }
-        (Array.from(
-            str.matchAll(/\S+/g)
-        ).map(v => {
-            if (v.index !== undefined) return [v[0], v.index];
-            else return undefined;
-        }).filter(
-            v => v !== undefined
-        ) as [string, number][]).forEach(
-            v => {
-                words.push(v[0]);
-                positions.push([
-                    offset + v[1],
-                    offset + v[1] + v[0].length - 1
-                ]);
-            }
-        );
-        return { words, positions };
+        // (Array.from(
+        //     str.matchAll(/\S+/gd)
+        // ).map(v => {
+        //     if (v.index !== undefined) return [v[0], v.index, v.index];
+        //     else return undefined;
+        // }).filter(
+        //     v => v !== undefined
+        // ) as [string, number][]).forEach(
+        //     v => {
+        //         words.push(v[0]);
+        //         positions.push([
+        //             offset + v[1],
+        //             offset + v[1] + v[0].length - 1
+        //         ]);
+        //     }
+        // );
+        // return { words, positions };
+        let flags = pattern.flags;
+        if (!flags.includes("g")) flags += "g";
+        if (!flags.includes("d")) flags += "d";
+        return Array.from(
+            str.matchAll(new RegExp(pattern.source, flags))
+        ).map((v: any) => 
+            [v[0], [offset + v.indices[0][0], offset + v.indices[0][1] - 1]]
+        ) as [string, [number, number]][];
     };
 
     /**
@@ -484,12 +498,12 @@ class RainParser {
      * contract metas will be cached for parsing.
      * @returns The index of the meta hash that is settled for op meta and -1 no valid settlement is found for op meta
      */
-    private resolveMeta = async(hashes: [string, number][]): Promise<number> => {
+    private resolveMeta = async(hashes: [string, [number, number]][]): Promise<number> => {
         let index = -1;
         for (let i = 0; i < hashes.length; i++) {
-            let _hash = "";
-            if (hashes[i][0].match(/^\s?@0x[a-zA-F0-9]{64}$/)) {
-                _hash = hashes[i][0].slice(hashes[i][0].match(/^\s/) ? 2 : 1);
+            const _offset = /^\s/.test(hashes[i][0]) ? 1 : 0;
+            const _hash = hashes[i][0].slice(1 + _offset);
+            if (this.hashPattern.test(_hash)) {
                 let _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
                 let _newContMetaBytes = this.metaStore.getContractMeta(_hash);
                 if (index === -1 && _newOpMetaBytes) {
@@ -508,8 +522,8 @@ class RainParser {
                             this.problems.push({
                                 msg: _err instanceof Error ? _err.message : _err as string,
                                 position: [
-                                    hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
-                                    hashes[i][1] + hashes[i][0].length - 1
+                                    hashes[i][1][0] + _offset, 
+                                    hashes[i][1][1]
                                 ],
                                 code: ErrorCode.InvalidOpMeta
                             });
@@ -526,19 +540,21 @@ class RainParser {
                         _contractMeta.methods.forEach(method => {
                             method.expressions.forEach(exp => {
                                 exp.contextColumns?.forEach(ctxCol => {
-                                    // const colIndex = this.ctxAliases.findIndex(
-                                    //     e => e.name === ctxCol.alias
-                                    // );
-                                    // if (colIndex > -1) this.ctxAliases[colIndex] = {
-                                    //     name: ctxCol.alias,
-                                    //     column: ctxCol.columnIndex,
-                                    //     row: NaN
-                                    // };
-                                    // else this.ctxAliases.push({
-                                    //     name: ctxCol.alias,
-                                    //     column: ctxCol.columnIndex,
-                                    //     row: NaN
-                                    // });
+                                    const colIndex = this.ctxAliases.findIndex(
+                                        e => e.name === ctxCol.alias
+                                    );
+                                    if (colIndex > -1) this.ctxAliases[colIndex] = {
+                                        name: ctxCol.alias,
+                                        column: ctxCol.columnIndex,
+                                        row: NaN,
+                                        desc: ctxCol.desc ?? ""
+                                    };
+                                    else this.ctxAliases.push({
+                                        name: ctxCol.alias,
+                                        column: ctxCol.columnIndex,
+                                        row: NaN,
+                                        desc: ctxCol.desc ?? ""
+                                    });
                                     ctxCol.cells?.forEach(ctxCell => {
                                         const cellIndex = this.ctxAliases.findIndex(
                                             e => e.name === ctxCell.alias
@@ -564,8 +580,8 @@ class RainParser {
                         this.problems.push({
                             msg: _err instanceof Error ? _err.message : _err as string,
                             position: [
-                                hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
-                                hashes[i][1] + hashes[i][0].length - 1
+                                hashes[i][1][0] + _offset, 
+                                hashes[i][1][1]
                             ],
                             code: ErrorCode.InvalidContractMeta
                         });
@@ -594,8 +610,8 @@ class RainParser {
                                 this.problems.push({
                                     msg: _err instanceof Error ? _err.message : _err as string,
                                     position: [
-                                        hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
-                                        hashes[i][1] + hashes[i][0].length - 1
+                                        hashes[i][1][0] + _offset, 
+                                        hashes[i][1][1]
                                     ],
                                     code: ErrorCode.InvalidOpMeta
                                 });
@@ -612,19 +628,21 @@ class RainParser {
                             _contractMeta.methods.forEach(method => {
                                 method.expressions.forEach(exp => {
                                     exp.contextColumns?.forEach(ctxCol => {
-                                        // const colIndex = this.ctxAliases.findIndex(
-                                        //     e => e.name === ctxCol.alias
-                                        // );
-                                        // if (colIndex > -1) this.ctxAliases[colIndex] = {
-                                        //     name: ctxCol.alias,
-                                        //     column: ctxCol.columnIndex,
-                                        //     row: NaN
-                                        // };
-                                        // else this.ctxAliases.push({
-                                        //     name: ctxCol.alias,
-                                        //     column: ctxCol.columnIndex,
-                                        //     row: NaN
-                                        // });
+                                        const colIndex = this.ctxAliases.findIndex(
+                                            e => e.name === ctxCol.alias
+                                        );
+                                        if (colIndex > -1) this.ctxAliases[colIndex] = {
+                                            name: ctxCol.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: NaN,
+                                            desc: ctxCol.desc ?? ""
+                                        };
+                                        else this.ctxAliases.push({
+                                            name: ctxCol.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: NaN,
+                                            desc: ctxCol.desc ?? ""
+                                        });
                                         ctxCol.cells?.forEach(ctxCell => {
                                             const cellIndex = this.ctxAliases.findIndex(
                                                 e => e.name === ctxCell.alias
@@ -650,8 +668,8 @@ class RainParser {
                             this.problems.push({
                                 msg: _err instanceof Error ? _err.message : _err as string,
                                 position: [
-                                    hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
-                                    hashes[i][1] + hashes[i][0].length - 1
+                                    hashes[i][1][0] + _offset, 
+                                    hashes[i][1][1]
                                 ],
                                 code: ErrorCode.InvalidContractMeta
                             });
@@ -661,8 +679,8 @@ class RainParser {
                         this.problems.push({
                             msg: `cannot find any settlement for hash: ${_hash}`,
                             position: [
-                                hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
-                                hashes[i][1] + hashes[i][0].length - 1
+                                hashes[i][1][0] + _offset, 
+                                hashes[i][1][1]
                             ],
                             code: ErrorCode.UndefinedMeta
                         });
@@ -672,8 +690,8 @@ class RainParser {
             else this.problems.push({
                 msg: "invalid meta hash, must be 32 bytes",
                 position: [
-                    hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
-                    hashes[i][1] + hashes[i][0].length - 1
+                    hashes[i][1][0] + _offset, 
+                    hashes[i][1][1]
                 ],
                 code: ErrorCode.InvalidMetaHash
             });
@@ -698,23 +716,37 @@ class RainParser {
                 "max-uint256",
                 "infinity"
             ];
+            const _ctxRowOperand = [
+                (this.operand[this.names.indexOf("context")] as OperandArgs)?.find(
+                    v => v.name.includes("row") || v.name.includes("Row")
+                ) ?? {
+                    name: "Row Index",
+                    bits: [0, 7]
+                }
+            ];
             for (let i = 0; i < this.ctxAliases.length; i++) {
                 if (_ops.includes(this.ctxAliases[i].name)) this.problems.push({
                     msg: `duplicate alias for contract context and opcode: ${this.ctxAliases[i].name}`,
                     position: this.hashes[index].position,
                     code: ErrorCode.DuplicateAlias
                 });
+                this.pops.push(0);
+                this.pushes.push(1);
+                this.operand.push(0);
+                this.names.push(this.ctxAliases[i].name);
                 this.opmeta.push({
                     name: this.ctxAliases[i].name,
-                    desc: this.ctxAliases[i].desc,
+                    desc: this.ctxAliases[i].desc 
+                        ? this.ctxAliases[i].desc 
+                        : this.opmeta[this.names.indexOf("context")]?.desc ?? "",
                     operand: 0,
                     inputs: 0,
                     outputs: 1
                 });
-                this.names.push(this.ctxAliases[i].name);
-                this.pops.push(0);
-                this.pushes.push(1);
-                this.operand.push(0);
+                if (isNaN(this.ctxAliases[i].row)) {
+                    this.operand[this.operand.length - 1] = _ctxRowOperand;
+                    this.opmeta[this.opmeta.length - 1].operand = _ctxRowOperand;
+                }
             }
         }
         return index;
@@ -816,34 +848,21 @@ class RainParser {
             }
 
             // parse op meta
-            const _hashes = Array.from(
-                document.matchAll(/(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/g)
-            ).map(v => {
-                if (v.index !== undefined) return [v[0], v.index];
-                else return undefined;
-            }).filter(v => v !== undefined) as [string, number][];
+            const _hashes = this.simpleParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/);
             if (_hashes.length) {
                 await this.resolveMeta(_hashes);
                 for (let i = 0; i < _hashes.length; i++) {
                     this.hashes.push({
                         hash: _hashes[i][0],
                         position: [
-                            _hashes[i][1] + (_hashes[i][0].match(/^\s/) ? 1 : 0), 
-                            _hashes[i][1] + _hashes[i][0].length - 1
+                            _hashes[i][1][0] + (/^\s/.test(_hashes[i][0]) ? 1 : 0), 
+                            _hashes[i][1][1]
                         ],
                     });
-                    // if (i !== _i) this.problems.push({
-                    //     msg: "unexpected meta hash, cannot include more than 1 meta hash per document",
-                    //     position: [
-                    //         _hashes[i][1], 
-                    //         _hashes[i][1] + _hashes[i][0].length - 1
-                    //     ],
-                    //     code: ErrorCode.UnexpectedMetaHash
-                    // });
                     document = 
-                        document.slice(0, _hashes[i][1]) +
+                        document.slice(0, _hashes[i][1][0]) +
                         " ".repeat(_hashes[i][0].length) +
-                        document.slice(_hashes[i][1] + _hashes[i][0].length);
+                        document.slice(_hashes[i][1][1] + 1);
                 }
             }
             else this.problems.push({
@@ -952,8 +971,9 @@ class RainParser {
 
                         // begin parsing LHS
                         if (_lhs.length > 0) {
-                            const { words, positions } = this.simpleParse(
+                            const _parsedLhs = this.simpleParse(
                                 _lhs, 
+                                /\S+/,
                                 _positionOffset
                             );
                             const _ops = [
@@ -963,24 +983,24 @@ class RainParser {
                                 "max-uint256",
                                 "infinity"
                             ];
-                            for (let k = 0; k < words.length; k++) {
+                            for (let k = 0; k < _parsedLhs.length; k++) {
                                 this.state.parse.aliases.push({
-                                    name: words[k],
-                                    position: positions[k]
+                                    name: _parsedLhs[k][0],
+                                    position: _parsedLhs[k][1]
                                 });
-                                if (!words[k].match(/^[a-z][a-z0-9-]*$|^_$/)) {
+                                if (!/^[a-z][a-z0-9-]*$|^_$/.test(_parsedLhs[k][0])) {
                                     this.problems.push({
-                                        msg: `invalid LHS alias: ${words[k]}`,
-                                        position: positions[k],
+                                        msg: `invalid LHS alias: ${_parsedLhs[k][0]}`,
+                                        position: _parsedLhs[k][1],
                                         code:ErrorCode.InvalidWordPattern
                                     });
                                 }
-                                if (_ops.includes(words[k])) this.problems.push({
-                                    msg: `duplicate alias: ${words[k]}`,
-                                    position: positions[k],
+                                if (_ops.includes(_parsedLhs[k][0])) this.problems.push({
+                                    msg: `duplicate alias: ${_parsedLhs[k][0]}`,
+                                    position: _parsedLhs[k][1],
                                     code:ErrorCode.DuplicateAlias
                                 });
-                                this.state.track.char = positions[k][1];
+                                this.state.track.char = _parsedLhs[k][1][1];
                             }
                         }
 
@@ -1238,15 +1258,15 @@ class RainParser {
     /**
      * @internal Method to handle operand arguments
      */
-    private resolveOperand(pos: number, op?: RDOpNode, count = 0): RDOpNode | undefined {
+    private resolveOperand(pos: number, op: RDOpNode): RDOpNode | undefined {
         if (!this.exp.includes(">")) {
-            this.state.operandArgsErr = true;
+            // this.state.operandArgsErr = true;
             this.problems.push({
                 msg: "expected \">\"",
                 position: [pos, pos + this.exp.length - 1],
                 code: ErrorCode.ExpectedClosingAngleBracket
             });
-            if (op) if (!op.operandArgs) op.operandArgs = {
+            op.operandArgs = {
                 position: [pos, pos + this.exp.length - 1],
                 args: []
             };
@@ -1255,87 +1275,132 @@ class RainParser {
         else {
             const _operandArgs = this.exp.slice(1, this.exp.indexOf(">"));
             this.exp = this.exp.slice(this.exp.indexOf(">") + 1);
-            if (_operandArgs.search(/[^0-9\s]/) > -1) {
-                if (op) this.state.operandArgsErr = true;
-                const _errors = _operandArgs.matchAll(/[^0-9\s]+/g);
-                for (const _err of _errors) {
-                    this.problems.push({
-                        msg: "invalid argument pattern",
-                        position: [
-                            pos + _err.index! + 1,
-                            pos + _err.index! + _err[0].length,
-                        ],
-                        code: ErrorCode.InvalidWordPattern
-                    });
+            const _parsedVals = this.simpleParse(_operandArgs, /\S+/, pos + 1);
+            op.operandArgs = {
+                position: [pos, pos + _operandArgs.length + 1],
+                args: []
+            };
+            let _operandMetas: OperandArgs = [];
+            const _index = this.names.indexOf(op.opcode.name);
+            if (_index > -1) {
+                if (typeof this.operand[_index] !== "number") {
+                    _operandMetas = deepCopy(this.operand[_index] as OperandArgs);
+                    const _i = _operandMetas.findIndex(v => v.name === "inputs");
+                    if (_i > -1) _operandMetas.splice(_i, 1);
                 }
-            }
-            else {
-                if (!op) this.problems.push({
-                    msg: "invalid syntax, operand args need to follow an opcode",
+                if (_operandMetas.length === 0) this.problems.push({
+                    msg: `opcode ${op.opcode.name} doesn't have argumented operand`,
                     position: [pos, pos + _operandArgs.length + 1],
-                    code: ErrorCode.ExpectedOpcode
+                    code: ErrorCode.MismatchOperandArgs
                 });
-                else {
-                    if (!op.operandArgs) op.operandArgs = {
-                        position: [pos, pos + _operandArgs.length + 1],
-                        args: []
-                    };
-                    if (op.opcode.name !== ("unknown opcode") && count === 0) {
-                        this.state.operandArgsErr = true;
-                        this.problems.push({
-                            msg: `opcode ${op.opcode.name} doesn't have argumented operand`,
-                            position: [pos, pos + _operandArgs.length + 1],
-                            code: ErrorCode.MismatchOperandArgs
-                        });
-                    }
-                    else {
-                        const _parsed = this.simpleParse(_operandArgs, pos + 1);
-                        const _args = _parsed.words;
-                        const _argsPos: [number, number][] = _parsed.positions;
-                        if (op.opcode.name === "unknown opcode") {
-                            _args.forEach((v, i) => op.operandArgs?.args.push({
-                                value: Number(v),
-                                name: "unknown",
-                                position: _argsPos[i]
-                            }));
-                        }
-                        else {
-                            const _opMetaOperandArgs = [...(this.operand[
-                                this.names.indexOf(op.opcode.name)
-                            ] as OperandArgs)];
-                            const _i = _opMetaOperandArgs.findIndex(v => v.name === "inputs");
-                            if (_i > -1) _opMetaOperandArgs.splice(_i, 1);
-                            const _diff = _args.length - _opMetaOperandArgs.length;
-                            if (_diff === 0) _opMetaOperandArgs.forEach(
-                                (v, i) => op.operandArgs?.args.push({
-                                    value: Number(_args[i]),
-                                    name: v.name,
-                                    description: v?.desc,
-                                    position: _argsPos[i]
-                                })
-                            );
-                            else if (_diff > 0) {
-                                this.state.operandArgsErr = true;
-                                for (let i = 0; i < _diff; i++) {
-                                    this.problems.push({
-                                        msg: `unexpected operand argument for ${op.opcode.name}`,
-                                        position: [..._argsPos[_argsPos.length - 1 - i]],
-                                        code: ErrorCode.MismatchOperandArgs
-                                    });
-                                }
-                            }
-                            else {
-                                this.state.operandArgsErr = true;
-                                this.problems.push({
-                                    msg: `unexpected number of operand args for ${op.opcode.name}`,
-                                    position: [pos, pos + _operandArgs.length + 1],
-                                    code: ErrorCode.MismatchOperandArgs
-                                });
-                            }
-                        } 
-                    }
-                }
+                if (_operandMetas.length > _parsedVals.length) this.problems.push({
+                    msg: `expected ${
+                        _operandMetas.length - _parsedVals.length
+                    } more operand arguments for ${
+                        op.opcode.name
+                    }`,
+                    position: [pos, pos + _operandArgs.length + 1],
+                    code: ErrorCode.MismatchOperandArgs
+                });
             }
+            _parsedVals.forEach((v, i) => {
+                const _isValid = /^[0-9]+$/.test(v[0]);
+                if (!_isValid) this.problems.push({
+                    msg: "invalid argument pattern",
+                    position: v[1],
+                    code: ErrorCode.InvalidWordPattern
+                });
+                if (_index > -1 && i >= _operandMetas.length) this.problems.push({
+                    msg: `unexpected operand argument for ${op.opcode.name}`,
+                    position: v[1],
+                    code: ErrorCode.MismatchOperandArgs
+                });
+                if (_isValid) op.operandArgs!.args.push({
+                    value: Number(v[0]),
+                    name: _operandMetas[i]?.name ?? "unknown",
+                    position: v[1],
+                    description: _operandMetas[i]?.desc
+                });
+            });
+            // console.log(JSON.stringify(op.operandArgs.args));
+            // if (_operandArgs.search(/[^0-9\s]/) > -1) {
+            //     if (op) this.state.operandArgsErr = true;
+            //     const _errors = _operandArgs.matchAll(/[^0-9\s]+/g);
+            //     for (const _err of _errors) {
+            //         this.problems.push({
+            //             msg: "invalid argument pattern",
+            //             position: [
+            //                 pos + _err.index! + 1,
+            //                 pos + _err.index! + _err[0].length,
+            //             ],
+            //             code: ErrorCode.InvalidWordPattern
+            //         });
+            //     }
+            // }
+            // else {
+            //     // if (!op) this.problems.push({
+            //     //     msg: "invalid syntax, operand args need to follow an opcode",
+            //     //     position: [pos, pos + _operandArgs.length + 1],
+            //     //     code: ErrorCode.ExpectedOpcode
+            //     // });
+            //     else {
+            //         op.operandArgs = {
+            //             position: [pos, pos + _operandArgs.length + 1],
+            //             args: []
+            //         };
+            //         if (op.opcode.name !== "unknown opcode" && count === 0) {
+            //             this.state.operandArgsErr = true;
+            //             this.problems.push({
+            //                 msg: `opcode ${op.opcode.name} doesn't have argumented operand`,
+            //                 position: [pos, pos + _operandArgs.length + 1],
+            //                 code: ErrorCode.MismatchOperandArgs
+            //             });
+            //         }
+            //         else {
+            //             if (op.opcode.name === "unknown opcode") {
+            //                 _parsedVals.forEach((v) => op.operandArgs?.args.push({
+            //                     value: Number(v),
+            //                     name: "unknown",
+            //                     position: v[1]
+            //                 }));
+            //             }
+            //             else {
+            //                 const _opMetaOperandArgs = [...(this.operand[
+            //                     this.names.indexOf(op.opcode.name)
+            //                 ] as OperandArgs)];
+            //                 const _i = _opMetaOperandArgs.findIndex(v => v.name === "inputs");
+            //                 if (_i > -1) _opMetaOperandArgs.splice(_i, 1);
+            //                 const _diff = _parsedVals.length - _opMetaOperandArgs.length;
+            //                 if (_diff === 0) _opMetaOperandArgs.forEach(
+            //                     (v, i) => op.operandArgs?.args.push({
+            //                         value: Number(_args[i]),
+            //                         name: v.name,
+            //                         description: v?.desc,
+            //                         position: _argsPos[i]
+            //                     })
+            //                 );
+            //                 else if (_diff > 0) {
+            //                     this.state.operandArgsErr = true;
+            //                     for (let i = 0; i < _diff; i++) {
+            //                         this.problems.push({
+            //                             msg: `unexpected operand argument for ${op.opcode.name}`,
+            //                             position: [..._argsPos[_argsPos.length - 1 - i]],
+            //                             code: ErrorCode.MismatchOperandArgs
+            //                         });
+            //                     }
+            //                 }
+            //                 else {
+            //                     this.state.operandArgsErr = true;
+            //                     this.problems.push({
+            //                         msg: `unexpected number of operand args for ${op.opcode.name}`,
+            //                         position: [pos, pos + _operandArgs.length + 1],
+            //                         code: ErrorCode.MismatchOperandArgs
+            //                     });
+            //                 }
+            //             } 
+            //         }
+            //     }
+            // }
         }
         return op;
     }
@@ -1349,42 +1414,51 @@ class RainParser {
             if (typeof this.pushes[_index] === "number") {
                 node.output = this.pushes[_index] as number;
             }
-            if (this.state.operandArgsErr) {
-                this.state.operandArgsErr = false;
-                node.operand = NaN;
-            } 
-            else {
-                if (this.operand[_index] === 0) {
-                    node.operand = 0;
-                    if (this.pops[_index] === 0) {
-                        if (node.parameters.length) this.problems.push({
-                            msg: "out-of-range inputs",
-                            position: [...node.parens],
-                            code: ErrorCode.OutOfRangeInputs
-                        });
-                    }
-                    else {
-                        if (
-                            node.parameters.length !== 
-                            (this.pops[_index] as InputArgs).parameters.length
-                        ) this.problems.push({
-                            msg: "out-of-range inputs",
-                            position: [...node.parens],
-                            code: ErrorCode.OutOfRangeInputs
-                        });
-                    }
+            // if (this.state.operandArgsErr) {
+            //     this.state.operandArgsErr = false;
+            //     node.operand = NaN;
+            // } 
+            // else {
+            if (this.operand[_index] === 0) {
+                node.operand = 0;
+                if (node.operandArgs) {
+                    node.operand = NaN;
+                    this.problems.push({
+                        msg: `opcode ${node.opcode.name} doesn't have argumented operand`,
+                        position: node.operandArgs.position,
+                        code: ErrorCode.MismatchOperandArgs
+                    });
+                }
+                if (this.pops[_index] === 0) {
+                    if (node.parameters.length) this.problems.push({
+                        msg: "out-of-range inputs",
+                        position: [...node.parens],
+                        code: ErrorCode.OutOfRangeInputs
+                    });
                 }
                 else {
-                    let _argIndex = 0;
-                    let _inputsIndex = -1;
-                    const _argsLength = (
-                        this.operand[_index] as OperandArgs
-                    ).find(
-                        v => v.name === "inputs"
-                    )
-                        ? (this.operand[_index] as OperandArgs).length - 1
-                        : (this.operand[_index] as OperandArgs).length;
-                    if (_argsLength === (node.operandArgs?.args.length ?? 0)) {
+                    if (
+                        node.parameters.length !== 
+                        (this.pops[_index] as InputArgs).parameters.length
+                    ) this.problems.push({
+                        msg: "out-of-range inputs",
+                        position: [...node.parens],
+                        code: ErrorCode.OutOfRangeInputs
+                    });
+                }
+            }
+            else {
+                let _argIndex = 0;
+                let _inputsIndex = -1;
+                const _argsLength = (
+                    this.operand[_index] as OperandArgs
+                ).find(
+                    v => v.name === "inputs"
+                )
+                    ? (this.operand[_index] as OperandArgs).length - 1
+                    : (this.operand[_index] as OperandArgs).length;
+                if (_argsLength === (node.operandArgs?.args.length ?? 0)) {
+                    if ((_argsLength === 0 && !node.operandArgs) || _argsLength > 0) {
                         const _operand = constructByBits(
                             (this.operand[_index] as OperandArgs).map((v, i) => {
                                 if (v.name === "inputs") {
@@ -1464,8 +1538,18 @@ class RainParser {
                             }
                         }
                     }
+                    else node.operand = NaN;
+                }
+                else {
+                    node.operand = NaN;
+                    if (_argsLength > 0 && !node.operandArgs) this.problems.push({
+                        msg: `expected operand arguments for opcode ${node.opcode.name}`,
+                        position: node.opcode.position,
+                        code: ErrorCode.ExpectedOperandArgs
+                    });
                 }
             }
+            // }
             if (node.output === 0 && this.state.depthLevel > 1) this.problems.push({
                 msg: "zero output opcodes cannot be nested",
                 position: [...node.position],
@@ -1500,7 +1584,6 @@ class RainParser {
         );
 
         if (this.exp.startsWith("(") || this.exp.startsWith("<")) {
-            let _op: RDOpNode;
             // let _ctx: ContextAlias | undefined;
             if (!_word.match(this.wordPattern)) this.problems.push({
                 msg: `invalid word pattern: "${_word}"`,
@@ -1518,7 +1601,7 @@ class RainParser {
                 position: [..._wordPos],
                 code: ErrorCode.UnknownOp
             });
-            _op = {
+            let _op: RDOpNode = {
                 opcode: {
                     name: _enum > -1 ? this.names[_enum] : "unknown opcode",
                     description: _enum > -1 ? this.opmeta[_enum].desc : "",
@@ -1552,28 +1635,28 @@ class RainParser {
             //         ]
             //     };
             // }
-            let count = 0;
-            if (_enum > -1 && typeof this.operand[_enum] !== "number") {
-                (this.operand[_enum] as OperandArgs).forEach(v => {
-                    if (v.name !== "inputs") count++;
-                });
-            }
+            // let count = 0;
+            // if (_enum > -1 && typeof this.operand[_enum] !== "number") {
+            //     (this.operand[_enum] as OperandArgs).forEach(v => {
+            //         if (v.name !== "inputs") count++;
+            //     });
+            // }
             if (this.exp.startsWith("<")) {
                 // if (_ctx) this.problems.push({
                 //     msg: "unexpected \"<\"",
                 //     position: [_wordPos[1] + 1, _wordPos[1] + 1],
                 //     code: ErrorCode.UnexpectedOpeningAngleBracket
                 // });
-                _op = this.resolveOperand(entry + _word.length, _op, count)!;
+                _op = this.resolveOperand(entry + _word.length, _op)!;
             }
-            else if (count) {
-                this.problems.push({
-                    msg: `expected operand arguments for opcode ${_op.opcode.name}`,
-                    position: [..._wordPos],
-                    code: ErrorCode.ExpectedOperandArgs
-                });
-                this.state.operandArgsErr = true;
-            }
+            // else if (count) {
+            //     this.problems.push({
+            //         msg: `expected operand arguments for opcode ${_op.opcode.name}`,
+            //         position: [..._wordPos],
+            //         code: ErrorCode.ExpectedOperandArgs
+            //     });
+            //     this.state.operandArgsErr = true;
+            // }
             if (this.exp.startsWith("(")) {
                 const _pos = _op.operandArgs 
                     ? [..._op.operandArgs!.position][1] + 1 
@@ -1821,16 +1904,27 @@ class RainParser {
                             op(
                                 _ctx ? this.names.indexOf("context") : _index, 
                                 _ctx
-                                    ? constructByBits([
-                                        {
-                                            value: _ctx.column,
-                                            bits: [8, 15]
-                                        },
-                                        {
-                                            value: _ctx.row,
-                                            bits: [0, 7]
-                                        }
-                                    ])
+                                    ? isNaN(_ctx.row)
+                                        ? constructByBits([
+                                            {
+                                                value: _ctx.column,
+                                                bits: [8, 15]
+                                            },
+                                            {
+                                                value: _node.operand,
+                                                bits: [0, 7]
+                                            }
+                                        ])
+                                        : constructByBits([
+                                            {
+                                                value: _ctx.column,
+                                                bits: [8, 15]
+                                            },
+                                            {
+                                                value: _ctx.row,
+                                                bits: [0, 7]
+                                            }
+                                        ])
                                     : _node.operand 
                             )
                         );
