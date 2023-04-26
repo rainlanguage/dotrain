@@ -79,8 +79,9 @@ export async function getRainlangCompletion(
                 )
             ).match(/[a-zA-Z0-9-]/)
         ) {
+            const _opmeta = _rd.getOpMeta();
             const _offset = _td.offsetAt(position);
-            const _result = _rd.getOpMeta().map(v => {
+            const _result = _opmeta.map(v => {
                 const _following = v.operand === 0 
                     ? "()" 
                     : v.operand.find(i => i.name !== "inputs") 
@@ -101,7 +102,7 @@ export async function getRainlangCompletion(
                     insertText: v.name + _following
                 } as CompletionItem;
             });
-            _rd.getOpMeta().forEach(v => {
+            _opmeta.forEach(v => {
                 v.aliases?.forEach(e => {
                     const _following = v.operand === 0 
                         ? "()" 
@@ -122,6 +123,27 @@ export async function getRainlangCompletion(
                         },
                         insertText: v.name + _following
                     });
+                });
+            });
+            _rd.getContextAliases().forEach(v => {
+                const _following = isNaN(v.row) ? "<>()" : "()";
+                _result.unshift({
+                    label: v.name,
+                    labelDetails: {
+                        detail: _following, 
+                        description: "context (alias)"
+                    },
+                    kind: CompletionItemKind.Function,
+                    detail: `context ${
+                        isNaN(v.row) 
+                            ? "column <" + v.column + ">" 
+                            : "cell <" + v.column + " " + v.row + ">"
+                    } alias` + v.name + _following,
+                    documentation: {
+                        kind: _documentionType,
+                        value: v.desc
+                    },
+                    insertText: v.name + _following
                 });
             });
             const _tree = _rd.getParseTree();

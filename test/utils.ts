@@ -12,6 +12,11 @@ export const deployerAddress = "0x092Fce581457894FDa5cdAF6208fe3E823543fb7";
  */
 export const opMetaHash = "0x999dbdc57ac1b4b920864b6f2adc9d856689c422b889ebe19eeac1c30e7f962c";
 
+/**
+ * Contract Meta hash to get the contract meta bytes from
+ */
+export const contractMetaHash = "0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6";
+
 /** 
  * Assert errors thrown by functions
 */

@@ -192,4 +192,20 @@ new-total-amount-sent);
         );
     });
 
+    it("should provide hover: meta info", async () => {    
+        assert.deepEqual(
+            await testHover(
+                expression,
+                Position.create(0, 5),
+                { metaStore: store },
+            ),
+            {
+                range: toRange(0, 0, 0, 67),
+                contents: {
+                    kind: "plaintext",
+                    value: "This Rain metadata consists of:\n  - An op meta with 78 opcodes"
+                }
+            }
+        );
+    });
 });

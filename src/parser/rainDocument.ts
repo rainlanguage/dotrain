@@ -310,7 +310,7 @@ class RainParser {
      * @public Get the current op meta of this RainParser instance
      */
     public getOpMeta(): OpMeta[] {
-        return this.opmeta;
+        return this.opmeta.slice(0, this.opmetaLength);
     }
 
     /**
@@ -853,7 +853,7 @@ class RainParser {
                 await this.resolveMeta(_hashes);
                 for (let i = 0; i < _hashes.length; i++) {
                     this.hashes.push({
-                        hash: _hashes[i][0],
+                        hash: _hashes[i][0].slice(1 + (/^\s/.test(_hashes[i][0]) ? 1 : 0)),
                         position: [
                             _hashes[i][1][0] + (/^\s/.test(_hashes[i][0]) ? 1 : 0), 
                             _hashes[i][1][1]

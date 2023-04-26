@@ -1,5 +1,7 @@
 import { RDNode } from "../rainLanguageTypes";
+import { MetaStore } from "../parser/metaStore";
 import { RainDocument } from "../parser/rainDocument";
+import { ContractMetaSchema, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
 import { LanguageServiceParams, MarkupKind, TextDocument, Position, Hover, Range } from "../rainLanguageTypes";
 
 
@@ -55,12 +57,22 @@ export async function getRainlangHover(
         ?.completionItem
         ?.documentationFormat;
     if (format && format[0]) _contentType = format[0];
-
+    
     const _offset = _td.offsetAt(position);
-    const _tree = _rd.getParseTree().find(v =>
-        v.position[0] <= _offset && v.position[1] >= _offset
-    );
-    const search = (nodes: RDNode[]): Hover | null => {
+    const search = async(nodes: RDNode[]): Promise<Hover | null> => {
+        const _hashes = _rd.getMetaHashes();
+        for (const _item of _hashes) {
+            if (_item.position[0] <= _offset && _item.position[1] >= _offset) return {
+                range: Range.create(
+                    _td.positionAt(_item.position[0]),
+                    _td.positionAt(_item.position[1] + 1)
+                ),
+                contents: {
+                    kind: _contentType,
+                    value: await buildMetaInfo(_item.hash, _rd.getMetaStore())
+                }
+            };
+        }
         for (let i = 0; i < nodes.length; i++) {
             const _n = nodes[i];
             if (_n.position[0] <= _offset && _n.position[1] >= _offset) {
@@ -180,14 +192,51 @@ export async function getRainlangHover(
         }
         return null;
     };
-    if (_tree) {
-        try {
-            return search(_tree.tree);
-        }
-        catch (err) {
-            console.log(err);
-            return null;
-        }
+    try {
+        return search(
+            _rd.getParseTree().find(v =>
+                v.position[0] <= _offset && v.position[1] >= _offset
+            )?.tree ?? []
+        );
     }
-    else return null;
+    catch (err) {
+        console.log(err);
+        return null;
+    }
+}
+
+/**
+ * @public Build a general info from a meta content (used as hover info for a meta hash)
+ * @param hash - The meta hash to build info from
+ * @param metaStore - The meta store instance that keeps this hash as record
+ * @returns A promise that resolves with general info about the meta
+ */
+export async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise<string> {
+    const _opMeta = metaStore.getOpMeta(hash);
+    const _contMeta = metaStore.getContractMeta(hash);
+    if (!_opMeta && !_contMeta) return "Unfortunately, could not find any info about this meta";
+    else {
+        const info = ["This Rain metadata consists of:"];
+        if (_opMeta) info.push(`  - An op meta with ${
+            (() => {
+                try {
+                    return metaFromBytes(_opMeta, OpMetaSchema).length.toString() + " opcodes";
+                }
+                catch {
+                    return "unknown number of opcodes";
+                }
+            })()
+        }`);
+        if (_contMeta) info.push(`  - A ${
+            (() => {
+                try {
+                    return metaFromBytes(_contMeta, ContractMetaSchema).name;
+                }
+                catch {
+                    return "unknown";
+                }
+            })()
+        } contract meta`);
+        return info.join("\n");
+    }
 }
