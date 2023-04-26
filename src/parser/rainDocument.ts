@@ -200,7 +200,7 @@ export class RainDocument {
  * which later will be used in RainDocument object and Rain Language Services and Compiler
  */
 class RainParser {
-    public readonly illigalChar = /[^ -~\s]/gd;
+    public readonly illigalChar = /[^ -~\s]/;
     public readonly wordPattern = /^[a-z][0-9a-z-]*$/;
     public readonly hashPattern = /^0x[a-zA-F0-9]{64}$/;
     public readonly numericPattern = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
@@ -237,7 +237,6 @@ class RainParser {
             }
         },
         depthLevel: 0,
-        // operandArgsErr: false,
         runtimeError: undefined
     };
 
@@ -403,7 +402,6 @@ class RainParser {
         this.state.track.parens.open = [];
         this.state.track.parens.close = [];
         this.state.depthLevel = 0;
-        // this.state.operandArgsErr = false;
     };
 
     /**
@@ -445,43 +443,6 @@ class RainParser {
         pattern: RegExp,
         offset = 0
     ): [string, [number, number]][] => {
-        // const words: string[] = [];
-        // const positions: [number, number][] = [];
-        // let counter = 0;
-        // while (str.length) {
-        //     if (str.startsWith(" ")) {
-        //         str = str.slice(1);
-        //         counter++;
-        //     }
-        //     else {
-        //         const _i = str.indexOf(" ") > -1 
-        //             ? str.indexOf(" ")
-        //             : str.length;
-        //         words.push(str.slice(0, _i));
-        //         positions.push([offset + counter, NaN]);
-        //         counter = counter + words[words.length - 1].length;
-        //         positions[positions.length - 1].pop();
-        //         positions[positions.length - 1][1] = offset + counter - 1;
-        //         str = str.slice(_i);
-        //     }
-        // }
-        // (Array.from(
-        //     str.matchAll(/\S+/gd)
-        // ).map(v => {
-        //     if (v.index !== undefined) return [v[0], v.index, v.index];
-        //     else return undefined;
-        // }).filter(
-        //     v => v !== undefined
-        // ) as [string, number][]).forEach(
-        //     v => {
-        //         words.push(v[0]);
-        //         positions.push([
-        //             offset + v[1],
-        //             offset + v[1] + v[0].length - 1
-        //         ]);
-        //     }
-        // );
-        // return { words, positions };
         let flags = pattern.flags;
         if (!flags.includes("g")) flags += "g";
         if (!flags.includes("d")) flags += "d";
@@ -770,32 +731,17 @@ class RainParser {
         this.state.runtimeError = undefined;
         let document = this.textDocument.getText();
 
-        if (document.search(/[^ -~\s]/) > -1) {
-            let _i = document.search(/[^ -~\s]/);
-            while (_i > -1) {
-                const _charCode = document.codePointAt(_i)!.toString(16).padStart(4, "0");
-                const _char = _charCode.length > 4 
-                    ? document[_i] + document[_i + 1] 
-                    : document[_i];
+        const _illigals = this.simpleParse(document, this.illigalChar);
+        if (_illigals.length) {
+            _illigals.forEach(v => {
                 this.problems.push({
-                    msg: _charCode.length > 4 
-                        ? `found non-ASCII character: "${_char}"`
-                        : `found non-printable-ASCII character with unicode: "U+${_charCode}"`,
-                    position: _charCode.length > 4 
-                        ? [_i, _i + 1]
-                        : [_i, _i],
-                    code: _charCode.length > 4 
-                        ? ErrorCode.NonASCIICharacter
-                        : ErrorCode.NonPrintableASCIICharacter
+                    msg: `found non-printable-ASCII character with unicode: "U+${
+                        v[0].codePointAt(0)!.toString(16).padStart(4, "0")
+                    }"`,
+                    position: v[1],
+                    code: ErrorCode.NonPrintableASCIIChar
                 });
-                document = document.replace(
-                    _charCode.length > 4 
-                        ? document[_i] + document[_i + 1] 
-                        : document[_i], 
-                    " ".repeat(_charCode.length > 4 ? 2 : 1)
-                );
-                _i = document.search(/[^ -~\s]/);
-            }
+            });
         }
         else {
             // remove indents and tabs
@@ -1258,9 +1204,8 @@ class RainParser {
     /**
      * @internal Method to handle operand arguments
      */
-    private resolveOperand(pos: number, op: RDOpNode): RDOpNode | undefined {
+    private resolveOperand(pos: number, op: RDOpNode): RDOpNode {
         if (!this.exp.includes(">")) {
-            // this.state.operandArgsErr = true;
             this.problems.push({
                 msg: "expected \">\"",
                 position: [pos, pos + this.exp.length - 1],
@@ -1304,9 +1249,15 @@ class RainParser {
                 });
             }
             _parsedVals.forEach((v, i) => {
-                const _isValid = /^[0-9]+$/.test(v[0]);
-                if (!_isValid) this.problems.push({
-                    msg: "invalid argument pattern",
+                const _isValid = /^[0-9]+$|^0x[a-fA-F0-9]+$/.test(v[0]);
+                if (_isValid) op.operandArgs!.args.push({
+                    value: Number(v[0]),
+                    name: _operandMetas[i]?.name ?? "unknown",
+                    position: v[1],
+                    description: _operandMetas[i]?.desc
+                });
+                else this.problems.push({
+                    msg: `invalid argument pattern: ${v[0]}`,
                     position: v[1],
                     code: ErrorCode.InvalidWordPattern
                 });
@@ -1315,92 +1266,7 @@ class RainParser {
                     position: v[1],
                     code: ErrorCode.MismatchOperandArgs
                 });
-                if (_isValid) op.operandArgs!.args.push({
-                    value: Number(v[0]),
-                    name: _operandMetas[i]?.name ?? "unknown",
-                    position: v[1],
-                    description: _operandMetas[i]?.desc
-                });
             });
-            // console.log(JSON.stringify(op.operandArgs.args));
-            // if (_operandArgs.search(/[^0-9\s]/) > -1) {
-            //     if (op) this.state.operandArgsErr = true;
-            //     const _errors = _operandArgs.matchAll(/[^0-9\s]+/g);
-            //     for (const _err of _errors) {
-            //         this.problems.push({
-            //             msg: "invalid argument pattern",
-            //             position: [
-            //                 pos + _err.index! + 1,
-            //                 pos + _err.index! + _err[0].length,
-            //             ],
-            //             code: ErrorCode.InvalidWordPattern
-            //         });
-            //     }
-            // }
-            // else {
-            //     // if (!op) this.problems.push({
-            //     //     msg: "invalid syntax, operand args need to follow an opcode",
-            //     //     position: [pos, pos + _operandArgs.length + 1],
-            //     //     code: ErrorCode.ExpectedOpcode
-            //     // });
-            //     else {
-            //         op.operandArgs = {
-            //             position: [pos, pos + _operandArgs.length + 1],
-            //             args: []
-            //         };
-            //         if (op.opcode.name !== "unknown opcode" && count === 0) {
-            //             this.state.operandArgsErr = true;
-            //             this.problems.push({
-            //                 msg: `opcode ${op.opcode.name} doesn't have argumented operand`,
-            //                 position: [pos, pos + _operandArgs.length + 1],
-            //                 code: ErrorCode.MismatchOperandArgs
-            //             });
-            //         }
-            //         else {
-            //             if (op.opcode.name === "unknown opcode") {
-            //                 _parsedVals.forEach((v) => op.operandArgs?.args.push({
-            //                     value: Number(v),
-            //                     name: "unknown",
-            //                     position: v[1]
-            //                 }));
-            //             }
-            //             else {
-            //                 const _opMetaOperandArgs = [...(this.operand[
-            //                     this.names.indexOf(op.opcode.name)
-            //                 ] as OperandArgs)];
-            //                 const _i = _opMetaOperandArgs.findIndex(v => v.name === "inputs");
-            //                 if (_i > -1) _opMetaOperandArgs.splice(_i, 1);
-            //                 const _diff = _parsedVals.length - _opMetaOperandArgs.length;
-            //                 if (_diff === 0) _opMetaOperandArgs.forEach(
-            //                     (v, i) => op.operandArgs?.args.push({
-            //                         value: Number(_args[i]),
-            //                         name: v.name,
-            //                         description: v?.desc,
-            //                         position: _argsPos[i]
-            //                     })
-            //                 );
-            //                 else if (_diff > 0) {
-            //                     this.state.operandArgsErr = true;
-            //                     for (let i = 0; i < _diff; i++) {
-            //                         this.problems.push({
-            //                             msg: `unexpected operand argument for ${op.opcode.name}`,
-            //                             position: [..._argsPos[_argsPos.length - 1 - i]],
-            //                             code: ErrorCode.MismatchOperandArgs
-            //                         });
-            //                     }
-            //                 }
-            //                 else {
-            //                     this.state.operandArgsErr = true;
-            //                     this.problems.push({
-            //                         msg: `unexpected number of operand args for ${op.opcode.name}`,
-            //                         position: [pos, pos + _operandArgs.length + 1],
-            //                         code: ErrorCode.MismatchOperandArgs
-            //                     });
-            //                 }
-            //             } 
-            //         }
-            //     }
-            // }
         }
         return op;
     }
@@ -1414,11 +1280,6 @@ class RainParser {
             if (typeof this.pushes[_index] === "number") {
                 node.output = this.pushes[_index] as number;
             }
-            // if (this.state.operandArgsErr) {
-            //     this.state.operandArgsErr = false;
-            //     node.operand = NaN;
-            // } 
-            // else {
             if (this.operand[_index] === 0) {
                 node.operand = 0;
                 if (node.operandArgs) {
@@ -1584,7 +1445,6 @@ class RainParser {
         );
 
         if (this.exp.startsWith("(") || this.exp.startsWith("<")) {
-            // let _ctx: ContextAlias | undefined;
             if (!_word.match(this.wordPattern)) this.problems.push({
                 msg: `invalid word pattern: "${_word}"`,
                 position: [..._wordPos],
@@ -1592,10 +1452,6 @@ class RainParser {
             });
             let _enum = this.names.indexOf(_word);
             if (_enum === -1) _enum = this.opAliases.findIndex(v => v?.includes(_word));
-            // if (_enum === -1) {
-            //     _ctx = this.ctxAliases.find(v => v.name === _word);
-            //     if (_ctx) _enum = this.names.indexOf("context");
-            // }
             if (_enum === -1) this.problems.push({
                 msg: `unknown opcode: "${_word}"`,
                 position: [..._wordPos],
@@ -1613,50 +1469,7 @@ class RainParser {
                 parens: [NaN, NaN],
                 parameters: []
             };
-            // if (_ctx) {
-            //     _op.opcode = {
-            //         name: _enum > -1 ? this.names[_enum] : "unknown opcode",
-            //         description: _ctx.desc ? _ctx.desc : this.opmeta[_enum]?.desc ?? "",
-            //         position: [..._wordPos],
-            //     };
-            //     _op.operandArgs = {
-            //         position: [..._wordPos],
-            //         args: [
-            //             {
-            //                 value: _ctx.column,
-            //                 name:  (this.opmeta[_enum]?.operand as OperandArgs)[0].name ?? "Column Index",
-            //                 position: [..._wordPos]
-            //             },
-            //             {
-            //                 value: _ctx.row,
-            //                 name:  (this.opmeta[_enum]?.operand as OperandArgs)[1].name ?? "Row Index",
-            //                 position: [..._wordPos]
-            //             }
-            //         ]
-            //     };
-            // }
-            // let count = 0;
-            // if (_enum > -1 && typeof this.operand[_enum] !== "number") {
-            //     (this.operand[_enum] as OperandArgs).forEach(v => {
-            //         if (v.name !== "inputs") count++;
-            //     });
-            // }
-            if (this.exp.startsWith("<")) {
-                // if (_ctx) this.problems.push({
-                //     msg: "unexpected \"<\"",
-                //     position: [_wordPos[1] + 1, _wordPos[1] + 1],
-                //     code: ErrorCode.UnexpectedOpeningAngleBracket
-                // });
-                _op = this.resolveOperand(entry + _word.length, _op)!;
-            }
-            // else if (count) {
-            //     this.problems.push({
-            //         msg: `expected operand arguments for opcode ${_op.opcode.name}`,
-            //         position: [..._wordPos],
-            //         code: ErrorCode.ExpectedOperandArgs
-            //     });
-            //     this.state.operandArgsErr = true;
-            // }
+            if (this.exp.startsWith("<")) _op = this.resolveOperand(entry + _word.length, _op);
             if (this.exp.startsWith("(")) {
                 const _pos = _op.operandArgs 
                     ? [..._op.operandArgs!.position][1] + 1 

@@ -14,9 +14,8 @@ export { TextDocument, TextDocumentContentChangeEvent };
 export enum ErrorCode {
     UndefinedOpMeta = 0,
     UndefinedWord = 1,
-    NonASCIICharacter = 2,
-    NonPrintableASCIICharacter = 3,
-    UndefinedMeta = 4,
+    NonPrintableASCIIChar = 2,
+    UndefinedMeta = 3,
 
     InvalidWordPattern = 0x101,
     InvalidExpression = 0x102,
@@ -282,7 +281,6 @@ export type RainParseState = {
         };
     };
     depthLevel: number;
-    // operandArgsErr: boolean;
     runtimeError: Error | undefined;
 };
 
@@ -291,7 +289,7 @@ export type RainParseState = {
  */
 export type ContextAlias = {
     name: string;
+    desc: string;
     column: number;
     row: number;
-    desc: string;
 }

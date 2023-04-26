@@ -9,8 +9,8 @@ Type for context cell alias
 ```typescript
 type ContextAlias = {
     name: string;
+    desc: string;
     column: number;
     row: number;
-    desc: string;
 };
 ```

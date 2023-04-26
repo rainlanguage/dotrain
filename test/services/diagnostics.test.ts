@@ -59,7 +59,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
                 message: "found non-printable-ASCII character with unicode: \"U+00a2\"", 
                 range: toRange(0, 75, 0, 76), 
                 severity: DiagnosticSeverity.Error, 
-                code: ErrorCode.NonPrintableASCIICharacter, 
+                code: ErrorCode.NonPrintableASCIIChar, 
                 source: "rainlang" 
             }]
         );
