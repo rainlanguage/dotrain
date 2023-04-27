@@ -60,19 +60,19 @@ export async function getRainlangHover(
     
     const _offset = _td.offsetAt(position);
     const search = async(nodes: RDNode[]): Promise<Hover | null> => {
-        const _hashes = _rd.getMetaHashes();
-        for (const _item of _hashes) {
-            if (_item.position[0] <= _offset && _item.position[1] >= _offset) return {
-                range: Range.create(
-                    _td.positionAt(_item.position[0]),
-                    _td.positionAt(_item.position[1] + 1)
-                ),
-                contents: {
-                    kind: _contentType,
-                    value: await buildMetaInfo(_item.hash, _rd.getMetaStore())
-                }
-            };
-        }
+        const _hash = _rd.getMetaHashes().find(
+            v => v.position[0] <= _offset && v.position[1] >= _offset
+        );
+        if (_hash) return {
+            range: Range.create(
+                _td.positionAt(_hash.position[0]),
+                _td.positionAt(_hash.position[1] + 1)
+            ),
+            contents: {
+                kind: _contentType,
+                value: await buildMetaInfo(_hash.hash, _rd.getMetaStore())
+            }
+        };
         for (let i = 0; i < nodes.length; i++) {
             const _n = nodes[i];
             if (_n.position[0] <= _offset && _n.position[1] >= _offset) {
