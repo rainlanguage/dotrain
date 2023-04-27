@@ -180,7 +180,7 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(29, 22),
+                Position.create(29, 21),
                 { metaStore: store },
             ),
             {
