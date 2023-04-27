@@ -51,15 +51,15 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         );
     });
 
-    it("should error: found non-printable-ASCII character with unicode: \"U+00a2\"", async () => {
+    it.only("should error: found illigal character: \"\\u00a2\"", async () => {
         await testDiagnostics(
             rainlang`@${opMetaHash} _: add(¢ 2)`, 
             store, 
             [{ 
-                message: "found non-printable-ASCII character with unicode: \"U+00a2\"", 
+                message: "found illigal character: \"\u00a2\"", 
                 range: toRange(0, 75, 0, 76), 
                 severity: DiagnosticSeverity.Error, 
-                code: ErrorCode.NonPrintableASCIIChar, 
+                code: ErrorCode.IlligalChar, 
                 source: "rainlang" 
             }]
         );
@@ -204,7 +204,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
                     source: "rainlang"
                 },
                 { 
-                    message: "invalid argument pattern", 
+                    message: "invalid argument pattern: error-argument", 
                     range: toRange(0, 83, 0, 97), 
                     severity: DiagnosticSeverity.Error, 
                     code: ErrorCode.InvalidExpression, 

@@ -14,8 +14,8 @@ export { TextDocument, TextDocumentContentChangeEvent };
 export enum ErrorCode {
     UndefinedOpMeta = 0,
     UndefinedWord = 1,
-    NonPrintableASCIIChar = 2,
-    UndefinedMeta = 3,
+    IlligalChar = 2,
+    UndefinedMeta = 4,
 
     InvalidWordPattern = 0x101,
     InvalidExpression = 0x102,

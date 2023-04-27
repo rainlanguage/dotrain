@@ -1,5 +1,5 @@
 import assert from "assert";
-import { opMetaHash, toRange } from "../utils";
+import { contractMetaHash, opMetaHash, toRange } from "../utils";
 import {
     Hover, 
     Position,
@@ -29,7 +29,8 @@ describe("Rainlang Hover Service Tests", async function () {
 
     before(async () => {
         await store.updateStore(opMetaHash);
-        expression = rainlang`@${opMetaHash} 
+        await store.updateStore(contractMetaHash);
+        expression = rainlang`@${opMetaHash} @${contractMetaHash}
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,
 
@@ -192,7 +193,7 @@ new-total-amount-sent);
         );
     });
 
-    it("should provide hover: meta info", async () => {    
+    it("should provide hover: op meta info", async () => {    
         assert.deepEqual(
             await testHover(
                 expression,
@@ -204,6 +205,23 @@ new-total-amount-sent);
                 contents: {
                     kind: "plaintext",
                     value: "This Rain metadata consists of:\n  - An op meta with 78 opcodes"
+                }
+            }
+        );
+    });
+
+    it("should provide hover: contract meta info", async () => {    
+        assert.deepEqual(
+            await testHover(
+                expression,
+                Position.create(0, 88),
+                { metaStore: store },
+            ),
+            {
+                range: toRange(0, 68, 0, 135),
+                contents: {
+                    kind: "plaintext",
+                    value: "This Rain metadata consists of:\n  - A Order Book contract meta"
                 }
             }
         );

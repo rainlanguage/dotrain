@@ -931,6 +931,27 @@
             },
             {
               "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.IlligalChar:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "IlligalChar = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "2"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "IlligalChar"
+            },
+            {
+              "kind": "EnumMember",
               "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidContractMeta:member",
               "docComment": "",
               "excerptTokens": [
@@ -1183,27 +1204,6 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.NonPrintableASCIIChar:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "NonPrintableASCIIChar = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "2"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "NonPrintableASCIIChar"
-            },
-            {
-              "kind": "EnumMember",
               "canonicalReference": "@rainprotocol/rainlang!ErrorCode.OutOfRangeInputs:member",
               "docComment": "",
               "excerptTokens": [
@@ -1297,7 +1297,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "3"
+                  "text": "4"
                 }
               ],
               "initializerTokenRange": {
