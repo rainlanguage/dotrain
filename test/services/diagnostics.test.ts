@@ -197,7 +197,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
             store, 
             [
                 {
-                    message: "expected 1 more operand arguments for read-memory",
+                    message: "expected 1 more operand argument for read-memory",
                     range: toRange(0, 82, 0, 98), 
                     severity: DiagnosticSeverity.Error, 
                     code: ErrorCode.MismatchOperandArgs, 
@@ -247,7 +247,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
             rainlang`@${opMetaHash} x: read-memory<>();`, 
             store, 
             [{ 
-                message: "expected 2 more operand arguments for read-memory", 
+                message: "expected 2 operand arguments for read-memory", 
                 range: toRange(0, 82, 0, 84), 
                 severity: DiagnosticSeverity.Error, 
                 code: ErrorCode.MismatchOperandArgs, 

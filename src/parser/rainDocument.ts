@@ -1233,7 +1233,11 @@ class RainParser {
                 if (_operandMetas.length > _parsedVals.length) this.problems.push({
                     msg: `expected ${
                         _operandMetas.length - _parsedVals.length
-                    } more operand arguments for ${
+                    }${
+                        _parsedVals.length ? " more" : ""
+                    } operand argument${
+                        (_operandMetas.length - _parsedVals.length) > 1 ? "s" : ""
+                    } for ${
                         op.opcode.name
                     }`,
                     position: [pos, pos + _operandArgs.length + 1],
