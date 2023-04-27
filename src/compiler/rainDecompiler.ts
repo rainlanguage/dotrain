@@ -1,5 +1,5 @@
-import { TextDocument } from "../rainLanguageTypes";
 import { MetaStore } from "../parser/metaStore";
+import { TextDocument } from "../rainLanguageTypes";
 import { RainDocument } from "../parser/rainDocument";
 import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
