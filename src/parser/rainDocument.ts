@@ -214,13 +214,13 @@ class RainParser {
     private comments: RDComment[] = [];
     private parseAliases: RDAliasNode[][] = [];
     private hashes: RDMetaHash[] = [];
-    private ctxAliases: ContextAlias[] = []; 
 
     private names: string[] = [];
     private pops: InputMeta[] = [];
     private pushes: OutputMeta[] = [];
     private operand: OperandMeta[] = [];
     private opAliases: (string[] | undefined)[] = [];
+    private ctxAliases: ContextAlias[] = []; 
     private opmetaLength = 0;
     
     private exp = "";
@@ -256,7 +256,7 @@ class RainParser {
      * Parses this instance of RainParser
      */
     public async parse() {
-        if (/[^\s]/.test(this.textDocument.getText())) {
+        if (/[^\s]+/.test(this.textDocument.getText())) {
             try {
                 await this._parse();
             }
@@ -309,7 +309,7 @@ class RainParser {
      * @public Get the current op meta of this RainParser instance
      */
     public getOpMeta(): OpMeta[] {
-        return this.opmeta.slice(0, this.opmetaLength);
+        return deepCopy(this.opmeta.slice(0, this.opmetaLength));
     }
 
     /**
@@ -451,266 +451,6 @@ class RainParser {
         ).map((v: any) => 
             [v[0], [offset + v.indices[0][0], offset + v.indices[0][1] - 1]]
         ) as [string, [number, number]][];
-    };
-
-    /**
-     * @internal Resolves and settles the metas of this RainParser instance from parsed meta hashes
-     * First valid opmeta of a meta hash will be used for parsing and all context metas of all valid 
-     * contract metas will be cached for parsing.
-     * @returns The index of the meta hash that is settled for op meta and -1 no valid settlement is found for op meta
-     */
-    private resolveMeta = async(hashes: [string, [number, number]][]): Promise<number> => {
-        let index = -1;
-        for (let i = 0; i < hashes.length; i++) {
-            const _offset = /^\s/.test(hashes[i][0]) ? 1 : 0;
-            const _hash = hashes[i][0].slice(1 + _offset);
-            if (this.hashPattern.test(_hash)) {
-                let _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
-                let _newContMetaBytes = this.metaStore.getContractMeta(_hash);
-                if (index === -1 && _newOpMetaBytes) {
-                    if (_newOpMetaBytes !== this.opMetaBytes) {
-                        this.opMetaBytes = _newOpMetaBytes;
-                        try {
-                            this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
-                            this.names = this.opmeta.map(v => v.name);
-                            this.pops = this.opmeta.map(v => v.inputs);
-                            this.pushes = this.opmeta.map(v => v.outputs);
-                            this.operand = this.opmeta.map(v => v.operand);
-                            this.opAliases = this.opmeta.map(v => v.aliases);
-                            index = i;
-                        }
-                        catch (_err) {
-                            this.problems.push({
-                                msg: _err instanceof Error ? _err.message : _err as string,
-                                position: [
-                                    hashes[i][1][0] + _offset, 
-                                    hashes[i][1][1]
-                                ],
-                                code: ErrorCode.InvalidOpMeta
-                            });
-                        }
-                    }
-                    else index = i;
-                }
-                if (_newContMetaBytes) {
-                    try {
-                        const _contractMeta = metaFromBytes(
-                            _newContMetaBytes, 
-                            ContractMetaSchema
-                        ) as ContractMeta;
-                        _contractMeta.methods.forEach(method => {
-                            method.expressions.forEach(exp => {
-                                exp.contextColumns?.forEach(ctxCol => {
-                                    const colIndex = this.ctxAliases.findIndex(
-                                        e => e.name === ctxCol.alias
-                                    );
-                                    if (colIndex > -1) this.ctxAliases[colIndex] = {
-                                        name: ctxCol.alias,
-                                        column: ctxCol.columnIndex,
-                                        row: NaN,
-                                        desc: ctxCol.desc ?? ""
-                                    };
-                                    else this.ctxAliases.push({
-                                        name: ctxCol.alias,
-                                        column: ctxCol.columnIndex,
-                                        row: NaN,
-                                        desc: ctxCol.desc ?? ""
-                                    });
-                                    ctxCol.cells?.forEach(ctxCell => {
-                                        const cellIndex = this.ctxAliases.findIndex(
-                                            e => e.name === ctxCell.alias
-                                        );
-                                        if (cellIndex > -1) this.ctxAliases[cellIndex] = {
-                                            name: ctxCell.alias,
-                                            column: ctxCol.columnIndex,
-                                            row: ctxCell.cellIndex,
-                                            desc: ctxCell.desc ?? ""
-                                        };
-                                        this.ctxAliases.push({
-                                            name: ctxCell.alias,
-                                            column: ctxCol.columnIndex,
-                                            row: ctxCell.cellIndex,
-                                            desc: ctxCell.desc ?? ""
-                                        });
-                                    });
-                                });
-                            });
-                        });
-                    }
-                    catch (_err) {
-                        this.problems.push({
-                            msg: _err instanceof Error ? _err.message : _err as string,
-                            position: [
-                                hashes[i][1][0] + _offset, 
-                                hashes[i][1][1]
-                            ],
-                            code: ErrorCode.InvalidContractMeta
-                        });
-                    }
-                }
-                if (!_newContMetaBytes && !_newOpMetaBytes) {
-                    await this.metaStore.updateStore(_hash);
-                    _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
-                    _newContMetaBytes = this.metaStore.getContractMeta(_hash);
-                    if (index === -1 && _newOpMetaBytes) {
-                        if (_newContMetaBytes !== this.opMetaBytes) {
-                            try {
-                                this.opMetaBytes = _newOpMetaBytes;
-                                this.opmeta = metaFromBytes(
-                                    _newOpMetaBytes, 
-                                    OpMetaSchema
-                                ) as OpMeta[];
-                                this.names = this.opmeta.map(v => v.name);
-                                this.pops = this.opmeta.map(v => v.inputs);
-                                this.pushes = this.opmeta.map(v => v.outputs);
-                                this.operand = this.opmeta.map(v => v.operand);
-                                this.opAliases = this.opmeta.map(v => v.aliases);
-                                index = i;
-                            }
-                            catch (_err) {
-                                this.problems.push({
-                                    msg: _err instanceof Error ? _err.message : _err as string,
-                                    position: [
-                                        hashes[i][1][0] + _offset, 
-                                        hashes[i][1][1]
-                                    ],
-                                    code: ErrorCode.InvalidOpMeta
-                                });
-                            }
-                        }
-                        else index = i;
-                    }
-                    if (_newContMetaBytes) {
-                        try {
-                            const _contractMeta = metaFromBytes(
-                                _newContMetaBytes, 
-                                ContractMetaSchema
-                            ) as ContractMeta;
-                            _contractMeta.methods.forEach(method => {
-                                method.expressions.forEach(exp => {
-                                    exp.contextColumns?.forEach(ctxCol => {
-                                        const colIndex = this.ctxAliases.findIndex(
-                                            e => e.name === ctxCol.alias
-                                        );
-                                        if (colIndex > -1) this.ctxAliases[colIndex] = {
-                                            name: ctxCol.alias,
-                                            column: ctxCol.columnIndex,
-                                            row: NaN,
-                                            desc: ctxCol.desc ?? ""
-                                        };
-                                        else this.ctxAliases.push({
-                                            name: ctxCol.alias,
-                                            column: ctxCol.columnIndex,
-                                            row: NaN,
-                                            desc: ctxCol.desc ?? ""
-                                        });
-                                        ctxCol.cells?.forEach(ctxCell => {
-                                            const cellIndex = this.ctxAliases.findIndex(
-                                                e => e.name === ctxCell.alias
-                                            );
-                                            if (cellIndex > -1) this.ctxAliases[cellIndex] = {
-                                                name: ctxCell.alias,
-                                                column: ctxCol.columnIndex,
-                                                row: ctxCell.cellIndex,
-                                                desc: ctxCell.desc ?? ""
-                                            };
-                                            this.ctxAliases.push({
-                                                name: ctxCell.alias,
-                                                column: ctxCol.columnIndex,
-                                                row: ctxCell.cellIndex,
-                                                desc: ctxCell.desc ?? ""
-                                            });
-                                        });
-                                    });
-                                });
-                            });
-                        }
-                        catch (_err) {
-                            this.problems.push({
-                                msg: _err instanceof Error ? _err.message : _err as string,
-                                position: [
-                                    hashes[i][1][0] + _offset, 
-                                    hashes[i][1][1]
-                                ],
-                                code: ErrorCode.InvalidContractMeta
-                            });
-                        }
-                    }
-                    if (!_newContMetaBytes && !_newOpMetaBytes) {
-                        this.problems.push({
-                            msg: `cannot find any settlement for hash: ${_hash}`,
-                            position: [
-                                hashes[i][1][0] + _offset, 
-                                hashes[i][1][1]
-                            ],
-                            code: ErrorCode.UndefinedMeta
-                        });
-                    }
-                }
-            }
-            else this.problems.push({
-                msg: "invalid meta hash, must be 32 bytes",
-                position: [
-                    hashes[i][1][0] + _offset, 
-                    hashes[i][1][1]
-                ],
-                code: ErrorCode.InvalidMetaHash
-            });
-        }
-        if (index === -1) {
-            this.problems.push({
-                msg: `cannot find any valid settlement for op meta from specified ${
-                    hashes.length > 1 ? "hashes" : "hash"
-                }`,
-                position: [0, -1],
-                code: ErrorCode.UndefinedOpMeta
-            });
-            this._resetOpMeta();
-            this.opMetaBytes = "";
-        }
-        else {
-            this.opmetaLength = this.opmeta.length;
-            const _ops = [
-                ...this.names,
-                ...this.opAliases.filter(v => v !== undefined).flat(),
-                "max-uint-256",
-                "max-uint256",
-                "infinity"
-            ];
-            const _ctxRowOperand = [
-                (this.operand[this.names.indexOf("context")] as OperandArgs)?.find(
-                    v => v.name.includes("row") || v.name.includes("Row")
-                ) ?? {
-                    name: "Row Index",
-                    bits: [0, 7]
-                }
-            ];
-            for (let i = 0; i < this.ctxAliases.length; i++) {
-                if (_ops.includes(this.ctxAliases[i].name)) this.problems.push({
-                    msg: `duplicate alias for contract context and opcode: ${this.ctxAliases[i].name}`,
-                    position: this.hashes[index].position,
-                    code: ErrorCode.DuplicateAlias
-                });
-                this.pops.push(0);
-                this.pushes.push(1);
-                this.operand.push(0);
-                this.names.push(this.ctxAliases[i].name);
-                this.opmeta.push({
-                    name: this.ctxAliases[i].name,
-                    desc: this.ctxAliases[i].desc 
-                        ? this.ctxAliases[i].desc 
-                        : this.opmeta[this.names.indexOf("context")]?.desc ?? "",
-                    operand: 0,
-                    inputs: 0,
-                    outputs: 1
-                });
-                if (isNaN(this.ctxAliases[i].row)) {
-                    this.operand[this.operand.length - 1] = _ctxRowOperand;
-                    this.opmeta[this.opmeta.length - 1].operand = _ctxRowOperand;
-                }
-            }
-        }
-        return index;
     };
 
     /**
@@ -1151,6 +891,266 @@ class RainParser {
             });
         }
     }
+
+    /**
+     * @internal Resolves and settles the metas of this RainParser instance from parsed meta hashes
+     * First valid opmeta of a meta hash will be used for parsing and all context metas of all valid 
+     * contract metas will be cached for parsing.
+     * @returns The index of the meta hash that is settled for op meta and -1 no valid settlement is found for op meta
+     */
+    private resolveMeta = async(hashes: [string, [number, number]][]): Promise<number> => {
+        let index = -1;
+        for (let i = 0; i < hashes.length; i++) {
+            const _offset = /^\s/.test(hashes[i][0]) ? 1 : 0;
+            const _hash = hashes[i][0].slice(1 + _offset);
+            if (this.hashPattern.test(_hash)) {
+                let _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
+                let _newContMetaBytes = this.metaStore.getContractMeta(_hash);
+                if (index === -1 && _newOpMetaBytes) {
+                    if (_newOpMetaBytes !== this.opMetaBytes) {
+                        this.opMetaBytes = _newOpMetaBytes;
+                        try {
+                            this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
+                            this.names = this.opmeta.map(v => v.name);
+                            this.pops = this.opmeta.map(v => v.inputs);
+                            this.pushes = this.opmeta.map(v => v.outputs);
+                            this.operand = this.opmeta.map(v => v.operand);
+                            this.opAliases = this.opmeta.map(v => v.aliases);
+                            index = i;
+                        }
+                        catch (_err) {
+                            this.problems.push({
+                                msg: _err instanceof Error ? _err.message : _err as string,
+                                position: [
+                                    hashes[i][1][0] + _offset, 
+                                    hashes[i][1][1]
+                                ],
+                                code: ErrorCode.InvalidOpMeta
+                            });
+                        }
+                    }
+                    else index = i;
+                }
+                if (_newContMetaBytes) {
+                    try {
+                        const _contractMeta = metaFromBytes(
+                            _newContMetaBytes, 
+                            ContractMetaSchema
+                        ) as ContractMeta;
+                        _contractMeta.methods.forEach(method => {
+                            method.expressions.forEach(exp => {
+                                exp.contextColumns?.forEach(ctxCol => {
+                                    const colIndex = this.ctxAliases.findIndex(
+                                        e => e.name === ctxCol.alias
+                                    );
+                                    if (colIndex > -1) this.ctxAliases[colIndex] = {
+                                        name: ctxCol.alias,
+                                        column: ctxCol.columnIndex,
+                                        row: NaN,
+                                        desc: ctxCol.desc ?? ""
+                                    };
+                                    else this.ctxAliases.push({
+                                        name: ctxCol.alias,
+                                        column: ctxCol.columnIndex,
+                                        row: NaN,
+                                        desc: ctxCol.desc ?? ""
+                                    });
+                                    ctxCol.cells?.forEach(ctxCell => {
+                                        const cellIndex = this.ctxAliases.findIndex(
+                                            e => e.name === ctxCell.alias
+                                        );
+                                        if (cellIndex > -1) this.ctxAliases[cellIndex] = {
+                                            name: ctxCell.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: ctxCell.cellIndex,
+                                            desc: ctxCell.desc ?? ""
+                                        };
+                                        this.ctxAliases.push({
+                                            name: ctxCell.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: ctxCell.cellIndex,
+                                            desc: ctxCell.desc ?? ""
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    }
+                    catch (_err) {
+                        this.problems.push({
+                            msg: _err instanceof Error ? _err.message : _err as string,
+                            position: [
+                                hashes[i][1][0] + _offset, 
+                                hashes[i][1][1]
+                            ],
+                            code: ErrorCode.InvalidContractMeta
+                        });
+                    }
+                }
+                if (!_newContMetaBytes && !_newOpMetaBytes) {
+                    await this.metaStore.updateStore(_hash);
+                    _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
+                    _newContMetaBytes = this.metaStore.getContractMeta(_hash);
+                    if (index === -1 && _newOpMetaBytes) {
+                        if (_newContMetaBytes !== this.opMetaBytes) {
+                            try {
+                                this.opMetaBytes = _newOpMetaBytes;
+                                this.opmeta = metaFromBytes(
+                                    _newOpMetaBytes, 
+                                    OpMetaSchema
+                                ) as OpMeta[];
+                                this.names = this.opmeta.map(v => v.name);
+                                this.pops = this.opmeta.map(v => v.inputs);
+                                this.pushes = this.opmeta.map(v => v.outputs);
+                                this.operand = this.opmeta.map(v => v.operand);
+                                this.opAliases = this.opmeta.map(v => v.aliases);
+                                index = i;
+                            }
+                            catch (_err) {
+                                this.problems.push({
+                                    msg: _err instanceof Error ? _err.message : _err as string,
+                                    position: [
+                                        hashes[i][1][0] + _offset, 
+                                        hashes[i][1][1]
+                                    ],
+                                    code: ErrorCode.InvalidOpMeta
+                                });
+                            }
+                        }
+                        else index = i;
+                    }
+                    if (_newContMetaBytes) {
+                        try {
+                            const _contractMeta = metaFromBytes(
+                                _newContMetaBytes, 
+                                ContractMetaSchema
+                            ) as ContractMeta;
+                            _contractMeta.methods.forEach(method => {
+                                method.expressions.forEach(exp => {
+                                    exp.contextColumns?.forEach(ctxCol => {
+                                        const colIndex = this.ctxAliases.findIndex(
+                                            e => e.name === ctxCol.alias
+                                        );
+                                        if (colIndex > -1) this.ctxAliases[colIndex] = {
+                                            name: ctxCol.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: NaN,
+                                            desc: ctxCol.desc ?? ""
+                                        };
+                                        else this.ctxAliases.push({
+                                            name: ctxCol.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: NaN,
+                                            desc: ctxCol.desc ?? ""
+                                        });
+                                        ctxCol.cells?.forEach(ctxCell => {
+                                            const cellIndex = this.ctxAliases.findIndex(
+                                                e => e.name === ctxCell.alias
+                                            );
+                                            if (cellIndex > -1) this.ctxAliases[cellIndex] = {
+                                                name: ctxCell.alias,
+                                                column: ctxCol.columnIndex,
+                                                row: ctxCell.cellIndex,
+                                                desc: ctxCell.desc ?? ""
+                                            };
+                                            this.ctxAliases.push({
+                                                name: ctxCell.alias,
+                                                column: ctxCol.columnIndex,
+                                                row: ctxCell.cellIndex,
+                                                desc: ctxCell.desc ?? ""
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        }
+                        catch (_err) {
+                            this.problems.push({
+                                msg: _err instanceof Error ? _err.message : _err as string,
+                                position: [
+                                    hashes[i][1][0] + _offset, 
+                                    hashes[i][1][1]
+                                ],
+                                code: ErrorCode.InvalidContractMeta
+                            });
+                        }
+                    }
+                    if (!_newContMetaBytes && !_newOpMetaBytes) {
+                        this.problems.push({
+                            msg: `cannot find any settlement for hash: ${_hash}`,
+                            position: [
+                                hashes[i][1][0] + _offset, 
+                                hashes[i][1][1]
+                            ],
+                            code: ErrorCode.UndefinedMeta
+                        });
+                    }
+                }
+            }
+            else this.problems.push({
+                msg: "invalid meta hash, must be 32 bytes",
+                position: [
+                    hashes[i][1][0] + _offset, 
+                    hashes[i][1][1]
+                ],
+                code: ErrorCode.InvalidMetaHash
+            });
+        }
+        if (index === -1) {
+            this.problems.push({
+                msg: `cannot find any valid settlement for op meta from specified ${
+                    hashes.length > 1 ? "hashes" : "hash"
+                }`,
+                position: [0, -1],
+                code: ErrorCode.UndefinedOpMeta
+            });
+            this._resetOpMeta();
+            this.opMetaBytes = "";
+        }
+        else {
+            this.opmetaLength = this.opmeta.length;
+            const _ops = [
+                ...this.names,
+                ...this.opAliases.filter(v => v !== undefined).flat(),
+                "max-uint-256",
+                "max-uint256",
+                "infinity"
+            ];
+            const _ctxRowOperand = [
+                (this.operand[this.names.indexOf("context")] as OperandArgs)?.find(
+                    v => v.name.includes("row") || v.name.includes("Row")
+                ) ?? {
+                    name: "Row Index",
+                    bits: [0, 7]
+                }
+            ];
+            for (let i = 0; i < this.ctxAliases.length; i++) {
+                if (_ops.includes(this.ctxAliases[i].name)) this.problems.push({
+                    msg: `duplicate alias for contract context and opcode: ${this.ctxAliases[i].name}`,
+                    position: this.hashes[index].position,
+                    code: ErrorCode.DuplicateAlias
+                });
+                this.pops.push(0);
+                this.pushes.push(1);
+                this.operand.push(0);
+                this.names.push(this.ctxAliases[i].name);
+                this.opmeta.push({
+                    name: this.ctxAliases[i].name,
+                    desc: this.ctxAliases[i].desc 
+                        ? this.ctxAliases[i].desc 
+                        : this.opmeta[this.names.indexOf("context")]?.desc ?? "",
+                    operand: 0,
+                    inputs: 0,
+                    outputs: 1
+                });
+                if (isNaN(this.ctxAliases[i].row)) {
+                    this.operand[this.operand.length - 1] = _ctxRowOperand;
+                    this.opmeta[this.opmeta.length - 1].operand = _ctxRowOperand;
+                }
+            }
+        }
+        return index;
+    };
 
     /**
      * @internal Method to resolve a valid closed paren node at current state of parsing
