@@ -358,7 +358,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
         );
     });
 
-    it.only("should only accept ASCII characters", async () => {
+    it("should only accept ASCII characters", async () => {
         await assertError(
             async () => await rlc(rainlang`@${opMetaHash} _: add(10𐐀 20);`, store),
             "found illigal character: \\\"𐐀\\\"",

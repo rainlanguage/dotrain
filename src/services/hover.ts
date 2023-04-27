@@ -112,7 +112,7 @@ export async function getRainlangHover(
                         kind: _contentType,
                         value: _contentType === "markdown"
                             ? [
-                                "alias for:",
+                                "alias:",
                                 "```rainlang",
                                 _td.getText(
                                     Range.create(
@@ -122,7 +122,7 @@ export async function getRainlangHover(
                                 ),
                                 "```"
                             ].join("\n")
-                            : `alias for: ${
+                            : `alias: ${
                                 _td.getText(Range.create(
                                     _td.positionAt(_n.position[0]), 
                                     _td.positionAt(_n.position[1] + 1)
@@ -217,7 +217,7 @@ export async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise
     if (!_opMeta && !_contMeta) return "Unfortunately, could not find any info about this meta";
     else {
         const info = ["This Rain metadata consists of:"];
-        if (_opMeta) info.push(`  - An op meta with ${
+        if (_opMeta) info.push(`  - an op metadata with ${
             (() => {
                 try {
                     return metaFromBytes(_opMeta, OpMetaSchema).length.toString() + " opcodes";
@@ -227,7 +227,7 @@ export async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise
                 }
             })()
         }`);
-        if (_contMeta) info.push(`  - A ${
+        if (_contMeta) info.push(`  - ${
             (() => {
                 try {
                     return metaFromBytes(_contMeta, ContractMetaSchema).name;
@@ -236,7 +236,7 @@ export async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise
                     return "unknown";
                 }
             })()
-        } contract meta`);
+        } contract metadata`);
         return info.join("\n");
     }
 }

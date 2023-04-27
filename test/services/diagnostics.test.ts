@@ -51,7 +51,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         );
     });
 
-    it.only("should error: found illigal character: \"\\u00a2\"", async () => {
+    it("should error: found illigal character: \"\\u00a2\"", async () => {
         await testDiagnostics(
             rainlang`@${opMetaHash} _: add(¢ 2)`, 
             store, 

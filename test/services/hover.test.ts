@@ -148,7 +148,7 @@ new-total-amount-sent);
         );
     });
 
-    it("should provide hover: \"alias for\" an alias", async () => {    
+    it("should provide hover: alias", async () => {    
         assert.deepEqual(
             await testHover(
                 expression,
@@ -159,7 +159,7 @@ new-total-amount-sent);
                 range: toRange(13, 0, 13, 18),
                 contents: {
                     kind: "plaintext",
-                    value: "alias for: batch-start-info-k"
+                    value: "alias: batch-start-info-k"
                 }
             }
         );
@@ -204,7 +204,7 @@ new-total-amount-sent);
                 range: toRange(0, 0, 0, 67),
                 contents: {
                     kind: "plaintext",
-                    value: "This Rain metadata consists of:\n  - An op meta with 78 opcodes"
+                    value: "This Rain metadata consists of:\n  - an op metadata with 78 opcodes"
                 }
             }
         );
@@ -221,7 +221,7 @@ new-total-amount-sent);
                 range: toRange(0, 68, 0, 135),
                 contents: {
                     kind: "plaintext",
-                    value: "This Rain metadata consists of:\n  - A Order Book contract meta"
+                    value: "This Rain metadata consists of:\n  - Order Book contract metadata"
                 }
             }
         );
