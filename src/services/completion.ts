@@ -134,14 +134,11 @@ export async function getRainlangCompletion(
                         description: "context (alias)"
                     },
                     kind: CompletionItemKind.Function,
-                    detail: [
-                        v.name + _following,
-                        `context ${
-                            isNaN(v.row) 
-                                ? "column <" + v.column + ">" 
-                                : "cell <" + v.column + " " + v.row + ">"
-                        } alias`
-                    ].join("\n"),
+                    detail: `alias for context ${
+                        isNaN(v.row) 
+                            ? "column <" + v.column + ">" 
+                            : "cell <" + v.column + " " + v.row + ">"
+                    } ${v.name + _following}`,
                     documentation: {
                         kind: _documentionType,
                         value: v.desc
