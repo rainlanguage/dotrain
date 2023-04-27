@@ -7,10 +7,10 @@ import {
     OutputMeta,
     OperandArgs,
     OperandMeta,
+    ContractMeta,
     OpMetaSchema, 
     metaFromBytes, 
     ComputedOutput,
-    ContractMeta,
     ContractMetaSchema
 } from "@rainprotocol/meta";
 import { 
@@ -472,19 +472,19 @@ class RainParser {
         let document = this.textDocument.getText();
 
         // check for illigal characters
-        const _illigals = this.simpleParse(document, this.illigalChar);
-        if (_illigals.length) {
-            _illigals.forEach(v => {
-                this.problems.push({
-                    msg: `found illigal character: "${v[0]}"`,
-                    position: v[1],
-                    code: ErrorCode.IlligalChar
-                });
+        this.simpleParse(document, this.illigalChar).forEach(v => {
+            this.problems.push({
+                msg: `found illigal character: "${v[0]}"`,
+                position: v[1],
+                code: ErrorCode.IlligalChar
             });
-        }
+            document = 
+                document.slice(0, v[1][0]) 
+                + " ".repeat(v[0].length) 
+                + document.slice(v[1][1]);
+        });
 
-        // remove indents, tabs, new lines and illigal chars
-        document = document.replace(/[^ -~\s]/g, " ");
+        // remove indents, tabs, new lines
         document = document.replace(/\t/g, " ");
         document = document.replace(/\r\n/g, "  ");
         document = document.replace(/\r/g, " ");

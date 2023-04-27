@@ -2,7 +2,7 @@
 
 # Type ContextAlias
 
-Type for context cell alias
+Type for contract context alias
 
 <b>Signature:</b>
 

@@ -15,7 +15,7 @@ export enum ErrorCode {
     UndefinedOpMeta = 0,
     UndefinedWord = 1,
     IlligalChar = 2,
-    UndefinedMeta = 4,
+    UndefinedMeta = 3,
 
     InvalidWordPattern = 0x101,
     InvalidExpression = 0x102,
@@ -285,7 +285,7 @@ export type RainParseState = {
 };
 
 /**
- * @public Type for context cell alias
+ * @public Type for contract context alias
  */
 export type ContextAlias = {
     name: string;
