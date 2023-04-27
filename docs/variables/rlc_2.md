@@ -15,7 +15,7 @@ function rlc(document: TextDocument, metaStore?: MetaStore): Promise<ExpressionC
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  document | `TextDocument` | The TextDocument to compile |
-|  metaStore | [MetaStore](../classes/metastore.md) | (optional) Initial MetaStore object |
+|  metaStore | [MetaStore](../classes/metastore.md) | (optional) MetaStore object |
 
 <b>Returns:</b>
 

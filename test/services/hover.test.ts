@@ -1,5 +1,5 @@
 import assert from "assert";
-import { opMetaHash, toRange } from "../utils";
+import { contractMetaHash, opMetaHash, toRange } from "../utils";
 import {
     Hover, 
     Position,
@@ -29,7 +29,8 @@ describe("Rainlang Hover Service Tests", async function () {
 
     before(async () => {
         await store.updateStore(opMetaHash);
-        expression = rainlang`@${opMetaHash} 
+        await store.updateStore(contractMetaHash);
+        expression = rainlang`@${opMetaHash} @${contractMetaHash}
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,
 
@@ -147,7 +148,7 @@ new-total-amount-sent);
         );
     });
 
-    it("should provide hover: \"alias for\" an alias", async () => {    
+    it("should provide hover: alias", async () => {    
         assert.deepEqual(
             await testHover(
                 expression,
@@ -158,7 +159,7 @@ new-total-amount-sent);
                 range: toRange(13, 0, 13, 18),
                 contents: {
                     kind: "plaintext",
-                    value: "alias for: batch-start-info-k"
+                    value: "alias: batch-start-info-k"
                 }
             }
         );
@@ -192,4 +193,37 @@ new-total-amount-sent);
         );
     });
 
+    it("should provide hover: op meta info", async () => {    
+        assert.deepEqual(
+            await testHover(
+                expression,
+                Position.create(0, 5),
+                { metaStore: store },
+            ),
+            {
+                range: toRange(0, 0, 0, 67),
+                contents: {
+                    kind: "plaintext",
+                    value: "This Rain metadata consists of:\n- Op metadata with 78 opcodes"
+                }
+            }
+        );
+    });
+
+    it("should provide hover: contract meta info", async () => {    
+        assert.deepEqual(
+            await testHover(
+                expression,
+                Position.create(0, 88),
+                { metaStore: store },
+            ),
+            {
+                range: toRange(0, 68, 0, 135),
+                contents: {
+                    kind: "plaintext",
+                    value: "This Rain metadata consists of:\n- Order Book contract metadata"
+                }
+            }
+        );
+    });
 });

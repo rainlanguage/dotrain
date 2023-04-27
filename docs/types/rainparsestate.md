@@ -20,7 +20,6 @@ type RainParseState = {
         };
     };
     depthLevel: number;
-    operandArgsErr: boolean;
     runtimeError: Error | undefined;
 };
 ```

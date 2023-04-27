@@ -1,5 +1,5 @@
 import assert from "assert";
-import { opMetaHash } from "../utils";
+import { contractMetaHash, opMetaHash } from "../utils";
 import { OpMeta, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
 import {
     Position,
@@ -41,6 +41,7 @@ describe("Rainlang Code Completion Service Tests", async function () {
 
     before(async () => {
         await store.updateStore(opMetaHash);
+        await store.updateStore(contractMetaHash);
         const OpcodeMetas = metaFromBytes(
             store.getOpMeta(opMetaHash)!, 
             OpMetaSchema
@@ -133,6 +134,19 @@ describe("Rainlang Code Completion Service Tests", async function () {
                 },
                 ...AllOpcodeCompletions
             ],
+            { metaStore: store }
+        );
+    });
+
+    it("should include contract context in suggestions", async () => {
+        await testCompletion(
+            rainlang`@${opMetaHash} @${contractMetaHash} 
+            _: counterpa`,  
+            Position.create(1, 24),
+            [{
+                label: "counterparty",
+                kind: CompletionItemKind.Function
+            }],
             { metaStore: store }
         );
     });

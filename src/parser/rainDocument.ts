@@ -1,5 +1,5 @@
 import { MetaStore } from "./metaStore";
-import { ErrorCode, TextDocument } from "../rainLanguageTypes";
+import { ContextAlias, ErrorCode, TextDocument } from "../rainLanguageTypes";
 import { 
     OpMeta,
     InputMeta,
@@ -9,7 +9,9 @@ import {
     OperandMeta,
     OpMetaSchema, 
     metaFromBytes, 
-    ComputedOutput
+    ComputedOutput,
+    ContractMeta,
+    ContractMetaSchema
 } from "@rainprotocol/meta";
 import { 
     RDNode, 
@@ -155,17 +157,24 @@ export class RainDocument {
     }
 
     /**
-     * @public Get the parsed exp aliases of this RainParser instance
+     * @public Get the parsed exp aliases of this RainDocument instance
      */
     public getLHSAliases(): RDAliasNode[][] {
         return this._rp.getLHSAliases();
     }
 
     /**
-     * @public Get the specified meta hashes of this RainParser instance
+     * @public Get the specified meta hashes of this RainDocument instance
      */
     public getMetaHashes(): RDMetaHash[] {
         return this._rp.getMetaHashes();
+    }
+
+    /**
+     * @public Get the context aliases of specified meta hashes in this RainDocument instance
+     */
+    public getContextAliases(): ContextAlias[] {
+        return this._rp.getContextAliases();
     }
 
     /**
@@ -191,7 +200,9 @@ export class RainDocument {
  * which later will be used in RainDocument object and Rain Language Services and Compiler
  */
 class RainParser {
+    public readonly illigalChar = /[^ -~\s]+/;
     public readonly wordPattern = /^[a-z][0-9a-z-]*$/;
+    public readonly hashPattern = /^0x[a-zA-F0-9]{64}$/;
     public readonly numericPattern = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
     
     private textDocument: TextDocument;
@@ -203,12 +214,14 @@ class RainParser {
     private comments: RDComment[] = [];
     private parseAliases: RDAliasNode[][] = [];
     private hashes: RDMetaHash[] = [];
+    private ctxAliases: ContextAlias[] = []; 
 
     private names: string[] = [];
     private pops: InputMeta[] = [];
     private pushes: OutputMeta[] = [];
     private operand: OperandMeta[] = [];
     private opAliases: (string[] | undefined)[] = [];
+    private opmetaLength = 0;
     
     private exp = "";
     private state: RainParseState = {
@@ -224,7 +237,6 @@ class RainParser {
             }
         },
         depthLevel: 0,
-        operandArgsErr: false,
         runtimeError: undefined
     };
 
@@ -244,7 +256,7 @@ class RainParser {
      * Parses this instance of RainParser
      */
     public async parse() {
-        if (this.textDocument.getText().match(/[^\s]/)) {
+        if (/[^\s]/.test(this.textDocument.getText())) {
             try {
                 await this._parse();
             }
@@ -297,7 +309,7 @@ class RainParser {
      * @public Get the current op meta of this RainParser instance
      */
     public getOpMeta(): OpMeta[] {
-        return this.opmeta;
+        return this.opmeta.slice(0, this.opmetaLength);
     }
 
     /**
@@ -350,10 +362,17 @@ class RainParser {
     }
 
     /**
-     * @public Get the specified meta hases of this RainParser instance
+     * @public Get the specified meta hahses of this RainParser instance
      */
     public getMetaHashes(): RDMetaHash[] {
         return deepCopy(this.hashes);
+    }
+
+    /**
+     * @public Get the context aliases of specified meta hashes in this RainParser instance
+     */
+    public getContextAliases(): ContextAlias[] {
+        return deepCopy(this.ctxAliases);
     }
 
     /**
@@ -383,7 +402,6 @@ class RainParser {
         this.state.track.parens.open = [];
         this.state.track.parens.close = [];
         this.state.depthLevel = 0;
-        this.state.operandArgsErr = false;
     };
 
     /**
@@ -396,13 +414,14 @@ class RainParser {
         this.pops = [];
         this.pushes = [];
         this.operand = [];
+        this.opmetaLength = 0;
     };
 
     /**
      * @internal Method to find index of next element within the text
      */
     private findIndex = (str: string): number => {
-        return str.search(/[()<> ]/g);
+        return str.search(/[()<>\s]/g);
     };
 
     /**
@@ -419,108 +438,212 @@ class RainParser {
     /**
      * @internal Parse and extract words from a 1 liner string
      */
-    private simpleParse = (str: string, offset: number) => {
-        const words: string[] = [];
-        const positions: [number, number][] = [];
-        // let counter = 0;
-        // while (str.length) {
-        //     if (str.startsWith(" ")) {
-        //         str = str.slice(1);
-        //         counter++;
-        //     }
-        //     else {
-        //         const _i = str.indexOf(" ") > -1 
-        //             ? str.indexOf(" ")
-        //             : str.length;
-        //         words.push(str.slice(0, _i));
-        //         positions.push([offset + counter, NaN]);
-        //         counter = counter + words[words.length - 1].length;
-        //         positions[positions.length - 1].pop();
-        //         positions[positions.length - 1][1] = offset + counter - 1;
-        //         str = str.slice(_i);
-        //     }
-        // }
-        (Array.from(
-            str.matchAll(/\S+/g)
-        ).map(v => {
-            if (v.index !== undefined) return [v[0], v.index];
-            else return undefined;
-        }).filter(
-            v => v !== undefined
-        ) as [string, number][]).forEach(
-            v => {
-                words.push(v[0]);
-                positions.push([
-                    offset + v[1],
-                    offset + v[1] + v[0].length - 1
-                ]);
-            }
-        );
-        return { words, positions };
+    private simpleParse = (
+        str: string, 
+        pattern: RegExp,
+        offset = 0
+    ): [string, [number, number]][] => {
+        let flags = pattern.flags;
+        if (!flags.includes("g")) flags += "g";
+        if (!flags.includes("d")) flags += "d";
+        return Array.from(
+            str.matchAll(new RegExp(pattern.source, flags))
+        ).map((v: any) => 
+            [v[0], [offset + v.indices[0][0], offset + v.indices[0][1] - 1]]
+        ) as [string, [number, number]][];
     };
 
     /**
-     * @internal Settles the op meta of this RainParser instance from a parsed meta hashes
-     * First valid opmeta of a meta hash will win.
-     * @returns The index of the meta hash and -1 if no valid settlement is found
+     * @internal Resolves and settles the metas of this RainParser instance from parsed meta hashes
+     * First valid opmeta of a meta hash will be used for parsing and all context metas of all valid 
+     * contract metas will be cached for parsing.
+     * @returns The index of the meta hash that is settled for op meta and -1 no valid settlement is found for op meta
      */
-    private resolveOpMeta = async(hashes: [string, number][]): Promise<number> => {
+    private resolveMeta = async(hashes: [string, [number, number]][]): Promise<number> => {
+        let index = -1;
         for (let i = 0; i < hashes.length; i++) {
-            let _hash = "";
-            if (hashes[i][0].match(/^\s?@0x[a-zA-F0-9]{64}$/)) {
-                _hash = hashes[i][0].slice(hashes[i][0].match(/^\s/) ? 2 : 1);
-                const _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
-                if (_newOpMetaBytes) {
+            const _offset = /^\s/.test(hashes[i][0]) ? 1 : 0;
+            const _hash = hashes[i][0].slice(1 + _offset);
+            if (this.hashPattern.test(_hash)) {
+                let _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
+                let _newContMetaBytes = this.metaStore.getContractMeta(_hash);
+                if (index === -1 && _newOpMetaBytes) {
                     if (_newOpMetaBytes !== this.opMetaBytes) {
                         this.opMetaBytes = _newOpMetaBytes;
                         try {
                             this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
                             this.names = this.opmeta.map(v => v.name);
-                            this.opAliases = this.opmeta.map(v => v.aliases);
                             this.pops = this.opmeta.map(v => v.inputs);
                             this.pushes = this.opmeta.map(v => v.outputs);
                             this.operand = this.opmeta.map(v => v.operand);
                             this.opAliases = this.opmeta.map(v => v.aliases);
-                            return i;
+                            index = i;
                         }
                         catch (_err) {
-                            this._resetOpMeta();
                             this.problems.push({
                                 msg: _err instanceof Error ? _err.message : _err as string,
                                 position: [
-                                    hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
-                                    hashes[i][1] + hashes[i][0].length - 1
+                                    hashes[i][1][0] + _offset, 
+                                    hashes[i][1][1]
                                 ],
                                 code: ErrorCode.InvalidOpMeta
                             });
                         }
                     }
-                    else return i;
+                    else index = i;
                 }
-                else {
+                if (_newContMetaBytes) {
                     try {
-                        await this.metaStore.updateStore(_hash);
-                        this.opMetaBytes = this.metaStore.getOpMeta(_hash) ?? "";
-                        if (this.opMetaBytes === "") throw `no meta found for hash: ${_hash}`;
-                        this.opmeta = metaFromBytes(this.opMetaBytes, OpMetaSchema) as OpMeta[];
-                        this.names = this.opmeta.map(v => v.name);
-                        this.opAliases = this.opmeta.map(v => v.aliases);
-                        this.pops = this.opmeta.map(v => v.inputs);
-                        this.pushes = this.opmeta.map(v => v.outputs);
-                        this.operand = this.opmeta.map(v => v.operand);
-                        this.opAliases = this.opmeta.map(v => v.aliases);
-                        return i;
+                        const _contractMeta = metaFromBytes(
+                            _newContMetaBytes, 
+                            ContractMetaSchema
+                        ) as ContractMeta;
+                        _contractMeta.methods.forEach(method => {
+                            method.expressions.forEach(exp => {
+                                exp.contextColumns?.forEach(ctxCol => {
+                                    const colIndex = this.ctxAliases.findIndex(
+                                        e => e.name === ctxCol.alias
+                                    );
+                                    if (colIndex > -1) this.ctxAliases[colIndex] = {
+                                        name: ctxCol.alias,
+                                        column: ctxCol.columnIndex,
+                                        row: NaN,
+                                        desc: ctxCol.desc ?? ""
+                                    };
+                                    else this.ctxAliases.push({
+                                        name: ctxCol.alias,
+                                        column: ctxCol.columnIndex,
+                                        row: NaN,
+                                        desc: ctxCol.desc ?? ""
+                                    });
+                                    ctxCol.cells?.forEach(ctxCell => {
+                                        const cellIndex = this.ctxAliases.findIndex(
+                                            e => e.name === ctxCell.alias
+                                        );
+                                        if (cellIndex > -1) this.ctxAliases[cellIndex] = {
+                                            name: ctxCell.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: ctxCell.cellIndex,
+                                            desc: ctxCell.desc ?? ""
+                                        };
+                                        this.ctxAliases.push({
+                                            name: ctxCell.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: ctxCell.cellIndex,
+                                            desc: ctxCell.desc ?? ""
+                                        });
+                                    });
+                                });
+                            });
+                        });
                     }
                     catch (_err) {
-                        this.opMetaBytes = "";
-                        this._resetOpMeta();
                         this.problems.push({
                             msg: _err instanceof Error ? _err.message : _err as string,
                             position: [
-                                hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
-                                hashes[i][1] + hashes[i][0].length - 1
+                                hashes[i][1][0] + _offset, 
+                                hashes[i][1][1]
                             ],
-                            code: ErrorCode.InvalidOpMeta
+                            code: ErrorCode.InvalidContractMeta
+                        });
+                    }
+                }
+                if (!_newContMetaBytes && !_newOpMetaBytes) {
+                    await this.metaStore.updateStore(_hash);
+                    _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
+                    _newContMetaBytes = this.metaStore.getContractMeta(_hash);
+                    if (index === -1 && _newOpMetaBytes) {
+                        if (_newContMetaBytes !== this.opMetaBytes) {
+                            try {
+                                this.opMetaBytes = _newOpMetaBytes;
+                                this.opmeta = metaFromBytes(
+                                    _newOpMetaBytes, 
+                                    OpMetaSchema
+                                ) as OpMeta[];
+                                this.names = this.opmeta.map(v => v.name);
+                                this.pops = this.opmeta.map(v => v.inputs);
+                                this.pushes = this.opmeta.map(v => v.outputs);
+                                this.operand = this.opmeta.map(v => v.operand);
+                                this.opAliases = this.opmeta.map(v => v.aliases);
+                                index = i;
+                            }
+                            catch (_err) {
+                                this.problems.push({
+                                    msg: _err instanceof Error ? _err.message : _err as string,
+                                    position: [
+                                        hashes[i][1][0] + _offset, 
+                                        hashes[i][1][1]
+                                    ],
+                                    code: ErrorCode.InvalidOpMeta
+                                });
+                            }
+                        }
+                        else index = i;
+                    }
+                    if (_newContMetaBytes) {
+                        try {
+                            const _contractMeta = metaFromBytes(
+                                _newContMetaBytes, 
+                                ContractMetaSchema
+                            ) as ContractMeta;
+                            _contractMeta.methods.forEach(method => {
+                                method.expressions.forEach(exp => {
+                                    exp.contextColumns?.forEach(ctxCol => {
+                                        const colIndex = this.ctxAliases.findIndex(
+                                            e => e.name === ctxCol.alias
+                                        );
+                                        if (colIndex > -1) this.ctxAliases[colIndex] = {
+                                            name: ctxCol.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: NaN,
+                                            desc: ctxCol.desc ?? ""
+                                        };
+                                        else this.ctxAliases.push({
+                                            name: ctxCol.alias,
+                                            column: ctxCol.columnIndex,
+                                            row: NaN,
+                                            desc: ctxCol.desc ?? ""
+                                        });
+                                        ctxCol.cells?.forEach(ctxCell => {
+                                            const cellIndex = this.ctxAliases.findIndex(
+                                                e => e.name === ctxCell.alias
+                                            );
+                                            if (cellIndex > -1) this.ctxAliases[cellIndex] = {
+                                                name: ctxCell.alias,
+                                                column: ctxCol.columnIndex,
+                                                row: ctxCell.cellIndex,
+                                                desc: ctxCell.desc ?? ""
+                                            };
+                                            this.ctxAliases.push({
+                                                name: ctxCell.alias,
+                                                column: ctxCol.columnIndex,
+                                                row: ctxCell.cellIndex,
+                                                desc: ctxCell.desc ?? ""
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        }
+                        catch (_err) {
+                            this.problems.push({
+                                msg: _err instanceof Error ? _err.message : _err as string,
+                                position: [
+                                    hashes[i][1][0] + _offset, 
+                                    hashes[i][1][1]
+                                ],
+                                code: ErrorCode.InvalidContractMeta
+                            });
+                        }
+                    }
+                    if (!_newContMetaBytes && !_newOpMetaBytes) {
+                        this.problems.push({
+                            msg: `cannot find any settlement for hash: ${_hash}`,
+                            position: [
+                                hashes[i][1][0] + _offset, 
+                                hashes[i][1][1]
+                            ],
+                            code: ErrorCode.UndefinedMeta
                         });
                     }
                 }
@@ -528,18 +651,66 @@ class RainParser {
             else this.problems.push({
                 msg: "invalid meta hash, must be 32 bytes",
                 position: [
-                    hashes[i][1] + (hashes[i][0].match(/^\s/) ? 1 : 0), 
-                    hashes[i][1] + hashes[i][0].length - 1
+                    hashes[i][1][0] + _offset, 
+                    hashes[i][1][1]
                 ],
                 code: ErrorCode.InvalidMetaHash
             });
         }
-        this.problems.push({
-            msg: `cannot find any valid settlement for specified ${hashes.length > 1 ? "hashes" : "hash"}`,
-            position: [0, -1],
-            code: ErrorCode.UndefinedOpMeta
-        });
-        return -1;
+        if (index === -1) {
+            this.problems.push({
+                msg: `cannot find any valid settlement for op meta from specified ${
+                    hashes.length > 1 ? "hashes" : "hash"
+                }`,
+                position: [0, -1],
+                code: ErrorCode.UndefinedOpMeta
+            });
+            this._resetOpMeta();
+            this.opMetaBytes = "";
+        }
+        else {
+            this.opmetaLength = this.opmeta.length;
+            const _ops = [
+                ...this.names,
+                ...this.opAliases.filter(v => v !== undefined).flat(),
+                "max-uint-256",
+                "max-uint256",
+                "infinity"
+            ];
+            const _ctxRowOperand = [
+                (this.operand[this.names.indexOf("context")] as OperandArgs)?.find(
+                    v => v.name.includes("row") || v.name.includes("Row")
+                ) ?? {
+                    name: "Row Index",
+                    bits: [0, 7]
+                }
+            ];
+            for (let i = 0; i < this.ctxAliases.length; i++) {
+                if (_ops.includes(this.ctxAliases[i].name)) this.problems.push({
+                    msg: `duplicate alias for contract context and opcode: ${this.ctxAliases[i].name}`,
+                    position: this.hashes[index].position,
+                    code: ErrorCode.DuplicateAlias
+                });
+                this.pops.push(0);
+                this.pushes.push(1);
+                this.operand.push(0);
+                this.names.push(this.ctxAliases[i].name);
+                this.opmeta.push({
+                    name: this.ctxAliases[i].name,
+                    desc: this.ctxAliases[i].desc 
+                        ? this.ctxAliases[i].desc 
+                        : this.opmeta[this.names.indexOf("context")]?.desc ?? "",
+                    operand: 0,
+                    inputs: 0,
+                    outputs: 1
+                });
+                if (isNaN(this.ctxAliases[i].row)) {
+                    this.operand[this.operand.length - 1] = _ctxRowOperand;
+                    this.opmeta[this.opmeta.length - 1].operand = _ctxRowOperand;
+                }
+            }
+        }
+        return index;
     };
 
     /**
@@ -554,477 +725,437 @@ class RainParser {
         this.parseTree = [];
         this.problems = [];
         this.comments = [];
+        this.ctxAliases = [];
         this.parseAliases = [];
         this.state.track.char = 0;
         this.state.runtimeError = undefined;
         let document = this.textDocument.getText();
 
-        if (document.search(/[^ -~\s]/) > -1) {
-            let _i = document.search(/[^ -~\s]/);
-            while (_i > -1) {
-                const _charCode = document.codePointAt(_i)!.toString(16).padStart(4, "0");
-                const _char = _charCode.length > 4 
-                    ? document[_i] + document[_i + 1] 
-                    : document[_i];
+        // check for illigal characters
+        const _illigals = this.simpleParse(document, this.illigalChar);
+        if (_illigals.length) {
+            _illigals.forEach(v => {
                 this.problems.push({
-                    msg: _charCode.length > 4 
-                        ? `found non-ASCII character: "${_char}"`
-                        : `found non-printable-ASCII character with unicode: "U+${_charCode}"`,
-                    position: _charCode.length > 4 
-                        ? [_i, _i + 1]
-                        : [_i, _i],
-                    code: _charCode.length > 4 
-                        ? ErrorCode.NonASCIICharacter
-                        : ErrorCode.NonPrintableASCIICharacter
+                    msg: `found illigal character: "${v[0]}"`,
+                    position: v[1],
+                    code: ErrorCode.IlligalChar
                 });
-                document = document.replace(
-                    _charCode.length > 4 
-                        ? document[_i] + document[_i + 1] 
-                        : document[_i], 
-                    " ".repeat(_charCode.length > 4 ? 2 : 1)
-                );
-                _i = document.search(/[^ -~\s]/);
-            }
-        }
-        else {
-            // remove indents and tabs
-            document = document.replace(/\t/g, " ");
-            document = document.replace(/\r\n/g, "  ");
-            document = document.replace(/\r/g, " ");
-            document = document.replace(/\n/g, " ");
-
-            // extract comments if any exists
-            // const _cms = Array.from(
-            //     document.matchAll(/\/\*[^]*\*\//g)
-            // ).map(v => {
-            //     if (v.index) return [v[0], v.index];
-            //     else return undefined;
-            // }).filter(v => v !== undefined) as [string, number][];
-            if(document.includes("/*")) {
-                while(document.includes("/*")) {
-                    const _startCmPos = document.indexOf("/*");
-                    this.state.track.char = _startCmPos;
-                    let _endCmPos = document.length - 1;
-                    let _cm = document.slice(_startCmPos);
-                    let _notEnded = true;
-                    if (_cm.includes("*/")) {
-                        _endCmPos = _cm.indexOf("*/") + _startCmPos;
-                        this.state.track.char = _endCmPos;
-                        _cm = document.slice(_startCmPos, _endCmPos + 2);
-                        _notEnded = false;
-                    }
-                    document = _notEnded 
-                        ? document.slice(0, _startCmPos) 
-                            + " " .repeat(_cm.length) 
-                        : document.slice(0, _startCmPos) 
-                            + " " .repeat(_cm.length) 
-                            + document.slice(_endCmPos + 2);
-                
-                    if (_notEnded) {
-                        this.problems.push({
-                            msg: "unexpected end of comment",
-                            position: [_startCmPos, _endCmPos],
-                            code: ErrorCode.UnexpectedEndOfComment
-                        });
-                    }
-                    else {
-                        this.comments.push({
-                            comment: _cm,
-                            position: [_startCmPos, _endCmPos + 1]
-                        });
-                    }
-                }
-            }
-
-            // parse op meta
-            const _hashes = Array.from(
-                document.matchAll(/(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/g)
-            ).map(v => {
-                if (v.index !== undefined) return [v[0], v.index];
-                else return undefined;
-            }).filter(v => v !== undefined) as [string, number][];
-            if (_hashes.length) {
-                await this.resolveOpMeta(_hashes);
-                for (let i = 0; i < _hashes.length; i++) {
-                    this.hashes.push({
-                        hash: _hashes[i][0],
-                        position: [
-                            _hashes[i][1] + (_hashes[i][0].match(/^\s/) ? 1 : 0), 
-                            _hashes[i][1] + _hashes[i][0].length - 1
-                        ],
-                    });
-                    // if (i !== _i) this.problems.push({
-                    //     msg: "unexpected meta hash, cannot include more than 1 meta hash per document",
-                    //     position: [
-                    //         _hashes[i][1], 
-                    //         _hashes[i][1] + _hashes[i][0].length - 1
-                    //     ],
-                    //     code: ErrorCode.UnexpectedMetaHash
-                    // });
-                    document = 
-                        document.slice(0, _hashes[i][1]) +
-                        " ".repeat(_hashes[i][0].length) +
-                        document.slice(_hashes[i][1] + _hashes[i][0].length);
-                }
-            }
-            else this.problems.push({
-                msg: "cannot find op meta hash, please specify an op meta hash",
-                position: [0, 0],
-                code: ErrorCode.UndefinedOpMeta
             });
+        }
 
-            // begin parsing expression sources
-            const _doc = document;
-            const _sourceExp: string[] = [];
-            const _sourceExpPos: [number, number][] = [];
-            while (document.length) {
-                if (document.includes(";")) {
-                    const _trimmed = this.trim(document.slice(0, document.indexOf(";")));
-                    _sourceExpPos.push([
-                        _doc.length - document.length + _trimmed.startDelCount,
-                        _doc.length - document.length - 1 + document.indexOf(";") - _trimmed.endDelCount,
-                    ]);
-                    document = document.slice(document.indexOf(";") + 1);
-                    _sourceExp.push(_trimmed.text);
-                    
+        // remove indents, tabs, new lines and illigal chars
+        document = document.replace(/[^ -~\s]/g, " ");
+        document = document.replace(/\t/g, " ");
+        document = document.replace(/\r\n/g, "  ");
+        document = document.replace(/\r/g, " ");
+        document = document.replace(/\n/g, " ");
+
+        if(document.includes("/*")) {
+            while(document.includes("/*")) {
+                const _startCmPos = document.indexOf("/*");
+                this.state.track.char = _startCmPos;
+                let _endCmPos = document.length - 1;
+                let _cm = document.slice(_startCmPos);
+                let _notEnded = true;
+                if (_cm.includes("*/")) {
+                    _endCmPos = _cm.indexOf("*/") + _startCmPos;
+                    this.state.track.char = _endCmPos;
+                    _cm = document.slice(_startCmPos, _endCmPos + 2);
+                    _notEnded = false;
+                }
+                document = _notEnded 
+                    ? document.slice(0, _startCmPos) 
+                        + " " .repeat(_cm.length) 
+                    : document.slice(0, _startCmPos) 
+                        + " " .repeat(_cm.length) 
+                        + document.slice(_endCmPos + 2);
+            
+                if (_notEnded) {
+                    this.problems.push({
+                        msg: "unexpected end of comment",
+                        position: [_startCmPos, _endCmPos],
+                        code: ErrorCode.UnexpectedEndOfComment
+                    });
                 }
                 else {
-                    if (document.match(/[^\s+]/)) {
-                        const _trimmed = this.trim(document);
-                        this.problems.push({
-                            msg: "source item expressions must end with semi",
-                            position: [
-                                _doc.length - document.length + _trimmed.startDelCount,
-                                _doc.length - 1 - _trimmed.endDelCount,
-                            ],
-                            code: ErrorCode.InvalidExpression
-                        });
-                        _sourceExpPos.push([
-                            _doc.length - document.length + _trimmed.startDelCount,
-                            _doc.length - 1 - _trimmed.endDelCount,
-                        ]);
-                        _sourceExp.push(_trimmed.text);
-                    }
-                    document = "";
+                    this.comments.push({
+                        comment: _cm,
+                        position: [_startCmPos, _endCmPos + 1]
+                    });
                 }
             }
+        }
 
-            // begin parsing expression sentences
-            for (let i = 0; i < _sourceExp.length; i++) {
-                this._resetState();
-                this.parseAliases.push([]);
-                const _subExp: string[] = [];
-                const _subExpEntry: number[] = [];
-                const _currentSourceTree: RDNode[] = [];
-                let _exp = _sourceExp[i];
-                let _lhs: string;
+        // parse op meta
+        const _hashes = this.simpleParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/);
+        if (_hashes.length) {
+            await this.resolveMeta(_hashes);
+            for (let i = 0; i < _hashes.length; i++) {
+                this.hashes.push({
+                    hash: _hashes[i][0].slice(1 + (/^\s/.test(_hashes[i][0]) ? 1 : 0)),
+                    position: [
+                        _hashes[i][1][0] + (/^\s/.test(_hashes[i][0]) ? 1 : 0), 
+                        _hashes[i][1][1]
+                    ],
+                });
+                document = 
+                    document.slice(0, _hashes[i][1][0]) +
+                    " ".repeat(_hashes[i][0].length) +
+                    document.slice(_hashes[i][1][1] + 1);
+            }
+        }
+        else this.problems.push({
+            msg: "cannot find op meta hash, please specify an op meta hash",
+            position: [0, 0],
+            code: ErrorCode.UndefinedOpMeta
+        });
 
-                // cache the sub-expressions
-                if (!_exp.includes(",")) {
-                    const _trimmed = this.trim(_exp);
-                    _subExp.push(_trimmed.text);
-                    _subExpEntry.push(
-                        _sourceExp[i].length - _exp.length + _trimmed.startDelCount
-                    );
-                }
-                while (_exp.includes(",")) {
-                    const _trimmed_1 = this.trim(_exp.slice(0, _exp.indexOf(",")));
-                    _subExp.push(_trimmed_1.text);
-                    _subExpEntry.push(
-                        _sourceExp[i].length - _exp.length + _trimmed_1.startDelCount
-                    );
-                    _exp = _exp.slice(_exp.indexOf(",") + 1);
-                    if (!_exp.includes(",")) {
-                        const _trimmed_2 = this.trim(_exp);
-                        _subExp.push(_trimmed_2.text);
-                        _subExpEntry.push(
-                            _sourceExp[i].length - _exp.length + _trimmed_2.startDelCount
-                        );
-                    }
-                }
-
-                // begin parsing sub-expressions
-                for (let j = 0; j < _subExp.length; j++) {
-                    this._resetState();
-                    const _positionOffset = _sourceExpPos[i][0] + _subExpEntry[j];
-                    this.state.track.char = _positionOffset;
-
-                    // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
-                    // no or more than one delimitter was found, else start parsing LHS and RHS
-                    if (_subExp[j].match(/:/)) {
-                        _lhs = _subExp[j].slice(0, _subExp[j].indexOf(":"));
-                        this.exp = _subExp[j].slice(_subExp[j].indexOf(":") + 1);
-
-                        // check for invalid RHS comments
-                        for (let k = 0; k < this.comments.length; k++) {
-                            if (
-                                this.comments[k].position[0] > _positionOffset + 
-                                    _subExp[j].indexOf(":") &&
-                                this.comments[k].position[0] < _positionOffset + 
-                                    _subExp[j].length
-                            ) {
-                                this.problems.push({
-                                    msg: "invalid RHS, comments are not allowed",
-                                    position: [...this.comments[k].position],
-                                    code: ErrorCode.UnexpectedRHSComment
-                                });
-                            }
-                        }
-
-                        // begin parsing LHS
-                        if (_lhs.length > 0) {
-                            const { words, positions } = this.simpleParse(
-                                _lhs, 
-                                _positionOffset
-                            );
-                            const _ops = [
-                                ...this.names,
-                                ...this.opAliases.filter(v => v !== undefined).flat(),
-                                "max-uint-256",
-                                "max-uint256",
-                                "infinity"
-                            ];
-                            for (let k = 0; k < words.length; k++) {
-                                this.state.parse.aliases.push({
-                                    name: words[k],
-                                    position: positions[k]
-                                });
-                                if (!words[k].match(/^[a-z][a-z0-9-]*$|^_$/)) {
-                                    this.problems.push({
-                                        msg: `invalid LHS alias: ${words[k]}`,
-                                        position: positions[k],
-                                        code:ErrorCode.InvalidWordPattern
-                                    });
-                                }
-                                if (_ops.includes(words[k])) this.problems.push({
-                                    msg: `illigal alias, "${words[k]}" is reserved`,
-                                    position: positions[k],
-                                    code:ErrorCode.IlligalAlias
-                                });
-                                this.state.track.char = positions[k][1];
-                            }
-                        }
-
-                        // begin parsing RHS
-                        while (this.exp.length > 0) {
-                            const _currentPosition = 
-                                _positionOffset + 
-                                _subExp[j].length - 
-                                this.exp.length;
-                            this.state.track.char = _currentPosition;
-                            
-                            if (this.exp.startsWith(" ")) {
-                                this.exp = this.exp.slice(1);
-                                this.state.track.char++;
-                            }
-                            else if (this.exp.startsWith("(")) {
-                                this.exp = this.exp.slice(1);
-                                this.state.track.char++;
-                                let __exp = this.exp;
-                                const _pos: number[] = [];
-                                let _index = -1;
-                                let _check = true;
-                                while (_check && (__exp.includes("(") || __exp.includes(")"))) {
-                                    const _i = __exp.search(/\(|\)/);
-                                    if (__exp[_i] === "(") _pos.push(_i);
-                                    else {
-                                        const _x = _pos.pop();
-                                        if (!_x) {
-                                            _index = _i;
-                                            _check = false;
-                                        }
-                                    }
-                                    __exp = __exp.slice(_i + 1);
-                                }
-                                this.problems.push({
-                                    msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
-                                    position: [
-                                        _currentPosition,
-                                        _index > -1 
-                                            ? _currentPosition + _index + 1 
-                                            : _currentPosition + this.exp.length
-                                    ],
-                                    code: ErrorCode.ExpectedOpcode
-                                });
-                                if (_index === -1) {
-                                    this.state.track.char += (this.exp.length);
-                                    this.exp = "";
-                                }
-                                else {
-                                    this.exp = this.exp.slice(_index + 1);
-                                    this.state.track.char +=  _index;
-                                }
-                            }
-                            else if (this.exp.startsWith(")")) {
-                                if (this.state.track.parens.open.length > 0) {
-                                    this.state.track.parens.close.push(_currentPosition);
-                                    this.resolveOpNode();
-                                    this.state.depthLevel--;
-                                }
-                                else this.problems.push({
-                                    msg: "unexpected \")\"",
-                                    position: [_currentPosition, _currentPosition],
-                                    code: ErrorCode.UnexpectedClosingParen
-                                });
-                                this.exp = this.exp.slice(1);
-                                this.state.track.char++;
-                                if (
-                                    this.exp.length &&
-                                    !this.exp.startsWith(" ") && 
-                                    !this.exp.startsWith(")") && 
-                                    !this.exp.startsWith(";") && 
-                                    !this.exp.startsWith(",")
-                                ) this.problems.push({
-                                    msg: "expected to be seperated by space",
-                                    position: [_currentPosition, _currentPosition + 1],
-                                    code: ErrorCode.ExpectedSpace
-                                });
-                            }
-                            else this.consume(_currentPosition);
-                        }
-
-                        // validating RHS against LHS
-                        const _outputCount = this.countOutputs(
-                            [...this.state.parse.tree]
-                        );
-                        if (!isNaN(_outputCount)) {
-                            const _tagsCount = this.state.parse.aliases.length;
-                            const _treeCount = this.state.parse.tree.length;
-                            const _diff = _tagsCount - _outputCount;
-                            const _tags = [...this.state.parse.aliases];
-                            this.state.track.char = _positionOffset;
-                            if (!(_currentSourceTree.length === 0 && _treeCount === 0)) {
-                                if (_diff === 0) {
-                                    for (let k = 0; k < _treeCount; k++) {
-                                        const _node = this.state.parse.tree[
-                                            this.state.parse.tree.length - 1 - k
-                                        ];
-                                        this.state.track.char = _node.position[1];
-                                        if ("opcode" in _node) {
-                                            if (_node.output > 0) {
-                                                _node.lhs = [];
-                                                _tags.splice(-_node.output).forEach(v => {
-                                                    _node.lhs?.push(v);
-                                                });
-                                            }
-                                        }
-                                        else _tags.splice(-1).forEach(v => {
-                                            _node.lhs = v;
-                                        });
-                                    }
-                                }
-                                else if (_diff > 0) {
-                                    for (let k = 0; k < _diff; k++) {
-                                        const _tag = _tags.pop()!;
-                                        this.problems.push({
-                                            msg: `no RHS item exists to match this LHS item: ${_tag.name}`,
-                                            position: _tag.position,
-                                            code: ErrorCode.MismatchRHS
-                                        });
-                                    }
-                                    for (let k = 0; k < _treeCount; k++) {
-                                        const _node = this.state.parse.tree[
-                                            this.state.parse.tree.length - 1 - k
-                                        ];
-                                        this.state.track.char = _node.position[1];
-                                        if ("opcode" in _node) {
-                                            if (_node.output > 0) {
-                                                _node.lhs = [];
-                                                _tags.splice(-_node.output).forEach(v => {
-                                                    _node.lhs?.push(v);
-                                                }); 
-                                            }
-                                        }
-                                        else _tags.splice(-1).forEach(v => {
-                                            _node.lhs = v;
-                                        });
-                                    }
-                                }
-                                else {
-                                    let _c = -_diff;
-                                    const _nodes = [...this.state.parse.tree];
-                                    for (let k = 0; k < -_diff; k++) {
-                                        if ("opcode" in _nodes[k]) {
-                                            if ((_nodes[k] as RDOpNode).output > 0) {
-                                                const _node = _nodes[_nodes.length - 1];
-                                                this.problems.push({
-                                                    msg: "no LHS item exists to match this RHS item",
-                                                    position: _node.position,
-                                                    code: ErrorCode.MismatchLHS
-                                                });
-                                                if ((_nodes[k] as RDOpNode).output > 1) {
-                                                    if (_c >= (_nodes[k] as RDOpNode).output) {
-                                                        _nodes.pop();
-                                                        _c -= (_nodes[k] as RDOpNode).output;
-                                                    }
-                                                    k += ((_nodes[k] as RDOpNode).output - 1);
-                                                }
-                                                else {
-                                                    _nodes.pop();
-                                                    _c--;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    for (let k = 0; k < _nodes.length; k++) {
-                                        const _node = this.state.parse.tree[
-                                            _nodes.length - 1 - k
-                                        ];
-                                        this.state.track.char = _node.position[1];
-                                        if (_node) {
-                                            if ("opcode" in _node) {
-                                                if (_node.output > 0) {
-                                                    _node.lhs = [];
-                                                    _tags.slice(-_node.output).forEach(v => {
-                                                        _node.lhs?.push(v);
-                                                    });
-                                                }
-                                            }
-                                            else _tags.slice(-1).forEach(v => {
-                                                _node.lhs = v;
-                                            });
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else this.problems.push({
-                        msg: "invalid rain expression",
+        // begin parsing expression sources
+        const _doc = document;
+        const _sourceExp: string[] = [];
+        const _sourceExpPos: [number, number][] = [];
+        while (document.length) {
+            if (document.includes(";")) {
+                const _trimmed = this.trim(document.slice(0, document.indexOf(";")));
+                _sourceExpPos.push([
+                    _doc.length - document.length + _trimmed.startDelCount,
+                    _doc.length - document.length - 1 + document.indexOf(";") - _trimmed.endDelCount,
+                ]);
+                document = document.slice(document.indexOf(";") + 1);
+                _sourceExp.push(_trimmed.text);
+                
+            }
+            else {
+                if (document.match(/[^\s+]/)) {
+                    const _trimmed = this.trim(document);
+                    this.problems.push({
+                        msg: "source item expressions must end with semi",
                         position: [
-                            _positionOffset,
-                            _positionOffset + _subExp[j].length - 1
+                            _doc.length - document.length + _trimmed.startDelCount,
+                            _doc.length - 1 - _trimmed.endDelCount,
                         ],
                         code: ErrorCode.InvalidExpression
                     });
+                    _sourceExpPos.push([
+                        _doc.length - document.length + _trimmed.startDelCount,
+                        _doc.length - 1 - _trimmed.endDelCount,
+                    ]);
+                    _sourceExp.push(_trimmed.text);
+                }
+                document = "";
+            }
+        }
 
-                    _currentSourceTree.push(
-                        ...this.state.parse.tree.splice(
-                            -this.state.parse.tree.length
-                        )
-                    );
-                    this.parseAliases[
-                        this.parseAliases.length - 1
-                    ].push(
-                        ...[...this.state.parse.aliases.splice(
-                            -this.state.parse.aliases.length
-                        )]
+        // begin parsing expression sentences
+        for (let i = 0; i < _sourceExp.length; i++) {
+            this._resetState();
+            this.parseAliases.push([]);
+            const _subExp: string[] = [];
+            const _subExpEntry: number[] = [];
+            const _currentSourceTree: RDNode[] = [];
+            let _exp = _sourceExp[i];
+            let _lhs: string;
+
+            // cache the sub-expressions
+            if (!_exp.includes(",")) {
+                const _trimmed = this.trim(_exp);
+                _subExp.push(_trimmed.text);
+                _subExpEntry.push(
+                    _sourceExp[i].length - _exp.length + _trimmed.startDelCount
+                );
+            }
+            while (_exp.includes(",")) {
+                const _trimmed_1 = this.trim(_exp.slice(0, _exp.indexOf(",")));
+                _subExp.push(_trimmed_1.text);
+                _subExpEntry.push(
+                    _sourceExp[i].length - _exp.length + _trimmed_1.startDelCount
+                );
+                _exp = _exp.slice(_exp.indexOf(",") + 1);
+                if (!_exp.includes(",")) {
+                    const _trimmed_2 = this.trim(_exp);
+                    _subExp.push(_trimmed_2.text);
+                    _subExpEntry.push(
+                        _sourceExp[i].length - _exp.length + _trimmed_2.startDelCount
                     );
                 }
-
-                // constructing final parse tree
-                this.parseTree.push({
-                    position: _sourceExpPos[i],
-                    tree: _currentSourceTree.splice(-_currentSourceTree.length)
-                });
             }
+
+            // begin parsing sub-expressions
+            for (let j = 0; j < _subExp.length; j++) {
+                this._resetState();
+                const _positionOffset = _sourceExpPos[i][0] + _subExpEntry[j];
+                this.state.track.char = _positionOffset;
+
+                // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
+                // no or more than one delimitter was found, else start parsing LHS and RHS
+                if (_subExp[j].match(/:/)) {
+                    _lhs = _subExp[j].slice(0, _subExp[j].indexOf(":"));
+                    this.exp = _subExp[j].slice(_subExp[j].indexOf(":") + 1);
+
+                    // check for invalid RHS comments
+                    for (let k = 0; k < this.comments.length; k++) {
+                        if (
+                            this.comments[k].position[0] > _positionOffset + 
+                                _subExp[j].indexOf(":") &&
+                            this.comments[k].position[0] < _positionOffset + 
+                                _subExp[j].length
+                        ) {
+                            this.problems.push({
+                                msg: "invalid RHS, comments are not allowed",
+                                position: [...this.comments[k].position],
+                                code: ErrorCode.UnexpectedRHSComment
+                            });
+                        }
+                    }
+
+                    // begin parsing LHS
+                    if (_lhs.length > 0) {
+                        const _parsedLhs = this.simpleParse(
+                            _lhs, 
+                            /\S+/,
+                            _positionOffset
+                        );
+                        const _ops = [
+                            ...this.names,
+                            ...this.opAliases.filter(v => v !== undefined).flat(),
+                            "max-uint-256",
+                            "max-uint256",
+                            "infinity"
+                        ];
+                        for (let k = 0; k < _parsedLhs.length; k++) {
+                            this.state.parse.aliases.push({
+                                name: _parsedLhs[k][0],
+                                position: _parsedLhs[k][1]
+                            });
+                            if (!/^[a-z][a-z0-9-]*$|^_$/.test(_parsedLhs[k][0])) {
+                                this.problems.push({
+                                    msg: `invalid LHS alias: ${_parsedLhs[k][0]}`,
+                                    position: _parsedLhs[k][1],
+                                    code:ErrorCode.InvalidWordPattern
+                                });
+                            }
+                            if (_ops.includes(_parsedLhs[k][0])) this.problems.push({
+                                msg: `duplicate alias: ${_parsedLhs[k][0]}`,
+                                position: _parsedLhs[k][1],
+                                code:ErrorCode.DuplicateAlias
+                            });
+                            this.state.track.char = _parsedLhs[k][1][1];
+                        }
+                    }
+
+                    // begin parsing RHS
+                    while (this.exp.length > 0) {
+                        const _currentPosition = 
+                            _positionOffset + 
+                            _subExp[j].length - 
+                            this.exp.length;
+                        this.state.track.char = _currentPosition;
+                        
+                        if (this.exp.startsWith(" ")) {
+                            this.exp = this.exp.slice(1);
+                            this.state.track.char++;
+                        }
+                        else if (this.exp.startsWith("(")) {
+                            this.exp = this.exp.slice(1);
+                            this.state.track.char++;
+                            let __exp = this.exp;
+                            const _pos: number[] = [];
+                            let _index = -1;
+                            let _check = true;
+                            while (_check && (__exp.includes("(") || __exp.includes(")"))) {
+                                const _i = __exp.search(/\(|\)/);
+                                if (__exp[_i] === "(") _pos.push(_i);
+                                else {
+                                    const _x = _pos.pop();
+                                    if (!_x) {
+                                        _index = _i;
+                                        _check = false;
+                                    }
+                                }
+                                __exp = __exp.slice(_i + 1);
+                            }
+                            this.problems.push({
+                                msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
+                                position: [
+                                    _currentPosition,
+                                    _index > -1 
+                                        ? _currentPosition + _index + 1 
+                                        : _currentPosition + this.exp.length
+                                ],
+                                code: ErrorCode.ExpectedOpcode
+                            });
+                            if (_index === -1) {
+                                this.state.track.char += (this.exp.length);
+                                this.exp = "";
+                            }
+                            else {
+                                this.exp = this.exp.slice(_index + 1);
+                                this.state.track.char +=  _index;
+                            }
+                        }
+                        else if (this.exp.startsWith(")")) {
+                            if (this.state.track.parens.open.length > 0) {
+                                this.state.track.parens.close.push(_currentPosition);
+                                this.resolveParen();
+                                this.state.depthLevel--;
+                            }
+                            else this.problems.push({
+                                msg: "unexpected \")\"",
+                                position: [_currentPosition, _currentPosition],
+                                code: ErrorCode.UnexpectedClosingParen
+                            });
+                            this.exp = this.exp.slice(1);
+                            this.state.track.char++;
+                            if (this.exp && !this.exp.match(/^[\s);,]/)) this.problems.push({
+                                msg: "expected to be seperated by space",
+                                position: [_currentPosition, _currentPosition + 1],
+                                code: ErrorCode.ExpectedSpace
+                            });
+                        }
+                        else this.consume(_currentPosition);
+                    }
+
+                    // validating RHS against LHS
+                    const _outputCount = this.countOutputs(
+                        [...this.state.parse.tree]
+                    );
+                    if (!isNaN(_outputCount)) {
+                        const _tagsCount = this.state.parse.aliases.length;
+                        const _treeCount = this.state.parse.tree.length;
+                        const _diff = _tagsCount - _outputCount;
+                        const _tags = [...this.state.parse.aliases];
+                        this.state.track.char = _positionOffset;
+                        if (!(_currentSourceTree.length === 0 && _treeCount === 0)) {
+                            if (_diff === 0) {
+                                for (let k = 0; k < _treeCount; k++) {
+                                    const _node = this.state.parse.tree[
+                                        this.state.parse.tree.length - 1 - k
+                                    ];
+                                    this.state.track.char = _node.position[1];
+                                    if ("opcode" in _node) {
+                                        if (_node.output > 0) {
+                                            _node.lhs = [];
+                                            _tags.splice(-_node.output).forEach(v => {
+                                                _node.lhs?.push(v);
+                                            });
+                                        }
+                                    }
+                                    else _tags.splice(-1).forEach(v => {
+                                        _node.lhs = v;
+                                    });
+                                }
+                            }
+                            else if (_diff > 0) {
+                                for (let k = 0; k < _diff; k++) {
+                                    const _tag = _tags.pop()!;
+                                    this.problems.push({
+                                        msg: `no RHS item exists to match this LHS item: ${_tag.name}`,
+                                        position: _tag.position,
+                                        code: ErrorCode.MismatchRHS
+                                    });
+                                }
+                                for (let k = 0; k < _treeCount; k++) {
+                                    const _node = this.state.parse.tree[
+                                        this.state.parse.tree.length - 1 - k
+                                    ];
+                                    this.state.track.char = _node.position[1];
+                                    if ("opcode" in _node) {
+                                        if (_node.output > 0) {
+                                            _node.lhs = [];
+                                            _tags.splice(-_node.output).forEach(v => {
+                                                _node.lhs?.push(v);
+                                            }); 
+                                        }
+                                    }
+                                    else _tags.splice(-1).forEach(v => {
+                                        _node.lhs = v;
+                                    });
+                                }
+                            }
+                            else {
+                                let _c = -_diff;
+                                const _nodes = [...this.state.parse.tree];
+                                for (let k = 0; k < -_diff; k++) {
+                                    if ("opcode" in _nodes[k]) {
+                                        if ((_nodes[k] as RDOpNode).output > 0) {
+                                            const _node = _nodes[_nodes.length - 1];
+                                            this.problems.push({
+                                                msg: "no LHS item exists to match this RHS item",
+                                                position: _node.position,
+                                                code: ErrorCode.MismatchLHS
+                                            });
+                                            if ((_nodes[k] as RDOpNode).output > 1) {
+                                                if (_c >= (_nodes[k] as RDOpNode).output) {
+                                                    _nodes.pop();
+                                                    _c -= (_nodes[k] as RDOpNode).output;
+                                                }
+                                                k += ((_nodes[k] as RDOpNode).output - 1);
+                                            }
+                                            else {
+                                                _nodes.pop();
+                                                _c--;
+                                            }
+                                        }
+                                    }
+                                }
+                                for (let k = 0; k < _nodes.length; k++) {
+                                    const _node = this.state.parse.tree[
+                                        _nodes.length - 1 - k
+                                    ];
+                                    this.state.track.char = _node.position[1];
+                                    if (_node) {
+                                        if ("opcode" in _node) {
+                                            if (_node.output > 0) {
+                                                _node.lhs = [];
+                                                _tags.slice(-_node.output).forEach(v => {
+                                                    _node.lhs?.push(v);
+                                                });
+                                            }
+                                        }
+                                        else _tags.slice(-1).forEach(v => {
+                                            _node.lhs = v;
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else this.problems.push({
+                    msg: "invalid rain expression",
+                    position: [
+                        _positionOffset,
+                        _positionOffset + _subExp[j].length - 1
+                    ],
+                    code: ErrorCode.InvalidExpression
+                });
+
+                _currentSourceTree.push(
+                    ...this.state.parse.tree.splice(
+                        -this.state.parse.tree.length
+                    )
+                );
+                this.parseAliases[
+                    this.parseAliases.length - 1
+                ].push(
+                    ...[...this.state.parse.aliases.splice(
+                        -this.state.parse.aliases.length
+                    )]
+                );
+            }
+
+            // constructing final parse tree
+            this.parseTree.push({
+                position: _sourceExpPos[i],
+                tree: _currentSourceTree.splice(-_currentSourceTree.length)
+            });
         }
     }
 
     /**
-     * @internal Method to resolve a valid closed node at current state of parsing
+     * @internal Method to resolve a valid closed paren node at current state of parsing
      */
-    private resolveOpNode() {
+    private resolveParen() {
         this.state.track.parens.open.pop();
         const _endPosition = this.state.track.parens.close.pop()!;
         let _nodes: RDNode[] = this.state.parse.tree;
@@ -1065,15 +1196,14 @@ class RainParser {
     /**
      * @internal Method to handle operand arguments
      */
-    private resolveOperand(pos: number, op?: RDOpNode, count = 0): RDOpNode | undefined {
+    private resolveOperand(pos: number, op: RDOpNode): RDOpNode {
         if (!this.exp.includes(">")) {
-            this.state.operandArgsErr = true;
             this.problems.push({
                 msg: "expected \">\"",
                 position: [pos, pos + this.exp.length - 1],
-                code: ErrorCode.ExpectedClosingOperandArgBracket
+                code: ErrorCode.ExpectedClosingAngleBracket
             });
-            if (op) if (!op.operandArgs) op.operandArgs = {
+            op.operandArgs = {
                 position: [pos, pos + this.exp.length - 1],
                 args: []
             };
@@ -1082,93 +1212,63 @@ class RainParser {
         else {
             const _operandArgs = this.exp.slice(1, this.exp.indexOf(">"));
             this.exp = this.exp.slice(this.exp.indexOf(">") + 1);
-            if (_operandArgs.search(/[^0-9\s]/) > -1) {
-                if (op) this.state.operandArgsErr = true;
-                const _errors = _operandArgs.matchAll(/[^0-9\s]+/g);
-                for (const _err of _errors) {
-                    this.problems.push({
-                        msg: "invalid argument pattern",
-                        position: [
-                            pos + _err.index! + 1,
-                            pos + _err.index! + _err[0].length,
-                        ],
-                        code: ErrorCode.InvalidWordPattern
-                    });
+            const _parsedVals = this.simpleParse(_operandArgs, /\S+/, pos + 1);
+            op.operandArgs = {
+                position: [pos, pos + _operandArgs.length + 1],
+                args: []
+            };
+            let _operandMetas: OperandArgs = [];
+            const _index = this.names.indexOf(op.opcode.name);
+            if (_index > -1) {
+                if (typeof this.operand[_index] !== "number") {
+                    _operandMetas = deepCopy(this.operand[_index] as OperandArgs);
+                    const _i = _operandMetas.findIndex(v => v.name === "inputs");
+                    if (_i > -1) _operandMetas.splice(_i, 1);
                 }
-            }
-            else {
-                if (!op) this.problems.push({
-                    msg: "invalid syntax, operand args need to follow an opcode",
+                if (_operandMetas.length === 0) this.problems.push({
+                    msg: `opcode ${op.opcode.name} doesn't have argumented operand`,
                     position: [pos, pos + _operandArgs.length + 1],
-                    code: ErrorCode.ExpectedOpcode
+                    code: ErrorCode.MismatchOperandArgs
                 });
-                else {
-                    if (!op.operandArgs) op.operandArgs = {
-                        position: [pos, pos + _operandArgs.length + 1],
-                        args: []
-                    };
-                    if (op.opcode.name !== ("unknown opcode") && count === 0) {
-                        this.state.operandArgsErr = true;
-                        this.problems.push({
-                            msg: `opcode ${op.opcode.name} doesn't have argumented operand`,
-                            position: [pos, pos + _operandArgs.length + 1],
-                            code: ErrorCode.MismatchOperandArgs
-                        });
-                    }
-                    else {
-                        const _parsed = this.simpleParse(_operandArgs, pos + 1);
-                        const _args = _parsed.words;
-                        const _argsPos: [number, number][] = _parsed.positions;
-                        if (op.opcode.name === "unknown opcode") {
-                            _args.forEach((v, i) => op.operandArgs?.args.push({
-                                value: Number(v),
-                                name: "unknown",
-                                position: _argsPos[i]
-                            }));
-                        }
-                        else {
-                            const _opMetaOperandArgs = [...(this.operand[
-                                this.names.indexOf(op.opcode.name)
-                            ] as OperandArgs)];
-                            const _i = _opMetaOperandArgs.findIndex(v => v.name === "inputs");
-                            if (_i > -1) _opMetaOperandArgs.splice(_i, 1);
-                            const _diff = _args.length - _opMetaOperandArgs.length;
-                            if (_diff === 0) _opMetaOperandArgs.forEach(
-                                (v, i) => op.operandArgs?.args.push({
-                                    value: Number(_args[i]),
-                                    name: v.name,
-                                    description: v?.desc,
-                                    position: _argsPos[i]
-                                })
-                            );
-                            else if (_diff > 0) {
-                                this.state.operandArgsErr = true;
-                                for (let i = 0; i < _diff; i++) {
-                                    this.problems.push({
-                                        msg: `unexpected operand argument for ${op.opcode.name}`,
-                                        position: [..._argsPos[_argsPos.length - 1 - i]],
-                                        code: ErrorCode.MismatchOperandArgs
-                                    });
-                                }
-                            }
-                            else {
-                                this.state.operandArgsErr = true;
-                                this.problems.push({
-                                    msg: `unexpected number of operand args for ${op.opcode.name}`,
-                                    position: [pos, pos + _operandArgs.length + 1],
-                                    code: ErrorCode.MismatchOperandArgs
-                                });
-                            }
-                        } 
-                    }
-                }
+                if (_operandMetas.length > _parsedVals.length) this.problems.push({
+                    msg: `expected ${
+                        _operandMetas.length - _parsedVals.length
+                    }${
+                        _parsedVals.length ? " more" : ""
+                    } operand argument${
+                        (_operandMetas.length - _parsedVals.length) > 1 ? "s" : ""
+                    } for ${
+                        op.opcode.name
+                    }`,
+                    position: [pos, pos + _operandArgs.length + 1],
+                    code: ErrorCode.MismatchOperandArgs
+                });
             }
+            _parsedVals.forEach((v, i) => {
+                const _isValid = /^[0-9]+$|^0x[a-fA-F0-9]+$/.test(v[0]);
+                if (_isValid) op.operandArgs!.args.push({
+                    value: Number(v[0]),
+                    name: _operandMetas[i]?.name ?? "unknown",
+                    position: v[1],
+                    description: _operandMetas[i]?.desc
+                });
+                else this.problems.push({
+                    msg: `invalid argument pattern: ${v[0]}`,
+                    position: v[1],
+                    code: ErrorCode.InvalidWordPattern
+                });
+                if (_index > -1 && i >= _operandMetas.length) this.problems.push({
+                    msg: `unexpected operand argument for ${op.opcode.name}`,
+                    position: v[1],
+                    code: ErrorCode.MismatchOperandArgs
+                });
+            });
         }
         return op;
     }
 
     /**
-     * @internal Method that resolves the RDOpNode once its respective closing paren has consumed
+     * @internal Method that resolves the RDOpNode once its respective closing paren has been consumed
      */
     private resolveOp = (node: RDOpNode): RDOpNode => {
         const _index = this.names.indexOf(node.opcode.name);
@@ -1176,38 +1276,46 @@ class RainParser {
             if (typeof this.pushes[_index] === "number") {
                 node.output = this.pushes[_index] as number;
             }
-            if (this.state.operandArgsErr) {
-                this.state.operandArgsErr = false;
-                node.operand = NaN;
-            } 
-            else {
-                if (this.operand[_index] === 0) {
-                    node.operand = 0;
-                    if (this.pops[_index] === 0) {
-                        if (node.parameters.length) this.problems.push({
-                            msg: "out-of-range inputs",
-                            position: [...node.parens],
-                            code: ErrorCode.OutOfRangeInputs
-                        });
-                    }
-                    else {
-                        if (
-                            node.parameters.length !== 
-                            (this.pops[_index] as InputArgs).parameters.length
-                        ) this.problems.push({
-                            msg: "out-of-range inputs",
-                            position: [...node.parens],
-                            code: ErrorCode.OutOfRangeInputs
-                        });
-                    }
+            if (this.operand[_index] === 0) {
+                node.operand = 0;
+                if (node.operandArgs) {
+                    node.operand = NaN;
+                    this.problems.push({
+                        msg: `opcode ${node.opcode.name} doesn't have argumented operand`,
+                        position: node.operandArgs.position,
+                        code: ErrorCode.MismatchOperandArgs
+                    });
+                }
+                if (this.pops[_index] === 0) {
+                    if (node.parameters.length) this.problems.push({
+                        msg: "out-of-range inputs",
+                        position: [...node.parens],
+                        code: ErrorCode.OutOfRangeInputs
+                    });
                 }
                 else {
-                    let _argIndex = 0;
-                    let _inputsIndex = -1;
-                    const _argsLength = (this.operand[_index] as OperandArgs).find(v => v.name === "inputs")
-                        ? (this.operand[_index] as OperandArgs).length - 1
-                        : (this.operand[_index] as OperandArgs).length;
-                    if (_argsLength === (node.operandArgs?.args.length ?? 0)) {
+                    if (
+                        node.parameters.length !== 
+                        (this.pops[_index] as InputArgs).parameters.length
+                    ) this.problems.push({
+                        msg: "out-of-range inputs",
+                        position: [...node.parens],
+                        code: ErrorCode.OutOfRangeInputs
+                    });
+                }
+            }
+            else {
+                let _argIndex = 0;
+                let _inputsIndex = -1;
+                const _argsLength = (
+                    this.operand[_index] as OperandArgs
+                ).find(
+                    v => v.name === "inputs"
+                )
+                    ? (this.operand[_index] as OperandArgs).length - 1
+                    : (this.operand[_index] as OperandArgs).length;
+                if (_argsLength === (node.operandArgs?.args.length ?? 0)) {
+                    if ((_argsLength === 0 && !node.operandArgs) || _argsLength > 0) {
                         const _operand = constructByBits(
                             (this.operand[_index] as OperandArgs).map((v, i) => {
                                 if (v.name === "inputs") {
@@ -1287,8 +1395,18 @@ class RainParser {
                             }
                         }
                     }
+                    else node.operand = NaN;
+                }
+                else {
+                    node.operand = NaN;
+                    if (_argsLength > 0 && !node.operandArgs) this.problems.push({
+                        msg: `expected operand arguments for opcode ${node.opcode.name}`,
+                        position: node.opcode.position,
+                        code: ErrorCode.ExpectedOperandArgs
+                    });
                 }
             }
+            // }
             if (node.output === 0 && this.state.depthLevel > 1) this.problems.push({
                 msg: "zero output opcodes cannot be nested",
                 position: [...node.position],
@@ -1330,19 +1448,11 @@ class RainParser {
             });
             let _enum = this.names.indexOf(_word);
             if (_enum === -1) _enum = this.opAliases.findIndex(v => v?.includes(_word));
-            let count = 0;
-            if (_enum > -1 && typeof this.operand[_enum] !== "number") {
-                (this.operand[_enum] as OperandArgs).forEach(v => {
-                    if (v.name !== "inputs") count++;
-                });
-            }
-            if (_enum === -1) {
-                this.problems.push({
-                    msg: `unknown opcode: "${_word}"`,
-                    position: [..._wordPos],
-                    code: ErrorCode.UnknownOp
-                });
-            }
+            if (_enum === -1) this.problems.push({
+                msg: `unknown opcode: "${_word}"`,
+                position: [..._wordPos],
+                code: ErrorCode.UnknownOp
+            });
             let _op: RDOpNode = {
                 opcode: {
                     name: _enum > -1 ? this.names[_enum] : "unknown opcode",
@@ -1355,16 +1465,7 @@ class RainParser {
                 parens: [NaN, NaN],
                 parameters: []
             };
-            if (this.exp.startsWith("<")) _op = 
-                this.resolveOperand(entry + _word.length, _op, count)!;
-            else if (count) {
-                this.problems.push({
-                    msg: `expected operand arguments for opcode ${_op.opcode.name}`,
-                    position: [..._wordPos],
-                    code: ErrorCode.ExpectedOperandArgs
-                });
-                this.state.operandArgsErr = true;
-            }
+            if (this.exp.startsWith("<")) _op = this.resolveOperand(entry + _word.length, _op);
             if (this.exp.startsWith("(")) {
                 const _pos = _op.operandArgs 
                     ? [..._op.operandArgs!.position][1] + 1 
@@ -1458,13 +1559,13 @@ class RainParser {
     /**
      * @internal Method to check for errors in parse tree once an expression is fully parsed
      */
-    private _errorCheck(node: RDNode): boolean {
+    private errorCheck(node: RDNode): boolean {
         if (this.problems.length) return false;
         if ("opcode" in node) {
             if (isNaN(node.operand) || isNaN(node.output)) return false;
             else {
                 for (let i = 0; i < node.parameters.length; i++) {
-                    if (!this._errorCheck(node.parameters[i])) return false;
+                    if (!this.errorCheck(node.parameters[i])) return false;
                 }
                 return true;
             }
@@ -1523,101 +1624,136 @@ class RainParser {
         // check for errors
         for (let i = 0; i < _nodes.length; i++) {
             for (let j = 0; j < _nodes[i].length; j++) {
-                if (!this._errorCheck(_nodes[i][j])) return undefined;
+                if (!this.errorCheck(_nodes[i][j])) return undefined;
             }
         }
 
         // compile from parsed tree
-        for (let i = 0; i < _nodes.length; i++) {
-            if (_nodes[i].length === 0) _sourcesCache = [];
-            for (let j = 0; j < _nodes[i].length; j++) {
-                if (i > sourceIndex) sourceIndex = i;
-                const _node = _nodes[i][j];
-                if ("value" in _node) {
-                    if (isBigNumberish(_node.value)) {
-                        if (constants.includes(_node.value)) {
-                            _sourcesCache.push(
-                                op(
-                                    this.names.indexOf("read-memory"),
-                                    memoryOperand(
-                                        constants.indexOf(_node.value),
-                                        MemoryType.Constant,
+        try {
+            for (let i = 0; i < _nodes.length; i++) {
+                if (_nodes[i].length === 0) _sourcesCache = [];
+                for (let j = 0; j < _nodes[i].length; j++) {
+                    if (i > sourceIndex) sourceIndex = i;
+                    const _node = _nodes[i][j];
+                    if ("value" in _node) {
+                        if (isBigNumberish(_node.value)) {
+                            if (constants.includes(_node.value)) {
+                                _sourcesCache.push(
+                                    op(
+                                        this.names.indexOf("read-memory"),
+                                        memoryOperand(
+                                            constants.indexOf(_node.value),
+                                            MemoryType.Constant,
+                                        )
                                     )
-                                )
-                            );
+                                );
+                            }
+                            else {
+                                _sourcesCache.push(
+                                    op(
+                                        this.names.indexOf("read-memory"),
+                                        memoryOperand(constants.length, MemoryType.Constant)
+                                    )
+                                );
+                                constants.push(_node.value);
+                            }
                         }
-                        else {
-                            _sourcesCache.push(
-                                op(
-                                    this.names.indexOf("read-memory"),
-                                    memoryOperand(constants.length, MemoryType.Constant)
-                                )
+                        else if ((_node.value as string).match(/max-uint-?256|infinity/)) {
+                            const _i = constants.findIndex(
+                                v => CONSTANTS.MaxUint256.eq(v)
                             );
-                            constants.push(_node.value);
+                            if (_i > -1) {
+                                _sourcesCache.push(
+                                    op(
+                                        this.names.indexOf("read-memory"),
+                                        memoryOperand(_i, MemoryType.Constant)
+                                    )
+                                );
+                            }
+                            else {
+                                _sourcesCache.push(
+                                    op(
+                                        this.names.indexOf("read-memory"),
+                                        memoryOperand(constants.length, MemoryType.Constant)
+                                    )
+                                );
+                                constants.push(
+                                    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                                );
+                            }
                         }
                     }
-                    else if (_node.value === "max-uint256" || _node.value === "infinity") {
-                        const _i = constants.findIndex(
-                            v => CONSTANTS.MaxUint256.eq(v)
+                    else if ("name" in _node) {
+                        const _i = this.parseAliases[sourceIndex].findIndex(
+                            v => v.name === _node.name
                         );
-                        if (_i > -1) {
-                            _sourcesCache.push(
-                                op(
-                                    this.names.indexOf("read-memory"),
-                                    memoryOperand(_i, MemoryType.Constant)
-                                )
+                        if (_i > -1) _sourcesCache.push(
+                            op(
+                                this.names.indexOf("read-memory"),
+                                memoryOperand(_i, MemoryType.Stack)
+                            )
+                        );
+                        else throw new Error(`cannot find "${_node.name}"`);
+                    }
+                    else {
+                        for (let i = 0; i < _node.parameters.length; i++) {
+                            const _expConf = this._compile(
+                                _node.parameters[i],
+                                constants,
+                                sourceIndex
                             );
-                        }
-                        else {
-                            _sourcesCache.push(
-                                op(
-                                    this.names.indexOf("read-memory"),
-                                    memoryOperand(constants.length, MemoryType.Constant)
-                                )
-                            );
-                            constants.push(
-                                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-                            );
-                        }
+                            _sourcesCache.push(..._expConf!.sources);
+                        } 
+                        let _ctx: ContextAlias | undefined;
+                        const _index = this.names.indexOf(_node.opcode.name);
+                        if (_index >= this.opmetaLength) _ctx = this.ctxAliases.find(
+                            v => v.name === _node.opcode.name
+                        );
+                        _sourcesCache.push(
+                            op(
+                                _ctx ? this.names.indexOf("context") : _index, 
+                                _ctx
+                                    ? isNaN(_ctx.row)
+                                        ? constructByBits([
+                                            {
+                                                value: _ctx.column,
+                                                bits: [8, 15]
+                                            },
+                                            {
+                                                value: _node.operand,
+                                                bits: [0, 7]
+                                            }
+                                        ])
+                                        : constructByBits([
+                                            {
+                                                value: _ctx.column,
+                                                bits: [8, 15]
+                                            },
+                                            {
+                                                value: _ctx.row,
+                                                bits: [0, 7]
+                                            }
+                                        ])
+                                    : _node.operand 
+                            )
+                        );
                     }
                 }
-                else if ("name" in _node && !("opcode" in _node)) {
-                    const _i = this.parseAliases[sourceIndex].findIndex(
-                        v => v.name === _node.name
-                    );
-                    if (_i > -1) _sourcesCache.push(
-                        op(
-                            this.names.indexOf("read-memory"),
-                            memoryOperand(_i, MemoryType.Stack)
-                        )
-                    );
-                    else throw new Error(`cannot find "${_node.name}"`);
-                }
-                else {
-                    for (let i = 0; i < (_node as RDOpNode).parameters.length; i++) {
-                        const _expConf = this._compile(
-                            (_node as RDOpNode).parameters[i],
-                            constants,
-                            sourceIndex
-                        );
-                        _sourcesCache.push(..._expConf!.sources);
-                    } 
-                    _sourcesCache.push(op(
-                        this.names.indexOf((_node as RDOpNode).opcode.name),
-                        (_node as RDOpNode).operand
-                    ));
-                }
+                _sources.push(concat(_sourcesCache));
+                _sourcesCache = [];
             }
-            _sources.push(concat(_sourcesCache));
-            _sourcesCache = [];
+            return {
+                constants,
+                sources: _sources.length 
+                    ? _sources.map(
+                        v => hexlify(v, { allowMissingPrefix: true })
+                    ) 
+                    : []
+            };
         }
-        return {
-            constants,
-            sources: _sources.length 
-                ? _sources.map(
-                    v => hexlify(v, { allowMissingPrefix: true })
-                ) 
-                : []
-        };
+        catch (_err) {
+            console.log(_err);
+            return undefined;
+        }
     }
 }

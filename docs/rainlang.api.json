@@ -242,6 +242,73 @@
           }
         },
         {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!buildMetaInfo:function(1)",
+          "docComment": "/**\n * Build a general info from a meta content (used as hover info for a meta hash)\n *\n * @param hash - The meta hash to build info from\n *\n * @param metaStore - The meta store instance that keeps this hash as record\n *\n * @returns A promise that resolves with general info about the meta\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function buildMetaInfo(hash: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", metaStore: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MetaStore",
+              "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<string>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/services/hover.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 7
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "hash",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "metaStore",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "buildMetaInfo"
+        },
+        {
           "kind": "Variable",
           "canonicalReference": "@rainprotocol/rainlang!bytify:var",
           "docComment": "/**\n * Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte, unless a desired `bytesLength` is specified.\n *\n * @param value - value to convert to raw bytes format\n *\n * @param bytesLength - (defaults to 1) number of bytes to left pad if `value` doesn't completely fill the desired amount of memory. Will throw `InvalidArgument` error if value already exceeds bytes length.\n *\n * @returns raw bytes representation as Uint8Array\n *\n * @public\n */\n",
@@ -572,6 +639,32 @@
           "name": "constructByBits"
         },
         {
+          "kind": "TypeAlias",
+          "canonicalReference": "@rainprotocol/rainlang!ContextAlias:type",
+          "docComment": "/**\n * Type for context cell alias\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export type ContextAlias = "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    name: string;\n    desc: string;\n    column: number;\n    row: number;\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
+          "releaseTag": "Public",
+          "name": "ContextAlias",
+          "typeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!deepCopy:function(1)",
           "docComment": "/**\n * Deep copy an item in a way that all of its properties get new reference\n *\n * @param variable - The variable to copy\n *\n * @returns a new deep copy of the variable\n *\n * @public\n */\n",
@@ -691,12 +784,33 @@
           "members": [
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedClosingOperandArgBracket:member",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.DuplicateAlias:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "ExpectedClosingOperandArgBracket = "
+                  "text": "DuplicateAlias = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "2048"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "DuplicateAlias"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedClosingAngleBracket:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedClosingAngleBracket = "
                 },
                 {
                   "kind": "Content",
@@ -708,7 +822,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "ExpectedClosingOperandArgBracket"
+              "name": "ExpectedClosingAngleBracket"
             },
             {
               "kind": "EnumMember",
@@ -817,16 +931,16 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.IlligalAlias:member",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.IlligalChar:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "IlligalAlias = "
+                  "text": "IlligalChar = "
                 },
                 {
                   "kind": "Content",
-                  "text": "2048"
+                  "text": "2"
                 }
               ],
               "initializerTokenRange": {
@@ -834,7 +948,28 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "IlligalAlias"
+              "name": "IlligalChar"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidContractMeta:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "InvalidContractMeta = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "265"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "InvalidContractMeta"
             },
             {
               "kind": "EnumMember",
@@ -1069,48 +1204,6 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.NonASCIICharacter:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "NonASCIICharacter = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "2"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "NonASCIICharacter"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.NonPrintableASCIICharacter:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "NonPrintableASCIICharacter = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "3"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "NonPrintableASCIICharacter"
-            },
-            {
-              "kind": "EnumMember",
               "canonicalReference": "@rainprotocol/rainlang!ErrorCode.OutOfRangeInputs:member",
               "docComment": "",
               "excerptTokens": [
@@ -1192,6 +1285,27 @@
               },
               "releaseTag": "Public",
               "name": "RuntimeError"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UndefinedMeta:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UndefinedMeta = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "4"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UndefinedMeta"
             },
             {
               "kind": "EnumMember",
@@ -2377,6 +2491,52 @@
           }
         },
         {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!isEmptyRange:function(1)",
+          "docComment": "/**\n * Checks if a range is empty\n *\n * @param range - The range to check\n *\n * @returns True if the range is empty and false if not\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function isEmptyRange(range: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Range",
+              "canonicalReference": "@rainprotocol/rainlang!~Range"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "range",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "isEmptyRange"
+        },
+        {
           "kind": "Variable",
           "canonicalReference": "@rainprotocol/rainlang!isHexString:var",
           "docComment": "/**\n * ethers isHexString\n *\n * @public\n */\n",
@@ -2403,6 +2563,69 @@
             "startIndex": 1,
             "endIndex": 3
           }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!isInRange:function(1)",
+          "docComment": "/**\n * Checks if a position is within a range\n *\n * @param range - The range to check\n *\n * @param position - The position to check\n *\n * @returns True if the position is in range and false if not\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function isInRange(range: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Range",
+              "canonicalReference": "@rainprotocol/rainlang!~Range"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Position",
+              "canonicalReference": "@rainprotocol/rainlang!~Position"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "range",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "isInRange"
         },
         {
           "kind": "Interface",
@@ -2569,6 +2792,69 @@
             }
           ],
           "name": "mapToRecord"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!matchRange:function(1)",
+          "docComment": "/**\n * Checks if 2 ranges match exactly together\n *\n * @param range1 - The first range\n *\n * @param range2 - The second range\n *\n * @returns True if the ranges match and false if they don't\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function matchRange(range1: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Range",
+              "canonicalReference": "@rainprotocol/rainlang!~Range"
+            },
+            {
+              "kind": "Content",
+              "text": ", range2: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Range",
+              "canonicalReference": "@rainprotocol/rainlang!~Range"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "boolean"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "range1",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "range2",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "matchRange"
         },
         {
           "kind": "Function",
@@ -3561,6 +3847,42 @@
             },
             {
               "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getContextAliases:member(1)",
+              "docComment": "/**\n * Get the context aliases of specified meta hashes in this RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getContextAliases(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "ContextAlias",
+                  "canonicalReference": "@rainprotocol/rainlang!ContextAlias:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getContextAliases"
+            },
+            {
+              "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#getExpressionConfig:member(1)",
               "docComment": "/**\n * Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used.\n *\n * @param item - Optional item to get the ExpressionConfig for\n *\n * @public\n */\n",
               "excerptTokens": [
@@ -3634,7 +3956,7 @@
             {
               "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#getLHSAliases:member(1)",
-              "docComment": "/**\n * Get the parsed exp aliases of this RainParser instance\n *\n * @public\n */\n",
+              "docComment": "/**\n * Get the parsed exp aliases of this RainDocument instance\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -3670,7 +3992,7 @@
             {
               "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#getMetaHashes:member(1)",
-              "docComment": "/**\n * Get the specified meta hashes of this RainParser instance\n *\n * @public\n */\n",
+              "docComment": "/**\n * Get the specified meta hashes of this RainDocument instance\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -4378,7 +4700,7 @@
             },
             {
               "kind": "Content",
-              "text": "[];\n    };\n    track: {\n        char: number;\n        parens: {\n            open: number[];\n            close: number[];\n        };\n    };\n    depthLevel: number;\n    operandArgsErr: boolean;\n    runtimeError: "
+              "text": "[];\n    };\n    track: {\n        char: number;\n        parens: {\n            open: number[];\n            close: number[];\n        };\n    };\n    depthLevel: number;\n    runtimeError: "
             },
             {
               "kind": "Reference",
@@ -4979,7 +5301,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!rlc:function(2)",
-          "docComment": "/**\n * Rain Language Compiler (rlc), compiles Text Documents into valid ExpressionConfig (deployable bytes)\n *\n * @param document - The TextDocument to compile\n *\n * @param metaStore - (optional) Initial MetaStore object\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
+          "docComment": "/**\n * Rain Language Compiler (rlc), compiles Text Documents into valid ExpressionConfig (deployable bytes)\n *\n * @param document - The TextDocument to compile\n *\n * @param metaStore - (optional) MetaStore object\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",

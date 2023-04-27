@@ -51,15 +51,15 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         );
     });
 
-    it("should error: found non-printable-ASCII character with unicode: \"U+00a2\"", async () => {
+    it("should error: found illigal character: \"\\u00a2\"", async () => {
         await testDiagnostics(
             rainlang`@${opMetaHash} _: add(¢ 2)`, 
             store, 
             [{ 
-                message: "found non-printable-ASCII character with unicode: \"U+00a2\"", 
+                message: "found illigal character: \"\u00a2\"", 
                 range: toRange(0, 75, 0, 76), 
                 severity: DiagnosticSeverity.Error, 
-                code: ErrorCode.NonPrintableASCIICharacter, 
+                code: ErrorCode.IlligalChar, 
                 source: "rainlang" 
             }]
         );
@@ -195,13 +195,22 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         await testDiagnostics(
             rainlang`@${opMetaHash} x: read-memory<error-argument>();`, 
             store, 
-            [{ 
-                message: "invalid argument pattern", 
-                range: toRange(0, 83, 0, 97), 
-                severity: DiagnosticSeverity.Error, 
-                code: ErrorCode.InvalidExpression, 
-                source: "rainlang" 
-            }]
+            [
+                {
+                    message: "expected 1 more operand argument for read-memory",
+                    range: toRange(0, 82, 0, 98), 
+                    severity: DiagnosticSeverity.Error, 
+                    code: ErrorCode.MismatchOperandArgs, 
+                    source: "rainlang"
+                },
+                { 
+                    message: "invalid argument pattern: error-argument", 
+                    range: toRange(0, 83, 0, 97), 
+                    severity: DiagnosticSeverity.Error, 
+                    code: ErrorCode.InvalidExpression, 
+                    source: "rainlang" 
+                }
+            ]
         );
     });
 
@@ -219,7 +228,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         );
     });
 
-    it("should error: unexpected operand argument for read-memory", async () => {
+    it("should error: unexpected operand argument for opcode", async () => {
         await testDiagnostics(
             rainlang`@${opMetaHash} x: read-memory<1 2 3>(1);`, 
             store, 
@@ -233,12 +242,12 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         );
     });
 
-    it("should error: unexpected number of operand args for read-memory", async () => {
+    it("should error: expected more operand args for opcode", async () => {
         await testDiagnostics(
             rainlang`@${opMetaHash} x: read-memory<>();`, 
             store, 
             [{ 
-                message: "unexpected number of operand args for read-memory", 
+                message: "expected 2 operand arguments for read-memory", 
                 range: toRange(0, 82, 0, 84), 
                 severity: DiagnosticSeverity.Error, 
                 code: ErrorCode.MismatchOperandArgs, 
@@ -477,7 +486,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
                     message: "expected \">\"", 
                     range: toRange(0, 82, 0, 88), 
                     severity: DiagnosticSeverity.Error, 
-                    code: ErrorCode.ExpectedClosingOperandArgBracket, 
+                    code: ErrorCode.ExpectedClosingAngleBracket, 
                     source: "rainlang" 
                 },
                 { 
@@ -580,14 +589,14 @@ describe("Rainlang Diagnostics Service Tests", async function () {
             store, 
             [
                 { 
-                    range: toRange(4, 30, 4, 31), 
+                    range: toRange(4, 28, 4, 29), 
                     message: "unexpected operand argument for do-while", 
                     severity: DiagnosticSeverity.Error, 
                     code: ErrorCode.MismatchOperandArgs, 
                     source: "rainlang" 
                 },
                 { 
-                    range: toRange(4, 28, 4, 29), 
+                    range: toRange(4, 30, 4, 31), 
                     message: "unexpected operand argument for do-while", 
                     severity: DiagnosticSeverity.Error, 
                     code: ErrorCode.MismatchOperandArgs, 

@@ -21,6 +21,7 @@
 
 |  Function | Description |
 |  --- | --- |
+|  [buildMetaInfo(hash, metaStore)](./variables/buildmetainfo_1.md) | Build a general info from a meta content (used as hover info for a meta hash) |
 |  [constructByBits(args)](./variables/constructbybits_1.md) | Method to construct the operand from operand args |
 |  [deepCopy(variable)](./variables/deepcopy_1.md) | Deep copy an item in a way that all of its properties get new reference |
 |  [deepFreeze(object)](./variables/deepfreeze_1.md) | Deeply freezes an object, all of the properties of propterties gets frozen |
@@ -35,7 +36,10 @@
 |  [getRainlangHover(document, position, setting)](./variables/getrainlanghover_2.md) | Provides hover items |
 |  [getRainLanguageServices(params)](./variables/getrainlanguageservices_1.md) | Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services |
 |  [isBigNumberish(value)](./variables/isbignumberish_1.md) | function to check if the a value is of type BigNumberish, from EthersJS library |
+|  [isEmptyRange(range)](./variables/isemptyrange_1.md) | Checks if a range is empty |
+|  [isInRange(range, position)](./variables/isinrange_1.md) | Checks if a position is within a range |
 |  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
+|  [matchRange(range1, range2)](./variables/matchrange_1.md) | Checks if 2 ranges match exactly together |
 |  [memoryOperand(offset, type)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
 |  [rainlang(stringChunks, vars)](./variables/rainlang_1.md) | Method to be used as Tagged Templates to activate embedded rainlang in javascript to typescript that highlights the rainlang syntax. Requires rainlang vscode extension to be installed. |
 |  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
@@ -85,6 +89,7 @@
 
 |  Type Alias | Description |
 |  --- | --- |
+|  [ContextAlias](./types/contextalias.md) | Type for context cell alias |
 |  [ExpressionConfig](./types/expressionconfig.md) | Type of valid parsed expression, i.e. compiled bytes |
 |  [RainParseState](./types/rainparsestate.md) | Type of RainParser state |
 |  [RDAliasNode](./types/rdaliasnode.md) | Type of RainDocument's lhs aliases |

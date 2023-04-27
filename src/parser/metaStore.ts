@@ -107,7 +107,8 @@ export class MetaStore {
      * @returns The op meta bytes as hex string if it exists in the store and `undefined` if it doesn't
      */
     public getOpMeta(metaHash: string): string | undefined {
-        return this.exctractMeta(this.opCache[metaHash.toLowerCase()], "op");
+        return this.exctractMeta(this.opCache[metaHash.toLowerCase()], "op")
+            ?.toLowerCase();
     }
 
     /**
@@ -116,7 +117,8 @@ export class MetaStore {
      * @returns The contract meta bytes as hex string if it exists in the store and `undefined` if it doesn't
      */
     public getContractMeta(metaHash: string): string | undefined {
-        return this.exctractMeta(this.contCache[metaHash.toLowerCase()], "contract");
+        return this.exctractMeta(this.contCache[metaHash.toLowerCase()], "contract")
+            ?.toLowerCase();
     }
 
     /**

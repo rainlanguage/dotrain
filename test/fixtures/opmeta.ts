@@ -2,8 +2,16 @@
  * k/v pairs of invalid op metas
  */
 export const invalidOpMetas: Record<string, any> = {
-    empty: "",
-    invalid_bytes: "not-bytes",
+    empty: {
+        metaHash: "0xf9aa8f85748ea80a6ad269429c95782cb7585bef1e8022acf4db5db25087a55e",
+        opmeta: "",
+        metaBytes: "0xa40060011bffe5282f43e495b402706170706c69636174696f6e2f6a736f6e03676465666c617465"
+    },
+    invalid_bytes: {
+        metaHash: "0xba0638290808a56c33c045fc3ac9f9468a53f083c815a0a4bc9052240ed81604",
+        opmeta: "not-bytes",
+        metaBytes: "0xa400696e6f742d6279746573011bffe5282f43e495b402706170706c69636174696f6e2f6a736f6e03676465666c617465"
+    },
     invalid_header: {
         metaHash: "0x55cf677f697728a2c47d827121735abe1621592ad68ca90898dd41d3c7f8c6e5",
         opmeta: "0xabcd",

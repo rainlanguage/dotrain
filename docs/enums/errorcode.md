@@ -14,13 +14,15 @@ enum ErrorCode
 
 |  Member | Value | Description |
 |  --- | --- | --- |
-|  ExpectedClosingOperandArgBracket | `774` |  |
+|  DuplicateAlias | `2048` |  |
+|  ExpectedClosingAngleBracket | `774` |  |
 |  ExpectedClosingParen | `772` |  |
 |  ExpectedOpcode | `769` |  |
 |  ExpectedOpeningParen | `773` |  |
 |  ExpectedOperandArgs | `771` |  |
 |  ExpectedSpace | `770` |  |
-|  IlligalAlias | `2048` |  |
+|  IlligalChar | `2` |  |
+|  InvalidContractMeta | `265` |  |
 |  InvalidExpression | `258` |  |
 |  InvalidInputsMeta | `259` |  |
 |  InvalidMetaHash | `263` |  |
@@ -32,12 +34,11 @@ enum ErrorCode
 |  MismatchLHS | `1026` |  |
 |  MismatchOperandArgs | `1027` |  |
 |  MismatchRHS | `1025` |  |
-|  NonASCIICharacter | `2` |  |
-|  NonPrintableASCIICharacter | `3` |  |
 |  OutOfRangeInputs | `1281` |  |
 |  OutOfRangeOperandArgs | `1282` |  |
 |  OutOfRangeValue | `1283` |  |
 |  RuntimeError | `1792` |  |
+|  UndefinedMeta | `4` |  |
 |  UndefinedOpMeta | `0` |  |
 |  UndefinedWord | `1` |  |
 |  UnexpectedClosingParen | `514` |  |
