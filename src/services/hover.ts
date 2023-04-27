@@ -217,7 +217,7 @@ export async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise
     if (!_opMeta && !_contMeta) return "Unfortunately, could not find any info about this meta";
     else {
         const info = ["This Rain metadata consists of:"];
-        if (_opMeta) info.push(`  - an op metadata with ${
+        if (_opMeta) info.push(`- Op metadata with ${
             (() => {
                 try {
                     return metaFromBytes(_opMeta, OpMetaSchema).length.toString() + " opcodes";
@@ -227,7 +227,7 @@ export async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise
                 }
             })()
         }`);
-        if (_contMeta) info.push(`  - ${
+        if (_contMeta) info.push(`- ${
             (() => {
                 try {
                     return metaFromBytes(_contMeta, ContractMetaSchema).name;

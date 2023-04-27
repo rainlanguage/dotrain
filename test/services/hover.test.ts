@@ -204,7 +204,7 @@ new-total-amount-sent);
                 range: toRange(0, 0, 0, 67),
                 contents: {
                     kind: "plaintext",
-                    value: "This Rain metadata consists of:\n  - an op metadata with 78 opcodes"
+                    value: "This Rain metadata consists of:\n- Op metadata with 78 opcodes"
                 }
             }
         );
@@ -221,7 +221,7 @@ new-total-amount-sent);
                 range: toRange(0, 68, 0, 135),
                 contents: {
                     kind: "plaintext",
-                    value: "This Rain metadata consists of:\n  - Order Book contract metadata"
+                    value: "This Rain metadata consists of:\n- Order Book contract metadata"
                 }
             }
         );

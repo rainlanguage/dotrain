@@ -65,6 +65,7 @@ export async function getRainlangCompletion(
         ?.documentationFormat;
     if (format && format[0]) _documentionType = format[0];
 
+    const _regexp = /[a-zA-Z0-9-]/;
     const _prefixText = _td.getText(
         Range.create(Position.create(position.line, 0), position)
     );
@@ -72,12 +73,12 @@ export async function getRainlangCompletion(
     try {
         if (
             _prefixText.includes(":") && 
-            !_td.getText(
+            !_regexp.test(_td.getText(
                 Range.create(
                     position, 
                     { line: position.line, character: position.character + 1 }
                 )
-            ).match(/[a-zA-Z0-9-]/)
+            ))
         ) {
             const _opmeta = _rd.getOpMeta();
             const _offset = _td.offsetAt(position);
@@ -204,7 +205,7 @@ export async function getRainlangCompletion(
             // filter the items based on previous characters
             let _prefixMatch = "";
             for (let i = 0; i < _prefixText.length; i++) {
-                if (_prefixText[_prefixText.length - i - 1].match(/[a-zA-Z0-9-]/)) {
+                if (_regexp.test(_prefixText[_prefixText.length - i - 1])) {
                     _prefixMatch = _prefixText[_prefixText.length - i - 1] + _prefixMatch;
                 }
                 else break;
