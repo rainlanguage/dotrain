@@ -148,15 +148,15 @@ export async function getRainlangCompletion(
                 });
             });
             const _tree = _rd.getParseTree();
-            let _currentSource = 0;
+            let _currentSource = NaN;
             for (let i = 0; i < _tree.length; i++) {
-                if (_tree[i].position[0] <= _offset && _tree[i].position[1] >= _offset) {
+                if (_tree[i].position[0] <= _offset && _tree[i].position[1] + 1 >= _offset) {
                     _currentSource = i;
                     break;
                 }
             }
             let _pos: [number, number] | undefined;
-            _rd.getLHSAliases()[_currentSource]
+            if (!isNaN(_currentSource)) _rd.getLHSAliases()[_currentSource]
                 ?.filter(v => v.name !== "_")
                 .forEach(v => {
                     let _text = "";

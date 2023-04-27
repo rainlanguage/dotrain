@@ -75,9 +75,9 @@ export async function getRainlangHover(
         };
         for (let i = 0; i < nodes.length; i++) {
             const _n = nodes[i];
-            if (_n.position[0] <= _offset && _n.position[1] >= _offset) {
+            if (_n.position[0] <= _offset && _n.position[1] + 1 >= _offset) {
                 if ("opcode" in _n) {
-                    if (_n.parens[0] < _offset && _n.parens[1] > _offset) {
+                    if (_n.parens[0] < _offset && _n.parens[1] + 1 > _offset) {
                         return search(_n.parameters);
                     }
                     else return {
@@ -135,7 +135,7 @@ export async function getRainlangHover(
                 let _lhs = _n.lhs;
                 if (!Array.isArray(_lhs)) _lhs = [_lhs];
                 for (let j = 0; j < _lhs.length; j++) {
-                    if (_lhs[j].position[0] <= _offset && _lhs[j].position[1] >= _offset) {
+                    if (_lhs[j].position[0] <= _offset && _lhs[j].position[1] + 1 >= _offset) {
                         const _opener = _lhs[j].name === "_" ? "placeholder" : "alias";
                         return {
                             range: Range.create(
@@ -195,7 +195,7 @@ export async function getRainlangHover(
     try {
         return search(
             _rd.getParseTree().find(v =>
-                v.position[0] <= _offset && v.position[1] >= _offset
+                v.position[0] <= _offset && v.position[1] + 1 >= _offset
             )?.tree ?? []
         );
     }
