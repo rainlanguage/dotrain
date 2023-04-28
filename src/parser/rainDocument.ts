@@ -473,39 +473,6 @@ class RainParser {
 
         // parse comments
         if(document.includes("/*")) {
-            // while(document.includes("/*")) {
-            //     const _startCmPos = document.indexOf("/*");
-            //     this.state.track.char = _startCmPos;
-            //     let _endCmPos = document.length - 1;
-            //     let _cm = document.slice(_startCmPos);
-            //     let _notEnded = true;
-            //     if (_cm.includes("*/")) {
-            //         _endCmPos = _cm.indexOf("*/") + _startCmPos;
-            //         this.state.track.char = _endCmPos;
-            //         _cm = document.slice(_startCmPos, _endCmPos + 2);
-            //         _notEnded = false;
-            //     }
-            //     document = _notEnded 
-            //         ? document.slice(0, _startCmPos) 
-            //             + " " .repeat(_cm.length) 
-            //         : document.slice(0, _startCmPos) 
-            //             + " " .repeat(_cm.length) 
-            //             + document.slice(_endCmPos + 2);
-            
-            //     if (_notEnded) {
-            //         this.problems.push({
-            //             msg: "unexpected end of comment",
-            //             position: [_startCmPos, _endCmPos],
-            //             code: ErrorCode.UnexpectedEndOfComment
-            //         });
-            //     }
-            //     else {
-            //         this.comments.push({
-            //             comment: _cm,
-            //             position: [_startCmPos, _endCmPos + 1]
-            //         });
-            //     }
-            // }
             inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
                 if (!v[0].endsWith("*/")) this.problems.push({
                     msg: "unexpected end of comment",
@@ -520,7 +487,7 @@ class RainParser {
             });
         }
 
-        // parse op meta
+        // parse metas
         const _hashes = inclusiveParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/gd);
         if (_hashes.length) {
             await this.resolveMeta(_hashes);
