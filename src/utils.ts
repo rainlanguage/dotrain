@@ -561,3 +561,58 @@ export function matchRange(range1: Range, range2: Range): boolean {
     ) return true;
     else return false;
 }
+
+// /**
+//  
+//  */
+// //
+
+/**
+ * @public Parses an string by extracting matching strings
+ * @param str - The string to parse
+ * @param pattern - The pattern to search and extract
+ * @param offset - (optional) The offset to factor in for returning matched positions
+ * @returns An array of matching strings and their position inclusive at both ends
+ */
+export function inclusiveParse(
+    str: string, 
+    pattern: RegExp,
+    offset = 0
+): [string, [number, number]][] {
+    let flags = pattern.flags;
+    if (!flags.includes("g")) flags += "g";
+    if (!flags.includes("d")) flags += "d";
+    return Array.from(
+        str.matchAll(new RegExp(pattern.source, flags))
+    ).map((v: any) => 
+        [v[0], [offset + v.indices[0][0], offset + v.indices[0][1] - 1]]
+    ) as [string, [number, number]][];
+}
+
+/**
+ * @public Parses an string by extracting the strings outside of matches
+ * @param str - The string to parse
+ * @param pattern - The pattern to search and extract
+ * @param offset - (optional) The offset to factor in for returning matched positions
+ * @returns An array of strings outside of matchings and their position inclusive at both ends
+ */
+export function exclusiveParse(
+    str: string, 
+    pattern: RegExp,
+    offset = 0
+): [string, [number, number]][] {
+    const matches = inclusiveParse(str, pattern);
+    const strings = str.split(pattern);
+    const result: [string, [number, number]][] = [[
+        strings[0],
+        [ 0 + offset, (matches.length ? matches[0][1][0] : str.length) + offset - 1 ]
+    ]];
+    matches.forEach((v, i, a) => {
+        result.push([
+            // str.slice(v[1][1] + 1, a[i + 1] ? a[i + 1][1][0] : str.length),
+            strings[i + 1],
+            [ v[1][1] + 1 + offset, (a[i + 1] ? a[i + 1][1][0] : str.length) + offset - 1 ]
+        ]);
+    });
+    return result;
+}

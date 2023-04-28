@@ -36,6 +36,8 @@ import {
     extractByBits, 
     memoryOperand,
     isBigNumberish,
+    inclusiveParse,
+    exclusiveParse,
     constructByBits,
 } from "../utils";
 
@@ -436,24 +438,6 @@ class RainParser {
     };
 
     /**
-     * @internal Parse and extract words from a 1 liner string
-     */
-    private simpleParse = (
-        str: string, 
-        pattern: RegExp,
-        offset = 0
-    ): [string, [number, number]][] => {
-        let flags = pattern.flags;
-        if (!flags.includes("g")) flags += "g";
-        if (!flags.includes("d")) flags += "d";
-        return Array.from(
-            str.matchAll(new RegExp(pattern.source, flags))
-        ).map((v: any) => 
-            [v[0], [offset + v.indices[0][0], offset + v.indices[0][1] - 1]]
-        ) as [string, [number, number]][];
-    };
-
-    /**
      * @internal 
      * The main workhorse of RainParser which parses the words used in an
      * expression and is responsible for building the parse tree and collect problems
@@ -472,16 +456,13 @@ class RainParser {
         let document = this.textDocument.getText();
 
         // check for illigal characters
-        this.simpleParse(document, this.illigalChar).forEach(v => {
+        inclusiveParse(document, this.illigalChar).forEach(v => {
             this.problems.push({
                 msg: `found illigal character: "${v[0]}"`,
                 position: v[1],
                 code: ErrorCode.IlligalChar
             });
-            document = 
-                document.slice(0, v[1][0]) 
-                + " ".repeat(v[0].length) 
-                + document.slice(v[1][1]);
+            document = document.replace(v[0], " ".repeat(v[0].length));
         });
 
         // remove indents, tabs, new lines
@@ -490,44 +471,57 @@ class RainParser {
         document = document.replace(/\r/g, " ");
         document = document.replace(/\n/g, " ");
 
+        // parse comments
         if(document.includes("/*")) {
-            while(document.includes("/*")) {
-                const _startCmPos = document.indexOf("/*");
-                this.state.track.char = _startCmPos;
-                let _endCmPos = document.length - 1;
-                let _cm = document.slice(_startCmPos);
-                let _notEnded = true;
-                if (_cm.includes("*/")) {
-                    _endCmPos = _cm.indexOf("*/") + _startCmPos;
-                    this.state.track.char = _endCmPos;
-                    _cm = document.slice(_startCmPos, _endCmPos + 2);
-                    _notEnded = false;
-                }
-                document = _notEnded 
-                    ? document.slice(0, _startCmPos) 
-                        + " " .repeat(_cm.length) 
-                    : document.slice(0, _startCmPos) 
-                        + " " .repeat(_cm.length) 
-                        + document.slice(_endCmPos + 2);
+            // while(document.includes("/*")) {
+            //     const _startCmPos = document.indexOf("/*");
+            //     this.state.track.char = _startCmPos;
+            //     let _endCmPos = document.length - 1;
+            //     let _cm = document.slice(_startCmPos);
+            //     let _notEnded = true;
+            //     if (_cm.includes("*/")) {
+            //         _endCmPos = _cm.indexOf("*/") + _startCmPos;
+            //         this.state.track.char = _endCmPos;
+            //         _cm = document.slice(_startCmPos, _endCmPos + 2);
+            //         _notEnded = false;
+            //     }
+            //     document = _notEnded 
+            //         ? document.slice(0, _startCmPos) 
+            //             + " " .repeat(_cm.length) 
+            //         : document.slice(0, _startCmPos) 
+            //             + " " .repeat(_cm.length) 
+            //             + document.slice(_endCmPos + 2);
             
-                if (_notEnded) {
-                    this.problems.push({
-                        msg: "unexpected end of comment",
-                        position: [_startCmPos, _endCmPos],
-                        code: ErrorCode.UnexpectedEndOfComment
-                    });
-                }
-                else {
-                    this.comments.push({
-                        comment: _cm,
-                        position: [_startCmPos, _endCmPos + 1]
-                    });
-                }
-            }
+            //     if (_notEnded) {
+            //         this.problems.push({
+            //             msg: "unexpected end of comment",
+            //             position: [_startCmPos, _endCmPos],
+            //             code: ErrorCode.UnexpectedEndOfComment
+            //         });
+            //     }
+            //     else {
+            //         this.comments.push({
+            //             comment: _cm,
+            //             position: [_startCmPos, _endCmPos + 1]
+            //         });
+            //     }
+            // }
+            inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
+                if (v[1][1] === document.length - 1) this.problems.push({
+                    msg: "unexpected end of comment",
+                    position: v[1],
+                    code: ErrorCode.UnexpectedEndOfComment
+                });
+                this.comments.push({
+                    comment: v[0],
+                    position: v[1]
+                });
+                document = document.replace(v[0], " ".repeat(v[0].length));
+            });
         }
 
         // parse op meta
-        const _hashes = this.simpleParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/gd);
+        const _hashes = inclusiveParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/gd);
         if (_hashes.length) {
             await this.resolveMeta(_hashes);
             for (let i = 0; i < _hashes.length; i++) {
@@ -550,11 +544,10 @@ class RainParser {
             code: ErrorCode.UndefinedOpMeta
         });
 
-        // begin parsing expression sources
-        // const _doc = document;
+        // begin parsing expression sources and cache them
         const _sourceExp: string[] = [];
         const _sourceExpPos: [number, number][] = [];
-        this.simpleParse(document, /[^;]+(?=;|$)|^\s*(?=;|$)/gd).forEach((v) => {
+        exclusiveParse(document, /;/gd).forEach(v => {
             if (document[v[1][1] + 1] === ";" || /[^\s]/.test(v[0])) {
                 const _trimmed = this.trim(v[0]);
                 _sourceExp.push(_trimmed.text);
@@ -574,78 +567,24 @@ class RainParser {
                 }
             }
         });
-        // while (document.length) {
-        //     if (document.includes(";")) {
-        //         const _trimmed = this.trim(document.slice(0, document.indexOf(";")));
-        //         _sourceExpPos.push([
-        //             _doc.length - document.length + _trimmed.startDelCount,
-        //             _doc.length - document.length - 1 + document.indexOf(";") - _trimmed.endDelCount,
-        //         ]);
-        //         document = document.slice(document.indexOf(";") + 1);
-        //         _sourceExp.push(_trimmed.text);
-                
-        //     }
-        //     else {
-        //         if (document.match(/[^\s+]/)) {
-        //             const _trimmed = this.trim(document);
-        //             this.problems.push({
-        //                 msg: "source item expressions must end with semi",
-        //                 position: [
-        //                     _doc.length - document.length + _trimmed.startDelCount,
-        //                     _doc.length - 1 - _trimmed.endDelCount,
-        //                 ],
-        //                 code: ErrorCode.InvalidExpression
-        //             });
-        //             _sourceExpPos.push([
-        //                 _doc.length - document.length + _trimmed.startDelCount,
-        //                 _doc.length - 1 - _trimmed.endDelCount,
-        //             ]);
-        //             _sourceExp.push(_trimmed.text);
-        //         }
-        //         document = "";
-        //     }
-        // }
 
-        // begin parsing expression sentences
+        // begin parsing individual expression sources
         for (let i = 0; i < _sourceExp.length; i++) {
             this._resetState();
             this.parseAliases.push([]);
             const _subExp: string[] = [];
             const _subExpEntry: number[] = [];
             const _currentSourceTree: RDNode[] = [];
-            // let _exp = _sourceExp[i];
             let _lhs: string;
 
-            // cache the sub-expressions
-            this.simpleParse(_sourceExp[i], /[^,]+(?=,|$)|^\s*(?=,|$)/gd).forEach((v) => {
+            // parse and cache the sub-expressions
+            exclusiveParse(_sourceExp[i], /,/gd).forEach(v => {
                 const _trimmed = this.trim(v[0]);
                 _subExp.push(_trimmed.text);
                 _subExpEntry.push(v[1][0] + _trimmed.startDelCount);
             });
-            // if (!_exp.includes(",")) {
-            //     const _trimmed = this.trim(_exp);
-            //     _subExp.push(_trimmed.text);
-            //     _subExpEntry.push(
-            //         _sourceExp[i].length - _exp.length + _trimmed.startDelCount
-            //     );
-            // }
-            // while (_exp.includes(",")) {
-            //     const _trimmed_1 = this.trim(_exp.slice(0, _exp.indexOf(",")));
-            //     _subExp.push(_trimmed_1.text);
-            //     _subExpEntry.push(
-            //         _sourceExp[i].length - _exp.length + _trimmed_1.startDelCount
-            //     );
-            //     _exp = _exp.slice(_exp.indexOf(",") + 1);
-            //     if (!_exp.includes(",")) {
-            //         const _trimmed_2 = this.trim(_exp);
-            //         _subExp.push(_trimmed_2.text);
-            //         _subExpEntry.push(
-            //             _sourceExp[i].length - _exp.length + _trimmed_2.startDelCount
-            //         );
-            //     }
-            // }
 
-            // begin parsing sub-expressions
+            // begin parsing individual sub-expressions
             for (let j = 0; j < _subExp.length; j++) {
                 this._resetState();
                 const _positionOffset = _sourceExpPos[i][0] + _subExpEntry[j];
@@ -675,7 +614,7 @@ class RainParser {
 
                     // begin parsing LHS
                     if (_lhs.length > 0) {
-                        const _parsedLhs = this.simpleParse(
+                        const _parsedLhs = inclusiveParse(
                             _lhs, 
                             /\S+/gd,
                             _positionOffset
@@ -1237,7 +1176,7 @@ class RainParser {
         else {
             const _operandArgs = this.exp.slice(1, this.exp.indexOf(">"));
             this.exp = this.exp.slice(this.exp.indexOf(">") + 1);
-            const _parsedVals = this.simpleParse(_operandArgs, /\S+/gd, pos + 1);
+            const _parsedVals = inclusiveParse(_operandArgs, /\S+/gd, pos + 1);
             op.operandArgs = {
                 position: [pos, pos + _operandArgs.length + 1],
                 args: []
