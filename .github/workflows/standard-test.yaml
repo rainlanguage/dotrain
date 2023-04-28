@@ -16,9 +16,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: |
-          echo "${{ github.event.head_commit.message }}""
-          npm install --ignore-scripts
+        run: npm install --ignore-scripts
 
       - name: Build
         run: npm run build
