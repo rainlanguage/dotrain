@@ -462,7 +462,10 @@ class RainParser {
                 position: v[1],
                 code: ErrorCode.IlligalChar
             });
-            document = document.replace(v[0], " ".repeat(v[0].length));
+            document = 
+                document.slice(0, v[1][0]) +
+                " ".repeat(v[0].length) +
+                document.slice(v[1][1] + 1);
         });
 
         // remove indents, tabs, new lines
@@ -482,7 +485,10 @@ class RainParser {
                 comment: v[0],
                 position: v[1]
             });
-            document = document.replace(v[0], " ".repeat(v[0].length));
+            document = 
+                document.slice(0, v[1][0]) +
+                " ".repeat(v[0].length) +
+                document.slice(v[1][1] + 1);
         });
 
         // parse metas
