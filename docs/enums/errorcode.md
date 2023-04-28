@@ -20,6 +20,7 @@ enum ErrorCode
 |  ExpectedOpcode | `769` |  |
 |  ExpectedOpeningParen | `773` |  |
 |  ExpectedOperandArgs | `771` |  |
+|  ExpectedSemi | `775` |  |
 |  ExpectedSpace | `770` |  |
 |  IlligalChar | `2` |  |
 |  InvalidContractMeta | `265` |  |

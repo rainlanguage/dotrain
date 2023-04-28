@@ -269,7 +269,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `:`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} :`, store),
+                await rlc(rainlang`:`, store),
             "source item expressions must end with semi",
             "Invalid Error"
         );
@@ -278,7 +278,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `,`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} ,`, store),
+                await rlc(rainlang`,`, store),
             "source item expressions must end with semi",
             "Invalid Error"
         );
@@ -287,7 +287,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `;`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} ;`, store),
+                await rlc(rainlang`;`, store),
             "invalid rain expression",
             "Invalid Error"
         );
@@ -296,7 +296,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `,;`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} ,;`, store),
+                await rlc(rainlang`,;`, store),
             "invalid rain expression",
             "Invalid Error"
         );
@@ -305,7 +305,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `_;`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} _;`, store),
+                await rlc(rainlang`_;`, store),
             "invalid rain expression",
             "Invalid Error"
         );

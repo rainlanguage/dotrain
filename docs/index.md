@@ -25,6 +25,7 @@
 |  [constructByBits(args)](./variables/constructbybits_1.md) | Method to construct the operand from operand args |
 |  [deepCopy(variable)](./variables/deepcopy_1.md) | Deep copy an item in a way that all of its properties get new reference |
 |  [deepFreeze(object)](./variables/deepfreeze_1.md) | Deeply freezes an object, all of the properties of propterties gets frozen |
+|  [exclusiveParse(str, pattern, offset)](./variables/exclusiveparse_1.md) | Parses an string by extracting the strings outside of matches |
 |  [extractByBits(value, bits, computation, computationVar)](./variables/extractbybits_1.md) | Method to extract value from operand by specified bits indexes |
 |  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properites from a Map as a new Map with same keys. |
 |  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
@@ -35,6 +36,7 @@
 |  [getRainlangHover(document, position, setting)](./variables/getrainlanghover_1.md) | Provides hover items |
 |  [getRainlangHover(document, position, setting)](./variables/getrainlanghover_2.md) | Provides hover items |
 |  [getRainLanguageServices(params)](./variables/getrainlanguageservices_1.md) | Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services |
+|  [inclusiveParse(str, pattern, offset)](./variables/inclusiveparse_1.md) | Parses an string by extracting matching strings |
 |  [isBigNumberish(value)](./variables/isbignumberish_1.md) | function to check if the a value is of type BigNumberish, from EthersJS library |
 |  [isEmptyRange(range)](./variables/isemptyrange_1.md) | Checks if a range is empty |
 |  [isInRange(range, position)](./variables/isinrange_1.md) | Checks if a position is within a range |

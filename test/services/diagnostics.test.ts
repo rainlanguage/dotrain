@@ -26,6 +26,7 @@ async function testDiagnostics(
         assert.deepEqual(actualDiagnostic.range, expectedDiagnostic.range);
         assert.equal(actualDiagnostic.severity, expectedDiagnostic.severity);
         assert.equal(actualDiagnostic.source, expectedDiagnostic.source);
+        assert.equal(actualDiagnostic.code, expectedDiagnostic.code);
     });
 }
 
@@ -43,9 +44,9 @@ describe("Rainlang Diagnostics Service Tests", async function () {
             store, 
             [{ 
                 message: "source item expressions must end with semi", 
-                range: toRange(0, 68, 0, 79), 
+                range: toRange(0, 79, 0, 79), 
                 severity: DiagnosticSeverity.Error, 
-                code: ErrorCode.InvalidExpression, 
+                code: ErrorCode.ExpectedSemi, 
                 source: "rainlang" 
             }]
         );
@@ -207,7 +208,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
                     message: "invalid argument pattern: error-argument", 
                     range: toRange(0, 83, 0, 97), 
                     severity: DiagnosticSeverity.Error, 
-                    code: ErrorCode.InvalidExpression, 
+                    code: ErrorCode.InvalidWordPattern, 
                     source: "rainlang" 
                 }
             ]

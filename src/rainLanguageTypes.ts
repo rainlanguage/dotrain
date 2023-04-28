@@ -38,6 +38,7 @@ export enum ErrorCode {
     ExpectedClosingParen = 0x304,
     ExpectedOpeningParen = 0x305,
     ExpectedClosingAngleBracket = 0x306,
+    ExpectedSemi = 0x307,
 
     MismatchRHS = 0x401,
     MismatchLHS = 0x402,

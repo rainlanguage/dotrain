@@ -125,14 +125,14 @@ describe("Rainlang Code Completion Service Tests", async function () {
 
     it("should include lhs alias in suggestions", async () => {
         await testCompletion(
-            rainlang`@${opMetaHash} name: `,  
-            Position.create(0, 74),
+            rainlang`@${opMetaHash} name: n`,  
+            Position.create(0, 75),
             [
                 {
                     label: "name",
                     kind: CompletionItemKind.Variable
                 },
-                ...AllOpcodeCompletions
+                ...AllOpcodeCompletions.filter(v => v.label.includes("n"))
             ],
             { metaStore: store }
         );
