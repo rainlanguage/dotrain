@@ -472,20 +472,18 @@ class RainParser {
         document = document.replace(/\n/g, " ");
 
         // parse comments
-        if(document.includes("/*")) {
-            inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
-                if (!v[0].endsWith("*/")) this.problems.push({
-                    msg: "unexpected end of comment",
-                    position: v[1],
-                    code: ErrorCode.UnexpectedEndOfComment
-                });
-                this.comments.push({
-                    comment: v[0],
-                    position: v[1]
-                });
-                document = document.replace(v[0], " ".repeat(v[0].length));
+        inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
+            if (!v[0].endsWith("*/")) this.problems.push({
+                msg: "unexpected end of comment",
+                position: v[1],
+                code: ErrorCode.UnexpectedEndOfComment
             });
-        }
+            this.comments.push({
+                comment: v[0],
+                position: v[1]
+            });
+            document = document.replace(v[0], " ".repeat(v[0].length));
+        });
 
         // parse metas
         const _hashes = inclusiveParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/gd);
