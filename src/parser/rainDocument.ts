@@ -507,7 +507,7 @@ class RainParser {
             //     }
             // }
             inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
-                if (v[1][1] === document.length - 1) this.problems.push({
+                if (!v[0].endsWith("*/")) this.problems.push({
                     msg: "unexpected end of comment",
                     position: v[1],
                     code: ErrorCode.UnexpectedEndOfComment
