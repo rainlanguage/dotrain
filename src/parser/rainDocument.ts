@@ -527,7 +527,7 @@ class RainParser {
         }
 
         // parse op meta
-        const _hashes = this.simpleParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/);
+        const _hashes = this.simpleParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/gd);
         if (_hashes.length) {
             await this.resolveMeta(_hashes);
             for (let i = 0; i < _hashes.length; i++) {
@@ -551,40 +551,60 @@ class RainParser {
         });
 
         // begin parsing expression sources
-        const _doc = document;
+        // const _doc = document;
         const _sourceExp: string[] = [];
         const _sourceExpPos: [number, number][] = [];
-        while (document.length) {
-            if (document.includes(";")) {
-                const _trimmed = this.trim(document.slice(0, document.indexOf(";")));
-                _sourceExpPos.push([
-                    _doc.length - document.length + _trimmed.startDelCount,
-                    _doc.length - document.length - 1 + document.indexOf(";") - _trimmed.endDelCount,
-                ]);
-                document = document.slice(document.indexOf(";") + 1);
+        this.simpleParse(document, /[^;]+(?=;|$)|^\s*(?=;|$)/gd).forEach((v) => {
+            if (document[v[1][1] + 1] === ";" || /[^\s]/.test(v[0])) {
+                const _trimmed = this.trim(v[0]);
                 _sourceExp.push(_trimmed.text);
-                
-            }
-            else {
-                if (document.match(/[^\s+]/)) {
-                    const _trimmed = this.trim(document);
+                _sourceExpPos.push([
+                    v[1][0] + _trimmed.startDelCount, 
+                    v[1][1] - _trimmed.endDelCount
+                ]);
+                if (document[v[1][1] + 1] !== ";") {
                     this.problems.push({
                         msg: "source item expressions must end with semi",
                         position: [
-                            _doc.length - document.length + _trimmed.startDelCount,
-                            _doc.length - 1 - _trimmed.endDelCount,
+                            v[1][1] - _trimmed.endDelCount + 1, 
+                            v[1][1] - _trimmed.endDelCount
                         ],
-                        code: ErrorCode.InvalidExpression
+                        code: ErrorCode.ExpectedSemi
                     });
-                    _sourceExpPos.push([
-                        _doc.length - document.length + _trimmed.startDelCount,
-                        _doc.length - 1 - _trimmed.endDelCount,
-                    ]);
-                    _sourceExp.push(_trimmed.text);
                 }
-                document = "";
             }
-        }
+        });
+        // while (document.length) {
+        //     if (document.includes(";")) {
+        //         const _trimmed = this.trim(document.slice(0, document.indexOf(";")));
+        //         _sourceExpPos.push([
+        //             _doc.length - document.length + _trimmed.startDelCount,
+        //             _doc.length - document.length - 1 + document.indexOf(";") - _trimmed.endDelCount,
+        //         ]);
+        //         document = document.slice(document.indexOf(";") + 1);
+        //         _sourceExp.push(_trimmed.text);
+                
+        //     }
+        //     else {
+        //         if (document.match(/[^\s+]/)) {
+        //             const _trimmed = this.trim(document);
+        //             this.problems.push({
+        //                 msg: "source item expressions must end with semi",
+        //                 position: [
+        //                     _doc.length - document.length + _trimmed.startDelCount,
+        //                     _doc.length - 1 - _trimmed.endDelCount,
+        //                 ],
+        //                 code: ErrorCode.InvalidExpression
+        //             });
+        //             _sourceExpPos.push([
+        //                 _doc.length - document.length + _trimmed.startDelCount,
+        //                 _doc.length - 1 - _trimmed.endDelCount,
+        //             ]);
+        //             _sourceExp.push(_trimmed.text);
+        //         }
+        //         document = "";
+        //     }
+        // }
 
         // begin parsing expression sentences
         for (let i = 0; i < _sourceExp.length; i++) {
@@ -593,32 +613,37 @@ class RainParser {
             const _subExp: string[] = [];
             const _subExpEntry: number[] = [];
             const _currentSourceTree: RDNode[] = [];
-            let _exp = _sourceExp[i];
+            // let _exp = _sourceExp[i];
             let _lhs: string;
 
             // cache the sub-expressions
-            if (!_exp.includes(",")) {
-                const _trimmed = this.trim(_exp);
+            this.simpleParse(_sourceExp[i], /[^,]+(?=,|$)|^\s*(?=,|$)/gd).forEach((v) => {
+                const _trimmed = this.trim(v[0]);
                 _subExp.push(_trimmed.text);
-                _subExpEntry.push(
-                    _sourceExp[i].length - _exp.length + _trimmed.startDelCount
-                );
-            }
-            while (_exp.includes(",")) {
-                const _trimmed_1 = this.trim(_exp.slice(0, _exp.indexOf(",")));
-                _subExp.push(_trimmed_1.text);
-                _subExpEntry.push(
-                    _sourceExp[i].length - _exp.length + _trimmed_1.startDelCount
-                );
-                _exp = _exp.slice(_exp.indexOf(",") + 1);
-                if (!_exp.includes(",")) {
-                    const _trimmed_2 = this.trim(_exp);
-                    _subExp.push(_trimmed_2.text);
-                    _subExpEntry.push(
-                        _sourceExp[i].length - _exp.length + _trimmed_2.startDelCount
-                    );
-                }
-            }
+                _subExpEntry.push(v[1][0] + _trimmed.startDelCount);
+            });
+            // if (!_exp.includes(",")) {
+            //     const _trimmed = this.trim(_exp);
+            //     _subExp.push(_trimmed.text);
+            //     _subExpEntry.push(
+            //         _sourceExp[i].length - _exp.length + _trimmed.startDelCount
+            //     );
+            // }
+            // while (_exp.includes(",")) {
+            //     const _trimmed_1 = this.trim(_exp.slice(0, _exp.indexOf(",")));
+            //     _subExp.push(_trimmed_1.text);
+            //     _subExpEntry.push(
+            //         _sourceExp[i].length - _exp.length + _trimmed_1.startDelCount
+            //     );
+            //     _exp = _exp.slice(_exp.indexOf(",") + 1);
+            //     if (!_exp.includes(",")) {
+            //         const _trimmed_2 = this.trim(_exp);
+            //         _subExp.push(_trimmed_2.text);
+            //         _subExpEntry.push(
+            //             _sourceExp[i].length - _exp.length + _trimmed_2.startDelCount
+            //         );
+            //     }
+            // }
 
             // begin parsing sub-expressions
             for (let j = 0; j < _subExp.length; j++) {
@@ -652,7 +677,7 @@ class RainParser {
                     if (_lhs.length > 0) {
                         const _parsedLhs = this.simpleParse(
                             _lhs, 
-                            /\S+/,
+                            /\S+/gd,
                             _positionOffset
                         );
                         const _ops = [
@@ -1212,7 +1237,7 @@ class RainParser {
         else {
             const _operandArgs = this.exp.slice(1, this.exp.indexOf(">"));
             this.exp = this.exp.slice(this.exp.indexOf(">") + 1);
-            const _parsedVals = this.simpleParse(_operandArgs, /\S+/, pos + 1);
+            const _parsedVals = this.simpleParse(_operandArgs, /\S+/gd, pos + 1);
             op.operandArgs = {
                 position: [pos, pos + _operandArgs.length + 1],
                 args: []
@@ -1746,7 +1771,11 @@ class RainParser {
                 constants,
                 sources: _sources.length 
                     ? _sources.map(
-                        v => hexlify(v, { allowMissingPrefix: true })
+                        v => {
+                            const _bytes = hexlify(v, { allowMissingPrefix: true });
+                            if (_bytes === "0x") return "";
+                            else return _bytes;
+                        }
                     ) 
                     : []
             };
