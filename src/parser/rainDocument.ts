@@ -563,24 +563,22 @@ class RainParser {
 
                 // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
                 // no or more than one delimitter was found, else start parsing LHS and RHS
-                if (_subExp[j].match(/:/)) {
+                if (_subExp[j].includes(":")) {
                     _lhs = _subExp[j].slice(0, _subExp[j].indexOf(":"));
                     this.exp = _subExp[j].slice(_subExp[j].indexOf(":") + 1);
 
                     // check for invalid RHS comments
-                    for (let k = 0; k < this.comments.length; k++) {
+                    for (const _cm of this.comments) {
                         if (
-                            this.comments[k].position[0] > _positionOffset + 
+                            _cm.position[0] > _positionOffset + 
                                 _subExp[j].indexOf(":") &&
-                            this.comments[k].position[0] < _positionOffset + 
+                            _cm.position[0] < _positionOffset + 
                                 _subExp[j].length
-                        ) {
-                            this.problems.push({
-                                msg: "invalid RHS, comments are not allowed",
-                                position: [...this.comments[k].position],
-                                code: ErrorCode.UnexpectedRHSComment
-                            });
-                        }
+                        ) this.problems.push({
+                            msg: "invalid RHS, comments are not allowed",
+                            position: [..._cm.position],
+                            code: ErrorCode.UnexpectedRHSComment
+                        });
                     }
 
                     // begin parsing LHS
@@ -597,24 +595,24 @@ class RainParser {
                             "max-uint256",
                             "infinity"
                         ];
-                        for (let k = 0; k < _parsedLhs.length; k++) {
+                        for (const _p of _parsedLhs) {
                             this.state.parse.aliases.push({
-                                name: _parsedLhs[k][0],
-                                position: _parsedLhs[k][1]
+                                name: _p[0],
+                                position: _p[1]
                             });
-                            if (!/^[a-z][a-z0-9-]*$|^_$/.test(_parsedLhs[k][0])) {
+                            if (!/^[a-z][a-z0-9-]*$|^_$/.test(_p[0])) {
                                 this.problems.push({
-                                    msg: `invalid LHS alias: ${_parsedLhs[k][0]}`,
-                                    position: _parsedLhs[k][1],
+                                    msg: `invalid LHS alias: ${_p[0]}`,
+                                    position: _p[1],
                                     code:ErrorCode.InvalidWordPattern
                                 });
                             }
-                            if (_ops.includes(_parsedLhs[k][0])) this.problems.push({
-                                msg: `duplicate alias: ${_parsedLhs[k][0]}`,
-                                position: _parsedLhs[k][1],
+                            if (_ops.includes(_p[0])) this.problems.push({
+                                msg: `duplicate alias: ${_p[0]}`,
+                                position: _p[1],
                                 code:ErrorCode.DuplicateAlias
                             });
-                            this.state.track.char = _parsedLhs[k][1][1];
+                            this.state.track.char = _p[1][1];
                         }
                     }
 
@@ -1059,26 +1057,26 @@ class RainParser {
                     bits: [0, 7]
                 }
             ];
-            for (let i = 0; i < this.ctxAliases.length; i++) {
-                if (_ops.includes(this.ctxAliases[i].name)) this.problems.push({
-                    msg: `duplicate alias for contract context and opcode: ${this.ctxAliases[i].name}`,
+            for (const _ctx of this.ctxAliases) {
+                if (_ops.includes(_ctx.name)) this.problems.push({
+                    msg: `duplicate alias for contract context and opcode: ${_ctx.name}`,
                     position: this.hashes[index].position,
                     code: ErrorCode.DuplicateAlias
                 });
                 this.pops.push(0);
                 this.pushes.push(1);
                 this.operand.push(0);
-                this.names.push(this.ctxAliases[i].name);
+                this.names.push(_ctx.name);
                 this.opmeta.push({
-                    name: this.ctxAliases[i].name,
-                    desc: this.ctxAliases[i].desc 
-                        ? this.ctxAliases[i].desc 
+                    name: _ctx.name,
+                    desc: _ctx.desc 
+                        ? _ctx.desc 
                         : this.opmeta[this.names.indexOf("context")]?.desc ?? "",
                     operand: 0,
                     inputs: 0,
                     outputs: 1
                 });
-                if (isNaN(this.ctxAliases[i].row)) {
+                if (isNaN(_ctx.row)) {
                     this.operand[this.operand.length - 1] = _ctxRowOperand;
                     this.opmeta[this.opmeta.length - 1].operand = _ctxRowOperand;
                 }
@@ -1300,31 +1298,31 @@ class RainParser {
                         else {
                             node.operand = NaN;
                             if (typeof this.pushes[_index] !== "number") node.output = NaN;
-                            for (let i = 0; i < _operand.length; i++) {
+                            for (const _oprnd of _operand) {
                                 if (_inputsIndex > -1) {
-                                    if (_operand[i] === _inputsIndex) this.problems.push({
+                                    if (_oprnd === _inputsIndex) this.problems.push({
                                         msg: "out-of-range inputs",
                                         position: [...node.parens],
                                         code: ErrorCode.OutOfRangeInputs
                                     });
-                                    else if (_operand[i] < _inputsIndex) this.problems.push({
+                                    else if (_oprnd < _inputsIndex) this.problems.push({
                                         msg: "out-of-range operand argument",
                                         position: [
-                                            ...node.operandArgs!.args[_operand[i]].position
+                                            ...node.operandArgs!.args[_oprnd].position
                                         ],
                                         code: ErrorCode.OutOfRangeOperandArgs
                                     });
                                     else this.problems.push({
                                         msg: "out-of-range operand argument",
                                         position: [
-                                            ...node.operandArgs!.args[_operand[i] - 1].position
+                                            ...node.operandArgs!.args[_oprnd - 1].position
                                         ],
                                         code: ErrorCode.OutOfRangeOperandArgs
                                     });
                                 }
                                 else this.problems.push({
                                     msg: "out-of-range operand argument",
-                                    position: [...node.operandArgs!.args[_operand[i]].position],
+                                    position: [...node.operandArgs!.args[_oprnd].position],
                                     code: ErrorCode.OutOfRangeOperandArgs
                                 });
                             }
@@ -1499,8 +1497,8 @@ class RainParser {
         if ("opcode" in node) {
             if (isNaN(node.operand) || isNaN(node.output)) return false;
             else {
-                for (let i = 0; i < node.parameters.length; i++) {
-                    if (!this.errorCheck(node.parameters[i])) return false;
+                for (const param of node.parameters) {
+                    if (!this.errorCheck(param)) return false;
                 }
                 return true;
             }
@@ -1514,8 +1512,7 @@ class RainParser {
     private countOutputs(nodes: RDNode[], skip?: number): number {
         let _count = 0;
         if (skip) nodes = nodes.slice(skip - nodes.length);
-        for (let i = 0; i < nodes.length; i++) {
-            const _node = nodes[i];
+        for (const _node of nodes) {
             if ("opcode" in _node) {
                 if (!isNaN(_node.output)) _count = _count + _node.output;
                 else return NaN;
@@ -1567,9 +1564,8 @@ class RainParser {
         try {
             for (let i = 0; i < _nodes.length; i++) {
                 if (_nodes[i].length === 0) _sourcesCache = [];
-                for (let j = 0; j < _nodes[i].length; j++) {
+                for (const _node of _nodes[i]) {
                     if (i > sourceIndex) sourceIndex = i;
-                    const _node = _nodes[i][j];
                     if ("value" in _node) {
                         if (isBigNumberish(_node.value)) {
                             if (constants.includes(_node.value)) {
@@ -1631,9 +1627,9 @@ class RainParser {
                         else throw new Error(`cannot find "${_node.name}"`);
                     }
                     else {
-                        for (let i = 0; i < _node.parameters.length; i++) {
+                        for (const _p of _node.parameters) {
                             const _expConf = this._compile(
-                                _node.parameters[i],
+                                _p,
                                 constants,
                                 sourceIndex
                             );
