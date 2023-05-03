@@ -1,7 +1,7 @@
 {
     "name": "@rainprotocol/rainlang",
     "description": "Rainlang standalone, that encapsulates Rain Language Serivces (in LSP spec) and compiler for NodeJs and Browser environments",
-    "version": "2.2.1",
+    "version": "2.2.2",
     "author": "Rain Protocol",
     "license": "CAL-1.0",
     "repository": {
