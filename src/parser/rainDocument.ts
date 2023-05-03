@@ -1677,11 +1677,7 @@ class RainParser {
                 constants,
                 sources: _sources.length 
                     ? _sources.map(
-                        v => {
-                            const _bytes = hexlify(v, { allowMissingPrefix: true });
-                            if (_bytes === "0x") return "";
-                            else return _bytes;
-                        }
+                        v => hexlify(v, { allowMissingPrefix: true })
                     ) 
                     : []
             };
