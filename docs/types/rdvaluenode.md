@@ -8,7 +8,7 @@ Type of RainDocument's Value node
 
 ```typescript
 type RDValueNode = {
-    value: BigNumberish;
+    value: string;
     position: RDPosition;
     lhs?: RDAliasNode;
 };

@@ -31,14 +31,15 @@ import {
     hexlify,
     deepCopy,
     BytesLike,
-    CONSTANTS, 
+    CONSTANTS,
+    BigNumber, 
     BigNumberish, 
     extractByBits, 
     memoryOperand,
     isBigNumberish,
     inclusiveParse,
     exclusiveParse,
-    constructByBits,
+    constructByBits, 
 } from "../utils";
 
 
@@ -180,6 +181,13 @@ export class RainDocument {
     }
 
     /**
+     * @public Get constants k/v pairs of this RainDocument instance
+     */
+    public getConstants(): Record<string, string> {
+        return this._rp.getConstants();
+    }
+
+    /**
      * @public Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance.
      * This method should not be used directly, insteda the RainCompiler (rlc) should be used.
      * @param item - Optional item to get the ExpressionConfig for
@@ -206,6 +214,11 @@ class RainParser {
     public readonly wordPattern = /^[a-z][0-9a-z-]*$/;
     public readonly hashPattern = /^0x[a-zA-F0-9]{64}$/;
     public readonly numericPattern = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
+    public readonly constants: Record<string, string> = {
+        "infinity": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "max-uint256": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "max-uint-256": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    };
     
     private textDocument: TextDocument;
     private opMetaBytes = "";
@@ -378,6 +391,13 @@ class RainParser {
     }
 
     /**
+     * @public Get constant k/v pairs of this RainParser instance
+     */
+    public getConstants(): Record<string, string> {
+        return deepCopy(this.constants);
+    }
+
+    /**
      * @public
      * Method to get ExpressionConfig (bytes) from RDNode or parse tree object
      *
@@ -435,6 +455,17 @@ class RainParser {
             startDelCount: str.length - str.trimStart().length,
             endDelCount: str.length - str.trimEnd().length
         };
+    };
+
+    /**
+     * @internal Determines if an string matches the constants keys
+     */
+    private isConstant = (str: string): boolean => {
+        return new RegExp(
+            "^" + 
+            Object.keys(this.constants).join("$|^") + 
+            "$"
+        ).test(str);
     };
 
     /**
@@ -591,9 +622,7 @@ class RainParser {
                         const _ops = [
                             ...this.names,
                             ...this.opAliases.filter(v => v !== undefined).flat(),
-                            "max-uint-256",
-                            "max-uint256",
-                            "infinity"
+                            ...Object.keys(this.constants)
                         ];
                         for (const _p of _parsedLhs) {
                             this.state.parse.aliases.push({
@@ -1045,9 +1074,7 @@ class RainParser {
             const _ops = [
                 ...this.names,
                 ...this.opAliases.filter(v => v !== undefined).flat(),
-                "max-uint-256",
-                "max-uint256",
-                "infinity"
+                ...Object.keys(this.constants)
             ];
             const _ctxRowOperand = [
                 (this.operand[this.names.indexOf("context")] as OperandArgs)?.find(
@@ -1457,8 +1484,8 @@ class RainParser {
                 position: [..._wordPos],
             });
         }
-        else if (_word.match(this.wordPattern)) {
-            if (_word === "max-uint-256" || _word === "max-uint256" || _word === "infinity") {
+        else if (this.wordPattern.test(_word)) {
+            if (this.isConstant(_word)) {
                 this.updateTree({
                     value: _word,
                     position: [..._wordPos],
@@ -1589,9 +1616,9 @@ class RainParser {
                                 constants.push(_node.value);
                             }
                         }
-                        else if ((_node.value as string).match(/max-uint-?256|infinity/)) {
+                        else if (this.isConstant(_node.value)) {
                             const _i = constants.findIndex(
-                                v => CONSTANTS.MaxUint256.eq(v)
+                                v => BigNumber.from(this.constants[_node.value]).eq(v)
                             );
                             if (_i > -1) {
                                 _sourcesCache.push(
