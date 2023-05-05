@@ -122,7 +122,7 @@ export async function getRainlangCompletion(
                             kind: _documentionType,
                             value: v.desc
                         },
-                        insertText: v.name + _following
+                        insertText: e + _following
                     });
                 });
             });
@@ -145,6 +145,22 @@ export async function getRainlangCompletion(
                         value: v.desc
                     },
                     insertText: v.name + _following
+                });
+            });
+            const constants = _rd.getConstants();
+            Object.keys(constants).forEach(v => {
+                _result.unshift({
+                    label: v,
+                    labelDetails: {
+                        description: "constant alias"
+                    },
+                    kind: CompletionItemKind.Constant,
+                    detail: constants[v],
+                    documentation: {
+                        kind: _documentionType,
+                        value: `alias for constant value ${constants[v]}`
+                    },
+                    insertText: v
                 });
             });
             const _tree = _rd.getParseTree();
@@ -198,7 +214,8 @@ export async function getRainlangCompletion(
                                     "```"
                                 ].join("\n")
                                 : `LHS alias for: ${_text}`
-                        }
+                        },
+                        insertText: v.name
                     });
                 });
             

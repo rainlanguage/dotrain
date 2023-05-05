@@ -9,7 +9,8 @@ import {
     CompletionItem,
     CompletionItemKind, 
     LanguageServiceParams, 
-    getRainLanguageServices 
+    getRainLanguageServices, 
+    RainDocument
 } from "../../src";
 
 
@@ -88,10 +89,21 @@ describe("Rainlang Code Completion Service Tests", async function () {
     });
 
     it("should provide all opcode suggestions for rhs when there is no lhs aliases", async () => {
+        const _allCompletions = [...AllOpcodeCompletions];
+        const _rd = await RainDocument.create(
+            TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} _: `), 
+            store
+        );
+        Object.keys(_rd.getConstants()).forEach(v => {
+            _allCompletions.unshift({
+                label: v,
+                kind: CompletionItemKind.Constant,
+            });
+        });
         await testCompletion(
-            rainlang`@${opMetaHash} _: `,  
+            rainlang`@${opMetaHash} _: `, 
             Position.create(0, 71),
-            AllOpcodeCompletions,
+            _allCompletions,
             { metaStore: store }
         );
     });
@@ -124,6 +136,17 @@ describe("Rainlang Code Completion Service Tests", async function () {
     });
 
     it("should include lhs alias in suggestions", async () => {
+        const _allCompletions = [...AllOpcodeCompletions];
+        const _rd = await RainDocument.create(
+            TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} name: n`), 
+            store
+        );
+        Object.keys(_rd.getConstants()).forEach(v => {
+            _allCompletions.unshift({
+                label: v,
+                kind: CompletionItemKind.Constant,
+            });
+        });
         await testCompletion(
             rainlang`@${opMetaHash} name: n`,  
             Position.create(0, 75),
@@ -132,7 +155,7 @@ describe("Rainlang Code Completion Service Tests", async function () {
                     label: "name",
                     kind: CompletionItemKind.Variable
                 },
-                ...AllOpcodeCompletions.filter(v => v.label.includes("n"))
+                ..._allCompletions.filter(v => v.label.includes("n"))
             ],
             { metaStore: store }
         );

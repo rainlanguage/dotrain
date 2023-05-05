@@ -200,7 +200,7 @@ export type RDProblem = {
  * @public Type of RainDocument's Value node
  */
 export type RDValueNode = {
-    value: BigNumberish;
+    value: string;
     position: RDPosition;
     lhs?: RDAliasNode;
 };

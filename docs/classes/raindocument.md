@@ -39,6 +39,7 @@ await myRainDocument.update(newText)
 |  Method | Description |
 |  --- | --- |
 |  [getComments()](./raindocument.md#getComments-method-1) | Get the current comments inside of the text of this RainDocument instance |
+|  [getConstants()](./raindocument.md#getConstants-method-1) | Get constants k/v pairs of this RainDocument instance |
 |  [getContextAliases()](./raindocument.md#getContextAliases-method-1) | Get the context aliases of specified meta hashes in this RainDocument instance |
 |  [getExpressionConfig(item)](./raindocument.md#getExpressionConfig-method-1) | Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used. |
 |  [getLHSAliases()](./raindocument.md#getLHSAliases-method-1) | Get the parsed exp aliases of this RainDocument instance |
@@ -95,6 +96,21 @@ getComments(): RDComment[];
 <b>Returns:</b>
 
 `RDComment[]`
+
+<a id="getConstants-method-1"></a>
+
+### getConstants()
+
+Get constants k/v pairs of this RainDocument instance
+
+<b>Signature:</b>
+
+```typescript
+getConstants(): Record<string, string>;
+```
+<b>Returns:</b>
+
+`Record<string, string>`
 
 <a id="getContextAliases-method-1"></a>
 
