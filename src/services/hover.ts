@@ -80,16 +80,43 @@ export async function getRainlangHover(
                     if (_n.parens[0] < _offset && _n.parens[1] > _offset) {
                         return search(_n.parameters);
                     }
-                    else return {
-                        range: Range.create(
-                            _td.positionAt(_n.opcode.position[0]), 
-                            _td.positionAt(_n.parens[1] + 1)
-                        ),
-                        contents: {
-                            kind: _contentType,
-                            value: _n.opcode.description
+                    else {
+                        if (
+                            _n.operandArgs && 
+                            _n.operandArgs.position[0] < _offset && 
+                            _n.operandArgs.position[1] > _offset
+                        ) {
+                            for (const _operandArg of _n.operandArgs.args) {
+                                if (
+                                    _operandArg.position[0] <= _offset && 
+                                    _operandArg.position[1] >= _offset
+                                ) return {
+                                    range: Range.create(
+                                        _td.positionAt(_operandArg.position[0]), 
+                                        _td.positionAt(_operandArg.position[1] + 1)
+                                    ),
+                                    contents: {
+                                        kind: _contentType,
+                                        value: [
+                                            _operandArg.name,
+                                            _operandArg.description ?? "Operand Argument"
+                                        ].join("\n")
+                                    }
+                                } as Hover;
+                            }
+                            return null;
                         }
-                    } as Hover;
+                        else return {
+                            range: Range.create(
+                                _td.positionAt(_n.opcode.position[0]), 
+                                _td.positionAt(_n.parens[1] + 1)
+                            ),
+                            contents: {
+                                kind: _contentType,
+                                value: _n.opcode.description
+                            }
+                        } as Hover;
+                    }
                 }
                 else if ("value" in _n) {
                     return {

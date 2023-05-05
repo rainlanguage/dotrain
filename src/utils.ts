@@ -609,7 +609,6 @@ export function exclusiveParse(
     ]];
     matches.forEach((v, i, a) => {
         result.push([
-            // str.slice(v[1][1] + 1, a[i + 1] ? a[i + 1][1][0] : str.length),
             strings[i + 1],
             [ v[1][1] + 1 + offset, (a[i + 1] ? a[i + 1][1][0] : str.length) + offset - 1 ]
         ]);

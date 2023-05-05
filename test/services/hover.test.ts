@@ -221,7 +221,30 @@ new-total-amount-sent);
                 range: toRange(0, 68, 0, 135),
                 contents: {
                     kind: "plaintext",
-                    value: "This Rain metadata consists of:\n- Order Book contract metadata"
+                    value: [
+                        "This Rain metadata consists of:",
+                        "- Order Book contract metadata"
+                    ].join("\n")
+                }
+            }
+        );
+    });
+
+    it("should provide hover: operand argument info", async () => {    
+        assert.deepEqual(
+            await testHover(
+                expression,
+                Position.create(4, 26),
+                { metaStore: store },
+            ),
+            {
+                range: toRange(4, 26, 4, 27),
+                contents: {
+                    kind: "plaintext",
+                    value: [
+                        "column",
+                        "Operand Argument"
+                    ].join("\n")
                 }
             }
         );
