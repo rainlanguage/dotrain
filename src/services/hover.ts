@@ -100,7 +100,7 @@ export async function getRainlangHover(
                                         value: [
                                             _operandArg.name,
                                             _operandArg.description ?? "Operand Argument"
-                                        ].join("\n")
+                                        ].join(_contentType === "markdown" ? "\n\n" : ", ")
                                     }
                                 } as Hover;
                             }

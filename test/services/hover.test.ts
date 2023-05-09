@@ -247,7 +247,7 @@ new-total-amount-sent);
                     value: [
                         "column",
                         "Operand Argument"
-                    ].join("\n")
+                    ].join(", ")
                 }
             }
         );
@@ -267,7 +267,7 @@ new-total-amount-sent);
                     value: [
                         "source-index",
                         "index of the source to run"
-                    ].join("\n")
+                    ].join(", ")
                 }
             }
         );
