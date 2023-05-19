@@ -176,14 +176,14 @@ export async function getRainlangCompletion(
                 ?.filter(v => v.name !== "_")
                 .forEach(v => {
                     let _text = "";
-                    _pos = _tree[_currentSource].tree.find(e => {
-                        if (e.lhs){
-                            if (Array.isArray(e.lhs)) {
-                                if (e.lhs.find(i => i.name === v.name)) return true; 
+                    _pos = _tree[_currentSource].nodes.find(e => {
+                        if (e.lhsAlias){
+                            if (Array.isArray(e.lhsAlias)) {
+                                if (e.lhsAlias.find(i => i.name === v.name)) return true; 
                                 else return false;
                             }
                             else {
-                                if (e.lhs.name === v.name) return true;
+                                if (e.lhsAlias.name === v.name) return true;
                                 else return false;
                             }
                         }

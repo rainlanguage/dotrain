@@ -1,4 +1,4 @@
-import { RDNode } from "../rainLanguageTypes";
+import { ExpressionASTNode } from "../rainLanguageTypes";
 import { MetaStore } from "../parser/metaStore";
 import { RainDocument } from "../parser/rainDocument";
 import { ContractMetaSchema, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
@@ -59,7 +59,7 @@ export async function getRainlangHover(
     if (format && format[0]) _contentType = format[0];
     
     const _offset = _td.offsetAt(position);
-    const search = async(nodes: RDNode[]): Promise<Hover | null> => {
+    const search = async(nodes: ExpressionASTNode[]): Promise<Hover | null> => {
         const _hash = _rd.getMetaHashes().find(
             v => v.position[0] <= _offset && v.position[1] >= _offset
         );
@@ -158,8 +158,8 @@ export async function getRainlangHover(
                     }
                 } as Hover;
             }
-            else if (_n.lhs) {
-                let _lhs = _n.lhs;
+            else if (_n.lhsAlias) {
+                let _lhs = _n.lhsAlias;
                 if (!Array.isArray(_lhs)) _lhs = [_lhs];
                 for (let j = 0; j < _lhs.length; j++) {
                     if (_lhs[j].position[0] <= _offset && _lhs[j].position[1] >= _offset) {
@@ -223,7 +223,7 @@ export async function getRainlangHover(
         return search(
             _rd.getParseTree().find(v =>
                 v.position[0] <= _offset && v.position[1] >= _offset
-            )?.tree ?? []
+            )?.nodes ?? []
         );
     }
     catch (err) {

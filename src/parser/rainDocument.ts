@@ -14,14 +14,14 @@ import {
     ContractMetaSchema
 } from "@rainprotocol/meta";
 import { 
-    RDNode, 
-    RDOpNode, 
-    RDProblem, 
-    RDComment, 
+    ExpressionASTNode, 
+    OpASTNode, 
+    ProblemASTNode, 
+    CommentASTNode, 
     MemoryType, 
-    RDMetaHash, 
-    RDParseTree,
-    RDAliasNode,
+    MetaHashASTNode, 
+    SourceASTNode,
+    AliasASTNode,
     RainParseState, 
     ExpressionConfig 
 } from "../rainLanguageTypes";
@@ -127,21 +127,21 @@ export class RainDocument {
     /**
      * @public Get the current parse tree of this RainDocument instance
      */
-    public getParseTree(): RDParseTree {
+    public getParseTree(): SourceASTNode[] {
         return this._rp.getParseTree();
     }
 
     /**
      * @public Get the current problems of this RainDocument instance
      */
-    public getProblems(): RDProblem[] {
+    public getProblems(): ProblemASTNode[] {
         return this._rp.getProblems();
     }
 
     /**
      * @public Get the current comments inside of the text of this RainDocument instance
      */
-    public getComments(): RDComment[] {
+    public getComments(): CommentASTNode[] {
         return this._rp.getComments();
     }
 
@@ -162,14 +162,14 @@ export class RainDocument {
     /**
      * @public Get the parsed exp aliases of this RainDocument instance
      */
-    public getLHSAliases(): RDAliasNode[][] {
+    public getLHSAliases(): AliasASTNode[][] {
         return this._rp.getLHSAliases();
     }
 
     /**
      * @public Get the specified meta hashes of this RainDocument instance
      */
-    public getMetaHashes(): RDMetaHash[] {
+    public getMetaHashes(): MetaHashASTNode[] {
         return this._rp.getMetaHashes();
     }
 
@@ -194,9 +194,9 @@ export class RainDocument {
      */
     public getExpressionConfig(
         item?:
-            | RDNode
-            | RDNode[][]
-            | RDParseTree,
+            | ExpressionASTNode
+            | ExpressionASTNode[][]
+            | SourceASTNode[],
     ): ExpressionConfig | undefined {
         return this._rp.compile(item);
     }
@@ -224,11 +224,11 @@ class RainParser {
     private opMetaBytes = "";
     private opmeta: OpMeta[] = [];
     private metaStore: MetaStore;
-    private parseTree: RDParseTree = [];
-    private problems: RDProblem[] = [];
-    private comments: RDComment[] = [];
-    private parseAliases: RDAliasNode[][] = [];
-    private hashes: RDMetaHash[] = [];
+    private parseTree: SourceASTNode[] = [];
+    private problems: ProblemASTNode[] = [];
+    private comments: CommentASTNode[] = [];
+    private parseAliases: AliasASTNode[][] = [];
+    private hashes: MetaHashASTNode[] = [];
 
     private names: string[] = [];
     private pops: InputMeta[] = [];
@@ -337,21 +337,21 @@ class RainParser {
     /**
      * @public Get the current parse tree of this RainParser instance
      */
-    public getParseTree(): RDParseTree {
+    public getParseTree(): SourceASTNode[] {
         return deepCopy(this.parseTree);
     }
 
     /**
      * @public Get the current problems of this RainParser instance
      */
-    public getProblems(): RDProblem[] {
+    public getProblems(): ProblemASTNode[] {
         return deepCopy(this.problems);
     }
 
     /**
      * @public Get the current comments inside of the text of this RainParser instance
      */
-    public getComments(): RDComment[] {
+    public getComments(): CommentASTNode[] {
         return deepCopy(this.comments);
     }
 
@@ -372,14 +372,14 @@ class RainParser {
     /**
      * @public Get the parsed exp aliases of this RainParser instance
      */
-    public getLHSAliases(): RDAliasNode[][] {
+    public getLHSAliases(): AliasASTNode[][] {
         return deepCopy(this.parseAliases);
     }
 
     /**
      * @public Get the specified meta hahses of this RainParser instance
      */
-    public getMetaHashes(): RDMetaHash[] {
+    public getMetaHashes(): MetaHashASTNode[] {
         return deepCopy(this.hashes);
     }
 
@@ -406,9 +406,9 @@ class RainParser {
      */
     public compile(
         items?:
-            | RDNode
-            | RDNode[][]
-            | RDParseTree,
+            | ExpressionASTNode
+            | ExpressionASTNode[][]
+            | SourceASTNode[],
     ): ExpressionConfig | undefined {
         if (this.problems.length) return undefined;
         if (items) return this._compile(items);
@@ -466,6 +466,79 @@ class RainParser {
             Object.keys(this.constants).join("$|^") + 
             "$"
         ).test(str);
+    };
+
+    /**
+     * @internal Parses right hand side of an expression
+     */
+    private parseRHS = (exp: string, offset: number) => {
+        while (exp.length > 0) {
+            const _currentPosition = offset - exp.length;
+            this.state.track.char = _currentPosition;
+            
+            if (exp.startsWith(" ")) {
+                exp = exp.slice(1);
+                this.state.track.char++;
+            }
+            else if (exp.startsWith("(")) {
+                exp = exp.slice(1);
+                this.state.track.char++;
+                let __exp = exp;
+                const _pos: number[] = [];
+                let _index = -1;
+                let _check = true;
+                while (_check && (__exp.includes("(") || __exp.includes(")"))) {
+                    const _i = __exp.search(/\(|\)/);
+                    if (__exp[_i] === "(") _pos.push(_i);
+                    else {
+                        const _x = _pos.pop();
+                        if (!_x) {
+                            _index = _i;
+                            _check = false;
+                        }
+                    }
+                    __exp = __exp.slice(_i + 1);
+                }
+                this.problems.push({
+                    msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
+                    position: [
+                        _currentPosition,
+                        _index > -1 
+                            ? _currentPosition + _index + 1 
+                            : _currentPosition + exp.length
+                    ],
+                    code: ErrorCode.ExpectedOpcode
+                });
+                if (_index === -1) {
+                    this.state.track.char += (exp.length);
+                    exp = "";
+                }
+                else {
+                    exp = exp.slice(_index + 1);
+                    this.state.track.char +=  _index;
+                }
+            }
+            else if (exp.startsWith(")")) {
+                if (this.state.track.parens.open.length > 0) {
+                    this.state.track.parens.close.push(_currentPosition);
+                    this.resolveParen();
+                    this.state.depthLevel--;
+                }
+                else this.problems.push({
+                    msg: "unexpected \")\"",
+                    position: [_currentPosition, _currentPosition],
+                    code: ErrorCode.UnexpectedClosingParen
+                });
+                exp = exp.slice(1);
+                this.state.track.char++;
+                if (exp && !exp.match(/^[\s);,]/)) this.problems.push({
+                    msg: "expected to be seperated by space",
+                    position: [_currentPosition, _currentPosition + 1],
+                    code: ErrorCode.ExpectedSpace
+                });
+            }
+            else exp = this.consume(exp, _currentPosition);
+        }
     };
 
     /**
@@ -576,7 +649,7 @@ class RainParser {
             this.parseAliases.push([]);
             const _subExp: string[] = [];
             const _subExpEntry: number[] = [];
-            const _currentSourceTree: RDNode[] = [];
+            const _currentSourceTree: ExpressionASTNode[] = [];
             let _lhs: string;
 
             // parse and cache the sub-expressions
@@ -646,76 +719,77 @@ class RainParser {
                     }
 
                     // begin parsing RHS
-                    while (this.exp.length > 0) {
-                        const _currentPosition = 
-                            _positionOffset + 
-                            _subExp[j].length - 
-                            this.exp.length;
-                        this.state.track.char = _currentPosition;
-                        
-                        if (this.exp.startsWith(" ")) {
-                            this.exp = this.exp.slice(1);
-                            this.state.track.char++;
-                        }
-                        else if (this.exp.startsWith("(")) {
-                            this.exp = this.exp.slice(1);
-                            this.state.track.char++;
-                            let __exp = this.exp;
-                            const _pos: number[] = [];
-                            let _index = -1;
-                            let _check = true;
-                            while (_check && (__exp.includes("(") || __exp.includes(")"))) {
-                                const _i = __exp.search(/\(|\)/);
-                                if (__exp[_i] === "(") _pos.push(_i);
-                                else {
-                                    const _x = _pos.pop();
-                                    if (!_x) {
-                                        _index = _i;
-                                        _check = false;
-                                    }
-                                }
-                                __exp = __exp.slice(_i + 1);
-                            }
-                            this.problems.push({
-                                msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
-                                position: [
-                                    _currentPosition,
-                                    _index > -1 
-                                        ? _currentPosition + _index + 1 
-                                        : _currentPosition + this.exp.length
-                                ],
-                                code: ErrorCode.ExpectedOpcode
-                            });
-                            if (_index === -1) {
-                                this.state.track.char += (this.exp.length);
-                                this.exp = "";
-                            }
-                            else {
-                                this.exp = this.exp.slice(_index + 1);
-                                this.state.track.char +=  _index;
-                            }
-                        }
-                        else if (this.exp.startsWith(")")) {
-                            if (this.state.track.parens.open.length > 0) {
-                                this.state.track.parens.close.push(_currentPosition);
-                                this.resolveParen();
-                                this.state.depthLevel--;
-                            }
-                            else this.problems.push({
-                                msg: "unexpected \")\"",
-                                position: [_currentPosition, _currentPosition],
-                                code: ErrorCode.UnexpectedClosingParen
-                            });
-                            this.exp = this.exp.slice(1);
-                            this.state.track.char++;
-                            if (this.exp && !this.exp.match(/^[\s);,]/)) this.problems.push({
-                                msg: "expected to be seperated by space",
-                                position: [_currentPosition, _currentPosition + 1],
-                                code: ErrorCode.ExpectedSpace
-                            });
-                        }
-                        else this.consume(_currentPosition);
-                    }
+                    // while (this.exp.length > 0) {
+                    // const _currentPosition = 
+                    //     _positionOffset + 
+                    //     _subExp[j].length - 
+                    //     this.exp.length;
+                    this.parseRHS(this.exp, _positionOffset + _subExp[j].length);
+                    // }
+                    //     this.state.track.char = _currentPosition;
+                    //     if (this.exp.startsWith(" ")) {
+                    //         this.exp = this.exp.slice(1);
+                    //         this.state.track.char++;
+                    //     }
+                    //     else if (this.exp.startsWith("(")) {
+                    //         this.exp = this.exp.slice(1);
+                    //         this.state.track.char++;
+                    //         let __exp = this.exp;
+                    //         const _pos: number[] = [];
+                    //         let _index = -1;
+                    //         let _check = true;
+                    //         while (_check && (__exp.includes("(") || __exp.includes(")"))) {
+                    //             const _i = __exp.search(/\(|\)/);
+                    //             if (__exp[_i] === "(") _pos.push(_i);
+                    //             else {
+                    //                 const _x = _pos.pop();
+                    //                 if (!_x) {
+                    //                     _index = _i;
+                    //                     _check = false;
+                    //                 }
+                    //             }
+                    //             __exp = __exp.slice(_i + 1);
+                    //         }
+                    //         this.problems.push({
+                    //             msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
+                    //             position: [
+                    //                 _currentPosition,
+                    //                 _index > -1 
+                    //                     ? _currentPosition + _index + 1 
+                    //                     : _currentPosition + this.exp.length
+                    //             ],
+                    //             code: ErrorCode.ExpectedOpcode
+                    //         });
+                    //         if (_index === -1) {
+                    //             this.state.track.char += (this.exp.length);
+                    //             this.exp = "";
+                    //         }
+                    //         else {
+                    //             this.exp = this.exp.slice(_index + 1);
+                    //             this.state.track.char +=  _index;
+                    //         }
+                    //     }
+                    //     else if (this.exp.startsWith(")")) {
+                    //         if (this.state.track.parens.open.length > 0) {
+                    //             this.state.track.parens.close.push(_currentPosition);
+                    //             this.resolveParen();
+                    //             this.state.depthLevel--;
+                    //         }
+                    //         else this.problems.push({
+                    //             msg: "unexpected \")\"",
+                    //             position: [_currentPosition, _currentPosition],
+                    //             code: ErrorCode.UnexpectedClosingParen
+                    //         });
+                    //         this.exp = this.exp.slice(1);
+                    //         this.state.track.char++;
+                    //         if (this.exp && !this.exp.match(/^[\s);,]/)) this.problems.push({
+                    //             msg: "expected to be seperated by space",
+                    //             position: [_currentPosition, _currentPosition + 1],
+                    //             code: ErrorCode.ExpectedSpace
+                    //         });
+                    //     }
+                    //     else this.consume(_currentPosition);
+                    // }
 
                     // validating RHS against LHS
                     const _outputCount = this.countOutputs(
@@ -736,14 +810,14 @@ class RainParser {
                                     this.state.track.char = _node.position[1];
                                     if ("opcode" in _node) {
                                         if (_node.output > 0) {
-                                            _node.lhs = [];
+                                            _node.lhsAlias = [];
                                             _tags.splice(-_node.output).forEach(v => {
-                                                _node.lhs?.push(v);
+                                                _node.lhsAlias?.push(v);
                                             });
                                         }
                                     }
                                     else _tags.splice(-1).forEach(v => {
-                                        _node.lhs = v;
+                                        _node.lhsAlias = v;
                                     });
                                 }
                             }
@@ -763,14 +837,14 @@ class RainParser {
                                     this.state.track.char = _node.position[1];
                                     if ("opcode" in _node) {
                                         if (_node.output > 0) {
-                                            _node.lhs = [];
+                                            _node.lhsAlias = [];
                                             _tags.splice(-_node.output).forEach(v => {
-                                                _node.lhs?.push(v);
+                                                _node.lhsAlias?.push(v);
                                             }); 
                                         }
                                     }
                                     else _tags.splice(-1).forEach(v => {
-                                        _node.lhs = v;
+                                        _node.lhsAlias = v;
                                     });
                                 }
                             }
@@ -779,19 +853,19 @@ class RainParser {
                                 const _nodes = [...this.state.parse.tree];
                                 for (let k = 0; k < -_diff; k++) {
                                     if ("opcode" in _nodes[k]) {
-                                        if ((_nodes[k] as RDOpNode).output > 0) {
+                                        if ((_nodes[k] as OpASTNode).output > 0) {
                                             const _node = _nodes[_nodes.length - 1];
                                             this.problems.push({
                                                 msg: "no LHS item exists to match this RHS item",
                                                 position: _node.position,
                                                 code: ErrorCode.MismatchLHS
                                             });
-                                            if ((_nodes[k] as RDOpNode).output > 1) {
-                                                if (_c >= (_nodes[k] as RDOpNode).output) {
+                                            if ((_nodes[k] as OpASTNode).output > 1) {
+                                                if (_c >= (_nodes[k] as OpASTNode).output) {
                                                     _nodes.pop();
-                                                    _c -= (_nodes[k] as RDOpNode).output;
+                                                    _c -= (_nodes[k] as OpASTNode).output;
                                                 }
-                                                k += ((_nodes[k] as RDOpNode).output - 1);
+                                                k += ((_nodes[k] as OpASTNode).output - 1);
                                             }
                                             else {
                                                 _nodes.pop();
@@ -808,14 +882,14 @@ class RainParser {
                                     if (_node) {
                                         if ("opcode" in _node) {
                                             if (_node.output > 0) {
-                                                _node.lhs = [];
+                                                _node.lhsAlias = [];
                                                 _tags.slice(-_node.output).forEach(v => {
-                                                    _node.lhs?.push(v);
+                                                    _node.lhsAlias?.push(v);
                                                 });
                                             }
                                         }
                                         else _tags.slice(-1).forEach(v => {
-                                            _node.lhs = v;
+                                            _node.lhsAlias = v;
                                         });
                                     }
                                 }
@@ -849,7 +923,7 @@ class RainParser {
             // constructing final parse tree
             this.parseTree.push({
                 position: _sourceExpPos[i],
-                tree: _currentSourceTree.splice(-_currentSourceTree.length)
+                nodes: _currentSourceTree.splice(-_currentSourceTree.length)
             });
         }
     }
@@ -1118,11 +1192,11 @@ class RainParser {
     private resolveParen() {
         this.state.track.parens.open.pop();
         const _endPosition = this.state.track.parens.close.pop()!;
-        let _nodes: RDNode[] = this.state.parse.tree;
+        let _nodes: ExpressionASTNode[] = this.state.parse.tree;
         for (let i = 0; i < this.state.depthLevel - 1; i++) {
-            _nodes = (_nodes[_nodes.length - 1] as RDOpNode).parameters;
+            _nodes = (_nodes[_nodes.length - 1] as OpASTNode).parameters;
         }
-        const _node = _nodes[_nodes.length - 1] as RDOpNode;
+        const _node = _nodes[_nodes.length - 1] as OpASTNode;
         _node.position[1] = _endPosition;
         _node.parens[1] = _endPosition;
         const _i = this.problems.findIndex(
@@ -1131,23 +1205,23 @@ class RainParser {
             v.position[1] === _node.parens[0]
         );
         if (_i > -1) this.problems.splice(_i, 1);
-        _nodes[_nodes.length - 1] = this.resolveOp(_node);
+        _nodes[_nodes.length - 1] = this.resolveOpcode(_node);
     }
 
     /**
      * @internal Method to update the parse tree
      */
-    private updateTree(node: RDNode, replace?: boolean) {
-        let _nodes: RDNode[] = this.state.parse.tree;
+    private updateTree(node: ExpressionASTNode, replace?: boolean) {
+        let _nodes: ExpressionASTNode[] = this.state.parse.tree;
         if (replace) {
             for (let i = 0; i < this.state.depthLevel - 1; i++) {
-                _nodes = (_nodes[_nodes.length - 1] as RDOpNode).parameters;
+                _nodes = (_nodes[_nodes.length - 1] as OpASTNode).parameters;
             }
             _nodes.pop();
         }
         else {
             for (let i = 0; i < this.state.depthLevel; i++) {
-                _nodes = (_nodes[_nodes.length - 1] as RDOpNode).parameters;
+                _nodes = (_nodes[_nodes.length - 1] as OpASTNode).parameters;
             }
         }
         _nodes.push(node);
@@ -1156,22 +1230,22 @@ class RainParser {
     /**
      * @internal Method to handle operand arguments
      */
-    private resolveOperand(pos: number, op: RDOpNode): RDOpNode {
-        if (!this.exp.includes(">")) {
+    private resolveOperand(exp: string, pos: number, op: OpASTNode): [string, OpASTNode] {
+        if (!exp.includes(">")) {
             this.problems.push({
                 msg: "expected \">\"",
-                position: [pos, pos + this.exp.length - 1],
+                position: [pos, pos + exp.length - 1],
                 code: ErrorCode.ExpectedClosingAngleBracket
             });
             op.operandArgs = {
-                position: [pos, pos + this.exp.length - 1],
+                position: [pos, pos + exp.length - 1],
                 args: []
             };
-            this.exp = "";
+            exp = "";
         }
         else {
-            const _operandArgs = this.exp.slice(1, this.exp.indexOf(">"));
-            this.exp = this.exp.slice(this.exp.indexOf(">") + 1);
+            const _operandArgs = exp.slice(1, exp.indexOf(">"));
+            exp = exp.slice(exp.indexOf(">") + 1);
             const _parsedVals = inclusiveParse(_operandArgs, /\S+/gd, pos + 1);
             op.operandArgs = {
                 position: [pos, pos + _operandArgs.length + 1],
@@ -1224,13 +1298,13 @@ class RainParser {
                 });
             });
         }
-        return op;
+        return [exp, op];
     }
 
     /**
      * @internal Method that resolves the RDOpNode once its respective closing paren has been consumed
      */
-    private resolveOp = (node: RDOpNode): RDOpNode => {
+    private resolveOpcode = (node: OpASTNode): OpASTNode => {
         const _index = this.names.indexOf(node.opcode.name);
         if (_index !== -1) {
             if (typeof this.pushes[_index] === "number") {
@@ -1384,13 +1458,13 @@ class RainParser {
     /**
      * @internal Method that consumes the words from the text and updates the parse tree
      */
-    private consume(entry: number): void {
-        const _tmp = this.findIndex(this.exp);
-        const _index = _tmp < 0 ? this.exp.length : _tmp === 0 ? 1 : _tmp;
-        const _word = this.exp.slice(0, _index);
+    private consume(exp: string, entry: number): string {
+        const _tmp = this.findIndex(exp);
+        const _index = _tmp < 0 ? exp.length : _tmp === 0 ? 1 : _tmp;
+        const _word = exp.slice(0, _index);
         const _wordPos: [number, number] = [entry, entry + _word.length - 1];
         this.state.track.char = entry + _word.length - 1;
-        this.exp = this.exp.replace(_word, "");
+        exp = exp.replace(_word, "");
         const _aliasIndex = this.parseAliases[
             this.parseAliases.length - 1
         ].findIndex(
@@ -1400,7 +1474,7 @@ class RainParser {
             v => v.name === _word
         );
 
-        if (this.exp.startsWith("(") || this.exp.startsWith("<")) {
+        if (exp.startsWith("(") || exp.startsWith("<")) {
             if (!_word.match(this.wordPattern)) this.problems.push({
                 msg: `invalid word pattern: "${_word}"`,
                 position: [..._wordPos],
@@ -1413,7 +1487,7 @@ class RainParser {
                 position: [..._wordPos],
                 code: ErrorCode.UnknownOp
             });
-            let _op: RDOpNode = {
+            let _op: OpASTNode = {
                 opcode: {
                     name: _enum > -1 ? this.names[_enum] : "unknown opcode",
                     description: _enum > -1 ? this.opmeta[_enum].desc : "",
@@ -1425,12 +1499,12 @@ class RainParser {
                 parens: [NaN, NaN],
                 parameters: []
             };
-            if (this.exp.startsWith("<")) _op = this.resolveOperand(entry + _word.length, _op);
-            if (this.exp.startsWith("(")) {
+            if (exp.startsWith("<")) [exp, _op] = this.resolveOperand(exp, entry + _word.length, _op);
+            if (exp.startsWith("(")) {
                 const _pos = _op.operandArgs 
                     ? [..._op.operandArgs!.position][1] + 1 
                     : [..._wordPos][1] + 1;
-                this.exp = this.exp.replace("(", "");
+                exp = exp.replace("(", "");
                 this.state.track.parens.open.push(_pos);
                 _op.parens[0] = _pos;
                 this.updateTree(_op);
@@ -1514,12 +1588,13 @@ class RainParser {
                 position: [..._wordPos],
             });
         }
+        return exp;
     }
 
     /**
      * @internal Method to check for errors in parse tree once an expression is fully parsed
      */
-    private errorCheck(node: RDNode): boolean {
+    private errorCheck(node: ExpressionASTNode): boolean {
         if (this.problems.length) return false;
         if ("opcode" in node) {
             if (isNaN(node.operand) || isNaN(node.output)) return false;
@@ -1536,7 +1611,7 @@ class RainParser {
     /**
      * @internal Method to count outputs of nodes in a parse tree
      */
-    private countOutputs(nodes: RDNode[], skip?: number): number {
+    private countOutputs(nodes: ExpressionASTNode[], skip?: number): number {
         let _count = 0;
         if (skip) nodes = nodes.slice(skip - nodes.length);
         for (const _node of nodes) {
@@ -1554,15 +1629,15 @@ class RainParser {
      */
     private _compile(
         parseTree:
-            | RDNode
-            | RDNode[][]
-            | RDParseTree,
+            | ExpressionASTNode
+            | ExpressionASTNode[][]
+            | SourceASTNode[],
         constants: BigNumberish[] = [],
         sourceIndex = 0
     ): ExpressionConfig | undefined {
         const _sources: BytesLike[] = [];
         let _sourcesCache: BytesLike[] = [];
-        let _nodes: RDNode[][] = [];
+        let _nodes: ExpressionASTNode[][] = [];
 
         if (this.problems.length) return undefined;
 
@@ -1573,8 +1648,8 @@ class RainParser {
             for (let i = 0; i < parseTree.length; i++) {
                 const _item = parseTree[i];
                 if (_item) {
-                    if (Array.isArray(_item)) _nodes.push(_item as RDNode[]);
-                    else _nodes.push(_item.tree as RDNode[]);
+                    if (Array.isArray(_item)) _nodes.push(_item as ExpressionASTNode[]);
+                    else _nodes.push(_item.nodes as ExpressionASTNode[]);
                 }
                 else _nodes.push([]);
             }

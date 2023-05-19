@@ -185,94 +185,280 @@ export enum MemoryType {
 /**
  * @public Type of position start and end indexes for RainDocument, inclusive at both ends
  */
-export type RDPosition = [number, number];
+export type ASTNodePosition = [number, number];
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace ASTNodePosition {
+    export function is(value: any): value is ASTNodePosition {
+        return Array.isArray(value) 
+            && value.length === 2 
+            && typeof value[0] === "number" 
+            && typeof value[1] === "number";
+    }
+}
 
 /**
  * @public Type of RainDocument's problem
  */
-export type RDProblem = {
+export interface ProblemASTNode {
     msg: string;
-    position: RDPosition;
+    position: ASTNodePosition;
     code: number;
-};
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace ProblemASTNode {
+    export function is(value: any): value is ProblemASTNode {
+        return value !== null 
+            && typeof value === "object"
+            && typeof value.msg === "string"
+            && ASTNodePosition.is(value.position)
+            && typeof value.code === "number";
+    }
+}
 
 /**
  * @public Type of RainDocument's Value node
  */
-export type RDValueNode = {
+export interface ValueASTNode {
     value: string;
-    position: RDPosition;
-    lhs?: RDAliasNode;
-};
+    position: ASTNodePosition;
+    lhsAlias?: AliasASTNode;
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace ValueASTNode {
+    export function is(value: any): value is ValueASTNode {
+        return value !== null 
+            && typeof value === "object"
+            && typeof value.value === "string"
+            && ASTNodePosition.is(value.position)
+            && (typeof value.lhsAlias === "undefined" || AliasASTNode.is(value.lhsAlias));
+    }
+
+    export function isStandaloneFragment(value: any): value is ValueASTNode {
+        return value !== null 
+            && typeof value === "object"
+            && typeof value.value === "string"
+            && ASTNodePosition.is(value.position)
+            && typeof value.lhsAlias === "undefined";
+    }
+}
 
 /**
  * @public Type of RainDocument's Opcode node
  */
-export type RDOpNode = {
+export interface OpASTNode {
     opcode: {
         name: string;
         description: string;
-        position: RDPosition;
+        position: ASTNodePosition;
     };
     operand: number;
     output: number;
-    position: RDPosition;
-    parens: RDPosition;
-    parameters: RDNode[];
+    position: ASTNodePosition;
+    parens: ASTNodePosition;
+    parameters: ExpressionASTNode[];
     operandArgs?: {
-        position: RDPosition;
+        position: ASTNodePosition;
         args: {
             value: number;
             name: string;
-            position: RDPosition;
+            position: ASTNodePosition;
             description?: string;
         }[];
     };
-    lhs?: RDAliasNode[];
-};
+    lhsAlias?: AliasASTNode[];
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace OpASTNode {
+    export function is(value: any): value is OpASTNode {
+        return value !== null 
+            && typeof value === "object"
+            && typeof value.opcode === "object"
+            && typeof value.opcode.name === "string"
+            && typeof value.opcode.description === "string"
+            && ASTNodePosition.is(value.opcode.position)
+            && typeof value.operand === "number"
+            && typeof value.output === "number"
+            && ASTNodePosition.is(value.position)
+            && ASTNodePosition.is(value.parens)
+            && Array.isArray(value.parameters)
+            && value.parameters.every((v: any) => ExpressionASTNode.is(v))
+            && (typeof value.lhsAlias === "undefined" || AliasASTNode.is(value.lhsAlias))
+            && (
+                typeof value.operandArgs === "undefined" || (
+                    value.operandArgs !== null 
+                    && typeof value.operandArgs === "object"
+                    && ASTNodePosition.is(value.operandArgs.position)
+                    && Array.isArray(value.operandArgs.args)
+                    && value.operandArgs.args.every(
+                        (v: any) => v !== null
+                            && typeof v === "object"
+                            && typeof v.value === "number"
+                            && typeof v.name === "string"
+                            && ASTNodePosition.is(v.position)
+                            && (
+                                typeof v.description === "undefined" || 
+                                typeof v.description === "string"
+                            )
+                    )
+                )
+            );
+
+    }
+
+    export function isStandaloneFragment(value: any): value is OpASTNode {
+        return value !== null 
+            && typeof value === "object"
+            && typeof value.opcode === "object"
+            && typeof value.opcode.name === "string"
+            && typeof value.opcode.description === "string"
+            && ASTNodePosition.is(value.opcode.position)
+            && typeof value.operand === "number"
+            && typeof value.output === "number"
+            && ASTNodePosition.is(value.position)
+            && ASTNodePosition.is(value.parens)
+            && Array.isArray(value.parameters)
+            && value.parameters.every((v: any) => ExpressionASTNode.is(v))
+            && typeof value.lhsAlias === "undefined"
+            && (
+                typeof value.operandArgs === "undefined" || (
+                    value.operandArgs !== null 
+                    && typeof value.operandArgs === "object"
+                    && ASTNodePosition.is(value.operandArgs.position)
+                    && Array.isArray(value.operandArgs.args)
+                    && value.operandArgs.args.every(
+                        (v: any) => v !== null
+                            && typeof v === "object"
+                            && typeof v.value === "number"
+                            && typeof v.name === "string"
+                            && ASTNodePosition.is(v.position)
+                            && (
+                                typeof v.description === "undefined" || 
+                                typeof v.description === "string"
+                            )
+                    )
+                )
+            );
+
+    }
+}
 
 /**
  * @public Type of RainDocument's lhs aliases
  */
-export type RDAliasNode = {
+export interface AliasASTNode {
     name: string;
-    position: RDPosition;
-    lhs?: RDAliasNode;
+    position: ASTNodePosition;
+    lhsAlias?: AliasASTNode;
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace AliasASTNode {
+    export function is(value: any): value is AliasASTNode {
+        return value !== null 
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && ASTNodePosition.is(value.position)
+            && (typeof value.lhsAlias === "undefined" || AliasASTNode.is(value.lhsAlias));
+    }
 }
 
 /**
  * @public Type of RainDocument's comments
  */
-export type RDComment = {
+export interface CommentASTNode {
     comment: string;
-    position: RDPosition;
+    position: ASTNodePosition;
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace CommentASTNode {
+    export function is(value: any): value is CommentASTNode {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.comment === "string"
+            && ASTNodePosition.is(value.position);
+    }
 }
 
 /**
  * @public Type of meta hash specified in a RainDocument
  */
-export type RDMetaHash = {
+export interface MetaHashASTNode {
     hash: string;
-    position: RDPosition;
+    position: ASTNodePosition;
 }
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace MetaHashASTNode {
+    export function is(value: any): value is MetaHashASTNode {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.hash === "string"
+            && ASTNodePosition.is(value.position);
+    }
+}
+
+// /**
+//  * @public Type of RainDocument's parse node
+//  */
+// export type FragmentASTNode = ValueASTNode | OpASTNode;
+
+// /**
+//  * @public The namespace provides functionality to type check
+//  */
+// export namespace FragmentASTNode {
+//     export function is(value: any): value is FragmentASTNode {
+//         return ValueASTNode.is(value) 
+//             || OpASTNode.is(value);
+//     }
+// }
 
 /**
  * @public Type of RainDocument's parse node
  */
-export type RDNode = RDValueNode | RDOpNode | RDAliasNode;
+export type ExpressionASTNode = ValueASTNode | OpASTNode | AliasASTNode;
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace ExpressionASTNode {
+    export function is(value: any): value is ExpressionASTNode {
+        return ValueASTNode.is(value) 
+            || AliasASTNode.is(value)
+            || OpASTNode.is(value);
+    }
+}
 
 /**
 * @public Type of a RainDocument parse tree
 */
-export type RDParseTree = { tree: RDNode[]; position: RDPosition; }[];
+export type SourceASTNode = { nodes: ExpressionASTNode[]; position: ASTNodePosition; };
 
 /**
  * @public Type of RainParser state
  */
 export type RainParseState = {
     parse: {
-        tree: RDNode[];
-        aliases: RDAliasNode[];
+        tree: ExpressionASTNode[];
+        aliases: AliasASTNode[];
     };
     track: {
         char: number;
