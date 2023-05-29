@@ -172,7 +172,7 @@ export class RainDocument {
             .flat() as ProblemASTNode[];
 
         problems.push(...deepCopy(expProblems));
-        return deepCopy(this.problems);
+        return deepCopy(problems);
     }
 
     /**
