@@ -643,10 +643,10 @@ export class RainDocument {
             code: ErrorCode.UndefinedOpMeta
         });
 
-        const exps = inclusiveParse(document, /#[^]+\s+[^#]*/);
+        const exps = inclusiveParse(document, /#[^#]+\s+[^#]*/);
         exps.forEach(v => {
-            const name = inclusiveParse(v[0], /^#[^]+(?=\s)/);
-            if (name[0][0].match(/^[a-z][a-z0-9-]*$/)) this.expressions.push({
+            const name = exclusiveParse(v[0], /\s+/);
+            if (name[0][0].match(/^#[a-z][a-z0-9-]*$/)) this.expressions.push({
                 name: name[0][0].slice(1),
                 namePosition: [v[1][0], v[1][0] + name[0][0].length - 1],
                 text: this.fillOut(
@@ -754,16 +754,17 @@ export class RainDocument {
             " ".repeat(text.slice(position[1] + 1, text.length).length);
     }
 }
-// const x = TextDocument.create("1", "1", 1, `@0x999dbdc57ac1b4b920864b6f2adc9d856689c422b889ebe19eeac1c30e7f962c
-// #my-exp
-// 1
+// const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
+// @0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6
+// /**
+//  * This is test
+//  */
 
-// #yo
-// _ : add(my-exp 2)`);
-// const y = new dotRain(x);
-// y._parse().then(() => {
-//     console.log(JSON.stringify(y.expressions[0].doc?.ast));
-//     console.log(RainlangAST.is(y.expressions[0].doc?.ast));
-//     console.log(JSON.stringify(y.expressions[1].doc?.ast));
-//     console.log(y.problems);
+// #my-exp
+// _ _: add(1 2 sub(1 2) add(1)),
+
+// #my-other-exp
+// _: mul(3 4 calling-context<1>());`);
+// RainDocument.create(x).then((v) => {
+//     console.log(v.expressions);
 // });
