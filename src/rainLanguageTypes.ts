@@ -2,6 +2,7 @@ import { MetaStore } from "./parser/metaStore";
 import { BigNumberish, BytesLike } from "./utils";
 import { MarkupKind } from "vscode-languageserver-types";
 import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
+import { RainlangParser } from "./parser/rainlangParser";
 
 export * from "vscode-languageserver-types";
 export { TextDocument, TextDocumentContentChangeEvent };
@@ -16,6 +17,7 @@ export enum ErrorCode {
     UndefinedWord = 1,
     IlligalChar = 2,
     UndefinedMeta = 3,
+    UndefinedExpression = 4,
 
     InvalidWordPattern = 0x101,
     InvalidExpression = 0x102,
@@ -23,14 +25,18 @@ export enum ErrorCode {
     InvalidOutputsMeta = 0x104,
     InvalidNestedNode = 0x105,
     InvalidSelfReferenceLHS = 0x106,
-    InvalidMetaHash = 0x107,
+    InvalidHash = 0x107,
     InvalidOpMeta = 0x108,
     InvalidContractMeta = 0x109,
+    InvalidImport = 0x110,
 
     UnexpectedEndOfComment = 0x201,
     UnexpectedClosingParen = 0x202,
     UnexpectedRHSComment = 0x203,
-    UnexpectedMetaHash = 0x204,
+    UnexpectedBindingKeyUsage = 0x204,
+    UnexpectedFragment = 0x205,
+    UnexpectedExpression = 0x206,
+    UnexpectedString = 0x207,
 
     ExpectedOpcode = 0x301,
     ExpectedSpace = 0x302,
@@ -39,6 +45,8 @@ export enum ErrorCode {
     ExpectedOpeningParen = 0x305,
     ExpectedClosingAngleBracket = 0x306,
     ExpectedSemi = 0x307,
+    ExpectedConstant = 0x308,
+    ExpectedExpressionKey = 0x309,
 
     MismatchRHS = 0x401,
     MismatchLHS = 0x402,
@@ -48,12 +56,21 @@ export enum ErrorCode {
     OutOfRangeOperandArgs = 0x502,
     OutOfRangeValue = 0x503,
 
-    UnknownOp = 0x600,
+    DuplicateAlias = 0x801,
+    DuplicateConetxtColumn = 0x802,
+    DuplicateContextCell = 0x803,
 
-    RuntimeError = 0x700,
+    UnknownOp = 0x700,
 
-    DuplicateAlias = 0x800
+    RuntimeError = 0x800,
+
+    CircularDependency = 0x900
 }
+
+export const illigalChar = /[^ -~\s]+/;
+export const wordPattern = /^[a-z][0-9a-z-]*$/;
+export const hashPattern = /^0x[a-zA-F0-9]{64}$/;
+export const numericPattern = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
 
 /**
  * @public
@@ -241,14 +258,6 @@ export namespace ValueASTNode {
             && ASTNodePosition.is(value.position)
             && (typeof value.lhsAlias === "undefined" || AliasASTNode.is(value.lhsAlias));
     }
-
-    export function isStandaloneFragment(value: any): value is ValueASTNode {
-        return value !== null 
-            && typeof value === "object"
-            && typeof value.value === "string"
-            && ASTNodePosition.is(value.position)
-            && typeof value.lhsAlias === "undefined";
-    }
 }
 
 /**
@@ -264,11 +273,11 @@ export interface OpASTNode {
     output: number;
     position: ASTNodePosition;
     parens: ASTNodePosition;
-    parameters: ExpressionASTNode[];
+    parameters: FragmentASTNode[];
     operandArgs?: {
         position: ASTNodePosition;
         args: {
-            value: number;
+            value: string;
             name: string;
             position: ASTNodePosition;
             description?: string;
@@ -293,8 +302,13 @@ export namespace OpASTNode {
             && ASTNodePosition.is(value.position)
             && ASTNodePosition.is(value.parens)
             && Array.isArray(value.parameters)
-            && value.parameters.every((v: any) => ExpressionASTNode.is(v))
-            && (typeof value.lhsAlias === "undefined" || AliasASTNode.is(value.lhsAlias))
+            && value.parameters.every((v: any) => FragmentASTNode.is(v))
+            && (
+                typeof value.lhsAlias === "undefined" || (
+                    Array.isArray(value.lhsAlias) &&
+                    value.lhsAlias.every((v: any) => AliasASTNode.is(v))
+                )
+            )
             && (
                 typeof value.operandArgs === "undefined" || (
                     value.operandArgs !== null 
@@ -314,43 +328,6 @@ export namespace OpASTNode {
                     )
                 )
             );
-
-    }
-
-    export function isStandaloneFragment(value: any): value is OpASTNode {
-        return value !== null 
-            && typeof value === "object"
-            && typeof value.opcode === "object"
-            && typeof value.opcode.name === "string"
-            && typeof value.opcode.description === "string"
-            && ASTNodePosition.is(value.opcode.position)
-            && typeof value.operand === "number"
-            && typeof value.output === "number"
-            && ASTNodePosition.is(value.position)
-            && ASTNodePosition.is(value.parens)
-            && Array.isArray(value.parameters)
-            && value.parameters.every((v: any) => ExpressionASTNode.is(v))
-            && typeof value.lhsAlias === "undefined"
-            && (
-                typeof value.operandArgs === "undefined" || (
-                    value.operandArgs !== null 
-                    && typeof value.operandArgs === "object"
-                    && ASTNodePosition.is(value.operandArgs.position)
-                    && Array.isArray(value.operandArgs.args)
-                    && value.operandArgs.args.every(
-                        (v: any) => v !== null
-                            && typeof v === "object"
-                            && typeof v.value === "number"
-                            && typeof v.name === "string"
-                            && ASTNodePosition.is(v.position)
-                            && (
-                                typeof v.description === "undefined" || 
-                                typeof v.description === "string"
-                            )
-                    )
-                )
-            );
-
     }
 }
 
@@ -399,7 +376,8 @@ export namespace CommentASTNode {
 /**
  * @public Type of meta hash specified in a RainDocument
  */
-export interface MetaHashASTNode {
+export interface ImportASTNode {
+    name: string;
     hash: string;
     position: ASTNodePosition;
 }
@@ -407,40 +385,26 @@ export interface MetaHashASTNode {
 /**
  * @public The namespace provides functionality to type check
  */
-export namespace MetaHashASTNode {
-    export function is(value: any): value is MetaHashASTNode {
+export namespace ImportASTNode {
+    export function is(value: any): value is ImportASTNode {
         return value !== null
             && typeof value === "object"
+            && typeof value.name === "string"
             && typeof value.hash === "string"
             && ASTNodePosition.is(value.position);
     }
 }
 
-// /**
-//  * @public Type of RainDocument's parse node
-//  */
-// export type FragmentASTNode = ValueASTNode | OpASTNode;
-
-// /**
-//  * @public The namespace provides functionality to type check
-//  */
-// export namespace FragmentASTNode {
-//     export function is(value: any): value is FragmentASTNode {
-//         return ValueASTNode.is(value) 
-//             || OpASTNode.is(value);
-//     }
-// }
-
 /**
  * @public Type of RainDocument's parse node
  */
-export type ExpressionASTNode = ValueASTNode | OpASTNode | AliasASTNode;
+export type FragmentASTNode = ValueASTNode | OpASTNode | AliasASTNode;
 
 /**
  * @public The namespace provides functionality to type check
  */
-export namespace ExpressionASTNode {
-    export function is(value: any): value is ExpressionASTNode {
+export namespace FragmentASTNode {
+    export function is(value: any): value is FragmentASTNode {
         return ValueASTNode.is(value) 
             || AliasASTNode.is(value)
             || OpASTNode.is(value);
@@ -448,16 +412,106 @@ export namespace ExpressionASTNode {
 }
 
 /**
-* @public Type of a RainDocument parse tree
-*/
-export type SourceASTNode = { nodes: ExpressionASTNode[]; position: ASTNodePosition; };
+ * @public Type of a RainDocument parse tree
+ */
+export type RainlangAST = { 
+    lines: {
+        nodes: FragmentASTNode[]; 
+        position: ASTNodePosition; 
+        aliases: AliasASTNode[];
+    }[]
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace RainlangAST {
+    export function is(value: any): value is RainlangAST {
+        return value !== null
+            && typeof value === "object"
+            && Array.isArray(value.lines)
+            && value.lines.every((v: any) => {
+                return ASTNodePosition.is(v.position)
+                    && Array.isArray(v.nodes)
+                    && v.nodes.every((e: any) => FragmentASTNode.is(e))
+                    && Array.isArray(v.aliases)
+                    && v.aliases.every((e: any) => AliasASTNode.is(e));
+            });
+    }
+
+    export function isConstant(value: any): boolean {
+        return value !== null
+            && typeof value === "object"
+            && Array.isArray(value.lines)
+            && value.lines.length === 1
+            && value.lines.every((v: any) => {
+                return ASTNodePosition.is(v.position)
+                    && Array.isArray(v.nodes)
+                    && v.nodes.length === 1
+                    && v.nodes.every((e: any) => ValueASTNode.is(e))
+                    && Array.isArray(v.aliases)
+                    && v.aliases.length === 0;
+            });
+    }
+}
+
+/**
+ * @public Type for a named expression
+ */
+export type BoundExpression = {
+    name: string;
+    namePosition: ASTNodePosition;
+    text: string;
+    position: ASTNodePosition;
+    doc?: RainlangParser;
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace BoundExpression {
+    export function is(value: any): value is BoundExpression {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && ASTNodePosition.is(value.namePosition)
+            && typeof value.text === "string"
+            && ASTNodePosition.is(value.position)
+            && (
+                typeof value.doc === "undefined" ||
+                value.doc instanceof RainlangParser
+            );
+    }
+
+    export function isConstant(value: any): boolean {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && ASTNodePosition.is(value.namePosition)
+            && typeof value.text === "string"
+            && ASTNodePosition.is(value.position)
+            && value.doc instanceof RainlangParser
+            && RainlangAST.isConstant(value.doc.ast);
+    }
+
+    export function isExpression(value: any): boolean {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && ASTNodePosition.is(value.namePosition)
+            && typeof value.text === "string"
+            && ASTNodePosition.is(value.position)
+            && value.doc instanceof RainlangParser
+            && !RainlangAST.isConstant(value.doc.ast);
+    }
+}
 
 /**
  * @public Type of RainParser state
  */
-export type RainParseState = {
+export type RainlangParseState = {
     parse: {
-        tree: ExpressionASTNode[];
+        tree: FragmentASTNode[];
         aliases: AliasASTNode[];
     };
     track: {

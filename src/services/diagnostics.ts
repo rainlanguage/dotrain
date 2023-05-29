@@ -43,7 +43,7 @@ export async function getRainlangDiagnostics(
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.getTextDocument();
-        if (setting?.metaStore) _rd.getMetaStore().updateStore(setting.metaStore);
+        if (setting?.metaStore) _rd.metaStore.updateStore(setting.metaStore);
     }
     else {
         _td = document;

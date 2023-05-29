@@ -2,13 +2,13 @@ import assert from "assert";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { assertError, opMetaHash } from "../utils";
-import { ExpressionConfig, MetaStore, rainlang, rlc } from "../../src";
+import { ExpressionConfig, MetaStore, rainlang, rainlangc } from "../../src";
 
 
 chai.use(chaiAsPromised);
 const expect: Chai.ExpectStatic = chai.expect;
 
-describe("Rainlang Compiler (rlc) Tests", async function () {
+describe("Rainlang Compiler (rainlangc) Tests", async function () {
     const store = new MetaStore();
 
     before(async () => {
@@ -20,7 +20,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
         /* main source */
         _: add(1 2);`;
 
-        const result = await rlc(expression, store)
+        const result = await rainlangc(expression, store)
             .catch((err) => {
                 assert.equal(err.problems[0].msg, "cannot find op meta hash, please specify an op meta hash");
             });
@@ -28,7 +28,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_:;`", async () => {
-        return expect(rlc(rainlang`@${opMetaHash} _:;`, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(rainlang`@${opMetaHash} _:;`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 0);
                 assert.equal(response.sources.length, 1);
@@ -36,7 +36,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `:;`", async () => {
-        return expect(rlc(rainlang`@${opMetaHash} :;`, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(rainlang`@${opMetaHash} :;`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 0);
                 assert.equal(response.sources.length, 1);
@@ -44,7 +44,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_ _:;`", async () => {
-        return expect(rlc(rainlang`@${opMetaHash} _ _:;`, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(rainlang`@${opMetaHash} _ _:;`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 0);
                 assert.equal(response.sources.length, 1);
@@ -52,7 +52,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_:;`", async () => {
-        return expect(rlc(rainlang`@${opMetaHash} _:;`, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(rainlang`@${opMetaHash} _:;`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 0);
                 assert.equal(response.sources.length, 1);
@@ -60,7 +60,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_:, _:;`", async () => {
-        return expect(rlc(
+        return expect(rainlangc(
             rainlang`@${opMetaHash} _:,
                     _:;`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
@@ -70,7 +70,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_:, _:, _:, _:, _:, _:;`", async () => {
-        return expect(rlc(
+        return expect(rainlangc(
             rainlang`@${opMetaHash} _:, _:, _:, _:, _:, _:;`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 0);
@@ -79,7 +79,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `/* this is a comment */ _:;`", async () => {
-        return expect(rlc(rainlang`@${opMetaHash} 
+        return expect(rainlangc(rainlang`@${opMetaHash} 
         /* this is a comment */
         _:;`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
@@ -89,7 +89,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_:; _:;`", async () => {
-        return expect(rlc(rainlang`@${opMetaHash} 
+        return expect(rainlangc(rainlang`@${opMetaHash} 
         _:;
         _:;`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
@@ -99,7 +99,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_:add(10 20);`", async () => {
-        return expect(rlc(rainlang`@${opMetaHash} _:add(10 20);`, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(rainlang`@${opMetaHash} _:add(10 20);`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 2);
                 assert.deepEqual(response.constants, ["10", "20"]);
@@ -108,7 +108,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_: add(10 20), _: block-timestamp();`", async () => {
-        return expect(rlc(rainlang`@${opMetaHash} _: add(10 20), _: block-timestamp();`, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(rainlang`@${opMetaHash} _: add(10 20), _: block-timestamp();`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 2);
                 assert.deepEqual(response.constants, ["10", "20"]);
@@ -117,7 +117,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_ _: add(10 20) block-timestamp();`", async () => {
-        return expect(rlc(rainlang`@${opMetaHash} _ _: add(10 20) block-timestamp();`, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(rainlang`@${opMetaHash} _ _: add(10 20) block-timestamp();`, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 2);
                 assert.deepEqual(response.constants, ["10", "20"]);
@@ -126,7 +126,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment for multiline comment", async () => {
-        return expect(rlc(rainlang`@${opMetaHash}        
+        return expect(rainlangc(rainlang`@${opMetaHash}        
        _: block-timestamp();
        `, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
@@ -151,7 +151,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
             mintslist: sentinel20,
             mint-account mint-amount: you mintamount;
         `;
-        return expect(rlc(expression, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(expression, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 3);
                 assert.deepEqual(
@@ -180,7 +180,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
             _: add(s0 4),
             _: add(s1 5);
         `;
-        return expect(rlc(expression, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(expression, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 5);
                 assert.deepEqual(response.constants, ["1", "2", "3", "4", "5"]);
@@ -212,7 +212,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
             op: add(finalmul s1);
         `;
 
-        return expect(rlc(expression, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(expression, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 6);
                 assert.deepEqual(response.constants, ["2", "3", "4", "5", "1", "6"]);
@@ -225,7 +225,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
             _ _ _:  call<1 3>(2 2);
         `;
 
-        return expect(rlc(expression, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(expression, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 1);
                 assert.equal(response.sources.length, 1);
@@ -237,7 +237,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
             _ _: fold-context<2 3 1>(0 1);
         `;
 
-        return expect(rlc(expression, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(expression, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 2);
                 assert.equal(response.sources.length, 1);
@@ -250,7 +250,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
         _: less-than(read-memory<0 0>() 0x03);
         _ _: add(read-memory<0 0>() 0x04) add(read-memory<1 0>() 0x05);`;
 
-        return expect(rlc(expression, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(expression, store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 5);
                 assert.equal(response.sources.length, 4);
@@ -260,7 +260,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `:add(10 20);`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} :add(10 20);`, store),
+                await rainlangc(rainlang`@${opMetaHash} :add(10 20);`, store),
             "no LHS item exists to match this RHS item",
             "Invalid Error"
         );
@@ -269,7 +269,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `:`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`:`, store),
+                await rainlangc(rainlang`:`, store),
             "source item expressions must end with semi",
             "Invalid Error"
         );
@@ -278,7 +278,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `,`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`,`, store),
+                await rainlangc(rainlang`,`, store),
             "source item expressions must end with semi",
             "Invalid Error"
         );
@@ -287,7 +287,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `;`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`;`, store),
+                await rainlangc(rainlang`;`, store),
             "invalid rain expression",
             "Invalid Error"
         );
@@ -296,7 +296,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `,;`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`,;`, store),
+                await rainlangc(rainlang`,;`, store),
             "invalid rain expression",
             "Invalid Error"
         );
@@ -305,7 +305,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `_;`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`_;`, store),
+                await rainlangc(rainlang`_;`, store),
             "invalid rain expression",
             "Invalid Error"
         );
@@ -314,7 +314,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `_: add(10 20), _:;`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} _: add(10 20), _:;`, store),
+                await rainlangc(rainlang`@${opMetaHash} _: add(10 20), _:;`, store),
             "no RHS item exists to match this LHS item: _",
             "Invalid Error"
         );
@@ -324,7 +324,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} 
+                await rainlangc(rainlang`@${opMetaHash} 
                 // This is an invalid comment.
                 _: add(10 20), _:;
                 `, store),
@@ -336,7 +336,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `_: add(10 20) block-timestamp();`", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} _: add(10 20) block-timestamp();`, store),
+                await rainlangc(rainlang`@${opMetaHash} _: add(10 20) block-timestamp();`, store),
             "no LHS item exists to match this RHS item",
             "Invalid Error"
         );
@@ -345,14 +345,14 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
     it("should not accept negative numbers", async () => {
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} _: add(-10 20);`, store),
+                await rainlangc(rainlang`@${opMetaHash} _: add(-10 20);`, store),
             "is not a valid rainlang word",
             "Invalid Error"
         );
 
         await assertError(
             async () =>
-                await rlc(rainlang`@${opMetaHash} _: sub(123941 -123941);`, store),
+                await rainlangc(rainlang`@${opMetaHash} _: sub(123941 -123941);`, store),
             "is not a valid rainlang word",
             "Invalid Error"
         );
@@ -360,7 +360,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
     it("should only accept ASCII characters", async () => {
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: add(10𐐀 20);`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: add(10𐐀 20);`, store),
             "found illigal character: \\\"𐐀\\\"",
             "Invalid Error"
         );
@@ -368,7 +368,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
     it("should error if invalid operand brackets is provided", async () => {
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: read-memory<10 1();`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: read-memory<10 1();`, store),
             "774",
             "Invalid Error"
         );
@@ -376,12 +376,12 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
     it("should error if invalid parenthesis is provided", async () => {
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: read-memory<10 1>;`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: read-memory<10 1>;`, store),
             "773",
             "Invalid Error"
         );
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: read-memory<10 1>(;`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: read-memory<10 1>(;`, store),
             "772",
             "Invalid Error"
         );
@@ -389,7 +389,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
     it("should error if invalid word pattern is provided", async () => {
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: <10 1>();`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: <10 1>();`, store),
             "257",
             "Invalid Error"
         );
@@ -397,7 +397,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
     it("should error if invalid opcode is passed in the rainlang fragment", async () => {
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: readmemory<10 1>();`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: readmemory<10 1>();`, store),
             "1536",
             "Invalid Error"
         );
@@ -405,19 +405,19 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
     it("should error if operand arguments are missing in the rainlang fragment", async () => {
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: read-memory();`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: read-memory();`, store),
             "771",
             "Invalid Error"
         );
 
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: read-memory<>();`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: read-memory<>();`, store),
             "1027",
             "Invalid Error"
         );
 
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: read-memory<1>();`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: read-memory<1>();`, store),
             "1027",
             "Invalid Error"
         );
@@ -425,7 +425,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
     it("should error if out-of-range operand arguments is provided", async () => {
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: read-memory<1 2>();`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: read-memory<1 2>();`, store),
             "1282",
             "Invalid Error"
         );
@@ -433,7 +433,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
     it("should error if out-of-range operand arguments is provided", async () => {
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: read-memory<1 2>();`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: read-memory<1 2>();`, store),
             "1282",
             "Invalid Error"
         );
@@ -442,7 +442,7 @@ describe("Rainlang Compiler (rlc) Tests", async function () {
 
     it("should error if a word is undefined", async () => {
         await assertError(
-            async () => await rlc(rainlang`@${opMetaHash} _: add(ans 1);`, store),
+            async () => await rainlangc(rainlang`@${opMetaHash} _: add(ans 1);`, store),
             "undefined word: ans",
             "Invalid Error"
         );

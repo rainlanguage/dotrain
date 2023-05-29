@@ -27,75 +27,73 @@ import {
  * @param expressionConfig - ExpressionConfig to decompile
  * @param metaHash - The meta hash
  * @param metaStore - (optional) MetaStore object instance
- * @param prettyFormat - (optional) Format the output document
  * @returns A promise that resolves with a RainDocument
  */
-export async function rld(
+export async function rainlangd(
     expressionConfig: ExpressionConfig, 
     metaHash: string, 
     metaStore = new MetaStore(),
-    prettyFormat = true
 ): Promise<RainDocument> {
 
-    /**
-     * @public
-     * Format a minified Rain document
-     *
-     * @remarks
-     * If the string is already indentend, the method will wrongly generate the string
-     *
-     * @param _text - A minified Raain document
-     * @returns A formatted output
-     */
-    function rainFormat(_text: string): string {
-        const n = 4;
-        const space = " ";
-        let counter = 0;
-        const _expressions: string[] = [];
+    // /**
+    //  * @public
+    //  * Format a minified Rain document
+    //  *
+    //  * @remarks
+    //  * If the string is already indentend, the method will wrongly generate the string
+    //  *
+    //  * @param _text - A minified Raain document
+    //  * @returns A formatted output
+    //  */
+    // function rainFormat(_text: string): string {
+    //     const n = 4;
+    //     const space = " ";
+    //     let counter = 0;
+    //     const _expressions: string[] = [];
 
-        // extract individual expression (sources expressions) that are seperated by semi
-        while (_text.length) {
-            const _index = _text.search(/;/i);
-            if (_index > -1) {
-                _expressions.push(_text.slice(0, _index + 1));
-                _text = _text.slice(_index + 1);
-            } 
-        }
+    //     // extract individual expression (sources expressions) that are seperated by semi
+    //     while (_text.length) {
+    //         const _index = _text.search(/;/i);
+    //         if (_index > -1) {
+    //             _expressions.push(_text.slice(0, _index + 1));
+    //             _text = _text.slice(_index + 1);
+    //         } 
+    //     }
 
-        // start prettifying
-        for (let j = 0; j < _expressions.length; j++) {
-            const _lhsIndex = _expressions[j].search(/:/i);
-            for (let i = _lhsIndex + 2; i < _expressions[j].length; i++) {
-                if ( _expressions[j][i] === " " && counter > 0) {
-                    _expressions[j] =
-                    _expressions[j].slice(0, i + 1) +
-                    "\n" +
-                    space.repeat(counter * n) +
-                    _expressions[j].slice(i + 1);
-                    i += (counter * n) + 2;
-                }
-                if (_expressions[j][i] === "(") {
-                    counter++;
-                    _expressions[j] =
-                    _expressions[j].slice(0, i + 1) +
-                    "\n" +
-                    space.repeat(counter * n) +
-                    _expressions[j].slice(i + 1);
-                    i += (counter * n) + 2;
-                }
-                if (_expressions[j][i] === ")") {
-                    counter--;
-                    _expressions[j] =
-                    _expressions[j].slice(0, i) +
-                    "\n" +
-                    space.repeat(counter * n) +
-                    _expressions[j].slice(i);
-                    i += (counter * n) + 1;
-                }
-            }
-        }
-        return _expressions.join("\n");
-    }
+    //     // start prettifying
+    //     for (let j = 0; j < _expressions.length; j++) {
+    //         const _lhsIndex = _expressions[j].search(/:/i);
+    //         for (let i = _lhsIndex + 2; i < _expressions[j].length; i++) {
+    //             if ( _expressions[j][i] === " " && counter > 0) {
+    //                 _expressions[j] =
+    //                 _expressions[j].slice(0, i + 1) +
+    //                 "\n" +
+    //                 space.repeat(counter * n) +
+    //                 _expressions[j].slice(i + 1);
+    //                 i += (counter * n) + 2;
+    //             }
+    //             if (_expressions[j][i] === "(") {
+    //                 counter++;
+    //                 _expressions[j] =
+    //                 _expressions[j].slice(0, i + 1) +
+    //                 "\n" +
+    //                 space.repeat(counter * n) +
+    //                 _expressions[j].slice(i + 1);
+    //                 i += (counter * n) + 2;
+    //             }
+    //             if (_expressions[j][i] === ")") {
+    //                 counter--;
+    //                 _expressions[j] =
+    //                 _expressions[j].slice(0, i) +
+    //                 "\n" +
+    //                 space.repeat(counter * n) +
+    //                 _expressions[j].slice(i);
+    //                 i += (counter * n) + 1;
+    //             }
+    //         }
+    //     }
+    //     return _expressions.join("\n");
+    // }
 
 
     /**
@@ -265,22 +263,21 @@ export async function rld(
 
         // construct the source expression at current index, both LHS and RHS
         _finalStack.push(
+            `#exp-${i}\n` +
             lhs.join(" ").concat(": ") + 
-            _stack.join(" ").concat(";")
+            _stack.join(" ")
         );
         _stack = [];
     }
-
     return Promise.resolve(
-        prettyFormat 
-            ? await RainDocument.create(
-                TextDocument.create("file", "rainlang", 1, rainFormat(`@${metaHash}\n` + _finalStack.join("\n"))), 
-                metaStore
-            )
-            : await RainDocument.create(
-                TextDocument.create("file", "rainlang", 1, `@${metaHash} ` + _finalStack.join("\n")),
-                metaStore
-            )
+        // prettyFormat 
+        // ? await RainDocument.create(
+        //     TextDocument.create("file", "rainlang", 1, rainFormat(`@${metaHash}\n` + _finalStack.join("\n"))), 
+        //     metaStore
+        // )
+        await RainDocument.create(
+            TextDocument.create("file", "rainlang", 1, `@${metaHash}\n` + _finalStack.join("\n")),
+            metaStore
+        )
     );
 }
-
