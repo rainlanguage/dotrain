@@ -643,10 +643,10 @@ export class RainDocument {
             code: ErrorCode.UndefinedOpMeta
         });
 
-        const exps = inclusiveParse(document, /#[a-z][0-9a-z-]*\s+[^#]*/);
+        const exps = inclusiveParse(document, /#[^]+\s+[^#]*/);
         exps.forEach(v => {
-            const name = inclusiveParse(v[0], /^#[a-z][0-9a-z-]*/);
-            this.expressions.push({
+            const name = inclusiveParse(v[0], /^#[^]+(?=\s)/);
+            if (name[0][0].match(/^[a-z][a-z0-9-]*$/)) this.expressions.push({
                 name: name[0][0].slice(1),
                 namePosition: [v[1][0], v[1][0] + name[0][0].length - 1],
                 text: this.fillOut(
@@ -654,6 +654,11 @@ export class RainDocument {
                     [v[1][0] + name[0][1][1] + 1, v[1][1]]
                 ),
                 position: v[1]
+            });
+            else this.problems.push({
+                msg: "invalid expression name",
+                position: [v[1][0], v[1][0] + name[0][0].length - 1],
+                code: ErrorCode.InvalidExpression
             });
             document = 
                 document.slice(0, v[1][0]) +
