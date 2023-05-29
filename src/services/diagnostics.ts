@@ -57,7 +57,7 @@ export async function getRainlangDiagnostics(
     if (option !== undefined) _hasRelatedInformation = option;
 
     if (_hasRelatedInformation) return Promise.resolve(
-        _rd.getProblems().map(v => Diagnostic.create(
+        _rd.getAllProblems().map(v => Diagnostic.create(
             Range.create(
                 _td.positionAt(v.position[0]),
                 _td.positionAt(v.position[1] + 1)
@@ -84,7 +84,7 @@ export async function getRainlangDiagnostics(
         ))
     );
     else return Promise.resolve(
-        _rd.getProblems().map(v => Diagnostic.create(
+        _rd.getAllProblems().map(v => Diagnostic.create(
             Range.create(
                 _td.positionAt(v.position[0]),
                 _td.positionAt(v.position[1] + 1)
