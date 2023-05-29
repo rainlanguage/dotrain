@@ -661,7 +661,7 @@ export class RainDocument {
                 document.slice(v[1][1] + 1);
 
         });
-        this.imports.forEach(v => {
+        if (this.expressions.length > 0) this.imports.forEach(v => {
             if (v.position[0] >= this.expressions[0].position[0]) this.problems.push({
                 msg: "imports can only be at top level",
                 position: [...v.position],
