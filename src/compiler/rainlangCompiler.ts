@@ -72,7 +72,7 @@ export async function rainlangc(
         else _rainDocument = await RainDocument.create(document, metaStore);
     }
     try {
-        const opmeta = _rainDocument.getOpMeta();
+        const opmeta = _rainDocument.getOpMetaWithCtxAliases();
         for (let i = 0; i < entrypoints.length; i++) {
             const _exp = _rainDocument.expressions.find(
                 v => v.name === entrypoints[i]
@@ -363,3 +363,14 @@ export async function rainlangc(
     }
 }
 
+// const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
+// @0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6
+// /**
+//  * This is test
+//  */
+
+// #my-exp
+// _: add(1 2 sub(1 2) add(1 2)),
+
+// #my-other-exp
+// _: mul(3 4 calling-context<1>())`);
