@@ -263,8 +263,9 @@ export async function rainlangd(
 
         // construct the source expression at current index, both LHS and RHS
         _finalStack.push(
-            `#exp-${i}\n` +
-            lhs.join(" ").concat(": ") + 
+            `#exp-${i + 1}\n` +
+            lhs.join(" ") + 
+            " : " + 
             _stack.join(" ")
         );
         _stack = [];

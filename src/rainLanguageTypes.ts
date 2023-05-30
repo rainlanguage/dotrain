@@ -29,6 +29,8 @@ export enum ErrorCode {
     InvalidOpMeta = 0x108,
     InvalidContractMeta = 0x109,
     InvalidImport = 0x110,
+    InvalidEmptyExpression = 0x111,
+    InvalidExpressionKey = 0x112,
 
     UnexpectedEndOfComment = 0x201,
     UnexpectedClosingParen = 0x202,
@@ -59,6 +61,7 @@ export enum ErrorCode {
     DuplicateAlias = 0x801,
     DuplicateConetxtColumn = 0x802,
     DuplicateContextCell = 0x803,
+    DuplicateExpressionKey = 0x804,
 
     UnknownOp = 0x700,
 

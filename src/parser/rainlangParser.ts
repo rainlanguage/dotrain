@@ -51,21 +51,22 @@ import {
  */
 export class RainlangParser {
 
-    public constants: Record<string, string>;
     public text: string;
     public ast: RainlangAST = { lines: [] };
     public problems: ProblemASTNode[] = [];
     public comments: CommentASTNode[] = [];
     public boundExps: BoundExpression[] = [];
+    public constants: Record<string, string>;
 
-    public opmeta: OpMeta[] = [];
-    public names: string[] = [];
-    public pops: InputMeta[] = [];
-    public pushes: OutputMeta[] = [];
-    public operand: OperandMeta[] = [];
-    public opAliases: (string[] | undefined)[] = [];
-  
-    public state: RainlangParseState = {
+    private opmeta: OpMeta[] = [];
+    private names: string[] = [];
+    private pops: InputMeta[] = [];
+    private pushes: OutputMeta[] = [];
+    private operand: OperandMeta[] = [];
+    private opAliases: (string[] | undefined)[] = [];
+
+    private currentIndex: number;
+    private state: RainlangParseState = {
         parse: {
             tree: [],
             aliases: []
@@ -89,6 +90,7 @@ export class RainlangParser {
     constructor(
         text: string, 
         opmeta: OpMeta[],
+        currentExpIndex: number,
         options?: { 
             boundExpressions?: BoundExpression[];
             compilationParse?: boolean; 
@@ -97,6 +99,7 @@ export class RainlangParser {
     ) {
         this.text = text;
         this.opmeta = opmeta;
+        this.currentIndex = currentExpIndex;
         this.names = this.opmeta.map(v => v.name);
         this.pops = this.opmeta.map(v => v.inputs);
         this.pushes = this.opmeta.map(v => v.outputs);
@@ -142,6 +145,11 @@ export class RainlangParser {
             this.comments = [];
             this.state.track.char = 0;
             this.state.runtimeError = undefined;
+            this.problems.push({
+                msg: "invalid empty expression",
+                position: this.boundExps[this.currentIndex].namePosition,
+                code: ErrorCode.InvalidEmptyExpression
+            });
         }
     }
 
@@ -345,7 +353,13 @@ export class RainlangParser {
 
             // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
             // no or more than one delimitter was found, else start parsing LHS and RHS
-            if (_subExp[i].includes(":")) {
+
+            if (_subExp[i].match(/^\s+$/)) this.problems.push({
+                msg: "invalid empty expression",
+                position: _subExpPos[i],
+                code: ErrorCode.InvalidExpression
+            });
+            else if (_subExp[i].includes(":")) {
                 if (type! === "const") this.problems.push({
                     msg: "unexpected expression",
                     position: _subExpPos[i],

@@ -658,7 +658,7 @@ export class RainDocument {
             else this.problems.push({
                 msg: "invalid expression name",
                 position: [v[1][0], v[1][0] + name[0][0].length - 1],
-                code: ErrorCode.InvalidExpression
+                code: ErrorCode.InvalidExpressionKey
             });
             document = 
                 document.slice(0, v[1][0]) +
@@ -666,6 +666,17 @@ export class RainDocument {
                 document.slice(v[1][1] + 1);
 
         });
+
+        this.expressions.forEach((v, i) => {
+            if (deepCopy(this.expressions.map(e => e.name)).splice(i, 1).includes(v.name)) {
+                this.problems.push({
+                    msg: "duplicate expression identifier",
+                    position: v.namePosition,
+                    code: ErrorCode.DuplicateAlias
+                });
+            }
+        });
+
         if (this.expressions.length > 0) this.imports.forEach(v => {
             if (v.position[0] >= this.expressions[0].position[0]) this.problems.push({
                 msg: "imports can only be at top level",
@@ -723,12 +734,16 @@ export class RainDocument {
         }
 
         for (let i = 0; i < deps.length; i++) {
-            const expression = this.expressions.find(v => v.name === deps[i]);
-            if (expression) {
-                expression.doc = new RainlangParser(
-                    expression.text, 
+            const _i = this.expressions.findIndex(v => v.name === deps[i]);
+            if (_i > -1) {
+                this.expressions[_i].doc = new RainlangParser(
+                    this.expressions[_i].text, 
                     this.opmeta, 
-                    {boundExpressions: this.expressions, constants: this.constants}
+                    _i,
+                    {
+                        boundExpressions: this.expressions, 
+                        constants: this.constants, 
+                    }
                 );
             }
         }

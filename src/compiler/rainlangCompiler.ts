@@ -137,14 +137,15 @@ export async function rainlangc(
         }
         exps.push(...consts);
         for (let i = 0; i < deps.length; i++) {
-            const exp = exps.find(v => v.name === deps[i]);
-            if (exp) exp.doc = new RainlangParser(
-                exp.text, 
+            const index = exps.findIndex(v => v.name === deps[i]);
+            if (index > -1) exps[index].doc = new RainlangParser(
+                exps[index].text, 
                 opmeta, 
+                index,
                 { 
                     boundExpressions: exps, 
                     constants: _rainDocument.constants,
-                    compilationParse: true,
+                    compilationParse: true
                 }
             );
             else return Promise.reject(new Error(`cannot find expression: ${deps[i]}`));
