@@ -668,13 +668,13 @@ export class RainDocument {
         });
 
         this.expressions.forEach((v, i) => {
-            if (deepCopy(this.expressions.map(e => e.name)).splice(i, 1).includes(v.name)) {
-                this.problems.push({
-                    msg: "duplicate expression identifier",
-                    position: v.namePosition,
-                    code: ErrorCode.DuplicateAlias
-                });
-            }
+            const names = deepCopy(this.expressions.map(e => e.name));
+            names.splice(i, 1);
+            if (names.includes(v.name)) this.problems.push({
+                msg: "duplicate expression identifier",
+                position: v.namePosition,
+                code: ErrorCode.DuplicateAlias
+            });
         });
 
         if (this.expressions.length > 0) this.imports.forEach(v => {
@@ -769,17 +769,17 @@ export class RainDocument {
             " ".repeat(text.slice(position[1] + 1, text.length).length);
     }
 }
-// const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
-// @0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6
-// /**
-//  * This is test
-//  */
+const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
+@0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6
+/**
+ * This is test
+ */
 
-// #my-exp
-// _ _: add(1 2 sub(1 2) add(1)),
+#my-exp
+_: add(1 2 sub(1 2) add(1 2)),
 
-// #my-other-exp
-// _: mul(3 4 calling-context<1>());`);
-// RainDocument.create(x).then((v) => {
-//     console.log(v.expressions);
-// });
+#my-other-exp
+_: mul(3 4 calling-context<1>())`);
+RainDocument.create(x).then((v) => {
+    console.log(v.getAllProblems());
+});
