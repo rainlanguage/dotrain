@@ -1,11 +1,11 @@
-import { MetaStore } from "../parser/metaStore";
-import { AliasASTNode, BoundExpression, ContextAlias, FragmentASTNode, MemoryType, OpASTNode, TextDocument, ValueASTNode } from "../rainLanguageTypes";
-import { ExpressionConfig } from "../rainLanguageTypes";
-import { RainDocument } from "../parser/rainDocument";
-import { BigNumber, BigNumberish, BytesLike, concat, constructByBits, hexlify, isBigNumberish, memoryOperand, op } from "../utils";
-import { deepCopy } from "@rainprotocol/meta";
 import toposort from "toposort";
+import { deepCopy } from "@rainprotocol/meta";
+import { MetaStore } from "../parser/metaStore";
+import { RainDocument } from "../parser/rainDocument";
+import { ExpressionConfig } from "../rainLanguageTypes";
 import { RainlangParser } from "../parser/rainlangParser";
+import { BigNumber, BigNumberish, BytesLike, concat, constructByBits, hexlify, isBigNumberish, memoryOperand, op } from "../utils";
+import { AliasASTNode, BoundExpression, ContextAlias, FragmentASTNode, MemoryType, OpASTNode, TextDocument, ValueASTNode } from "../rainLanguageTypes";
 
 
 /**
@@ -254,12 +254,12 @@ export async function rainlangc(
                             )
                         );
                         else {
-                            const _constAlias = exps.find(
+                            const _extExp = exps.find(
                                 v => v.name === _node.name
                             );
-                            if (BoundExpression.isConstant(_constAlias)) {
+                            if (BoundExpression.isConstant(_extExp)) {
                                 const _value = BigNumber.from(
-                                    (_constAlias?.doc?.ast.lines[0].nodes[0] as ValueASTNode).value
+                                    (_extExp?.doc?.ast.lines[0].nodes[0] as ValueASTNode).value
                                 );
                                 const _constIndex = constants.findIndex(v => _value.eq(v));
                                 if (_constIndex > -1) source.push(

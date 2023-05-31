@@ -205,13 +205,13 @@ export enum MemoryType {
 /**
  * @public Type of position start and end indexes for RainDocument, inclusive at both ends
  */
-export type ASTNodePosition = [number, number];
+export type PositionOffset = [number, number];
 
 /**
  * @public The namespace provides functionality to type check
  */
-export namespace ASTNodePosition {
-    export function is(value: any): value is ASTNodePosition {
+export namespace PositionOffset {
+    export function is(value: any): value is PositionOffset {
         return Array.isArray(value) 
             && value.length === 2 
             && typeof value[0] === "number" 
@@ -224,7 +224,7 @@ export namespace ASTNodePosition {
  */
 export interface ProblemASTNode {
     msg: string;
-    position: ASTNodePosition;
+    position: PositionOffset;
     code: number;
 }
 
@@ -236,7 +236,7 @@ export namespace ProblemASTNode {
         return value !== null 
             && typeof value === "object"
             && typeof value.msg === "string"
-            && ASTNodePosition.is(value.position)
+            && PositionOffset.is(value.position)
             && typeof value.code === "number";
     }
 }
@@ -246,7 +246,7 @@ export namespace ProblemASTNode {
  */
 export interface ValueASTNode {
     value: string;
-    position: ASTNodePosition;
+    position: PositionOffset;
     lhsAlias?: AliasASTNode;
 }
 
@@ -258,7 +258,7 @@ export namespace ValueASTNode {
         return value !== null 
             && typeof value === "object"
             && typeof value.value === "string"
-            && ASTNodePosition.is(value.position)
+            && PositionOffset.is(value.position)
             && (typeof value.lhsAlias === "undefined" || AliasASTNode.is(value.lhsAlias));
     }
 }
@@ -270,20 +270,20 @@ export interface OpASTNode {
     opcode: {
         name: string;
         description: string;
-        position: ASTNodePosition;
+        position: PositionOffset;
     };
     operand: number;
     output: number;
-    position: ASTNodePosition;
-    parens: ASTNodePosition;
+    position: PositionOffset;
+    parens: PositionOffset;
     parameters: FragmentASTNode[];
     operandArgs?: {
-        position: ASTNodePosition;
+        position: PositionOffset;
         args: {
             value: string;
             name: string;
-            position: ASTNodePosition;
-            description?: string;
+            position: PositionOffset;
+            description: string;
         }[];
     };
     lhsAlias?: AliasASTNode[];
@@ -299,11 +299,11 @@ export namespace OpASTNode {
             && typeof value.opcode === "object"
             && typeof value.opcode.name === "string"
             && typeof value.opcode.description === "string"
-            && ASTNodePosition.is(value.opcode.position)
+            && PositionOffset.is(value.opcode.position)
             && typeof value.operand === "number"
             && typeof value.output === "number"
-            && ASTNodePosition.is(value.position)
-            && ASTNodePosition.is(value.parens)
+            && PositionOffset.is(value.position)
+            && PositionOffset.is(value.parens)
             && Array.isArray(value.parameters)
             && value.parameters.every((v: any) => FragmentASTNode.is(v))
             && (
@@ -316,18 +316,15 @@ export namespace OpASTNode {
                 typeof value.operandArgs === "undefined" || (
                     value.operandArgs !== null 
                     && typeof value.operandArgs === "object"
-                    && ASTNodePosition.is(value.operandArgs.position)
+                    && PositionOffset.is(value.operandArgs.position)
                     && Array.isArray(value.operandArgs.args)
                     && value.operandArgs.args.every(
                         (v: any) => v !== null
                             && typeof v === "object"
                             && typeof v.value === "number"
                             && typeof v.name === "string"
-                            && ASTNodePosition.is(v.position)
-                            && (
-                                typeof v.description === "undefined" || 
-                                typeof v.description === "string"
-                            )
+                            && PositionOffset.is(v.position)
+                            && typeof v.description === "string"
                     )
                 )
             );
@@ -339,7 +336,7 @@ export namespace OpASTNode {
  */
 export interface AliasASTNode {
     name: string;
-    position: ASTNodePosition;
+    position: PositionOffset;
     lhsAlias?: AliasASTNode;
 }
 
@@ -351,7 +348,7 @@ export namespace AliasASTNode {
         return value !== null 
             && typeof value === "object"
             && typeof value.name === "string"
-            && ASTNodePosition.is(value.position)
+            && PositionOffset.is(value.position)
             && (typeof value.lhsAlias === "undefined" || AliasASTNode.is(value.lhsAlias));
     }
 }
@@ -361,7 +358,7 @@ export namespace AliasASTNode {
  */
 export interface CommentASTNode {
     comment: string;
-    position: ASTNodePosition;
+    position: PositionOffset;
 }
 
 /**
@@ -372,7 +369,7 @@ export namespace CommentASTNode {
         return value !== null
             && typeof value === "object"
             && typeof value.comment === "string"
-            && ASTNodePosition.is(value.position);
+            && PositionOffset.is(value.position);
     }
 }
 
@@ -382,7 +379,7 @@ export namespace CommentASTNode {
 export interface ImportASTNode {
     name: string;
     hash: string;
-    position: ASTNodePosition;
+    position: PositionOffset;
 }
 
 /**
@@ -394,7 +391,7 @@ export namespace ImportASTNode {
             && typeof value === "object"
             && typeof value.name === "string"
             && typeof value.hash === "string"
-            && ASTNodePosition.is(value.position);
+            && PositionOffset.is(value.position);
     }
 }
 
@@ -420,7 +417,7 @@ export namespace FragmentASTNode {
 export type RainlangAST = { 
     lines: {
         nodes: FragmentASTNode[]; 
-        position: ASTNodePosition; 
+        position: PositionOffset; 
         aliases: AliasASTNode[];
     }[]
 }
@@ -433,13 +430,12 @@ export namespace RainlangAST {
         return value !== null
             && typeof value === "object"
             && Array.isArray(value.lines)
-            && value.lines.every((v: any) => {
-                return ASTNodePosition.is(v.position)
+            && value.lines.every((v: any) => PositionOffset.is(v.position)
                     && Array.isArray(v.nodes)
                     && v.nodes.every((e: any) => FragmentASTNode.is(e))
                     && Array.isArray(v.aliases)
-                    && v.aliases.every((e: any) => AliasASTNode.is(e));
-            });
+                    && v.aliases.every((e: any) => AliasASTNode.is(e))
+            );
     }
 
     export function isConstant(value: any): boolean {
@@ -447,14 +443,13 @@ export namespace RainlangAST {
             && typeof value === "object"
             && Array.isArray(value.lines)
             && value.lines.length === 1
-            && value.lines.every((v: any) => {
-                return ASTNodePosition.is(v.position)
+            && value.lines.every((v: any) => PositionOffset.is(v.position)
                     && Array.isArray(v.nodes)
                     && v.nodes.length === 1
-                    && v.nodes.every((e: any) => ValueASTNode.is(e))
+                    && ValueASTNode.is(v.nodes[0])
                     && Array.isArray(v.aliases)
-                    && v.aliases.length === 0;
-            });
+                    && v.aliases.length === 0
+            );
     }
 }
 
@@ -463,9 +458,9 @@ export namespace RainlangAST {
  */
 export type BoundExpression = {
     name: string;
-    namePosition: ASTNodePosition;
+    namePosition: PositionOffset;
     text: string;
-    position: ASTNodePosition;
+    position: PositionOffset;
     doc?: RainlangParser;
 }
 
@@ -477,9 +472,9 @@ export namespace BoundExpression {
         return value !== null
             && typeof value === "object"
             && typeof value.name === "string"
-            && ASTNodePosition.is(value.namePosition)
+            && PositionOffset.is(value.namePosition)
             && typeof value.text === "string"
-            && ASTNodePosition.is(value.position)
+            && PositionOffset.is(value.position)
             && (
                 typeof value.doc === "undefined" ||
                 value.doc instanceof RainlangParser
@@ -490,9 +485,9 @@ export namespace BoundExpression {
         return value !== null
             && typeof value === "object"
             && typeof value.name === "string"
-            && ASTNodePosition.is(value.namePosition)
+            && PositionOffset.is(value.namePosition)
             && typeof value.text === "string"
-            && ASTNodePosition.is(value.position)
+            && PositionOffset.is(value.position)
             && value.doc instanceof RainlangParser
             && RainlangAST.isConstant(value.doc.ast);
     }
@@ -501,32 +496,13 @@ export namespace BoundExpression {
         return value !== null
             && typeof value === "object"
             && typeof value.name === "string"
-            && ASTNodePosition.is(value.namePosition)
+            && PositionOffset.is(value.namePosition)
             && typeof value.text === "string"
-            && ASTNodePosition.is(value.position)
+            && PositionOffset.is(value.position)
             && value.doc instanceof RainlangParser
             && !RainlangAST.isConstant(value.doc.ast);
     }
 }
-
-/**
- * @public Type of RainParser state
- */
-export type RainlangParseState = {
-    parse: {
-        tree: FragmentASTNode[];
-        aliases: AliasASTNode[];
-    };
-    track: {
-        char: number;
-        parens: {
-            open: number[];
-            close: number[];
-        };
-    };
-    depthLevel: number;
-    runtimeError: Error | undefined;
-};
 
 /**
  * @public Type for contract context alias

@@ -1,50 +1,25 @@
-import { MetaStore } from "./metaStore";
 import toposort from "toposort";
-import { ASTNodePosition, BoundExpression, ContextAlias, ErrorCode, TextDocument, hashPattern } from "../rainLanguageTypes";
+import { MetaStore } from "./metaStore";
+import { RainlangParser } from "./rainlangParser";
+import { inclusiveParse, exclusiveParse } from "../utils";
+import { ImportASTNode, ProblemASTNode, CommentASTNode } from "../rainLanguageTypes";
+import { 
+    ErrorCode, 
+    hashPattern, 
+    TextDocument,
+    ContextAlias,  
+    PositionOffset, 
+    BoundExpression, 
+} from "../rainLanguageTypes";
 import { 
     OpMeta,
-    // InputMeta,
-    // InputArgs, 
-    // OutputMeta,
+    deepCopy, 
     OperandArgs,
-    // OperandMeta,
     ContractMeta,
     OpMetaSchema, 
     metaFromBytes, 
-    // ComputedOutput,
     ContractMetaSchema,
-    deepCopy
 } from "@rainprotocol/meta";
-import { 
-    // FragmentASTNode, 
-    // OpASTNode, 
-    ProblemASTNode, 
-    CommentASTNode, 
-    // MemoryType, 
-    ImportASTNode, 
-    // RainlangAST,
-    // AliasASTNode,
-    // RainParseState, 
-    // ExpressionConfig  
-} from "../rainLanguageTypes";
-import {
-    // op,
-    // concat,
-    // hexlify,
-    // deepCopy,
-    // BytesLike,
-    // CONSTANTS,
-    // BigNumber, 
-    // BigNumberish, 
-    // extractByBits, 
-    // memoryOperand,
-    // isBigNumberish,
-    inclusiveParse,
-    exclusiveParse,
-    // deepCopy,
-    // constructByBits, 
-} from "../utils";
-import { RainlangParser } from "./rainlangParser";
 
 
 /**
@@ -698,14 +673,14 @@ export class RainDocument {
 
     private resolveDependencies() {
         let edges: [string, string][] = [];
-        const nodes = this.expressions.map(v => v.name);
+        let nodes = this.expressions.map(v => v.name);
         const regexpes = this.expressions.map(v => new RegExp(
             // eslint-disable-next-line no-useless-escape
             "(?:^|(|)|,|\s|:|')" + v.name + "(?:$|(|)|,|\s|:|>)"
         ));
         for (let i = 0; i < this.expressions.length; i++) {
             for (let j = 0; j < regexpes.length; j++) {
-                if (regexpes[j].test(this.expressions[i].text)) {
+                if (i !== j && regexpes[j].test(this.expressions[i].text)) {
                     this.dependencies.push([nodes[i], nodes[j]]);
                     edges.push([nodes[i], nodes[j]]);
                 }
@@ -722,8 +697,16 @@ export class RainDocument {
                 console.log(err);
                 const errorNode = err.message.slice(err.message.indexOf("\"") + 1, -1);
                 if (!errorNode.includes(" ")) {
-                    edges = edges.filter(v => !v.includes(errorNode));
-                    nodes.splice(nodes.indexOf(errorNode), 1);
+                    const nodesToDelete = [errorNode];
+                    for (let i = 0; i < nodesToDelete.length; i++) {
+                        edges.forEach(v => {
+                            if (v[1] === nodesToDelete[i]) {
+                                if (!nodesToDelete.includes(v[0])) nodesToDelete.push(v[0]);
+                            }
+                        });
+                    }
+                    edges = edges.filter(v => !nodesToDelete.includes(v[1]));
+                    nodes = nodes.filter(v => !nodesToDelete.includes(v));
                     this.dependencyProblems.push({
                         msg: "circular dependency",
                         position: this.expressions.find(v => v.name === errorNode)!.namePosition,
@@ -763,23 +746,15 @@ export class RainDocument {
     /**
      * @public Fills outside of a position with whitespaces
      */
-    private fillOut(text: string, position: ASTNodePosition): string {
+    private fillOut(text: string, position: PositionOffset): string {
         return " ".repeat(text.slice(0, position[0]).length) +
             text.slice(position[0], position[1] + 1) +
             " ".repeat(text.slice(position[1] + 1, text.length).length);
     }
 }
-const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
-@0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6
-/**
- * This is test
- */
-
-#my-exp
-_: add(1 2 sub(1 2) add(1 2)),
-
-#my-other-exp
-_: mul(3 4 calling-context<1>())`);
-RainDocument.create(x).then((v) => {
-    console.log(v.getAllProblems());
-});
+// const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
+// #my-exp
+// a: add(1 2), my-exp: mul(1 2)`);
+// RainDocument.create(x).then((v) => {
+//     console.log(v.getAllProblems());
+// });

@@ -1,7 +1,7 @@
 import stringMath from "string-math";
 import { ExpressionConfig, Position, Range } from "./rainLanguageTypes";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
-// import toposort from "toposort";
+
 
 /**
  * @public ethers constants
@@ -590,23 +590,25 @@ export function inclusiveParse(
  * @param str - The string to parse
  * @param pattern - The pattern to search and extract
  * @param offset - (optional) The offset to factor in for returning matched positions
+ * @param includeEmptyEnds - (optional) Includes start/end empty matches in the results if true
  * @returns An array of strings outside of matchings and their position inclusive at both ends
  */
 export function exclusiveParse(
     str: string, 
     pattern: RegExp,
-    offset = 0
+    offset = 0,
+    includeEmptyEnds = false
 ): [string, [number, number]][] {
     const matches = inclusiveParse(str, pattern);
     const strings = str.split(pattern);
     const result: [string, [number, number]][] = [];
-    if (strings[0]) result.push([
+    if (strings[0] || includeEmptyEnds) result.push([
         strings[0],
         [ 0 + offset, (matches.length ? matches[0][1][0] : str.length) + offset - 1 ]
     ]);
     matches.forEach((v, i, a) => {
         if (a.length - 1 === i) {
-            if (strings[i + 1]) result.push([
+            if (strings[i + 1] || includeEmptyEnds) result.push([
                 strings[i + 1],
                 [ v[1][1] + 1 + offset, (a[i + 1] ? a[i + 1][1][0] : str.length) + offset - 1 ]
             ]);
