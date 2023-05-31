@@ -103,6 +103,7 @@ export class RainlangParser {
                 this._parse(compilationParse);
             }
             catch (runtimeError) {
+                console.log(runtimeError);
                 if (runtimeError instanceof Error) {
                     this.state.runtimeError = runtimeError;
                 }
@@ -262,6 +263,7 @@ export class RainlangParser {
                 v[1][1] - _trimmed.endDelCount
             ]);
         });
+        if (_subExp.length > 1) type = "exp";
 
         const _reservedKeys = [
             ...this.opmeta.map(v => v.name),
@@ -284,7 +286,7 @@ export class RainlangParser {
 
             // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
             // no or more than one delimitter was found, else start parsing LHS and RHS
-            if (_subExp[i].match(/^\s+$/)) this.problems.push({
+            if (!_subExp[i] || _subExp[i].match(/^\s+$/)) this.problems.push({
                 msg: "invalid empty expression",
                 position: _subExpPos[i],
                 code: ErrorCode.InvalidExpression
@@ -434,6 +436,7 @@ export class RainlangParser {
                         }
                     }
                     else {
+                        console.log(JSON.stringify(this.ast));
                         if (!ValueASTNode.is(this.state.nodes[0])) {
                             this.problems.push({
                                 msg: "expected a constant value",

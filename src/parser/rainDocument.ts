@@ -754,7 +754,8 @@ export class RainDocument {
 }
 // const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
 // #my-exp
-// a: add(1 2), my-exp: mul(1 2)`);
+// ff,`);
 // RainDocument.create(x).then((v) => {
 //     console.log(v.getAllProblems());
+//     // console.log(v.state.runTimeError);
 // });
