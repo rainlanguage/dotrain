@@ -1,5 +1,5 @@
-import { invalidOpMetas } from "../fixtures/opmeta";
 import { assertError, opMetaHash } from "../utils";
+import { invalidOpMetas } from "../fixtures/opmeta";
 import { MetaStore, rainlang, rainlangc } from "../../src";
 
 

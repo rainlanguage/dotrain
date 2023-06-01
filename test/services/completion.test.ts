@@ -5,12 +5,12 @@ import {
     Position,
     rainlang,
     MetaStore, 
+    RainDocument, 
     TextDocument,
     CompletionItem,
     CompletionItemKind, 
     LanguageServiceParams, 
     getRainLanguageServices, 
-    RainDocument
 } from "../../src";
 
 
@@ -60,33 +60,6 @@ describe("Rainlang Code Completion Service Tests", async function () {
             });
         }));
     });
-
-    // it("should provide no suggestions for lhs", async () => {
-    //     await testCompletion(
-    //         rainlang`@${opMetaHash}`, 
-    //         Position.create(0, 0),
-    //         null,
-    //         { metaStore: store }
-    //     );
-    // });
-
-    // it("should provide no suggestions for lhs", async () => {
-    //     await testCompletion(
-    //         rainlang`@${opMetaHash} _ name`,  
-    //         Position.create(0, 6),
-    //         null,
-    //         { metaStore: store }
-    //     );
-    // });
-
-    // it("should provide no suggestions for lhs", async () => {
-    //     await testCompletion(
-    //         rainlang`@${opMetaHash} _: ad`,  
-    //         Position.create(0, 1),
-    //         null,
-    //         { metaStore: store }
-    //     );
-    // });
 
     it("should provide all opcode suggestions for rhs when there is no lhs aliases", async () => {
         const _allCompletions = [...AllOpcodeCompletions];

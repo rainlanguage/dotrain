@@ -1,6 +1,6 @@
 import assert, { AssertionError } from "assert";
-import { invalidOpMetas } from "../fixtures/opmeta";
 import { assertError, opMetaHash } from "../utils";
+import { invalidOpMetas } from "../fixtures/opmeta";
 import { ExpressionConfig, rainlang, hexlify, rainlangd, rainlangc, MetaStore } from "../../src";
 
 
