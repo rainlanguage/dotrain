@@ -72,7 +72,6 @@ export async function getRainlangCompletion(
 
     try {
         if (
-            _prefixText.includes(":") && 
             !_regexp.test(_td.getText(
                 Range.create(
                     position, 
@@ -163,10 +162,31 @@ export async function getRainlangCompletion(
                     insertText: v
                 });
             });
-            const _tree = _rd.expressions;
+            const _exps = _rd.expressions;
+            _exps.forEach(v => {
+                _result.push({
+                    label: v.name,
+                    labelDetails: {
+                        description: "expressioin key"
+                    },
+                    kind: CompletionItemKind.Class,
+                    detail: "named expression",
+                    documentation: {
+                        kind: _documentionType,
+                        value: _documentionType === "markdown"
+                            ? [
+                                "```rainlang",
+                                v.text,
+                                "```"
+                            ].join("\n")
+                            : v.text
+                    },
+                    insertText: v.name
+                });
+            });
             let _currentSource = NaN;
-            for (let i = 0; i < _tree.length; i++) {
-                if (_tree[i].position[0] <= _offset && _tree[i].position[1] + 1 >= _offset) {
+            for (let i = 0; i < _exps.length; i++) {
+                if (_exps[i].position[0] <= _offset && _exps[i].position[1] + 1 >= _offset) {
                     _currentSource = i;
                     break;
                 }
@@ -178,7 +198,7 @@ export async function getRainlangCompletion(
                 ?.filter(v => v.name !== "_")
                 .forEach(v => {
                     let _text = "";
-                    _pos = _tree[_currentSource].doc?.ast.lines.map(e => e.nodes).flat().find(e => {
+                    _pos = _exps[_currentSource].doc?.ast.lines.map(e => e.nodes).flat().find(e => {
                         if (e.lhsAlias) {
                             if (Array.isArray(e.lhsAlias)) {
                                 if (e.lhsAlias.find(i => i.name === v.name)) return true; 

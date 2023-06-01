@@ -34,7 +34,7 @@ import {
 
 /**
  * @public
- * Rain Parser is a the main workhorse that does all the heavy work of parsing a document, 
+ * Rainlang Parser is a the main workhorse that does all the heavy work of parsing a document, 
  * written in TypeScript in order to parse a text document using an op meta into known types 
  * which later will be used in RainDocument object and Rain Language Services and Compiler
  */
@@ -47,8 +47,8 @@ export class RainlangParser {
     public boundExps: BoundExpression[] = [];
     public constants: Record<string, string>;
 
+    private expIndex: number;
     private opmeta: OpMeta[] = [];
-    private currentIndex: number;
     private state: {
         nodes: FragmentASTNode[];
         aliases: AliasASTNode[];
@@ -86,7 +86,7 @@ export class RainlangParser {
     ) {
         this.text = text;
         this.opmeta = opmeta;
-        this.currentIndex = currentExpIndex;
+        this.expIndex = currentExpIndex;
         if (options?.boundExpressions) this.boundExps = options.boundExpressions;
         if (options?.constants) this.constants = options.constants;
         else this.constants = {};
@@ -125,7 +125,7 @@ export class RainlangParser {
             this.state.runtimeError = undefined;
             this.problems.push({
                 msg: "invalid empty expression",
-                position: this.boundExps[this.currentIndex].namePosition,
+                position: this.boundExps[this.expIndex].namePosition,
                 code: ErrorCode.InvalidEmptyExpression
             });
         }
@@ -135,11 +135,11 @@ export class RainlangParser {
      * @internal Method to reset the parser state
      */
     private resetState = () => {
+        this.state.depth = 0;
         this.state.nodes = [];
         this.state.aliases = [];
         this.state.parens.open = [];
         this.state.parens.close = [];
-        this.state.depth = 0;
     };
 
     /**
@@ -158,17 +158,6 @@ export class RainlangParser {
             startDelCount: str.length - str.trimStart().length,
             endDelCount: str.length - str.trimEnd().length
         };
-    };
-
-    /**
-     * @internal Determines if an string matches the constants keys
-     */
-    private isConst = (str: string): boolean => {
-        return new RegExp(
-            "^" + 
-          Object.keys(this.constants).join("$|^") + 
-          "$"
-        ).test(str);
     };
 
     /**
@@ -235,23 +224,19 @@ export class RainlangParser {
               document.slice(v[1][1] + 1);
         });
 
-        // begin parsing expression sources and cache them
         const _trimmed = this.trim(document);
-        const _sourceExp = _trimmed.text;
-        const _sourceExpPos: [number, number] = [
+        const _exp = _trimmed.text;
+        const _expPos: [number, number] = [
             _trimmed.startDelCount,
             document.length - _trimmed.endDelCount - 1
         ];
-
-        // begin parsing individual expression sources
-        this.resetState();
         const _subExp: string[] = [];
         const _subExpPos: PositionOffset[] = [];
         let multiNode = false;
         let type: "exp" | "const";
 
         // parse and cache the sub-expressions
-        exclusiveParse(_sourceExp, /,/gd, _sourceExpPos[0], true).forEach((v, i) => {
+        exclusiveParse(_exp, /,/gd, _expPos[0], true).forEach((v, i) => {
             if (i === 0) {
                 if (v[0].includes(":")) type = "exp";
                 else type = "const";
@@ -284,13 +269,13 @@ export class RainlangParser {
                     : []
             ));
 
-            // check for LHS/RHS delimitter, exit from parsing this sub-expression if 
-            // no or more than one delimitter was found, else start parsing LHS and RHS
+            // error if sub expressions is empty
             if (!_subExp[i] || _subExp[i].match(/^\s+$/)) this.problems.push({
                 msg: "invalid empty expression",
                 position: _subExpPos[i],
                 code: ErrorCode.InvalidExpression
             });
+            // check for LHS/RHS delimitter and parse accordingly
             else if (_subExp[i].includes(":")) {
                 if (type! === "const") this.problems.push({
                     msg: "unexpected expression",
@@ -299,7 +284,7 @@ export class RainlangParser {
                 });
                 else {
                     const _lhs = _subExp[i].slice(0, _subExp[i].indexOf(":"));
-                    const exp = _subExp[i].slice(_subExp[i].indexOf(":") + 1);
+                    const _rhs = _subExp[i].slice(_subExp[i].indexOf(":") + 1);
 
                     // check for invalid RHS comments
                     for (const _cm of this.comments) {
@@ -345,14 +330,17 @@ export class RainlangParser {
                     }
 
                     // begin parsing RHS
-                    this.consume(exp, _positionOffset + _subExp[i].length, compilationParse);
+                    this.consume(_rhs, _positionOffset + _subExp[i].length, compilationParse);
 
                     // validating RHS against LHS
                     const _outputCount = this.countOutputs(this.state.nodes);
                     if (!isNaN(_outputCount)) {
                         const _treeCount = this.state.nodes.length;
                         const _tags = [...this.state.aliases];
-                        if (!(this.ast.lines.at(-1)?.nodes.length === 0 && _treeCount === 0)) {
+                        if (!(
+                            this.ast.lines.map(v => v.nodes).flat().length === 0 && 
+                            _treeCount === 0
+                        )) {
                             for (let j = 0; j < _treeCount; j++) {
                                 const _node = this.state.nodes[j];
                                 if (OpASTNode.is(_node)) {
@@ -399,6 +387,7 @@ export class RainlangParser {
                     }
                 }
             }
+            // parse accordingly if there is no lhs/rhs delimiter
             else {
                 this.consume(
                     _subExp[i], 
@@ -436,7 +425,6 @@ export class RainlangParser {
                         }
                     }
                     else {
-                        console.log(JSON.stringify(this.ast));
                         if (!ValueASTNode.is(this.state.nodes[0])) {
                             this.problems.push({
                                 msg: "expected a constant value",
@@ -448,6 +436,7 @@ export class RainlangParser {
                 }
             }
 
+            // uppdate AST
             this.ast.lines.push({
                 nodes: this.state.nodes.splice(
                     -this.state.nodes.length
@@ -568,15 +557,15 @@ export class RainlangParser {
             exp = "";
         }
         else {
+            let _operandMetas: OperandArgs = [];
             const _operandArgs = exp.slice(1, exp.indexOf(">"));
-            exp = exp.slice(exp.indexOf(">") + 1);
             const _parsedVals = inclusiveParse(_operandArgs, /\S+/gd, pos + 1);
+            const _index = this.opmeta.findIndex(v => v.name === op.opcode.name);
+            exp = exp.slice(exp.indexOf(">") + 1);
             op.operandArgs = {
                 position: [pos, pos + _operandArgs.length + 1],
                 args: []
             };
-            let _operandMetas: OperandArgs = [];
-            const _index = this.opmeta.findIndex(v => v.name === op.opcode.name);
             if (_index > -1) {
                 if (typeof this.opmeta[_index].operand !== "number") {
                     _operandMetas = deepCopy(this.opmeta[_index].operand as OperandArgs);
@@ -828,18 +817,17 @@ export class RainlangParser {
                     });
                 }
             }
-            if (_node.output && _node.output === 0 && this.state.depth > 1) this.problems.push({
+            if (_node.output === 0 && this.state.depth > 1) this.problems.push({
                 msg: "zero output opcodes cannot be nested",
                 position: [..._node.position],
                 code: ErrorCode.InvalidNestedNode
             });
-            if (_node.output && _node.output > 1 && this.state.depth > 1) this.problems.push({
+            if (_node.output > 1 && this.state.depth > 1) this.problems.push({
                 msg: "multi output opcodes cannot be nested",
                 position: [..._node.position],
                 code: ErrorCode.InvalidNestedNode
             });
         }
-        // _nodes[_nodes.length - 1] = _node;
     };
 
     /**
@@ -954,7 +942,7 @@ export class RainlangParser {
             });
         }
         else if (wordPattern.test(_word)) {
-            if (this.isConst(_word)) {
+            if (Object.keys(this.constants).includes(_word)) {
                 this.updateAST({
                     value: _word,
                     position: [..._wordPos],

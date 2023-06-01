@@ -37,11 +37,11 @@ import {
  * // to create a new instance of the RainDocument object which parses right after instantiation
  * const myRainDocument = await RainDocument.create(text)
  *
- * // to get the parse tree after instantiation
- * const parseTree = myRainDocument.getParseTree()
+ * // to get the problems
+ * const problems = myRainDocument.getAllProblems()
  *
  * // to update the text
- * await myRainDocument.update(newText)
+ * await myRainDocument.updateText(newText)
  * ```
  */
 export class RainDocument {
@@ -51,22 +51,21 @@ export class RainDocument {
         "max-uint256": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "max-uint-256": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
     };
-    
-    public textDocument: TextDocument;
-    private opMetaBytes = "";
-    private opmeta: OpMeta[] = [];
     public metaStore: MetaStore;
-    private problems: ProblemASTNode[] = [];
-    private dependencyProblems: ProblemASTNode[] = [];
-    private comments: CommentASTNode[] = [];
-    private imports: ImportASTNode[] = [];
+    public textDocument: TextDocument;
+    public runtimeError: Error | undefined;
     public expressions: BoundExpression[] = [];
 
-    public runtimeError: Error | undefined;
-    private ctxAliases: ContextAlias[] = []; 
-    private dependencies: [string, string][] = [];
     private opmetaLength = 0;
     private opmetaIndex = -1;
+    private opMetaBytes = "";
+    private opmeta: OpMeta[] = [];
+    private imports: ImportASTNode[] = [];
+    private comments: CommentASTNode[] = [];
+    private ctxAliases: ContextAlias[] = []; 
+    private problems: ProblemASTNode[] = [];
+    private depProblems: ProblemASTNode[] = [];
+    private dependencies: [string, string][] = [];
 
 
     /**
@@ -91,6 +90,28 @@ export class RainDocument {
         const _rainDocument = new RainDocument(textDocument, metaStore);
         await _rainDocument.parse();
         return _rainDocument;
+    }
+
+    /**
+     * @public Updates the TextDocument of this RainDocument instance with new text
+     * @param newText - The new text
+     */
+    public async updateText(newText: string): Promise<void>;
+
+    /**
+     * @public Updates the TextDocument of this RainDocument instance
+     * @param newTextDocument - The new TextDocument
+     */
+    public async updateText(newTextDocument: TextDocument): Promise<void>;
+
+    public async updateText(newText: string | TextDocument) {
+        if (typeof newText === "string") this.textDocument = TextDocument.update(
+            this.textDocument, 
+            [{ text: newText }], 
+            this.textDocument.version + 1
+        );
+        else this.textDocument = newText;
+        await this.parse();
     }
 
     /**
@@ -140,7 +161,7 @@ export class RainDocument {
      */
     public getAllProblems(): ProblemASTNode[] {
         const problems = deepCopy(this.problems);
-        problems.push(...deepCopy(this.dependencyProblems));
+        problems.push(...deepCopy(this.depProblems));
         const expProblems = this.expressions
             .map(v => v.doc?.problems)
             .filter(v => v !== undefined)
@@ -155,7 +176,7 @@ export class RainDocument {
      */
     public getTopProblems(): ProblemASTNode[] {
         const problems = deepCopy(this.problems);
-        problems.push(...deepCopy(this.dependencyProblems));
+        problems.push(...deepCopy(this.depProblems));
         return problems;
     }
 
@@ -163,7 +184,7 @@ export class RainDocument {
      * @public Get the current problems of this RainParser instance
      */
     public getDependencyProblems(): ProblemASTNode[] {
-        return deepCopy(this.dependencyProblems);
+        return deepCopy(this.depProblems);
     }
 
     /**
@@ -213,6 +234,152 @@ export class RainDocument {
      */
     public getDependencies(): [string, string][] {
         return deepCopy(this.dependencies);
+    }
+
+    /**
+     * @public
+     * Parses this instance of RainParser
+     */
+    public async parse() {
+        if (/[^\s]+/.test(this.textDocument.getText())) {
+            try {
+                await this._parse();
+            }
+            catch (runtimeError) {
+                if (runtimeError instanceof Error) this.runtimeError = runtimeError;
+                else this.runtimeError = new Error(runtimeError as string);
+                this.problems.push({
+                    msg: `Runtime Error: ${
+                        this.runtimeError.message
+                    }`,
+                    position: [0, -1],
+                    code: ErrorCode.RuntimeError
+                });
+            }
+        }
+        else {
+            this.opmeta         = [];
+            this.imports        = [];
+            this.problems       = [];
+            this.comments       = [];
+            this.ctxAliases     = [];
+            this.expressions    = [];
+            this.depProblems    = [];
+            this.dependencies   = [];
+            this.opmetaLength   = 0;
+            this.opmetaIndex    = -1;
+            this.opMetaBytes    =  "";
+            this.runtimeError   = undefined;
+        }
+    }
+
+    /**
+     * @internal 
+     * The main workhorse of RainParser which parses the words used in an
+     * expression and is responsible for building the parse tree and collect problems
+     */
+    public async _parse() {
+        this.imports = [];
+        this.problems = [];
+        this.comments = [];
+        this.ctxAliases = [];
+        this.expressions = [];
+        this.runtimeError = undefined;
+        let document = this.textDocument.getText();
+
+        // parse comments
+        inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
+            if (!v[0].endsWith("*/")) this.problems.push({
+                msg: "unexpected end of comment",
+                position: v[1],
+                code: ErrorCode.UnexpectedEndOfComment
+            });
+            this.comments.push({
+                comment: v[0],
+                position: v[1]
+            });
+            document = 
+                document.slice(0, v[1][0]) +
+                " ".repeat(v[0].length) +
+                document.slice(v[1][1] + 1);
+        });
+
+        // parse imports
+        const _imports = inclusiveParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/gd);
+        if (_imports.length) {
+            await this.resolveMeta(_imports);
+            for (let i = 0; i < _imports.length; i++) {
+                this.imports.push({
+                    name: "root",
+                    hash: _imports[i][0].slice(1 + (/^\s/.test(_imports[i][0]) ? 1 : 0)),
+                    position: [
+                        _imports[i][1][0] + (/^\s/.test(_imports[i][0]) ? 1 : 0), 
+                        _imports[i][1][1]
+                    ],
+                });
+                document = 
+                    document.slice(0, _imports[i][1][0]) +
+                    " ".repeat(_imports[i][0].length) +
+                    document.slice(_imports[i][1][1] + 1);
+            }
+        }
+        else this.problems.push({
+            msg: "cannot find op meta import",
+            position: [0, 0],
+            code: ErrorCode.UndefinedOpMeta
+        });
+
+        const _exps = inclusiveParse(document, /#[^#]+\s+[^#]*/);
+        _exps.forEach(v => {
+            const _name = exclusiveParse(v[0], /\s+/);
+            if (_name[0][0].match(/^#[a-z][a-z0-9-]*$/)) this.expressions.push({
+                name: _name[0][0].slice(1),
+                namePosition: [v[1][0], v[1][0] + _name[0][0].length - 1],
+                text: this.fillOut(
+                    this.textDocument.getText(), 
+                    [v[1][0] + _name[0][1][1] + 1, v[1][1]]
+                ),
+                position: v[1]
+            });
+            else this.problems.push({
+                msg: "invalid expression name",
+                position: [v[1][0], v[1][0] + _name[0][0].length - 1],
+                code: ErrorCode.InvalidExpressionKey
+            });
+            document = 
+                document.slice(0, v[1][0]) +
+                " ".repeat(v[0].length) +
+                document.slice(v[1][1] + 1);
+
+        });
+
+        this.expressions.forEach((v, i) => {
+            if (this.expressions.find((e, j) => i !== j && e.name === v.name)) {
+                this.problems.push({
+                    msg: "duplicate expression identifier",
+                    position: v.namePosition,
+                    code: ErrorCode.DuplicateAlias
+                });
+            }
+        });
+
+        if (this.expressions.length > 0) this.imports.forEach(v => {
+            if (v.position[0] >= this.expressions[0].position[0]) this.problems.push({
+                msg: "imports can only be at top level",
+                position: [...v.position],
+                code: ErrorCode.InvalidImport
+            });
+        });
+
+        exclusiveParse(document, /\s+/).forEach(v => {
+            this.problems.push({
+                msg: "unexpected string",
+                position: v[1],
+                code: ErrorCode.UnexpectedString
+            });
+        });
+
+        this.resolveDependencies();
     }
 
     /**
@@ -297,7 +464,7 @@ export class RainDocument {
                                             code: ErrorCode.DuplicateContextCell
                                         });
                                         else {
-                                            if (!this.ctxAliases.findIndex(
+                                            if (!this.ctxAliases.find(
                                                 e => e.name === ctxCell.alias
                                             )) this.ctxAliases.push({
                                                 name: ctxCell.alias,
@@ -399,7 +566,7 @@ export class RainDocument {
                                                 code: ErrorCode.DuplicateContextCell
                                             });
                                             else {
-                                                if (!this.ctxAliases.findIndex(
+                                                if (!this.ctxAliases.find(
                                                     e => e.name === ctxCell.alias
                                                 )) this.ctxAliases.push({
                                                     name: ctxCell.alias,
@@ -458,7 +625,7 @@ export class RainDocument {
         }
         else {
             this.opmetaLength = this.opmeta.length;
-            const _ops = [
+            const _reservedKeys = [
                 ...this.opmeta.map(v => v.name),
                 ...this.opmeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
                 ...Object.keys(this.constants)
@@ -472,7 +639,7 @@ export class RainDocument {
                 }
             ];
             for (const _ctx of this.ctxAliases) {
-                if (_ops.includes(_ctx.name)) this.problems.push({
+                if (_reservedKeys.includes(_ctx.name)) this.problems.push({
                     msg: `duplicate alias for contract context and opcode: ${_ctx.name}`,
                     position: this.imports[index].position,
                     code: ErrorCode.DuplicateAlias
@@ -495,182 +662,8 @@ export class RainDocument {
     };
 
     /**
-     * @public
-     * Parses this instance of RainParser
+     * @public Resolves the expressions dependencies and instantiates RainlangParser for them
      */
-    public async parse() {
-        if (/[^\s]+/.test(this.textDocument.getText())) {
-            try {
-                await this._parse();
-            }
-            catch (runtimeError) {
-                this.runtimeError = runtimeError as Error;
-                this.problems.push({
-                    msg: `Runtime Error: ${
-                        this.runtimeError.message
-                    }`,
-                    position: [0, -1],
-                    code: ErrorCode.RuntimeError
-                });
-            }
-        }
-        else {
-            this.problems = [];
-            this.comments = [];
-            this.runtimeError = undefined;
-        }
-    }
-
-    /**
-     * @internal 
-     * The main workhorse of RainParser which parses the words used in an
-     * expression and is responsible for building the parse tree and collect problems
-     */
-    public async _parse() {
-        this.imports = [];
-        this.problems = [];
-        this.comments = [];
-        this.ctxAliases = [];
-        this.expressions = [];
-        this.runtimeError = undefined;
-        let document = this.textDocument.getText();
-
-        // parse comments
-        inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
-            if (!v[0].endsWith("*/")) this.problems.push({
-                msg: "unexpected end of comment",
-                position: v[1],
-                code: ErrorCode.UnexpectedEndOfComment
-            });
-            this.comments.push({
-                comment: v[0],
-                position: v[1]
-            });
-            document = 
-                document.slice(0, v[1][0]) +
-                " ".repeat(v[0].length) +
-                document.slice(v[1][1] + 1);
-            // const startPos = this.textDocument.positionAt(v[1][0]);
-            // const endPos = this.textDocument.positionAt(v[1][1]);
-            // if (startPos.line === endPos.line) 
-            // else {
-            //     for (let line = startPos.line; line <= endPos.line; line++) {
-            //         if (line === startPos.line) {
-            //             const lineEndPos = this.textDocument.offsetAt(Position.create(line + 1, 0));
-            //             if (this.textDocument.getText().slice(0, lineEndPos).match(/\r\n$/)) {
-            //                 document = 
-            //                     document.slice(0, v[1][0]) +
-            //                     " ".repeat(lineEndPos - v[1][0] - 2) +
-            //                     document.slice(lineEndPos - 2);
-            //             }
-            //             else document = 
-            //                 document.slice(0, v[1][0]) +
-            //                 " ".repeat(lineEndPos - v[1][0] - 1) +
-            //                 document.slice(lineEndPos - 1);
-            //         }
-            //         else if (line === endPos.line) {
-            //             const lineStartPos = this.textDocument.offsetAt(Position.create(line, 0));
-            //             document = 
-            //                 document.slice(0, lineStartPos) +
-            //                 " ".repeat(v[1][1] - lineStartPos + 1) +
-            //                 document.slice(v[1][1] + 1);
-            //         }
-            //         else {
-            //             const lineEndPos = this.textDocument.offsetAt(Position.create(line + 1, 0));
-            //             const lineStartPos = this.textDocument.offsetAt(Position.create(line, 0));
-            //             if (this.textDocument.getText().slice(0, lineEndPos).match(/\r\n$/)) {
-            //                 document = 
-            //                     document.slice(0, lineStartPos) +
-            //                     " ".repeat(lineEndPos - lineStartPos - 2) +
-            //                     document.slice(lineEndPos - 2);
-            //             }
-            //             else document = 
-            //                 document.slice(0, lineStartPos) +
-            //                 " ".repeat(lineEndPos - lineStartPos - 1) +
-            //                 document.slice(lineEndPos - 1);
-            //         }
-            //     }
-            // }
-        });
-
-        // parse imports
-        const _imports = inclusiveParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/gd);
-        if (_imports.length) {
-            await this.resolveMeta(_imports);
-            for (let i = 0; i < _imports.length; i++) {
-                this.imports.push({
-                    name: "root",
-                    hash: _imports[i][0].slice(1 + (/^\s/.test(_imports[i][0]) ? 1 : 0)),
-                    position: [
-                        _imports[i][1][0] + (/^\s/.test(_imports[i][0]) ? 1 : 0), 
-                        _imports[i][1][1]
-                    ],
-                });
-                document = 
-                    document.slice(0, _imports[i][1][0]) +
-                    " ".repeat(_imports[i][0].length) +
-                    document.slice(_imports[i][1][1] + 1);
-            }
-        }
-        else this.problems.push({
-            msg: "cannot find op meta imports, please import an op meta",
-            position: [0, 0],
-            code: ErrorCode.UndefinedOpMeta
-        });
-
-        const exps = inclusiveParse(document, /#[^#]+\s+[^#]*/);
-        exps.forEach(v => {
-            const name = exclusiveParse(v[0], /\s+/);
-            if (name[0][0].match(/^#[a-z][a-z0-9-]*$/)) this.expressions.push({
-                name: name[0][0].slice(1),
-                namePosition: [v[1][0], v[1][0] + name[0][0].length - 1],
-                text: this.fillOut(
-                    this.textDocument.getText(), 
-                    [v[1][0] + name[0][1][1] + 1, v[1][1]]
-                ),
-                position: v[1]
-            });
-            else this.problems.push({
-                msg: "invalid expression name",
-                position: [v[1][0], v[1][0] + name[0][0].length - 1],
-                code: ErrorCode.InvalidExpressionKey
-            });
-            document = 
-                document.slice(0, v[1][0]) +
-                " ".repeat(v[0].length) +
-                document.slice(v[1][1] + 1);
-
-        });
-
-        this.expressions.forEach((v, i) => {
-            const names = deepCopy(this.expressions.map(e => e.name));
-            names.splice(i, 1);
-            if (names.includes(v.name)) this.problems.push({
-                msg: "duplicate expression identifier",
-                position: v.namePosition,
-                code: ErrorCode.DuplicateAlias
-            });
-        });
-
-        if (this.expressions.length > 0) this.imports.forEach(v => {
-            if (v.position[0] >= this.expressions[0].position[0]) this.problems.push({
-                msg: "imports can only be at top level",
-                position: [...v.position],
-                code: ErrorCode.InvalidImport
-            });
-        });
-
-        exclusiveParse(document, /\s+/).forEach(v => {
-            this.problems.push({
-                msg: "unexpected string",
-                position: v[1],
-                code: ErrorCode.UnexpectedString
-            });
-        });
-
-        this.resolveDependencies();
-    }
-
     private resolveDependencies() {
         let edges: [string, string][] = [];
         let nodes = this.expressions.map(v => v.name);
@@ -707,7 +700,7 @@ export class RainDocument {
                     }
                     edges = edges.filter(v => !nodesToDelete.includes(v[1]));
                     nodes = nodes.filter(v => !nodesToDelete.includes(v));
-                    this.dependencyProblems.push({
+                    this.depProblems.push({
                         msg: "circular dependency",
                         position: this.expressions.find(v => v.name === errorNode)!.namePosition,
                         code: ErrorCode.CircularDependency
@@ -716,7 +709,7 @@ export class RainDocument {
             }
         }
 
-        for (let i = 0; i < deps.length; i++) {
+        if (this.opmetaIndex > -1) for (let i = 0; i < deps.length; i++) {
             const _i = this.expressions.findIndex(v => v.name === deps[i]);
             if (_i > -1) {
                 this.expressions[_i].doc = new RainlangParser(
@@ -733,17 +726,6 @@ export class RainDocument {
     }
 
     /**
-     * @internal Determines if an string matches the constants keys
-     */
-    public isConstant = (str: string): boolean => {
-        return new RegExp(
-            "^" + 
-            Object.keys(this.constants).join("$|^") + 
-            "$"
-        ).test(str);
-    };
-
-    /**
      * @public Fills outside of a position with whitespaces
      */
     private fillOut(text: string, position: PositionOffset): string {
@@ -753,8 +735,25 @@ export class RainDocument {
     }
 }
 // const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
-// #my-exp
-// ff,`);
+// #exp1
+// c0: 1,
+// c1: 2,
+// condition: 1, 
+// _ _: do-while<1 2 3>(c0 c1 condition)
+
+// #exp2
+// s0 s1: ,
+// o0 o1: 1 2,
+// condition: 3 3 4
+
+// #exp3
+// s0: ,
+// _: less-than(s0 3 3)
+
+// #exp4
+// s0 s1: ,
+// _: add(s0 4 infinity),
+// _: add(s3 s1 5)`);
 // RainDocument.create(x).then((v) => {
 //     console.log(v.getAllProblems());
 //     // console.log(v.state.runTimeError);

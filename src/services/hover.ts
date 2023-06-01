@@ -63,6 +63,9 @@ export async function getRainlangHover(
         const _hash = _rd.getImports().find(
             v => v.position[0] <= _offset && v.position[1] >= _offset
         );
+        const _index = _rd.getImports().findIndex(
+            v => v.position[0] <= _offset && v.position[1] >= _offset
+        );
         if (_hash) return {
             range: Range.create(
                 _td.positionAt(_hash.position[0]),
@@ -70,7 +73,11 @@ export async function getRainlangHover(
             ),
             contents: {
                 kind: _contentType,
-                value: await buildMetaInfo(_hash.hash, _rd.metaStore)
+                value: (await buildMetaInfo(_hash.hash, _rd.metaStore)) + (
+                    _index > -1 && _rd.getOpMetaImportIndex() === _index
+                        ? "\n Active Op Meta"
+                        : ""
+                )
             }
         };
         for (let i = 0; i < nodes.length; i++) {
@@ -99,7 +106,9 @@ export async function getRainlangHover(
                                         kind: _contentType,
                                         value: [
                                             _operandArg.name,
-                                            _operandArg.description ?? "Operand Argument"
+                                            _operandArg.description 
+                                                ? _operandArg.description 
+                                                : "Operand Argument"
                                         ].join(_contentType === "markdown" ? "\n\n" : ", ")
                                     }
                                 } as Hover;

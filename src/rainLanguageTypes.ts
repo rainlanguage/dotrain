@@ -296,6 +296,7 @@ export namespace OpASTNode {
     export function is(value: any): value is OpASTNode {
         return value !== null 
             && typeof value === "object"
+            && value.opcode !== null
             && typeof value.opcode === "object"
             && typeof value.opcode.name === "string"
             && typeof value.opcode.description === "string"
@@ -321,7 +322,7 @@ export namespace OpASTNode {
                     && value.operandArgs.args.every(
                         (v: any) => v !== null
                             && typeof v === "object"
-                            && typeof v.value === "number"
+                            && typeof v.value === "string"
                             && typeof v.name === "string"
                             && PositionOffset.is(v.position)
                             && typeof v.description === "string"
