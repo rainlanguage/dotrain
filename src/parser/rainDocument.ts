@@ -717,11 +717,10 @@ export class RainDocument {
             const _i = this.expressions.findIndex(v => v.name === deps[i]);
             if (_i > -1) {
                 this.expressions[_i].parseObj = new RainlangParser(
-                    this.expressions[_i].text, 
-                    this.opmeta, 
+                    this.expressions, 
                     _i,
+                    this.opmeta, 
                     {
-                        boundExpressions: this.expressions, 
                         constants: this.constants, 
                     }
                 );

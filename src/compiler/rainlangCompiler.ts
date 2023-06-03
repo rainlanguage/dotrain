@@ -142,11 +142,10 @@ export async function rainlangc(
         for (let i = 0; i < _deps.length; i++) {
             const index = _expressions.findIndex(v => v.name === _deps[i]);
             if (index > -1) _expressions[index].parseObj = new RainlangParser(
-                _expressions[index].text, 
-                _opmeta, 
+                _expressions, 
                 index,
+                _opmeta, 
                 { 
-                    boundExpressions: _expressions, 
                     constants: _rainDocument.constants,
                     compilationParse: true
                 }

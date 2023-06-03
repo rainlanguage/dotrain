@@ -44,8 +44,8 @@ export class RainlangParser {
     public ast: RainlangAST = { lines: [] };
     public problems: ProblemASTNode[] = [];
     public comments: CommentASTNode[] = [];
-    public boundExps: NamedExpression[] = [];
     public constants: Record<string, string>;
+    public namedExpressions: NamedExpression[] = [];
 
     private expIndex: number;
     private opmeta: OpMeta[] = [];
@@ -76,25 +76,24 @@ export class RainlangParser {
      */
     /**
      * @public Constructs a new RainParser object
-     * @param text - The text string
-     * @param opmeta - The op meta
+     * @param namedExpressions - The named expressions from parent RainDocument
      * @param currentExpIndex - Current index of this expression among all parent RainDocument expression
+     * @param opmeta - The op meta
      * @param options - Options to instantiate
      */
     constructor(
-        text: string, 
-        opmeta: OpMeta[],
+        namedExpressions: NamedExpression[],
         currentExpIndex: number,
+        opmeta: OpMeta[],
         options?: { 
-            boundExpressions?: NamedExpression[];
             compilationParse?: boolean; 
             constants?: Record<string, string>;
         }
     ) {
-        this.text = text;
-        this.opmeta = opmeta;
+        this.namedExpressions = namedExpressions;
+        this.text = namedExpressions[currentExpIndex].text;
         this.expIndex = currentExpIndex;
-        if (options?.boundExpressions) this.boundExps = options.boundExpressions;
+        this.opmeta = opmeta;
         if (options?.constants) this.constants = options.constants;
         else this.constants = {};
         this.parse(options?.compilationParse);
@@ -132,7 +131,7 @@ export class RainlangParser {
             this.state.runtimeError = undefined;
             this.problems.push({
                 msg: "invalid empty expression",
-                position: this.boundExps[this.expIndex].namePosition,
+                position: deepCopy(this.namedExpressions[this.expIndex].namePosition),
                 code: ErrorCode.InvalidEmptyExpression
             });
         }
@@ -262,7 +261,7 @@ export class RainlangParser {
             ...this.opmeta.map(v => v.name),
             ...this.opmeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
             ...Object.keys(this.constants),
-            ...this.boundExps.map(v => v.name)
+            ...this.namedExpressions.map(v => v.name)
         ];
 
         // begin parsing individual sub-expressions
@@ -561,15 +560,15 @@ export class RainlangParser {
                     let quoteValue = -1;
                     const quote = v[0].match(/^(?:')[a-z][a-z0-9-]*$/);
                     if (quote) {
-                        quoteIndex = this.boundExps.findIndex(v => v.name === quote[0]);
+                        quoteIndex = this.namedExpressions.findIndex(v => v.name === quote[0]);
                         if (quoteIndex === -1) this.problems.push({
                             msg: `undefined expression binding key: ${v[0]}`,
                             position: v[1],
                             code: ErrorCode.UndefinedExpression
                         });
                         else {
-                            if (NamedExpression.isConstant(this.boundExps[quoteIndex])) {
-                                quoteValue = Number((this.boundExps[
+                            if (NamedExpression.isConstant(this.namedExpressions[quoteIndex])) {
+                                quoteValue = Number((this.namedExpressions[
                                     quoteIndex
                                 ].parseObj?.ast.lines[0].nodes[0] as ValueASTNode).value);
                             }
@@ -806,7 +805,7 @@ export class RainlangParser {
         exp = exp.replace(_word, "");
         const _aliasIndex = this.ast.lines.findIndex(v => !!v.aliases.find(e => e.name === _word));
         const _currentAliasIndex = this.state.aliases.findIndex(v => v.name === _word);
-        const _bindingsAliasIndex = this.boundExps.findIndex(v => v.name === _word);
+        const _bindingsAliasIndex = this.namedExpressions.findIndex(v => v.name === _word);
 
         if (exp.startsWith("(") || exp.startsWith("<")) {
             if (!_word) this.problems.push({
@@ -879,7 +878,7 @@ export class RainlangParser {
                 code: ErrorCode.InvalidSelfReferenceLHS
             });
             if (_aliasIndex === -1 && _currentAliasIndex === -1 && _bindingsAliasIndex > -1) {
-                if (!NamedExpression.isConstant(this.boundExps[_bindingsAliasIndex])) {
+                if (!NamedExpression.isConstant(this.namedExpressions[_bindingsAliasIndex])) {
                     this.problems.push({
                         msg: "unexpected usage of binding key",
                         position: [..._wordPos],
