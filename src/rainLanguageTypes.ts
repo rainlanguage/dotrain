@@ -9,8 +9,28 @@ export { TextDocument, TextDocumentContentChangeEvent };
 
 
 /**
+ * @public Illigal character pattern 
+ */
+export const ILLIGAL_CHAR = /[^ -~\s]+/;
+
+/**
+ * @public Rainlang word pattern 
+ */
+export const WORD_PATTERN = /^[a-z][0-9a-z-]*$/;
+
+/**
+ * @public Import hash pattern 
+ */
+export const HASH_PATTERN = /^0x[a-zA-F0-9]{64}$/;
+
+/**
+ * @public Rainlang numeric pattern 
+ */
+export const NUMERIC_PATTERN = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
+
+/**
  * @public
- * Error codes used by diagnostics
+ * Error codes of Rainlang/RainDocument problem and LSP Diagnostics
  */
 export enum ErrorCode {
     UndefinedOpMeta = 0,
@@ -69,11 +89,6 @@ export enum ErrorCode {
 
     CircularDependency = 0x900
 }
-
-export const illigalChar = /[^ -~\s]+/;
-export const wordPattern = /^[a-z][0-9a-z-]*$/;
-export const hashPattern = /^0x[a-zA-F0-9]{64}$/;
-export const numericPattern = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
 
 /**
  * @public
@@ -203,7 +218,7 @@ export enum MemoryType {
 }
 
 /**
- * @public Type of position start and end indexes for RainDocument, inclusive at both ends
+ * @public Type for start and end indexes for RainDocument items, inclusive at both ends
  */
 export type PositionOffset = [number, number];
 
@@ -211,6 +226,11 @@ export type PositionOffset = [number, number];
  * @public The namespace provides functionality to type check
  */
 export namespace PositionOffset {
+
+    /**
+     * @public Checks if a value is a valid PositionOffset
+     * @param value - The value to check
+     */
     export function is(value: any): value is PositionOffset {
         return Array.isArray(value) 
             && value.length === 2 
@@ -220,7 +240,7 @@ export namespace PositionOffset {
 }
 
 /**
- * @public Type of RainDocument's problem
+ * @public Type for Rainlang/RainDocument problem
  */
 export interface ProblemASTNode {
     msg: string;
@@ -232,6 +252,11 @@ export interface ProblemASTNode {
  * @public The namespace provides functionality to type check
  */
 export namespace ProblemASTNode {
+
+    /**
+     * @public Checks if a value is a valid ProblemASTNode
+     * @param value - The value to check
+     */
     export function is(value: any): value is ProblemASTNode {
         return value !== null 
             && typeof value === "object"
@@ -242,29 +267,40 @@ export namespace ProblemASTNode {
 }
 
 /**
- * @public Type of RainDocument's Value node
+ * @public Type Rainlang AST Value node
  */
 export interface ValueASTNode {
     value: string;
     position: PositionOffset;
-    lhsAlias?: AliasASTNode;
+    lhsAlias?: AliasASTNode[];
 }
 
 /**
  * @public The namespace provides functionality to type check
  */
 export namespace ValueASTNode {
+
+    /**
+     * @public Checks if a value is a valid ValueASTNode
+     * @param value - The value to check
+     */
     export function is(value: any): value is ValueASTNode {
         return value !== null 
             && typeof value === "object"
             && typeof value.value === "string"
             && PositionOffset.is(value.position)
-            && (typeof value.lhsAlias === "undefined" || AliasASTNode.is(value.lhsAlias));
+            && (
+                typeof value.lhsAlias === "undefined" || (
+                    Array.isArray(value.lhsAlias) &&
+                    value.lhsAlias.length === 1 &&
+                    AliasASTNode.is(value.lhsAlias[0])
+                )
+            );
     }
 }
 
 /**
- * @public Type of RainDocument's Opcode node
+ * @public Type for Rainlang AST Opcode node
  */
 export interface OpASTNode {
     opcode: {
@@ -276,7 +312,7 @@ export interface OpASTNode {
     output: number;
     position: PositionOffset;
     parens: PositionOffset;
-    parameters: FragmentASTNode[];
+    parameters: ASTNode[];
     operandArgs?: {
         position: PositionOffset;
         args: {
@@ -293,6 +329,11 @@ export interface OpASTNode {
  * @public The namespace provides functionality to type check
  */
 export namespace OpASTNode {
+
+    /**
+     * @public Checks if a value is a valid OpASTNode
+     * @param value - The value to check
+     */
     export function is(value: any): value is OpASTNode {
         return value !== null 
             && typeof value === "object"
@@ -306,7 +347,7 @@ export namespace OpASTNode {
             && PositionOffset.is(value.position)
             && PositionOffset.is(value.parens)
             && Array.isArray(value.parameters)
-            && value.parameters.every((v: any) => FragmentASTNode.is(v))
+            && value.parameters.every((v: any) => ASTNode.is(v))
             && (
                 typeof value.lhsAlias === "undefined" || (
                     Array.isArray(value.lhsAlias) &&
@@ -333,29 +374,40 @@ export namespace OpASTNode {
 }
 
 /**
- * @public Type of RainDocument's lhs aliases
+ * @public Type for Rainlang/RainDocument alias
  */
 export interface AliasASTNode {
     name: string;
     position: PositionOffset;
-    lhsAlias?: AliasASTNode;
+    lhsAlias?: AliasASTNode[];
 }
 
 /**
  * @public The namespace provides functionality to type check
  */
 export namespace AliasASTNode {
+
+    /**
+     * @public Checks if a value is a valid AliasASTNode
+     * @param value - The value to check
+     */
     export function is(value: any): value is AliasASTNode {
         return value !== null 
             && typeof value === "object"
             && typeof value.name === "string"
             && PositionOffset.is(value.position)
-            && (typeof value.lhsAlias === "undefined" || AliasASTNode.is(value.lhsAlias));
+            && (
+                typeof value.lhsAlias === "undefined" || (
+                    Array.isArray(value.lhsAlias) &&
+                    value.lhsAlias.length === 1 &&
+                    AliasASTNode.is(value.lhsAlias[0])
+                )
+            );
     }
 }
 
 /**
- * @public Type of RainDocument's comments
+ * @public Type for Rainlang/RainDocument comments
  */
 export interface CommentASTNode {
     comment: string;
@@ -366,6 +418,11 @@ export interface CommentASTNode {
  * @public The namespace provides functionality to type check
  */
 export namespace CommentASTNode {
+
+    /**
+     * @public Checks if a value is a valid CommentASTNode
+     * @param value - The value to check
+     */
     export function is(value: any): value is CommentASTNode {
         return value !== null
             && typeof value === "object"
@@ -375,7 +432,7 @@ export namespace CommentASTNode {
 }
 
 /**
- * @public Type of meta hash specified in a RainDocument
+ * @public Type of import statements specified in a RainDocument
  */
 export interface ImportASTNode {
     name: string;
@@ -387,6 +444,11 @@ export interface ImportASTNode {
  * @public The namespace provides functionality to type check
  */
 export namespace ImportASTNode {
+
+    /**
+     * @public Checks if a value is a valid ImportASTNode
+     * @param value - The value to check
+     */
     export function is(value: any): value is ImportASTNode {
         return value !== null
             && typeof value === "object"
@@ -397,15 +459,20 @@ export namespace ImportASTNode {
 }
 
 /**
- * @public Type of RainDocument's parse node
+ * @public Type of an AST node
  */
-export type FragmentASTNode = ValueASTNode | OpASTNode | AliasASTNode;
+export type ASTNode = ValueASTNode | OpASTNode | AliasASTNode;
 
 /**
  * @public The namespace provides functionality to type check
  */
-export namespace FragmentASTNode {
-    export function is(value: any): value is FragmentASTNode {
+export namespace ASTNode {
+
+    /**
+     * @public Checks if a value is a valid ASTNode
+     * @param value - The value to check
+     */
+    export function is(value: any): value is ASTNode {
         return ValueASTNode.is(value) 
             || AliasASTNode.is(value)
             || OpASTNode.is(value);
@@ -413,11 +480,11 @@ export namespace FragmentASTNode {
 }
 
 /**
- * @public Type of a RainDocument parse tree
+ * @public Type of a Rainlang AST
  */
 export type RainlangAST = { 
     lines: {
-        nodes: FragmentASTNode[]; 
+        nodes: ASTNode[]; 
         position: PositionOffset; 
         aliases: AliasASTNode[];
     }[]
@@ -427,18 +494,27 @@ export type RainlangAST = {
  * @public The namespace provides functionality to type check
  */
 export namespace RainlangAST {
+
+    /**
+     * @public Checks if a value is a valid RainlangAST
+     * @param value - The value to check
+     */
     export function is(value: any): value is RainlangAST {
         return value !== null
             && typeof value === "object"
             && Array.isArray(value.lines)
             && value.lines.every((v: any) => PositionOffset.is(v.position)
                     && Array.isArray(v.nodes)
-                    && v.nodes.every((e: any) => FragmentASTNode.is(e))
+                    && v.nodes.every((e: any) => ASTNode.is(e))
                     && Array.isArray(v.aliases)
                     && v.aliases.every((e: any) => AliasASTNode.is(e))
             );
     }
 
+    /**
+     * @public Checks if a value is a valid RainlangAST Constant
+     * @param value - The value to check
+     */
     export function isConstant(value: any): boolean {
         return value !== null
             && typeof value === "object"
@@ -452,24 +528,50 @@ export namespace RainlangAST {
                     && v.aliases.length === 0
             );
     }
+
+    /**
+     * @public Checks if a value is a valid RainlangAST Expression
+     * @param value - The value to check
+     */
+    export function isExpression(value: any): boolean {
+        return value !== null
+            && typeof value === "object"
+            && Array.isArray(value.lines)
+            && value.lines.length > 0
+            && value.lines.every((v: any) => PositionOffset.is(v.position)
+                && Array.isArray(v.nodes)
+                && Array.isArray(v.aliases)
+                && (
+                    v.aliases.length > 0 ||
+                    v.nodes.every(
+                        (e: any) => ASTNode.is(e) && e.lhsAlias !== undefined
+                    )
+                )
+            );
+    }
 }
 
 /**
  * @public Type for a named expression
  */
-export type BoundExpression = {
+export type NamedExpression = {
     name: string;
     namePosition: PositionOffset;
     text: string;
     position: PositionOffset;
-    doc?: RainlangParser;
+    parseObj?: RainlangParser;
 }
 
 /**
  * @public The namespace provides functionality to type check
  */
-export namespace BoundExpression {
-    export function is(value: any): value is BoundExpression {
+export namespace NamedExpression {
+
+    /**
+     * @public Checks if a value is a valid NamedExpression
+     * @param value - The value to check
+     */
+    export function is(value: any): value is NamedExpression {
         return value !== null
             && typeof value === "object"
             && typeof value.name === "string"
@@ -477,11 +579,15 @@ export namespace BoundExpression {
             && typeof value.text === "string"
             && PositionOffset.is(value.position)
             && (
-                typeof value.doc === "undefined" ||
-                value.doc instanceof RainlangParser
+                typeof value.parseObj === "undefined" ||
+                value.parseObj instanceof RainlangParser
             );
     }
 
+    /**
+     * @public Checks if a value is a valid NamedExpression Constant
+     * @param value - The value to check
+     */
     export function isConstant(value: any): boolean {
         return value !== null
             && typeof value === "object"
@@ -489,10 +595,14 @@ export namespace BoundExpression {
             && PositionOffset.is(value.namePosition)
             && typeof value.text === "string"
             && PositionOffset.is(value.position)
-            && value.doc instanceof RainlangParser
-            && RainlangAST.isConstant(value.doc.ast);
+            && value.parseObj instanceof RainlangParser
+            && RainlangAST.isConstant(value.parseObj.ast);
     }
 
+    /**
+     * @public Checks if a value is a valid NamedExpression Expression
+     * @param value - The value to check
+     */
     export function isExpression(value: any): boolean {
         return value !== null
             && typeof value === "object"
@@ -500,13 +610,13 @@ export namespace BoundExpression {
             && PositionOffset.is(value.namePosition)
             && typeof value.text === "string"
             && PositionOffset.is(value.position)
-            && value.doc instanceof RainlangParser
-            && !RainlangAST.isConstant(value.doc.ast);
+            && value.parseObj instanceof RainlangParser
+            && RainlangAST.isExpression(value.parseObj.ast);
     }
 }
 
 /**
- * @public Type for contract context alias
+ * @public Type for context aliases from a contract caller meta
  */
 export type ContextAlias = {
     name: string;

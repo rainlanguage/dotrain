@@ -2,7 +2,7 @@
 
 # Enum ErrorCode
 
-Error codes used by diagnostics
+Error codes of Rainlang/RainDocument problem and LSP Diagnostics
 
 <b>Signature:</b>
 
@@ -14,9 +14,15 @@ enum ErrorCode
 
 |  Member | Value | Description |
 |  --- | --- | --- |
-|  DuplicateAlias | `2048` |  |
+|  CircularDependency | `2304` |  |
+|  DuplicateAlias | `2049` |  |
+|  DuplicateConetxtColumn | `2050` |  |
+|  DuplicateContextCell | `2051` |  |
+|  DuplicateExpressionKey | `2052` |  |
 |  ExpectedClosingAngleBracket | `774` |  |
 |  ExpectedClosingParen | `772` |  |
+|  ExpectedConstant | `776` |  |
+|  ExpectedExpressionKey | `777` |  |
 |  ExpectedOpcode | `769` |  |
 |  ExpectedOpeningParen | `773` |  |
 |  ExpectedOperandArgs | `771` |  |
@@ -24,9 +30,12 @@ enum ErrorCode
 |  ExpectedSpace | `770` |  |
 |  IlligalChar | `2` |  |
 |  InvalidContractMeta | `265` |  |
+|  InvalidEmptyExpression | `273` |  |
 |  InvalidExpression | `258` |  |
+|  InvalidExpressionKey | `274` |  |
+|  InvalidHash | `263` |  |
+|  InvalidImport | `272` |  |
 |  InvalidInputsMeta | `259` |  |
-|  InvalidMetaHash | `263` |  |
 |  InvalidNestedNode | `261` |  |
 |  InvalidOpMeta | `264` |  |
 |  InvalidOutputsMeta | `260` |  |
@@ -38,13 +47,17 @@ enum ErrorCode
 |  OutOfRangeInputs | `1281` |  |
 |  OutOfRangeOperandArgs | `1282` |  |
 |  OutOfRangeValue | `1283` |  |
-|  RuntimeError | `1792` |  |
+|  RuntimeError | `2048` |  |
+|  UndefinedExpression | `4` |  |
 |  UndefinedMeta | `3` |  |
 |  UndefinedOpMeta | `0` |  |
 |  UndefinedWord | `1` |  |
+|  UnexpectedBindingKeyUsage | `516` |  |
 |  UnexpectedClosingParen | `514` |  |
 |  UnexpectedEndOfComment | `513` |  |
-|  UnexpectedMetaHash | `516` |  |
+|  UnexpectedExpression | `518` |  |
+|  UnexpectedFragment | `517` |  |
 |  UnexpectedRHSComment | `515` |  |
-|  UnknownOp | `1536` |  |
+|  UnexpectedString | `519` |  |
+|  UnknownOp | `1792` |  |
 

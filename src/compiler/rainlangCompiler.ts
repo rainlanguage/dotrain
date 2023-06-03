@@ -5,7 +5,7 @@ import { RainDocument } from "../parser/rainDocument";
 import { ExpressionConfig } from "../rainLanguageTypes";
 import { RainlangParser } from "../parser/rainlangParser";
 import { BigNumber, BigNumberish, BytesLike, concat, constructByBits, hexlify, isBigNumberish, memoryOperand, op } from "../utils";
-import { AliasASTNode, BoundExpression, ContextAlias, FragmentASTNode, MemoryType, OpASTNode, TextDocument, ValueASTNode } from "../rainLanguageTypes";
+import { AliasASTNode, NamedExpression, ContextAlias, ASTNode, MemoryType, OpASTNode, TextDocument, ValueASTNode } from "../rainLanguageTypes";
 
 
 /**
@@ -55,6 +55,9 @@ export async function rainlangc(
     entrypoints: string[],
     metaStore?: MetaStore
 ): Promise<ExpressionConfig> {
+    const sources: BytesLike[] = [];
+    const constants: BigNumberish[] = [];
+
     if (entrypoints.length === 0) return Promise.reject("no entrypoints specified");
 
     let _rainDocument: RainDocument;
@@ -72,14 +75,14 @@ export async function rainlangc(
         else _rainDocument = await RainDocument.create(document, metaStore);
     }
     try {
-        const opmeta = _rainDocument.getOpMetaWithCtxAliases();
+        const _opmeta = _rainDocument.getOpMetaWithCtxAliases();
         for (let i = 0; i < entrypoints.length; i++) {
             const _exp = _rainDocument.expressions.find(
                 v => v.name === entrypoints[i]
             );
             if (!_exp) return Promise.reject(`undefined expression: ${entrypoints[i]}`);
             else {
-                if (BoundExpression.isConstant(_exp)) return Promise.reject(
+                if (NamedExpression.isConstant(_exp)) return Promise.reject(
                     `invalid entrypoint: ${entrypoints[i]}, constants cannot be entrypoint/source`
                 );
             }
@@ -87,90 +90,88 @@ export async function rainlangc(
         
         if (_rainDocument.getProblems().length) return Promise.reject(_rainDocument.getProblems());
 
-        const nodes: string[] = [...entrypoints];
-        const edges: [string, string][] = [];
-        const initDeps = _rainDocument.getDependencies();
-        for (let i = 0; i < nodes.length; i++) {
-            initDeps.forEach(v => {
-                if (v[0] === nodes[i] && !nodes.includes(v[1])) nodes.push(v[1]);
+        const _nodes: string[] = [...entrypoints];
+        const _edges: [string, string][] = [];
+        const _initDeps = _rainDocument.getDependencies();
+        for (let i = 0; i < _nodes.length; i++) {
+            _initDeps.forEach(v => {
+                if (v[0] === _nodes[i] && !_nodes.includes(v[1])) _nodes.push(v[1]);
             });
         }
-        for (let i = 0; i < initDeps.length; i++) {
-            if (nodes.includes(initDeps[i][0])) edges.push(initDeps[i]);
+        for (let i = 0; i < _initDeps.length; i++) {
+            if (_nodes.includes(_initDeps[i][0])) _edges.push(_initDeps[i]);
         }
 
-        for (let i = 0; i < nodes.length; i++) {
-            const exp = _rainDocument.expressions.find(v => v.name === nodes[i]);
-            if (exp?.doc) {
-                if (exp.doc.problems.length) return Promise.reject(exp.doc.problems);
+        for (let i = 0; i < _nodes.length; i++) {
+            const exp = _rainDocument.expressions.find(v => v.name === _nodes[i]);
+            if (exp?.parseObj) {
+                if (exp.parseObj.problems.length) return Promise.reject(exp.parseObj.problems);
             }
             else {
                 const prob = _rainDocument.getDependencyProblems().find(v => 
                     v.position[0] === exp?.namePosition[0] && v.position[1] === exp?.position[1]
                 );
                 if (prob) return Promise.reject(prob);
-                return Promise.reject(`cannot read properties of undefined parsed expression ${nodes[i]}`);
+                return Promise.reject(`cannot read properties of undefined parsed expression ${_nodes[i]}`);
             }
         }
 
         
-        const deps = toposort.array(nodes, edges).reverse();
-        const exps: BoundExpression[] = [];
-        const consts: BoundExpression[] = [];
-        for (let i = 0; i < nodes.length; i++) {
-            const expression = _rainDocument.expressions.find(v => v.name === nodes[i]);
+        const _deps = toposort.array(_nodes, _edges).reverse();
+        const _expressions: NamedExpression[] = [];
+        const _consts: NamedExpression[] = [];
+        for (let i = 0; i < _nodes.length; i++) {
+            const expression = _rainDocument.expressions.find(v => v.name === _nodes[i]);
             if (expression) {
-                if (BoundExpression.isConstant(expression)) consts.push({
+                if (NamedExpression.isConstant(expression)) _consts.push({
                     name: expression.name,
                     namePosition: deepCopy(expression.namePosition),
                     position: deepCopy(expression.position),
                     text: expression.text
                 });
-                else exps.push({
+                else _expressions.push({
                     name: expression.name,
                     namePosition: deepCopy(expression.namePosition),
                     position: deepCopy(expression.position),
                     text: expression.text
                 });
             }
-            else return Promise.reject(new Error(`cannot find expression: ${nodes[i]}`));
+            else return Promise.reject(new Error(`cannot find expression: ${_nodes[i]}`));
         }
-        exps.push(...consts);
-        for (let i = 0; i < deps.length; i++) {
-            const index = exps.findIndex(v => v.name === deps[i]);
-            if (index > -1) exps[index].doc = new RainlangParser(
-                exps[index].text, 
-                opmeta, 
+        _expressions.push(..._consts);
+        for (let i = 0; i < _deps.length; i++) {
+            const index = _expressions.findIndex(v => v.name === _deps[i]);
+            if (index > -1) _expressions[index].parseObj = new RainlangParser(
+                _expressions[index].text, 
+                _opmeta, 
                 index,
                 { 
-                    boundExpressions: exps, 
+                    boundExpressions: _expressions, 
                     constants: _rainDocument.constants,
                     compilationParse: true
                 }
             );
-            else return Promise.reject(new Error(`cannot find expression: ${deps[i]}`));
+            else return Promise.reject(new Error(`cannot find expression: ${_deps[i]}`));
         }
 
-        for (let i = 0; i < exps.length; i++) {
-            if (exps[i].doc) {
-                if (exps[i].doc?.problems.length) {
-                    return Promise.reject(exps[i].doc?.problems);
+        for (let i = 0; i < _expressions.length; i++) {
+            if (_expressions[i].parseObj) {
+                if (_expressions[i].parseObj?.problems.length) {
+                    return Promise.reject(_expressions[i].parseObj?.problems);
                 }
             }
-            else return Promise.reject(`cannot read properties of undefined parsed expression ${exps[i].name}`);
+            else return Promise.reject(`cannot read properties of undefined parsed expression ${_expressions[i].name}`);
         }
 
-        const sources: BytesLike[] = [];
-        const constants: BigNumberish[] = [];
-        const readMemoryIndex = opmeta.findIndex(v => v.name === "read-memory");
+        const _readMemoryIndex = _opmeta.findIndex(v => v.name === "read-memory");
 
         const _compile = (
-            nodes: FragmentASTNode[],
+            nodes: ASTNode[],
             aliases: AliasASTNode[],
         ): BytesLike | undefined => {
-            const source: BytesLike[] = []; 
+            const _src: BytesLike[] = []; 
 
-            function errorCheck(node: FragmentASTNode): boolean {
+            function errorCheck(node: ASTNode): boolean {
                 if (OpASTNode.is(node)) {
                     if (isNaN(node.operand) || isNaN(node.output)) return false;
                     else {
@@ -189,166 +190,160 @@ export async function rainlangc(
             }
         
             // compile from parsed tree
-            try {
-                for (let i = 0; i < nodes.length; i++) {
-                    const _node = nodes[i];
-                    if (ValueASTNode.is(_node)) {
-                        if (isBigNumberish(_node.value)) {
-                            const _i = constants.findIndex(
-                                v => BigNumber.from(_node.value).eq(v)
-                            );
-                            if (_i > -1) {
-                                source.push(
-                                    op(
-                                        readMemoryIndex,
-                                        memoryOperand(
-                                            _i,
-                                            MemoryType.Constant,
-                                        )
-                                    )
-                                );
-                            }
-                            else {
-                                source.push(
-                                    op(
-                                        readMemoryIndex,
-                                        memoryOperand(constants.length, MemoryType.Constant)
-                                    )
-                                );
-                                constants.push(_node.value);
-                            }
-                        }
-                        else if (Object.keys(_rainDocument.constants).includes(_node.value)) {
-                            const _i = constants.findIndex(
-                                v => BigNumber.from(_rainDocument.constants[_node.value]).eq(v)
-                            );
-                            if (_i > -1) {
-                                source.push(
-                                    op(
-                                        readMemoryIndex,
-                                        memoryOperand(_i, MemoryType.Constant)
-                                    )
-                                );
-                            }
-                            else {
-                                source.push(
-                                    op(
-                                        readMemoryIndex,
-                                        memoryOperand(constants.length, MemoryType.Constant)
-                                    )
-                                );
-                                constants.push(
-                                    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-                                );
-                            }
-                        }
-                    }
-                    else if (AliasASTNode.is(_node)) {
-                        const _i = aliases.findIndex(
-                            v => v.name === _node.name
+            for (let i = 0; i < nodes.length; i++) {
+                const _node = nodes[i];
+                if (ValueASTNode.is(_node)) {
+                    if (isBigNumberish(_node.value)) {
+                        const _i = constants.findIndex(
+                            v => BigNumber.from(_node.value).eq(v)
                         );
-                        if (_i > -1) source.push(
-                            op(
-                                readMemoryIndex,
-                                memoryOperand(_i, MemoryType.Stack)
-                            )
-                        );
+                        if (_i > -1) {
+                            _src.push(
+                                op(
+                                    _readMemoryIndex,
+                                    memoryOperand(
+                                        _i,
+                                        MemoryType.Constant,
+                                    )
+                                )
+                            );
+                        }
                         else {
-                            const _extExp = exps.find(
-                                v => v.name === _node.name
+                            _src.push(
+                                op(
+                                    _readMemoryIndex,
+                                    memoryOperand(constants.length, MemoryType.Constant)
+                                )
                             );
-                            if (BoundExpression.isConstant(_extExp)) {
-                                const _value = BigNumber.from(
-                                    (_extExp?.doc?.ast.lines[0].nodes[0] as ValueASTNode).value
-                                );
-                                const _constIndex = constants.findIndex(v => _value.eq(v));
-                                if (_constIndex > -1) source.push(
-                                    op(
-                                        readMemoryIndex,
-                                        memoryOperand(
-                                            _constIndex,
-                                            MemoryType.Constant,
-                                        )
-                                    )
-                                );
-                                else {
-                                    source.push(
-                                        op(
-                                            readMemoryIndex,
-                                            memoryOperand(
-                                                constants.length,
-                                                MemoryType.Constant,
-                                            )
-                                        )
-                                    );
-                                    constants.push(_value.toString());
-                                }
-                            }
-                            else throw new Error(`cannot find "${_node.name}"`);
+                            constants.push(_node.value);
                         }
                     }
-                    else {
-                        const _expConf = _compile(
-                            _node.parameters,
-                            aliases,
+                    else if (Object.keys(_rainDocument.constants).includes(_node.value)) {
+                        const _i = constants.findIndex(
+                            v => BigNumber.from(_rainDocument.constants[_node.value]).eq(v)
                         );
-                        source.push(_expConf!);
-
-                        let _ctx: ContextAlias | undefined;
-                        const _index = opmeta.findIndex(
-                            v => v.name === _node.opcode.name
-                        );
-                        if (_index >= _rainDocument.getOpMetaLength()) _ctx = 
-                            _rainDocument.getContextAliases().find(
-                                v => v.name === _node.opcode.name
+                        if (_i > -1) {
+                            _src.push(
+                                op(
+                                    _readMemoryIndex,
+                                    memoryOperand(_i, MemoryType.Constant)
+                                )
                             );
-                        source.push(
-                            op(
-                                _ctx ? opmeta.findIndex(v => v.name === "context") : _index, 
-                                _ctx
-                                    ? isNaN(_ctx.row)
-                                        ? constructByBits([
-                                            {
-                                                value: _ctx.column,
-                                                bits: [8, 15]
-                                            },
-                                            {
-                                                value: _node.operand,
-                                                bits: [0, 7]
-                                            }
-                                        ])
-                                        : constructByBits([
-                                            {
-                                                value: _ctx.column,
-                                                bits: [8, 15]
-                                            },
-                                            {
-                                                value: _ctx.row,
-                                                bits: [0, 7]
-                                            }
-                                        ])
-                                    : _node.operand 
-                            )
-                        );
+                        }
+                        else {
+                            _src.push(
+                                op(
+                                    _readMemoryIndex,
+                                    memoryOperand(constants.length, MemoryType.Constant)
+                                )
+                            );
+                            constants.push(
+                                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                            );
+                        }
                     }
                 }
-                return concat(source);
+                else if (AliasASTNode.is(_node)) {
+                    const _i = aliases.findIndex(
+                        v => v.name === _node.name
+                    );
+                    if (_i > -1) _src.push(
+                        op(
+                            _readMemoryIndex,
+                            memoryOperand(_i, MemoryType.Stack)
+                        )
+                    );
+                    else {
+                        const _extExp = _expressions.find(
+                            v => v.name === _node.name
+                        );
+                        if (NamedExpression.isConstant(_extExp)) {
+                            const _value = BigNumber.from(
+                                (_extExp?.parseObj?.ast.lines[0].nodes[0] as ValueASTNode).value
+                            );
+                            const _constIndex = constants.findIndex(v => _value.eq(v));
+                            if (_constIndex > -1) _src.push(
+                                op(
+                                    _readMemoryIndex,
+                                    memoryOperand(
+                                        _constIndex,
+                                        MemoryType.Constant,
+                                    )
+                                )
+                            );
+                            else {
+                                _src.push(
+                                    op(
+                                        _readMemoryIndex,
+                                        memoryOperand(
+                                            constants.length,
+                                            MemoryType.Constant,
+                                        )
+                                    )
+                                );
+                                constants.push(_value.toString());
+                            }
+                        }
+                        else throw new Error(`cannot find "${_node.name}"`);
+                    }
+                }
+                else {
+                    const _expConf = _compile(
+                        _node.parameters,
+                        aliases,
+                    );
+                    _src.push(_expConf!);
+
+                    let _ctx: ContextAlias | undefined;
+                    const _index = _opmeta.findIndex(
+                        v => v.name === _node.opcode.name
+                    );
+                    if (_index >= _rainDocument.getOpMetaLength()) _ctx = 
+                        _rainDocument.getContextAliases().find(
+                            v => v.name === _node.opcode.name
+                        );
+                    _src.push(
+                        op(
+                            _ctx ? _opmeta.findIndex(v => v.name === "context") : _index, 
+                            _ctx
+                                ? isNaN(_ctx.row)
+                                    ? constructByBits([
+                                        {
+                                            value: _ctx.column,
+                                            bits: [8, 15]
+                                        },
+                                        {
+                                            value: _node.operand,
+                                            bits: [0, 7]
+                                        }
+                                    ])
+                                    : constructByBits([
+                                        {
+                                            value: _ctx.column,
+                                            bits: [8, 15]
+                                        },
+                                        {
+                                            value: _ctx.row,
+                                            bits: [0, 7]
+                                        }
+                                    ])
+                                : _node.operand 
+                        )
+                    );
+                }
             }
-            catch (_err) {
-                console.log(_err);
-                return undefined;
-            }
+            return concat(_src);
         };
 
-        for (let i = 0; i < nodes.length; i++) {
-            const _exp = exps.find(v => v.name === nodes[i]);
-            if (BoundExpression.isExpression(_exp) && _exp!.doc!.ast.lines?.length > 0) {
-                const src = _compile(
-                    _exp!.doc!.ast.lines.map((v: any) => v.nodes).flat(),
-                    _exp!.doc!.ast.lines.map((v: any) => v.aliases).flat()
+        for (let i = 0; i < _nodes.length; i++) {
+            const _exp = _expressions.find(v => v.name === _nodes[i]);
+            if (NamedExpression.isExpression(_exp)) {
+                const _src = _compile(
+                    _exp!.parseObj!.ast.lines.map(v => v.nodes).flat(),
+                    _exp!.parseObj!.ast.lines.map(v => v.aliases).flat()
                 );
-                if (src) sources.push(src);
-                else return Promise.reject(`cannot compile expression ${nodes[i]}`);
+                if (_src) sources.push(_src);
+                else return Promise.reject(`cannot compile expression ${_nodes[i]}`);
             }
         }
 
@@ -362,11 +357,3 @@ export async function rainlangc(
         return Promise.reject(err);
     }
 }
-
-// const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
-// @0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6
-
-// #my-exp
-// :,:
-// `);
-// rainlangc(x, ["my-exp"]).catch(v => console.log(JSON.stringify(v)));

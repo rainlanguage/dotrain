@@ -192,25 +192,19 @@ export async function getRainlangCompletion(
                 }
             }
             let _pos: [number, number] | undefined;
-            if (!isNaN(_currentSource)) _rd.expressions[_currentSource].doc?.ast.lines
+            if (!isNaN(_currentSource)) _rd.expressions[_currentSource].parseObj?.ast.lines
                 .map(v => v.aliases)
                 .flat()
                 ?.filter(v => v.name !== "_")
                 .forEach(v => {
                     let _text = "";
-                    _pos = _exps[_currentSource].doc?.ast.lines.map(e => e.nodes).flat().find(e => {
-                        if (e.lhsAlias) {
-                            if (Array.isArray(e.lhsAlias)) {
-                                if (e.lhsAlias.find(i => i.name === v.name)) return true; 
-                                else return false;
-                            }
-                            else {
-                                if (e.lhsAlias.name === v.name) return true;
-                                else return false;
-                            }
-                        }
-                        else return false;
-                    })?.position;
+                    _pos = _exps[_currentSource].parseObj?.ast.lines
+                        .map(e => e.nodes)
+                        .flat()
+                        .find(e => {
+                            if (e.lhsAlias?.find(i => i.name === v.name)) return true;
+                            else return false;
+                        })?.position;
                     if (_pos) _text = `${
                         _rd!.getTextDocument().getText(
                             Range.create(

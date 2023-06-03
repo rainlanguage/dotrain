@@ -5,11 +5,11 @@ import { inclusiveParse, exclusiveParse } from "../utils";
 import { ImportASTNode, ProblemASTNode, CommentASTNode } from "../rainLanguageTypes";
 import { 
     ErrorCode, 
-    hashPattern, 
+    HASH_PATTERN, 
     TextDocument,
     ContextAlias,  
     PositionOffset, 
-    BoundExpression, 
+    NamedExpression, 
 } from "../rainLanguageTypes";
 import { 
     OpMeta,
@@ -54,7 +54,7 @@ export class RainDocument {
     public metaStore: MetaStore;
     public textDocument: TextDocument;
     public runtimeError: Error | undefined;
-    public expressions: BoundExpression[] = [];
+    public expressions: NamedExpression[] = [];
 
     private opmetaLength = 0;
     private opmetaIndex = -1;
@@ -115,115 +115,117 @@ export class RainDocument {
     }
 
     /**
-     * @public Get the current text of this RainParser instance
+     * @public Get the current text of this RainDocument instance
      */
     public getTextDocument(): TextDocument {
         return this.textDocument;
     }
 
     /**
-     * @public Get the current text of this RainParser instance
+     * @public Get the current text of this RainDocument instance
      */
     public getOpMeta(): OpMeta[] {
         return deepCopy(this.opmeta.slice(0, this.opmetaLength));
     }
 
     /**
-     * @public Get the current text of this RainParser instance
+     * @public Get the current text of this RainDocument instance
      */
     public getOpMetaWithCtxAliases(): OpMeta[] {
         return deepCopy(this.opmeta);
     }
 
     /**
-     * @public Get the current text of this RainParser instance
+     * @public Get the current text of this RainDocument instance
      */
     public getOpMetaLength(): number {
         return deepCopy(this.opmetaLength);
     }
 
     /**
-     * @public Get the current text of this RainParser instance
+     * @public Get the current text of this RainDocument instance
      */
     public getOpMetaImportIndex(): number {
         return deepCopy(this.opmetaIndex);
     }
 
     /**
-     * @public Get the current text of this RainParser instance
+     * @public Get the current text of this RainDocument instance
      */
     public getOpMetaBytes(): string {
         return this.opMetaBytes;
     }
 
     /**
-     * @public Get the current problems of this RainParser instance
+     * @public Get all problems of this RainDocument instance
      */
     public getAllProblems(): ProblemASTNode[] {
-        const problems = deepCopy(this.problems);
-        problems.push(...deepCopy(this.depProblems));
-        const expProblems = this.expressions
-            .map(v => v.doc?.problems)
-            .filter(v => v !== undefined)
-            .flat() as ProblemASTNode[];
-
-        problems.push(...deepCopy(expProblems));
-        return deepCopy(problems);
+        return [...this.getTopProblems(), ...this.getExpProblems()];
     }
 
     /**
-     * @public Get the current problems of this RainParser instance
+     * @public Get top problems of this RainDocument instance
      */
     public getTopProblems(): ProblemASTNode[] {
-        const problems = deepCopy(this.problems);
-        problems.push(...deepCopy(this.depProblems));
-        return problems;
+        return [...this.getProblems(), ...this.getDependencyProblems()];
     }
 
     /**
-     * @public Get the current problems of this RainParser instance
+     * @public Get the dependency problems of this RainDocument instance
      */
     public getDependencyProblems(): ProblemASTNode[] {
         return deepCopy(this.depProblems);
     }
 
     /**
-     * @public Get the current problems of this RainParser instance
+     * @public Get the current problems of this RainDocument instance
      */
     public getProblems(): ProblemASTNode[] {
         return deepCopy(this.problems);
     }
 
     /**
-     * @public Get the current comments inside of the text of this RainParser instance
+     * @public Get the expression problems of this RainDocument instance
+     */
+    public getExpProblems(): ProblemASTNode[] {
+        return deepCopy(
+            this.expressions
+                .map(v => v.parseObj?.problems)
+                .filter(v => v !== undefined)
+                .flat() as ProblemASTNode[]
+        );
+    }
+
+    /**
+     * @public Get the current comments inside of the text of this RainDocument instance
      */
     public getComments(): CommentASTNode[] {
         return deepCopy(this.comments);
     }
 
     /**
-     * @public Get the current runtime error of this RainParser instance
+     * @public Get the current runtime error of this RainDocument instance
      */
     public getRuntimeError(): Error | undefined {
         return deepCopy(this.runtimeError);
     }
 
     /**
-     * @public Get the specified meta hahses of this RainParser instance
+     * @public Get the imports of this RainDocument instance
      */
     public getImports(): ImportASTNode[] {
         return deepCopy(this.imports);
     }
 
     /**
-     * @public Get the context aliases of specified meta hashes in this RainParser instance
+     * @public Get the context aliases of specified meta hashes in this RainDocument instance
      */
     public getContextAliases(): ContextAlias[] {
         return deepCopy(this.ctxAliases);
     }
 
     /**
-     * @public Get constant k/v pairs of this RainParser instance
+     * @public Get constant k/v pairs of this RainDocument instance
      */
     public getConstants(): Record<string, string> {
         return deepCopy(this.constants);
@@ -238,10 +240,10 @@ export class RainDocument {
 
     /**
      * @public
-     * Parses this instance of RainParser
+     * Parses this instance of RainDocument
      */
     public async parse() {
-        if (/[^\s]+/.test(this.textDocument.getText())) {
+        if (/[^\s]/.test(this.textDocument.getText())) {
             try {
                 await this._parse();
             }
@@ -275,10 +277,10 @@ export class RainDocument {
 
     /**
      * @internal 
-     * The main workhorse of RainParser which parses the words used in an
-     * expression and is responsible for building the parse tree and collect problems
+     * The main workhorse of RainDocument which parses the words used in an
+     * expression and is responsible for building the AST and collect problems
      */
-    public async _parse() {
+    private async _parse() {
         this.imports = [];
         this.problems = [];
         this.comments = [];
@@ -329,8 +331,8 @@ export class RainDocument {
             code: ErrorCode.UndefinedOpMeta
         });
 
-        const _exps = inclusiveParse(document, /#[^#]+\s+[^#]*/);
-        _exps.forEach(v => {
+        // parse expressions
+        inclusiveParse(document, /#[^#]+\s+[^#]*/).forEach(v => {
             const _name = exclusiveParse(v[0], /\s+/);
             if (_name[0][0].match(/^#[a-z][a-z0-9-]*$/)) this.expressions.push({
                 name: _name[0][0].slice(1),
@@ -353,6 +355,7 @@ export class RainDocument {
 
         });
 
+        // find duplicate expression keys
         this.expressions.forEach((v, i) => {
             if (this.expressions.find((e, j) => i !== j && e.name === v.name)) {
                 this.problems.push({
@@ -363,6 +366,7 @@ export class RainDocument {
             }
         });
 
+        // find non-top level imports
         if (this.expressions.length > 0) this.imports.forEach(v => {
             if (v.position[0] >= this.expressions[0].position[0]) this.problems.push({
                 msg: "imports can only be at top level",
@@ -371,6 +375,7 @@ export class RainDocument {
             });
         });
 
+        // find any remaining strings and include them as errors
         exclusiveParse(document, /\s+/).forEach(v => {
             this.problems.push({
                 msg: "unexpected string",
@@ -379,21 +384,20 @@ export class RainDocument {
             });
         });
 
+        // resolve dependencies and parse expressions
         this.resolveDependencies();
     }
 
     /**
-     * @internal Resolves and settles the metas of this RainParser instance from parsed meta hashes
-     * First valid opmeta of a meta hash will be used for parsing and all context metas of all valid 
-     * contract metas will be cached for parsing.
-     * @returns The index of the meta hash that is settled for op meta and -1 no valid settlement is found for op meta
+     * @internal Resolves and settles the metas of this RainDocument instance from import statements
+     * First valid opmeta of a meta hash will be setteld as working op meta
      */
-    private resolveMeta = async(imports: [string, [number, number]][]) => {
+    private async resolveMeta(imports: [string, [number, number]][]) {
         let index = -1;
         for (let i = 0; i < imports.length; i++) {
             const _offset = /^\s/.test(imports[i][0]) ? 1 : 0;
             const _hash = imports[i][0].slice(1 + _offset);
-            if (hashPattern.test(_hash)) {
+            if (HASH_PATTERN.test(_hash)) {
                 let _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
                 let _newContMetaBytes = this.metaStore.getContractMeta(_hash);
                 if (index === -1 && _newOpMetaBytes) {
@@ -640,7 +644,7 @@ export class RainDocument {
             ];
             for (const _ctx of this.ctxAliases) {
                 if (_reservedKeys.includes(_ctx.name)) this.problems.push({
-                    msg: `duplicate alias for contract context and opcode: ${_ctx.name}`,
+                    msg: `duplicate identifier for contract alias: ${_ctx.name}`,
                     position: this.imports[index].position,
                     code: ErrorCode.DuplicateAlias
                 });
@@ -659,7 +663,7 @@ export class RainDocument {
             }
         }
         this.opmetaIndex = index;
-    };
+    }
 
     /**
      * @public Resolves the expressions dependencies and instantiates RainlangParser for them
@@ -712,7 +716,7 @@ export class RainDocument {
         if (this.opmetaIndex > -1) for (let i = 0; i < deps.length; i++) {
             const _i = this.expressions.findIndex(v => v.name === deps[i]);
             if (_i > -1) {
-                this.expressions[_i].doc = new RainlangParser(
+                this.expressions[_i].parseObj = new RainlangParser(
                     this.expressions[_i].text, 
                     this.opmeta, 
                     _i,
@@ -734,27 +738,3 @@ export class RainDocument {
             " ".repeat(text.slice(position[1] + 1, text.length).length);
     }
 }
-// const x = TextDocument.create("1", "1", 1, `@0xd919062443e39ea44967f9012d0c3060489e0e1eeda18deb74a5bd2557e65e69
-// #exp1
-// c0: 1,
-// c1: 2,
-// condition: 1, 
-// _ _: do-while<1 2 3>(c0 c1 condition)
-
-// #exp2
-// s0 s1: ,
-// o0 o1: 1 2,
-// condition: 3 3 4
-
-// #exp3
-// s0: ,
-// _: less-than(s0 3 3)
-
-// #exp4
-// s0 s1: ,
-// _: add(s0 4 infinity),
-// _: add(s3 s1 5)`);
-// RainDocument.create(x).then((v) => {
-//     console.log(v.getAllProblems());
-//     // console.log(v.state.runTimeError);
-// });

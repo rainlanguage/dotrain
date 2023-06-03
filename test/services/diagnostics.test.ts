@@ -37,21 +37,6 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         await store.updateStore(opMetaHash);
     });
 
-    // it("should error: source item expressions must end with semi", async () => {
-
-    //     await testDiagnostics(
-    //         rainlang`@${opMetaHash} _: add(1 2)`, 
-    //         store, 
-    //         [{ 
-    //             message: "source item expressions must end with semi", 
-    //             range: toRange(0, 79, 0, 79), 
-    //             severity: DiagnosticSeverity.Error, 
-    //             code: ErrorCode.ExpectedSemi, 
-    //             source: "rainlang" 
-    //         }]
-    //     );
-    // });
-
     it("should error: found illigal character: \"\\u00a2\"", async () => {
         await testDiagnostics(
             rainlang`@${opMetaHash} #exp _: add(¢ 2)`, 
@@ -114,7 +99,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
             store, 
             [{ 
                 message: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis", 
-                range: toRange(0, 76, 0, 78), 
+                range: toRange(0, 76, 0, 76), 
                 severity: DiagnosticSeverity.Error, 
                 code: ErrorCode.ExpectedOpcode, 
                 source: "rainlang" 

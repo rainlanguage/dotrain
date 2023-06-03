@@ -1,4 +1,4 @@
-import { FragmentASTNode } from "../rainLanguageTypes";
+import { ASTNode } from "../rainLanguageTypes";
 import { MetaStore } from "../parser/metaStore";
 import { RainDocument } from "../parser/rainDocument";
 import { ContractMetaSchema, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
@@ -59,7 +59,7 @@ export async function getRainlangHover(
     if (format && format[0]) _contentType = format[0];
     
     const _offset = _td.offsetAt(position);
-    const search = async(nodes: FragmentASTNode[]): Promise<Hover | null> => {
+    const search = async(nodes: ASTNode[]): Promise<Hover | null> => {
         const _hash = _rd.getImports().find(
             v => v.position[0] <= _offset && v.position[1] >= _offset
         );
@@ -232,7 +232,7 @@ export async function getRainlangHover(
         return search(
             _rd.expressions.find(v =>
                 v.position[0] <= _offset && v.position[1] >= _offset
-            )?.doc?.ast.lines.map(v => v.nodes).flat() ?? []
+            )?.parseObj?.ast.lines.map(v => v.nodes).flat() ?? []
         );
     }
     catch (err) {
@@ -247,7 +247,7 @@ export async function getRainlangHover(
  * @param metaStore - The meta store instance that keeps this hash as record
  * @returns A promise that resolves with general info about the meta
  */
-export async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise<string> {
+async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise<string> {
     const _opMeta = metaStore.getOpMeta(hash);
     const _contMeta = metaStore.getContractMeta(hash);
     if (!_opMeta && !_contMeta) return "Unfortunately, could not find any info about this meta";

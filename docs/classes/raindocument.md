@@ -20,38 +20,106 @@ import { Raindocument } from 'rainlang';
 // to create a new instance of the RainDocument object which parses right after instantiation
 const myRainDocument = await RainDocument.create(text)
 
-// to get the parse tree after instantiation
-const parseTree = myRainDocument.getParseTree()
+// to get the problems
+const problems = myRainDocument.getAllProblems()
 
 // to update the text
-await myRainDocument.update(newText)
+await myRainDocument.updateText(newText)
 
 ```
+
+## Properties
+
+|  Property | Type | Description |
+|  --- | --- | --- |
+|  [constants](./raindocument.md#constants-property) | `Record<string, string>` |  |
+|  [expressions](./raindocument.md#expressions-property) | `NamedExpression[]` |  |
+|  [metaStore](./raindocument.md#metaStore-property) | [MetaStore](./metastore.md) |  |
+|  [runtimeError](./raindocument.md#runtimeError-property) | `Error \| undefined` |  |
+|  [textDocument](./raindocument.md#textDocument-property) | `TextDocument` |  |
 
 ## Static Methods
 
 |  Method | Description |
 |  --- | --- |
-|  [create(textDocument, metaStore)](./raindocument.md#create-method-static-1) | Creates a new instance of RainDocument |
+|  [create(textDocument, metaStore)](./raindocument.md#create-method-static-1) | Creates a new RainDocument object instance |
 
 ## Methods
 
 |  Method | Description |
 |  --- | --- |
+|  [getAllProblems()](./raindocument.md#getAllProblems-method-1) | Get all problems of this RainDocument instance |
 |  [getComments()](./raindocument.md#getComments-method-1) | Get the current comments inside of the text of this RainDocument instance |
-|  [getConstants()](./raindocument.md#getConstants-method-1) | Get constants k/v pairs of this RainDocument instance |
+|  [getConstants()](./raindocument.md#getConstants-method-1) | Get constant k/v pairs of this RainDocument instance |
 |  [getContextAliases()](./raindocument.md#getContextAliases-method-1) | Get the context aliases of specified meta hashes in this RainDocument instance |
-|  [getExpressionConfig(item)](./raindocument.md#getExpressionConfig-method-1) | Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used. |
-|  [getLHSAliases()](./raindocument.md#getLHSAliases-method-1) | Get the parsed exp aliases of this RainDocument instance |
-|  [getMetaHashes()](./raindocument.md#getMetaHashes-method-1) | Get the specified meta hashes of this RainDocument instance |
-|  [getMetaStore()](./raindocument.md#getMetaStore-method-1) | Get the MetaStore object instance of this RainDocument instance |
-|  [getOpMeta()](./raindocument.md#getOpMeta-method-1) | Get the current op meta of this RainDocument instance |
-|  [getOpMetaBytes()](./raindocument.md#getOpMetaBytes-method-1) | Get the current raw op meta of this RainDocument instance in hex string |
-|  [getParseTree()](./raindocument.md#getParseTree-method-1) | Get the current parse tree of this RainDocument instance |
+|  [getDependencies()](./raindocument.md#getDependencies-method-1) | Get the expression dependencies of this RainDocument instance |
+|  [getDependencyProblems()](./raindocument.md#getDependencyProblems-method-1) | Get the dependency problems of this RainDocument instance |
+|  [getExpProblems()](./raindocument.md#getExpProblems-method-1) | Get the expression problems of this RainDocument instance |
+|  [getImports()](./raindocument.md#getImports-method-1) | Get the imports of this RainDocument instance |
+|  [getOpMeta()](./raindocument.md#getOpMeta-method-1) | Get the current text of this RainDocument instance |
+|  [getOpMetaBytes()](./raindocument.md#getOpMetaBytes-method-1) | Get the current text of this RainDocument instance |
+|  [getOpMetaImportIndex()](./raindocument.md#getOpMetaImportIndex-method-1) | Get the current text of this RainDocument instance |
+|  [getOpMetaLength()](./raindocument.md#getOpMetaLength-method-1) | Get the current text of this RainDocument instance |
+|  [getOpMetaWithCtxAliases()](./raindocument.md#getOpMetaWithCtxAliases-method-1) | Get the current text of this RainDocument instance |
 |  [getProblems()](./raindocument.md#getProblems-method-1) | Get the current problems of this RainDocument instance |
 |  [getRuntimeError()](./raindocument.md#getRuntimeError-method-1) | Get the current runtime error of this RainDocument instance |
 |  [getTextDocument()](./raindocument.md#getTextDocument-method-1) | Get the current text of this RainDocument instance |
-|  [update(newTextDocument)](./raindocument.md#update-method-1) | Method to update the RainDocument with new text or opmeta and get the parse results |
+|  [getTopProblems()](./raindocument.md#getTopProblems-method-1) | Get top problems of this RainDocument instance |
+|  [parse()](./raindocument.md#parse-method-1) | Parses this instance of RainDocument |
+|  [updateText(newText)](./raindocument.md#updateText-method-1) | Updates the TextDocument of this RainDocument instance with new text |
+|  [updateText(newTextDocument)](./raindocument.md#updateText-method-2) | Updates the TextDocument of this RainDocument instance |
+
+## Property Details
+
+<a id="constants-property"></a>
+
+### constants
+
+<b>Signature:</b>
+
+```typescript
+readonly constants: Record<string, string>;
+```
+
+<a id="expressions-property"></a>
+
+### expressions
+
+<b>Signature:</b>
+
+```typescript
+expressions: NamedExpression[];
+```
+
+<a id="metaStore-property"></a>
+
+### metaStore
+
+<b>Signature:</b>
+
+```typescript
+metaStore: MetaStore;
+```
+
+<a id="runtimeError-property"></a>
+
+### runtimeError
+
+<b>Signature:</b>
+
+```typescript
+runtimeError: Error | undefined;
+```
+
+<a id="textDocument-property"></a>
+
+### textDocument
+
+<b>Signature:</b>
+
+```typescript
+textDocument: TextDocument;
+```
 
 ## Static Method Details
 
@@ -59,7 +127,7 @@ await myRainDocument.update(newText)
 
 ### create(textDocument, metaStore)
 
-Creates a new instance of RainDocument
+Creates a new RainDocument object instance
 
 <b>Signature:</b>
 
@@ -72,15 +140,30 @@ static create(textDocument: TextDocument, metaStore?: MetaStore): Promise<RainDo
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  textDocument | `TextDocument` | The text document |
-|  metaStore | [MetaStore](./metastore.md) | The MetaStore object |
+|  metaStore | [MetaStore](./metastore.md) | (optional) The initial MetaStore object |
 
 <b>Returns:</b>
 
 `Promise<RainDocument>`
 
-A new instance of RainDocument
+A new RainDocument instance
 
 ## Method Details
+
+<a id="getAllProblems-method-1"></a>
+
+### getAllProblems()
+
+Get all problems of this RainDocument instance
+
+<b>Signature:</b>
+
+```typescript
+getAllProblems(): ProblemASTNode[];
+```
+<b>Returns:</b>
+
+`ProblemASTNode[]`
 
 <a id="getComments-method-1"></a>
 
@@ -91,17 +174,17 @@ Get the current comments inside of the text of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getComments(): RDComment[];
+getComments(): CommentASTNode[];
 ```
 <b>Returns:</b>
 
-`RDComment[]`
+`CommentASTNode[]`
 
 <a id="getConstants-method-1"></a>
 
 ### getConstants()
 
-Get constants k/v pairs of this RainDocument instance
+Get constant k/v pairs of this RainDocument instance
 
 <b>Signature:</b>
 
@@ -127,78 +210,71 @@ getContextAliases(): ContextAlias[];
 
 `ContextAlias[]`
 
-<a id="getExpressionConfig-method-1"></a>
+<a id="getDependencies-method-1"></a>
 
-### getExpressionConfig(item)
+### getDependencies()
 
-Get the ExpressionConfig (i.e. deployable bytes) of this RainDocument instance. This method should not be used directly, insteda the RainCompiler (rlc) should be used.
-
-<b>Signature:</b>
-
-```typescript
-getExpressionConfig(item?: RDNode | RDNode[][] | RDParseTree): ExpressionConfig | undefined;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  item | `RDNode \| RDNode[][] \| RDParseTree` | Optional item to get the ExpressionConfig for |
-
-<b>Returns:</b>
-
-`ExpressionConfig | undefined`
-
-<a id="getLHSAliases-method-1"></a>
-
-### getLHSAliases()
-
-Get the parsed exp aliases of this RainDocument instance
+Get the expression dependencies of this RainDocument instance
 
 <b>Signature:</b>
 
 ```typescript
-getLHSAliases(): RDAliasNode[][];
+getDependencies(): [string, string][];
 ```
 <b>Returns:</b>
 
-`RDAliasNode[][]`
+`[string, string][]`
 
-<a id="getMetaHashes-method-1"></a>
+<a id="getDependencyProblems-method-1"></a>
 
-### getMetaHashes()
+### getDependencyProblems()
 
-Get the specified meta hashes of this RainDocument instance
+Get the dependency problems of this RainDocument instance
 
 <b>Signature:</b>
 
 ```typescript
-getMetaHashes(): RDMetaHash[];
+getDependencyProblems(): ProblemASTNode[];
 ```
 <b>Returns:</b>
 
-`RDMetaHash[]`
+`ProblemASTNode[]`
 
-<a id="getMetaStore-method-1"></a>
+<a id="getExpProblems-method-1"></a>
 
-### getMetaStore()
+### getExpProblems()
 
-Get the MetaStore object instance of this RainDocument instance
+Get the expression problems of this RainDocument instance
 
 <b>Signature:</b>
 
 ```typescript
-getMetaStore(): MetaStore;
+getExpProblems(): ProblemASTNode[];
 ```
 <b>Returns:</b>
 
-`MetaStore`
+`ProblemASTNode[]`
+
+<a id="getImports-method-1"></a>
+
+### getImports()
+
+Get the imports of this RainDocument instance
+
+<b>Signature:</b>
+
+```typescript
+getImports(): ImportASTNode[];
+```
+<b>Returns:</b>
+
+`ImportASTNode[]`
 
 <a id="getOpMeta-method-1"></a>
 
 ### getOpMeta()
 
-Get the current op meta of this RainDocument instance
+Get the current text of this RainDocument instance
 
 <b>Signature:</b>
 
@@ -213,7 +289,7 @@ getOpMeta(): OpMeta[];
 
 ### getOpMetaBytes()
 
-Get the current raw op meta of this RainDocument instance in hex string
+Get the current text of this RainDocument instance
 
 <b>Signature:</b>
 
@@ -224,20 +300,50 @@ getOpMetaBytes(): string;
 
 `string`
 
-<a id="getParseTree-method-1"></a>
+<a id="getOpMetaImportIndex-method-1"></a>
 
-### getParseTree()
+### getOpMetaImportIndex()
 
-Get the current parse tree of this RainDocument instance
+Get the current text of this RainDocument instance
 
 <b>Signature:</b>
 
 ```typescript
-getParseTree(): RDParseTree;
+getOpMetaImportIndex(): number;
 ```
 <b>Returns:</b>
 
-`RDParseTree`
+`number`
+
+<a id="getOpMetaLength-method-1"></a>
+
+### getOpMetaLength()
+
+Get the current text of this RainDocument instance
+
+<b>Signature:</b>
+
+```typescript
+getOpMetaLength(): number;
+```
+<b>Returns:</b>
+
+`number`
+
+<a id="getOpMetaWithCtxAliases-method-1"></a>
+
+### getOpMetaWithCtxAliases()
+
+Get the current text of this RainDocument instance
+
+<b>Signature:</b>
+
+```typescript
+getOpMetaWithCtxAliases(): OpMeta[];
+```
+<b>Returns:</b>
+
+`OpMeta[]`
 
 <a id="getProblems-method-1"></a>
 
@@ -248,11 +354,11 @@ Get the current problems of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getProblems(): RDProblem[];
+getProblems(): ProblemASTNode[];
 ```
 <b>Returns:</b>
 
-`RDProblem[]`
+`ProblemASTNode[]`
 
 <a id="getRuntimeError-method-1"></a>
 
@@ -284,23 +390,75 @@ getTextDocument(): TextDocument;
 
 `TextDocument`
 
-<a id="update-method-1"></a>
+<a id="getTopProblems-method-1"></a>
 
-### update(newTextDocument)
+### getTopProblems()
 
-Method to update the RainDocument with new text or opmeta and get the parse results
+Get top problems of this RainDocument instance
 
 <b>Signature:</b>
 
 ```typescript
-update(newTextDocument?: TextDocument): Promise<void>;
+getTopProblems(): ProblemASTNode[];
+```
+<b>Returns:</b>
+
+`ProblemASTNode[]`
+
+<a id="parse-method-1"></a>
+
+### parse()
+
+Parses this instance of RainDocument
+
+<b>Signature:</b>
+
+```typescript
+parse(): Promise<void>;
+```
+<b>Returns:</b>
+
+`Promise<void>`
+
+<a id="updateText-method-1"></a>
+
+### updateText(newText)
+
+Updates the TextDocument of this RainDocument instance with new text
+
+<b>Signature:</b>
+
+```typescript
+updateText(newText: string): Promise<void>;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  newTextDocument | `TextDocument` | Raw text to parse |
+|  newText | `string` | The new text |
+
+<b>Returns:</b>
+
+`Promise<void>`
+
+<a id="updateText-method-2"></a>
+
+### updateText(newTextDocument)
+
+Updates the TextDocument of this RainDocument instance
+
+<b>Signature:</b>
+
+```typescript
+updateText(newTextDocument: TextDocument): Promise<void>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  newTextDocument | `TextDocument` | The new TextDocument |
 
 <b>Returns:</b>
 

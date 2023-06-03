@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [rld](./rld_1.md)
+[Home](../index.md) &gt; [rainlangd](./rainlangd_1.md)
 
-# Function rld()
+# Function rainlangd()
 
 Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document
 
 <b>Signature:</b>
 
 ```typescript
-function rld(expressionConfig: ExpressionConfig, metaHash: string, metaStore?: MetaStore, prettyFormat?: boolean): Promise<RainDocument>;
+function rainlangd(expressionConfig: ExpressionConfig, metaHash: string, metaStore?: MetaStore): Promise<RainDocument>;
 ```
 
 ## Parameters
@@ -17,7 +17,6 @@ function rld(expressionConfig: ExpressionConfig, metaHash: string, metaStore?: M
 |  expressionConfig | [ExpressionConfig](../types/expressionconfig.md) | ExpressionConfig to decompile |
 |  metaHash | `string` | The meta hash |
 |  metaStore | [MetaStore](../classes/metastore.md) | (optional) MetaStore object instance |
-|  prettyFormat | `boolean` | (optional) Format the output document |
 
 <b>Returns:</b>
 

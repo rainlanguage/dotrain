@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [rlc](./rlc_2.md)
+[Home](../index.md) &gt; [rainlangc](./rainlangc_2.md)
 
-# Function rlc()
+# Function rainlangc()
 
-Rain Language Compiler (rlc), compiles Text Documents into valid ExpressionConfig (deployable bytes)
+Rain Language Compiler (rainlangc), compiles Text Documents into valid ExpressionConfig (deployable bytes)
 
 <b>Signature:</b>
 
 ```typescript
-function rlc(document: TextDocument, metaStore?: MetaStore): Promise<ExpressionConfig>;
+function rainlangc(document: TextDocument, entrypoints: string[], metaStore?: MetaStore): Promise<ExpressionConfig>;
 ```
 
 ## Parameters
@@ -15,6 +15,7 @@ function rlc(document: TextDocument, metaStore?: MetaStore): Promise<ExpressionC
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  document | `TextDocument` | The TextDocument to compile |
+|  entrypoints | `string[]` |  |
 |  metaStore | [MetaStore](../classes/metastore.md) | (optional) MetaStore object |
 
 <b>Returns:</b>
