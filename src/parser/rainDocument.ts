@@ -636,9 +636,9 @@ export class RainDocument {
                 ...Object.keys(this.constants)
             ];
             const _ctxRowOperand = [
-                (this.opmeta.find(v => v.name === "context")?.operand as OperandArgs)?.find(
+                deepCopy((this.opmeta.find(v => v.name === "context")?.operand as OperandArgs)?.find(
                     v => v.name.includes("row") || v.name.includes("Row")
-                ) ?? {
+                )) ?? {
                     name: "Row Index",
                     bits: [0, 7]
                 }
