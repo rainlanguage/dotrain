@@ -626,6 +626,7 @@ export class RainDocument {
             });
             this.opmeta = [];
             this.opMetaBytes = "";
+            this.opmetaLength = 0;
         }
         else {
             this.opmetaLength = this.opmeta.length;
@@ -713,7 +714,7 @@ export class RainDocument {
             }
         }
 
-        if (this.opmetaIndex > -1) for (let i = 0; i < deps.length; i++) {
+        for (let i = 0; i < deps.length; i++) {
             const _i = this.expressions.findIndex(v => v.name === deps[i]);
             if (_i > -1) {
                 this.expressions[_i].parseObj = new RainlangParser(

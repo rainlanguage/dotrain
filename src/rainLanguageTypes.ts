@@ -1,8 +1,8 @@
 import { MetaStore } from "./parser/metaStore";
 import { BigNumberish, BytesLike } from "./utils";
 import { MarkupKind } from "vscode-languageserver-types";
-import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
 import { RainlangParser } from "./parser/rainlangParser";
+import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
 
 export * from "vscode-languageserver-types";
 export { TextDocument, TextDocumentContentChangeEvent };
