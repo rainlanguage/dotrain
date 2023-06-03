@@ -1309,7 +1309,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "776"
+                  "text": "775"
                 }
               ],
               "initializerTokenRange": {
@@ -1318,27 +1318,6 @@
               },
               "releaseTag": "Public",
               "name": "ExpectedConstant"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedExpressionKey:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExpectedExpressionKey = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "777"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExpectedExpressionKey"
             },
             {
               "kind": "EnumMember",
@@ -1405,27 +1384,6 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedSemi:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "ExpectedSemi = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "775"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "ExpectedSemi"
-            },
-            {
-              "kind": "EnumMember",
               "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedSpace:member",
               "docComment": "",
               "excerptTokens": [
@@ -1477,7 +1435,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "265"
+                  "text": "263"
                 }
               ],
               "initializerTokenRange": {
@@ -1498,7 +1456,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "273"
+                  "text": "265"
                 }
               ],
               "initializerTokenRange": {
@@ -1540,7 +1498,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "274"
+                  "text": "272"
                 }
               ],
               "initializerTokenRange": {
@@ -1561,7 +1519,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "263"
+                  "text": "261"
                 }
               ],
               "initializerTokenRange": {
@@ -1582,7 +1540,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "272"
+                  "text": "264"
                 }
               ],
               "initializerTokenRange": {
@@ -1591,27 +1549,6 @@
               },
               "releaseTag": "Public",
               "name": "InvalidImport"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidInputsMeta:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "InvalidInputsMeta = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "259"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "InvalidInputsMeta"
             },
             {
               "kind": "EnumMember",
@@ -1624,7 +1561,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "261"
+                  "text": "259"
                 }
               ],
               "initializerTokenRange": {
@@ -1645,7 +1582,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "264"
+                  "text": "262"
                 }
               ],
               "initializerTokenRange": {
@@ -1654,27 +1591,6 @@
               },
               "releaseTag": "Public",
               "name": "InvalidOpMeta"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidOutputsMeta:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "InvalidOutputsMeta = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "260"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "InvalidOutputsMeta"
             },
             {
               "kind": "EnumMember",
@@ -1687,7 +1603,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "262"
+                  "text": "260"
                 }
               ],
               "initializerTokenRange": {

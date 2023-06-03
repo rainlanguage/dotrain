@@ -361,7 +361,7 @@ export class RainDocument {
                 this.problems.push({
                     msg: "duplicate expression identifier",
                     position: v.namePosition,
-                    code: ErrorCode.DuplicateAlias
+                    code: ErrorCode.DuplicateExpressionKey
                 });
             }
         });
