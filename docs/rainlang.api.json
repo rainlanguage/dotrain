@@ -1855,7 +1855,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "516"
+                  "text": "515"
                 }
               ],
               "initializerTokenRange": {
@@ -1918,7 +1918,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "518"
+                  "text": "517"
                 }
               ],
               "initializerTokenRange": {
@@ -1939,7 +1939,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "517"
+                  "text": "516"
                 }
               ],
               "initializerTokenRange": {
@@ -1948,27 +1948,6 @@
               },
               "releaseTag": "Public",
               "name": "UnexpectedFragment"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedRHSComment:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "UnexpectedRHSComment = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "515"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "UnexpectedRHSComment"
             },
             {
               "kind": "EnumMember",
@@ -1981,7 +1960,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "519"
+                  "text": "518"
                 }
               ],
               "initializerTokenRange": {

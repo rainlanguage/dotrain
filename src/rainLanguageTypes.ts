@@ -52,11 +52,11 @@ export enum ErrorCode {
 
     UnexpectedEndOfComment = 0x201,
     UnexpectedClosingParen = 0x202,
-    UnexpectedRHSComment = 0x203,
-    UnexpectedBindingKeyUsage = 0x204,
-    UnexpectedFragment = 0x205,
-    UnexpectedExpression = 0x206,
-    UnexpectedString = 0x207,
+    UnexpectedBindingKeyUsage = 0x203,
+    UnexpectedFragment = 0x204,
+    UnexpectedExpression = 0x205,
+    UnexpectedString = 0x206,
+    // UnexpectedRHSComment = 0x207,
 
     ExpectedOpcode = 0x301,
     ExpectedSpace = 0x302,

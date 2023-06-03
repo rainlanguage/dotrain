@@ -338,7 +338,7 @@ export class RainDocument {
                 name: _name[0][0].slice(1),
                 namePosition: [v[1][0], v[1][0] + _name[0][0].length - 1],
                 text: this.fillOut(
-                    this.textDocument.getText(), 
+                    document, 
                     [v[1][0] + _name[0][1][1] + 1, v[1][1]]
                 ),
                 position: v[1]

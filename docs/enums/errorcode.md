@@ -47,12 +47,11 @@ enum ErrorCode
 |  UndefinedMeta | `3` |  |
 |  UndefinedOpMeta | `0` |  |
 |  UndefinedWord | `1` |  |
-|  UnexpectedBindingKeyUsage | `516` |  |
+|  UnexpectedBindingKeyUsage | `515` |  |
 |  UnexpectedClosingParen | `514` |  |
 |  UnexpectedEndOfComment | `513` |  |
-|  UnexpectedExpression | `518` |  |
-|  UnexpectedFragment | `517` |  |
-|  UnexpectedRHSComment | `515` |  |
-|  UnexpectedString | `519` |  |
+|  UnexpectedExpression | `517` |  |
+|  UnexpectedFragment | `516` |  |
+|  UnexpectedString | `518` |  |
 |  UnknownOp | `1792` |  |
 

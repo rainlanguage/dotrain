@@ -5,11 +5,10 @@ import {
     ComputedOutput,
 } from "@rainprotocol/meta";
 import { 
+    ASTNode, 
     OpASTNode, 
     RainlangAST,
     ProblemASTNode, 
-    CommentASTNode, 
-    ASTNode, 
 } from "../rainLanguageTypes";
 import {
     deepCopy,
@@ -43,7 +42,7 @@ export class RainlangParser {
     public text: string;
     public ast: RainlangAST = { lines: [] };
     public problems: ProblemASTNode[] = [];
-    public comments: CommentASTNode[] = [];
+    // public comments: CommentASTNode[] = [];
     public constants: Record<string, string>;
     public namedExpressions: NamedExpression[] = [];
 
@@ -133,7 +132,7 @@ export class RainlangParser {
             this.resetState();
             this.ast.lines = [];
             this.problems = [];
-            this.comments = [];
+            // this.comments = [];
             this.state.runtimeError = undefined;
             this.problems.push({
                 msg: "invalid empty expression",
@@ -196,7 +195,7 @@ export class RainlangParser {
         this.resetState();
         this.ast.lines = [];
         this.problems = [];
-        this.comments = [];
+        // this.comments = [];
         this.state.runtimeError = undefined;
         let document = this.text;
 
@@ -219,22 +218,22 @@ export class RainlangParser {
         document = document.replace(/\r/g, " ");
         document = document.replace(/\n/g, " ");
 
-        // parse comments
-        inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
-            if (!v[0].endsWith("*/")) this.problems.push({
-                msg: "unexpected end of comment",
-                position: v[1],
-                code: ErrorCode.UnexpectedEndOfComment
-            });
-            this.comments.push({
-                comment: v[0],
-                position: v[1]
-            });
-            document = 
-              document.slice(0, v[1][0]) +
-              " ".repeat(v[0].length) +
-              document.slice(v[1][1] + 1);
-        });
+        // // parse comments
+        // inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
+        //     if (!v[0].endsWith("*/")) this.problems.push({
+        //         msg: "unexpected end of comment",
+        //         position: v[1],
+        //         code: ErrorCode.UnexpectedEndOfComment
+        //     });
+        //     this.comments.push({
+        //         comment: v[0],
+        //         position: v[1]
+        //     });
+        //     document = 
+        //       document.slice(0, v[1][0]) +
+        //       " ".repeat(v[0].length) +
+        //       document.slice(v[1][1] + 1);
+        // });
 
         // trim excess whitespaces from start and end of the whole text
         const _trimmed = this.trim(document);
@@ -299,19 +298,19 @@ export class RainlangParser {
                     const _lhs = _subExp[i].slice(0, _subExp[i].indexOf(":"));
                     const _rhs = _subExp[i].slice(_subExp[i].indexOf(":") + 1);
 
-                    // check for invalid RHS comments
-                    for (const _cm of this.comments) {
-                        if (
-                            _cm.position[0] > _positionOffset + 
-                                _subExp[i].indexOf(":") &&
-                            _cm.position[0] < _positionOffset + 
-                                _subExp[i].length
-                        ) this.problems.push({
-                            msg: "invalid RHS, comments are not allowed",
-                            position: [..._cm.position],
-                            code: ErrorCode.UnexpectedRHSComment
-                        });
-                    }
+                    // // check for invalid RHS comments
+                    // for (const _cm of this.comments) {
+                    //     if (
+                    //         _cm.position[0] > _positionOffset + 
+                    //             _subExp[i].indexOf(":") &&
+                    //         _cm.position[0] < _positionOffset + 
+                    //             _subExp[i].length
+                    //     ) this.problems.push({
+                    //         msg: "invalid RHS, comments are not allowed",
+                    //         position: [..._cm.position],
+                    //         code: ErrorCode.UnexpectedRHSComment
+                    //     });
+                    // }
 
                     // begin parsing LHS
                     if (_lhs.length > 0) {

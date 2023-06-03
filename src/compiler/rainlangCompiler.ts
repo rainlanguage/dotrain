@@ -164,28 +164,24 @@ export async function rainlangc(
 
         const _readMemoryIndex = _opmeta.findIndex(v => v.name === "read-memory");
 
-        const _compile = (
-            nodes: ASTNode[],
-            aliases: AliasASTNode[],
-        ): BytesLike | undefined => {
-            const _src: BytesLike[] = []; 
-
-            function errorCheck(node: ASTNode): boolean {
-                if (OpASTNode.is(node)) {
-                    if (isNaN(node.operand) || isNaN(node.output)) return false;
-                    else {
-                        for (const param of node.parameters) {
-                            if (!errorCheck(param)) return false;
-                        }
-                        return true;
+        const _errorCheck = (node: ASTNode): boolean => {
+            if (OpASTNode.is(node)) {
+                if (isNaN(node.operand) || isNaN(node.output)) return false;
+                else {
+                    for (const param of node.parameters) {
+                        if (!_errorCheck(param)) return false;
                     }
+                    return true;
                 }
-                else return true;
             }
+            else return true;
+        };
+        const _compile = (nodes: ASTNode[], aliases: AliasASTNode[]): BytesLike | undefined => {
+            const _src: BytesLike[] = []; 
 
             // check for errors
             for (let i = 0; i < nodes.length; i++) {
-                if (!errorCheck(nodes[i])) return undefined;
+                if (!_errorCheck(nodes[i])) return undefined;
             }
         
             // compile from parsed tree
@@ -346,10 +342,7 @@ export async function rainlangc(
             }
         }
 
-        return {
-            constants, 
-            sources: sources.map(v => hexlify(v, {allowMissingPrefix: true}))
-        };
+        return { constants, sources: sources.map(v => hexlify(v, { allowMissingPrefix: true })) };
 
     }
     catch (err) {
