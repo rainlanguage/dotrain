@@ -16,9 +16,8 @@ enum ErrorCode
 |  --- | --- | --- |
 |  CircularDependency | `2304` |  |
 |  DuplicateAlias | `2049` |  |
-|  DuplicateConetxtColumn | `2050` |  |
-|  DuplicateContextCell | `2051` |  |
-|  DuplicateExpressionKey | `2052` |  |
+|  DuplicateContextAlias | `2050` |  |
+|  DuplicateExpressionKey | `2051` |  |
 |  ExpectedClosingAngleBracket | `774` |  |
 |  ExpectedClosingParen | `772` |  |
 |  ExpectedConstant | `775` |  |

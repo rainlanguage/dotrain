@@ -147,7 +147,7 @@ export async function rainlangc(
                 _opmeta, 
                 { 
                     constants: _rainDocument.constants,
-                    compilationParse: true
+                    resolveQuotes: true
                 }
             );
             else return Promise.reject(new Error(`cannot find expression: ${_deps[i]}`));

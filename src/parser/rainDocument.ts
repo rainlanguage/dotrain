@@ -435,12 +435,12 @@ export class RainDocument {
                                         )
                                     );
                                     if (colIndex > -1) this.problems.push({
-                                        msg: "duplicate context column alias",
+                                        msg: `duplicate context column alias: ${ctxCol.alias}`,
                                         position: [
                                             imports[i][1][0] + _offset, 
                                             imports[i][1][1]
                                         ],
-                                        code: ErrorCode.DuplicateConetxtColumn
+                                        code: ErrorCode.DuplicateContextAlias
                                     });
                                     else {
                                         if (!this.ctxAliases.find(e => e.name === ctxCol.alias)) {
@@ -460,12 +460,12 @@ export class RainDocument {
                                             )
                                         );
                                         if (cellIndex > -1) this.problems.push({
-                                            msg: "duplicate context cell alias",
+                                            msg: `duplicate context cell alias: ${ctxCell.alias}`,
                                             position: [
                                                 imports[i][1][0] + _offset, 
                                                 imports[i][1][1]
                                             ],
-                                            code: ErrorCode.DuplicateContextCell
+                                            code: ErrorCode.DuplicateContextAlias
                                         });
                                         else {
                                             if (!this.ctxAliases.find(
@@ -535,12 +535,12 @@ export class RainDocument {
                                             )
                                         );
                                         if (colIndex > -1) this.problems.push({
-                                            msg: "duplicate context column alias",
+                                            msg: `duplicate context column alias: ${ctxCol.alias}`,
                                             position: [
                                                 imports[i][1][0] + _offset, 
                                                 imports[i][1][1]
                                             ],
-                                            code: ErrorCode.DuplicateConetxtColumn
+                                            code: ErrorCode.DuplicateContextAlias
                                         });
                                         else {
                                             if (!this.ctxAliases.find(
@@ -562,12 +562,12 @@ export class RainDocument {
                                                 )
                                             );
                                             if (cellIndex > -1) this.problems.push({
-                                                msg: "duplicate context cell alias",
+                                                msg: `duplicate context cell alias: ${ctxCell.alias}`,
                                                 position: [
                                                     imports[i][1][0] + _offset, 
                                                     imports[i][1][1]
                                                 ],
-                                                code: ErrorCode.DuplicateContextCell
+                                                code: ErrorCode.DuplicateContextAlias
                                             });
                                             else {
                                                 if (!this.ctxAliases.find(
@@ -715,11 +715,11 @@ export class RainDocument {
         }
 
         for (let i = 0; i < deps.length; i++) {
-            const _i = this.expressions.findIndex(v => v.name === deps[i]);
-            if (_i > -1) {
-                this.expressions[_i].parseObj = new RainlangParser(
+            const _index = this.expressions.findIndex(v => v.name === deps[i]);
+            if (_index > -1) {
+                this.expressions[_index].parseObj = new RainlangParser(
                     this.expressions, 
-                    _i,
+                    _index,
                     this.opmeta, 
                     {
                         constants: this.constants, 

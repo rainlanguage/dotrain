@@ -86,7 +86,13 @@ export class RainlangParser {
         currentExpIndex: number,
         opmeta: OpMeta[],
         options?: { 
-            compilationParse?: boolean; 
+            /**
+             * Determines if quotes should be resolved into indexes when parsing or not
+             */
+            resolveQuotes?: boolean; 
+            /**
+             * Reserved constant values as k/v
+             */
             constants?: Record<string, string>;
         }
     ) {
@@ -96,17 +102,17 @@ export class RainlangParser {
         this.opmeta = opmeta;
         if (options?.constants) this.constants = options.constants;
         else this.constants = {};
-        this.parse(options?.compilationParse);
+        this.parse(options?.resolveQuotes);
     }
 
     /**
      * @public
      * Parses this instance of RainParser
      */
-    public parse(compilationParse = false) {
+    public parse(resolveQuotes = false) {
         if (/[^\s]+/.test(this.text)) {
             try {
-                this._parse(compilationParse);
+                this._parse(resolveQuotes);
             }
             catch (runtimeError) {
                 console.log(runtimeError);
@@ -186,7 +192,7 @@ export class RainlangParser {
      * The main workhorse of RainParser which parses the words used in an
      * expression and is responsible for building the parse tree and collect problems
      */
-    private _parse(compilationParse = false) {
+    private _parse(resolveQuotes = false) {
         this.resetState();
         this.ast.lines = [];
         this.problems = [];
@@ -337,7 +343,7 @@ export class RainlangParser {
                     }
 
                     // parsing RHS
-                    this.consume(_rhs, _positionOffset + _subExp[i].length, compilationParse);
+                    this.consume(_rhs, _positionOffset + _subExp[i].length, resolveQuotes);
 
                     // validating RHS against LHS
                     const _outputCount = this.countOutputs(this.state.nodes);
@@ -398,7 +404,7 @@ export class RainlangParser {
                 this.consume(
                     _subExp[i], 
                     _positionOffset + _subExp[i].length, 
-                    compilationParse
+                    resolveQuotes
                 );
                 if (type! === "exp") this.problems.push({
                     msg: "invalid expression",
@@ -469,7 +475,7 @@ export class RainlangParser {
     /**
      * @internal Consumes items in an expression
      */
-    private consume(exp: string, offset: number, compilationParse = false) {
+    private consume(exp: string, offset: number, resolveQuotes = false) {
         while (exp.length > 0) {
             const _currentPosition = offset - exp.length;
             if (exp.startsWith(" ")) {
@@ -493,7 +499,7 @@ export class RainlangParser {
                     code: ErrorCode.ExpectedSpace
                 });
             }
-            else exp = this.resolveWord(exp, _currentPosition, compilationParse);
+            else exp = this.resolveWord(exp, _currentPosition, resolveQuotes);
         }
     }
 
@@ -504,7 +510,7 @@ export class RainlangParser {
         exp: string, 
         pos: number, 
         op: OpASTNode, 
-        compilationParse = false
+        resolveQuotes = false
     ): [string, OpASTNode] {
         if (!exp.includes(">")) {
             this.problems.push({
@@ -579,7 +585,7 @@ export class RainlangParser {
                             ? v[0] 
                             : quoteValue !== -1
                                 ? quoteValue.toString()
-                                : quoteIndex > -1 && compilationParse
+                                : quoteIndex > -1 && resolveQuotes
                                     ? quoteIndex.toString() 
                                     : v[0].slice(1),
                         name: _operandMeta[i]?.name ?? "unknown",
@@ -795,7 +801,7 @@ export class RainlangParser {
     /**
      * @internal Method that parses an upcoming word to a rainlang AST node
      */
-    private resolveWord(exp: string, entry: number, compilationParse = false): string {
+    private resolveWord(exp: string, entry: number, resolveQuotes = false): string {
         const _offset = this.findOffset(exp);
         const _index = _offset < 0 
             ? exp.length 
@@ -841,7 +847,7 @@ export class RainlangParser {
                 exp, 
                 entry + _word.length, 
                 _op, 
-                compilationParse
+                resolveQuotes
             );
             if (exp.startsWith("(")) {
                 const _pos = _op.operandArgs 

@@ -75,9 +75,8 @@ export enum ErrorCode {
     OutOfRangeValue = 0x503,
 
     DuplicateAlias = 0x801,
-    DuplicateConetxtColumn = 0x802,
-    DuplicateContextCell = 0x803,
-    DuplicateExpressionKey = 0x804,
+    DuplicateContextAlias = 0x802,
+    DuplicateExpressionKey = 0x803,
 
     UnknownOp = 0x700,
 

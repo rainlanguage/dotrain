@@ -1195,12 +1195,12 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.DuplicateConetxtColumn:member",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.DuplicateContextAlias:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "DuplicateConetxtColumn = "
+                  "text": "DuplicateContextAlias = "
                 },
                 {
                   "kind": "Content",
@@ -1212,28 +1212,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "DuplicateConetxtColumn"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.DuplicateContextCell:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "DuplicateContextCell = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "2051"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "DuplicateContextCell"
+              "name": "DuplicateContextAlias"
             },
             {
               "kind": "EnumMember",
@@ -1246,7 +1225,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "2052"
+                  "text": "2051"
                 }
               ],
               "initializerTokenRange": {
