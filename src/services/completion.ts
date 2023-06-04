@@ -176,10 +176,20 @@ export async function getRainlangCompletion(
                         value: _documentionType === "markdown"
                             ? [
                                 "```rainlang",
-                                v.text.trim(),
+                                _td.getText(
+                                    Range.create(
+                                        _td.positionAt(v.position[0]), 
+                                        _td.positionAt(v.position[1] + 1)
+                                    )
+                                ),
                                 "```"
                             ].join("\n")
-                            : v.text
+                            : _td.getText(
+                                Range.create(
+                                    _td.positionAt(v.position[0]), 
+                                    _td.positionAt(v.position[1] + 1)
+                                )
+                            )
                     },
                     insertText: v.name
                 });
