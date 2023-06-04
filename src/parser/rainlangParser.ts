@@ -396,6 +396,9 @@ export class RainlangParser {
                             }
                         }
                     }
+                    else for (let j = 0; j < this.state.nodes.length; j++) {
+                        this.state.nodes[j].lhsAlias = [];
+                    }
                 }
             }
             // parse accordingly if there is no lhs/rhs delimiter
@@ -885,9 +888,9 @@ export class RainlangParser {
             if (_aliasIndex === -1 && _currentAliasIndex === -1 && _bindingsAliasIndex > -1) {
                 if (!NamedExpression.isConstant(this.namedExpressions[_bindingsAliasIndex])) {
                     this.problems.push({
-                        msg: "unexpected usage of binding key",
+                        msg: "unexpected usage of expression key",
                         position: [..._wordPos],
-                        code: ErrorCode.UnexpectedBindingKeyUsage
+                        code: ErrorCode.UnexpectedExpressionKeyUsage
                     });
                 }
             }

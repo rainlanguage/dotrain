@@ -167,7 +167,7 @@ export async function getRainlangCompletion(
                 _result.push({
                     label: v.name,
                     labelDetails: {
-                        description: "expressioin key"
+                        description: "expression key"
                     },
                     kind: CompletionItemKind.Class,
                     detail: "named expression",
@@ -176,7 +176,7 @@ export async function getRainlangCompletion(
                         value: _documentionType === "markdown"
                             ? [
                                 "```rainlang",
-                                v.text,
+                                v.text.trim(),
                                 "```"
                             ].join("\n")
                             : v.text

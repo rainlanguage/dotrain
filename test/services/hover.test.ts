@@ -161,7 +161,7 @@ new-total-amount-sent);
                 range: toRange(14, 0, 14, 18),
                 contents: {
                     kind: "plaintext",
-                    value: "alias: batch-start-info-k"
+                    value: "Alias"
                 }
             }
         );

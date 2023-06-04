@@ -146,30 +146,30 @@ export async function getRainlangHover(
                     ),
                     contents: {
                         kind: _contentType,
-                        value: _contentType === "markdown"
-                            ? [
-                                "alias:",
-                                "```rainlang",
-                                _td.getText(
-                                    Range.create(
-                                        _td.positionAt(_n.position[0]), 
-                                        _td.positionAt(_n.position[1] + 1)
-                                    )
-                                ),
-                                "```"
-                            ].join("\n")
-                            : `alias: ${
-                                _td.getText(Range.create(
-                                    _td.positionAt(_n.position[0]), 
-                                    _td.positionAt(_n.position[1] + 1)
-                                ))
-                            }`
+                        value: "Alias"
+                        // _contentType === "markdown"
+                        //     ? [
+                        //         "alias:",
+                        //         "```rainlang",
+                        //         _td.getText(
+                        //             Range.create(
+                        //                 _td.positionAt(_n.position[0]), 
+                        //                 _td.positionAt(_n.position[1] + 1)
+                        //             )
+                        //         ),
+                        //         "```"
+                        //     ].join("\n")
+                        //     : `alias: ${
+                        //         _td.getText(Range.create(
+                        //             _td.positionAt(_n.position[0]), 
+                        //             _td.positionAt(_n.position[1] + 1)
+                        //         ))
+                        //     }`
                     }
                 } as Hover;
             }
             else if (_n.lhsAlias) {
-                let _lhs = _n.lhsAlias;
-                if (!Array.isArray(_lhs)) _lhs = [_lhs];
+                const _lhs = _n.lhsAlias;
                 for (let j = 0; j < _lhs.length; j++) {
                     if (_lhs[j].position[0] <= _offset && _lhs[j].position[1] >= _offset) {
                         const _opener = _lhs[j].name === "_" ? "placeholder" : "alias";

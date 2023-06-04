@@ -52,7 +52,7 @@ export enum ErrorCode {
 
     UnexpectedEndOfComment = 0x201,
     UnexpectedClosingParen = 0x202,
-    UnexpectedBindingKeyUsage = 0x203,
+    UnexpectedExpressionKeyUsage = 0x203,
     UnexpectedFragment = 0x204,
     UnexpectedExpression = 0x205,
     UnexpectedString = 0x206,
@@ -519,6 +519,7 @@ export namespace RainlangAST {
                     && Array.isArray(v.nodes)
                     && v.nodes.length === 1
                     && ValueASTNode.is(v.nodes[0])
+                    && typeof v.nodes[0].lhsAlias === "undefined"
                     && Array.isArray(v.aliases)
                     && v.aliases.length === 0
             );

@@ -1846,27 +1846,6 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedBindingKeyUsage:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "UnexpectedBindingKeyUsage = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "515"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "UnexpectedBindingKeyUsage"
-            },
-            {
-              "kind": "EnumMember",
               "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedClosingParen:member",
               "docComment": "",
               "excerptTokens": [
@@ -1927,6 +1906,27 @@
               },
               "releaseTag": "Public",
               "name": "UnexpectedExpression"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedExpressionKeyUsage:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UnexpectedExpressionKeyUsage = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "515"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UnexpectedExpressionKeyUsage"
             },
             {
               "kind": "EnumMember",
