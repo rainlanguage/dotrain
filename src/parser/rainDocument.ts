@@ -332,7 +332,7 @@ export class RainDocument {
         });
 
         // parse expressions
-        inclusiveParse(document, /#[^#]+\s+[^#]*/).forEach(v => {
+        inclusiveParse(document, /#[^#\s]+\s+[^#]*/).forEach(v => {
             const _name = exclusiveParse(v[0], /\s+/);
             if (_name[0][0].match(/^#[a-z][a-z0-9-]*$/)) this.expressions.push({
                 name: _name[0][0].slice(1),
@@ -368,7 +368,7 @@ export class RainDocument {
 
         // find non-top level imports
         if (this.expressions.length > 0) this.imports.forEach(v => {
-            if (v.position[0] >= this.expressions[0].position[0]) this.problems.push({
+            if (v.position[0] >= this.expressions[0].namePosition[0]) this.problems.push({
                 msg: "imports can only be at top level",
                 position: [...v.position],
                 code: ErrorCode.InvalidImport

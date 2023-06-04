@@ -181,7 +181,7 @@ export async function getRainlangCompletion(
                                         _td.positionAt(v.position[0]), 
                                         _td.positionAt(v.position[1] + 1)
                                     )
-                                ),
+                                ).trim(),
                                 "```"
                             ].join("\n")
                             : _td.getText(
@@ -189,7 +189,7 @@ export async function getRainlangCompletion(
                                     _td.positionAt(v.position[0]), 
                                     _td.positionAt(v.position[1] + 1)
                                 )
-                            )
+                            ).trim()
                     },
                     insertText: v.name
                 });

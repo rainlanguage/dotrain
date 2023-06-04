@@ -109,7 +109,7 @@ export async function rainlangc(
             }
             else {
                 const prob = _rainDocument.getDependencyProblems().find(v => 
-                    v.position[0] === exp?.namePosition[0] && v.position[1] === exp?.position[1]
+                    v.position[0] === exp?.namePosition[0] && v.position[1] === exp?.namePosition[1]
                 );
                 if (prob) return Promise.reject(prob);
                 return Promise.reject(`cannot read properties of undefined parsed expression ${_nodes[i]}`);
