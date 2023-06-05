@@ -1,4 +1,4 @@
-import { RDNode } from "../rainLanguageTypes";
+import { ASTNode } from "../rainLanguageTypes";
 import { MetaStore } from "../parser/metaStore";
 import { RainDocument } from "../parser/rainDocument";
 import { ContractMetaSchema, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
@@ -44,7 +44,7 @@ export async function getRainlangHover(
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.getTextDocument();
-        if (setting?.metaStore) _rd.getMetaStore().updateStore(setting.metaStore);
+        if (setting?.metaStore) _rd.metaStore.updateStore(setting.metaStore);
     }
     else {
         _td = document;
@@ -59,8 +59,11 @@ export async function getRainlangHover(
     if (format && format[0]) _contentType = format[0];
     
     const _offset = _td.offsetAt(position);
-    const search = async(nodes: RDNode[]): Promise<Hover | null> => {
-        const _hash = _rd.getMetaHashes().find(
+    const search = async(nodes: ASTNode[]): Promise<Hover | null> => {
+        const _hash = _rd.getImports().find(
+            v => v.position[0] <= _offset && v.position[1] >= _offset
+        );
+        const _index = _rd.getImports().findIndex(
             v => v.position[0] <= _offset && v.position[1] >= _offset
         );
         if (_hash) return {
@@ -70,7 +73,11 @@ export async function getRainlangHover(
             ),
             contents: {
                 kind: _contentType,
-                value: await buildMetaInfo(_hash.hash, _rd.getMetaStore())
+                value: (await buildMetaInfo(_hash.hash, _rd.metaStore)) + (
+                    _index > -1 && _rd.getOpMetaImportIndex() === _index
+                        ? "\n Active Op Meta"
+                        : ""
+                )
             }
         };
         for (let i = 0; i < nodes.length; i++) {
@@ -99,7 +106,9 @@ export async function getRainlangHover(
                                         kind: _contentType,
                                         value: [
                                             _operandArg.name,
-                                            _operandArg.description ?? "Operand Argument"
+                                            _operandArg.description 
+                                                ? _operandArg.description 
+                                                : "Operand Argument"
                                         ].join(_contentType === "markdown" ? "\n\n" : ", ")
                                     }
                                 } as Hover;
@@ -137,30 +146,30 @@ export async function getRainlangHover(
                     ),
                     contents: {
                         kind: _contentType,
-                        value: _contentType === "markdown"
-                            ? [
-                                "alias:",
-                                "```rainlang",
-                                _td.getText(
-                                    Range.create(
-                                        _td.positionAt(_n.position[0]), 
-                                        _td.positionAt(_n.position[1] + 1)
-                                    )
-                                ),
-                                "```"
-                            ].join("\n")
-                            : `alias: ${
-                                _td.getText(Range.create(
-                                    _td.positionAt(_n.position[0]), 
-                                    _td.positionAt(_n.position[1] + 1)
-                                ))
-                            }`
+                        value: "Alias"
+                        // _contentType === "markdown"
+                        //     ? [
+                        //         "alias:",
+                        //         "```rainlang",
+                        //         _td.getText(
+                        //             Range.create(
+                        //                 _td.positionAt(_n.position[0]), 
+                        //                 _td.positionAt(_n.position[1] + 1)
+                        //             )
+                        //         ),
+                        //         "```"
+                        //     ].join("\n")
+                        //     : `alias: ${
+                        //         _td.getText(Range.create(
+                        //             _td.positionAt(_n.position[0]), 
+                        //             _td.positionAt(_n.position[1] + 1)
+                        //         ))
+                        //     }`
                     }
                 } as Hover;
             }
-            else if (_n.lhs) {
-                let _lhs = _n.lhs;
-                if (!Array.isArray(_lhs)) _lhs = [_lhs];
+            else if (_n.lhsAlias) {
+                const _lhs = _n.lhsAlias;
                 for (let j = 0; j < _lhs.length; j++) {
                     if (_lhs[j].position[0] <= _offset && _lhs[j].position[1] >= _offset) {
                         const _opener = _lhs[j].name === "_" ? "placeholder" : "alias";
@@ -221,9 +230,9 @@ export async function getRainlangHover(
     };
     try {
         return search(
-            _rd.getParseTree().find(v =>
+            _rd.expressions.find(v =>
                 v.position[0] <= _offset && v.position[1] >= _offset
-            )?.tree ?? []
+            )?.parseObj?.ast.lines.map(v => v.nodes).flat() ?? []
         );
     }
     catch (err) {
@@ -238,7 +247,7 @@ export async function getRainlangHover(
  * @param metaStore - The meta store instance that keeps this hash as record
  * @returns A promise that resolves with general info about the meta
  */
-export async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise<string> {
+async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise<string> {
     const _opMeta = metaStore.getOpMeta(hash);
     const _contMeta = metaStore.getContractMeta(hash);
     if (!_opMeta && !_contMeta) return "Unfortunately, could not find any info about this meta";

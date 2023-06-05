@@ -48,6 +48,7 @@
         "@types/pako": "^2.0.0",
         "@types/prettier": "^2.7.2",
         "@types/string-math": "^1.0.0",
+        "@types/toposort": "^2.0.3",
         "@typescript-eslint/eslint-plugin": "^5.42.0",
         "@typescript-eslint/parser": "^5.42.0",
         "chai": "^4.3.6",
@@ -66,6 +67,7 @@
         "@rainprotocol/meta": "^1.1.0",
         "ethers": "^5.7.2",
         "string-math": "^1.2.2",
+        "toposort": "^2.0.2",
         "vscode-languageserver-textdocument": "^1.0.8",
         "vscode-languageserver-types": "^3.17.3"
     }

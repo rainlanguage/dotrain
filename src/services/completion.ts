@@ -51,7 +51,7 @@ export async function getRainlangCompletion(
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.getTextDocument();
-        if (setting?.metaStore) _rd.getMetaStore().updateStore(setting.metaStore);
+        if (setting?.metaStore) _rd.metaStore.updateStore(setting.metaStore);
     }
     else {
         _td = document;
@@ -72,7 +72,6 @@ export async function getRainlangCompletion(
 
     try {
         if (
-            _prefixText.includes(":") && 
             !_regexp.test(_td.getText(
                 Range.create(
                     position, 
@@ -163,32 +162,59 @@ export async function getRainlangCompletion(
                     insertText: v
                 });
             });
-            const _tree = _rd.getParseTree();
+            const _exps = _rd.expressions;
+            _exps.forEach(v => {
+                _result.push({
+                    label: v.name,
+                    labelDetails: {
+                        description: "expression key"
+                    },
+                    kind: CompletionItemKind.Class,
+                    detail: "named expression",
+                    documentation: {
+                        kind: _documentionType,
+                        value: _documentionType === "markdown"
+                            ? [
+                                "```rainlang",
+                                _td.getText(
+                                    Range.create(
+                                        _td.positionAt(v.position[0]), 
+                                        _td.positionAt(v.position[1] + 1)
+                                    )
+                                ).trim(),
+                                "```"
+                            ].join("\n")
+                            : _td.getText(
+                                Range.create(
+                                    _td.positionAt(v.position[0]), 
+                                    _td.positionAt(v.position[1] + 1)
+                                )
+                            ).trim()
+                    },
+                    insertText: v.name
+                });
+            });
             let _currentSource = NaN;
-            for (let i = 0; i < _tree.length; i++) {
-                if (_tree[i].position[0] <= _offset && _tree[i].position[1] + 1 >= _offset) {
+            for (let i = 0; i < _exps.length; i++) {
+                if (_exps[i].position[0] <= _offset && _exps[i].position[1] + 1 >= _offset) {
                     _currentSource = i;
                     break;
                 }
             }
             let _pos: [number, number] | undefined;
-            if (!isNaN(_currentSource)) _rd.getLHSAliases()[_currentSource]
+            if (!isNaN(_currentSource)) _rd.expressions[_currentSource].parseObj?.ast.lines
+                .map(v => v.aliases)
+                .flat()
                 ?.filter(v => v.name !== "_")
                 .forEach(v => {
                     let _text = "";
-                    _pos = _tree[_currentSource].tree.find(e => {
-                        if (e.lhs){
-                            if (Array.isArray(e.lhs)) {
-                                if (e.lhs.find(i => i.name === v.name)) return true; 
-                                else return false;
-                            }
-                            else {
-                                if (e.lhs.name === v.name) return true;
-                                else return false;
-                            }
-                        }
-                        else return false;
-                    })?.position;
+                    _pos = _exps[_currentSource].parseObj?.ast.lines
+                        .map(e => e.nodes)
+                        .flat()
+                        .find(e => {
+                            if (e.lhsAlias?.find(i => i.name === v.name)) return true;
+                            else return false;
+                        })?.position;
                     if (_pos) _text = `${
                         _rd!.getTextDocument().getText(
                             Range.create(

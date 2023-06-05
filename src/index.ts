@@ -1,5 +1,5 @@
-export * from "./compiler/rainCompiler";
-export * from "./compiler/rainDecompiler";
+export * from "./compiler/rainlangCompiler";
+export * from "./compiler/rainlangDecompiler";
 export * from "./parser/rainDocument";
 export * from "./parser/metaStore";
 export * from "./services/hover";

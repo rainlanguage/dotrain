@@ -31,6 +31,7 @@ describe("Rainlang Hover Service Tests", async function () {
         await store.updateStore(opMetaHash);
         await store.updateStore(contractMetaHash);
         expression = rainlang`@${opMetaHash} @${contractMetaHash}
+#exp1
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,
 
@@ -50,6 +51,7 @@ if(
     batch-start-info)),
 :set(total-sent-k new-total-sent);
 
+#exp2
 new-sent:,
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 amount-per-batch: 1000e18,
@@ -67,11 +69,11 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(1, 1),
+                Position.create(2, 1),
                 { metaStore: store },
             ),
             {
-                range: toRange(1, 0, 1, 12),
+                range: toRange(2, 0, 2, 12),
                 contents: {
                     kind: "plaintext",
                     value: "alias for: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8",
@@ -84,11 +86,11 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(2, 52),
+                Position.create(3, 52),
                 { metaStore: store },
             ),
             {
-                range: toRange(2, 20, 2, 86),
+                range: toRange(3, 20, 3, 86),
                 contents: {
                     kind: "plaintext",
                     value: "Value"
@@ -101,11 +103,11 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(4, 5),
+                Position.create(5, 5),
                 { metaStore: store },
             ),
             {
-                range: toRange(4, 0, 4, 16),
+                range: toRange(5, 0, 5, 16),
                 contents: {
                     kind: "plaintext",
                     value: "alias for: context<3 4>()"
@@ -118,11 +120,11 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(6, 37),
+                Position.create(7, 37),
                 { metaStore: store },
             ),
             {
-                range: toRange(6, 34, 6, 103),
+                range: toRange(7, 34, 7, 103),
                 contents: {
                     kind: "plaintext",
                     value: "Takes some items from the stack and runs a source with sub-stack and puts the results back to the stack"
@@ -135,11 +137,11 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(8, 20),
+                Position.create(9, 20),
                 { metaStore: store },
             ),
             {
-                range: toRange(8, 18, 8, 41),
+                range: toRange(9, 18, 9, 41),
                 contents: {
                     kind: "plaintext",
                     value: "Read a key/value pair from contract storage by providing the key and stack the value"
@@ -152,14 +154,14 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(13, 10),
+                Position.create(14, 10),
                 { metaStore: store },
             ),
             {
-                range: toRange(13, 0, 13, 18),
+                range: toRange(14, 0, 14, 18),
                 contents: {
                     kind: "plaintext",
-                    value: "alias: batch-start-info-k"
+                    value: "Alias"
                 }
             }
         );
@@ -169,7 +171,7 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(20, 6),
+                Position.create(22, 6),
                 { metaStore: store },
             ),
             undefined
@@ -180,11 +182,11 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(29, 21),
+                Position.create(31, 21),
                 { metaStore: store },
             ),
             {
-                range: toRange(25, 21, 29, 22),
+                range: toRange(27, 21, 31, 22),
                 contents: {
                     kind: "plaintext",
                     value: "Subtracts N values. Values can be either decimal or integer, but not a mix of both."
@@ -206,7 +208,8 @@ new-total-amount-sent);
                     kind: "plaintext",
                     value: [
                         "This Rain metadata consists of:",
-                        "- Op metadata with 78 opcodes"
+                        "- Op metadata with 78 opcodes",
+                        " Active Op Meta"
                     ].join("\n")
                 }
             }
@@ -237,11 +240,11 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(4, 26),
+                Position.create(5, 26),
                 { metaStore: store },
             ),
             {
-                range: toRange(4, 26, 4, 27),
+                range: toRange(5, 26, 5, 27),
                 contents: {
                     kind: "plaintext",
                     value: [
@@ -257,11 +260,11 @@ new-total-amount-sent);
         assert.deepEqual(
             await testHover(
                 expression,
-                Position.create(6, 39),
+                Position.create(7, 39),
                 { metaStore: store },
             ),
             {
-                range: toRange(6, 39, 6, 40),
+                range: toRange(7, 39, 7, 40),
                 contents: {
                     kind: "plaintext",
                     value: [

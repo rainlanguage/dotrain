@@ -2,7 +2,7 @@
 
 # Type ContextAlias
 
-Type for contract context alias
+Type for context aliases from a contract caller meta
 
 <b>Signature:</b>
 

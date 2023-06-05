@@ -1,6 +1,7 @@
 import { MetaStore } from "./parser/metaStore";
 import { BigNumberish, BytesLike } from "./utils";
 import { MarkupKind } from "vscode-languageserver-types";
+import { RainlangParser } from "./parser/rainlangParser";
 import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
 
 export * from "vscode-languageserver-types";
@@ -8,29 +9,54 @@ export { TextDocument, TextDocumentContentChangeEvent };
 
 
 /**
+ * @public Illigal character pattern 
+ */
+export const ILLIGAL_CHAR = /[^ -~\s]+/;
+
+/**
+ * @public Rainlang word pattern 
+ */
+export const WORD_PATTERN = /^[a-z][0-9a-z-]*$/;
+
+/**
+ * @public Import hash pattern 
+ */
+export const HASH_PATTERN = /^0x[a-zA-F0-9]{64}$/;
+
+/**
+ * @public Rainlang numeric pattern 
+ */
+export const NUMERIC_PATTERN = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
+
+/**
  * @public
- * Error codes used by diagnostics
+ * Error codes of Rainlang/RainDocument problem and LSP Diagnostics
  */
 export enum ErrorCode {
     UndefinedOpMeta = 0,
     UndefinedWord = 1,
     IlligalChar = 2,
     UndefinedMeta = 3,
+    UndefinedExpression = 4,
 
     InvalidWordPattern = 0x101,
     InvalidExpression = 0x102,
-    InvalidInputsMeta = 0x103,
-    InvalidOutputsMeta = 0x104,
-    InvalidNestedNode = 0x105,
-    InvalidSelfReferenceLHS = 0x106,
-    InvalidMetaHash = 0x107,
-    InvalidOpMeta = 0x108,
-    InvalidContractMeta = 0x109,
+    InvalidNestedNode = 0x103,
+    InvalidSelfReferenceLHS = 0x104,
+    InvalidHash = 0x105,
+    InvalidOpMeta = 0x106,
+    InvalidContractMeta = 0x107,
+    InvalidImport = 0x108,
+    InvalidEmptyExpression = 0x109,
+    InvalidExpressionKey = 0x110,
 
     UnexpectedEndOfComment = 0x201,
     UnexpectedClosingParen = 0x202,
-    UnexpectedRHSComment = 0x203,
-    UnexpectedMetaHash = 0x204,
+    UnexpectedExpressionKeyUsage = 0x203,
+    UnexpectedFragment = 0x204,
+    UnexpectedExpression = 0x205,
+    UnexpectedString = 0x206,
+    // UnexpectedRHSComment = 0x207,
 
     ExpectedOpcode = 0x301,
     ExpectedSpace = 0x302,
@@ -38,7 +64,7 @@ export enum ErrorCode {
     ExpectedClosingParen = 0x304,
     ExpectedOpeningParen = 0x305,
     ExpectedClosingAngleBracket = 0x306,
-    ExpectedSemi = 0x307,
+    ExpectedConstant = 0x307,
 
     MismatchRHS = 0x401,
     MismatchLHS = 0x402,
@@ -48,11 +74,15 @@ export enum ErrorCode {
     OutOfRangeOperandArgs = 0x502,
     OutOfRangeValue = 0x503,
 
-    UnknownOp = 0x600,
+    DuplicateAlias = 0x801,
+    DuplicateContextAlias = 0x802,
+    DuplicateExpressionKey = 0x803,
 
-    RuntimeError = 0x700,
+    UnknownOp = 0x700,
 
-    DuplicateAlias = 0x800
+    RuntimeError = 0x800,
+
+    CircularDependency = 0x900
 }
 
 /**
@@ -183,110 +213,406 @@ export enum MemoryType {
 }
 
 /**
- * @public Type of position start and end indexes for RainDocument, inclusive at both ends
+ * @public Type for start and end indexes for RainDocument items, inclusive at both ends
  */
-export type RDPosition = [number, number];
+export type PositionOffset = [number, number];
 
 /**
- * @public Type of RainDocument's problem
+ * @public The namespace provides functionality to type check
  */
-export type RDProblem = {
+export namespace PositionOffset {
+
+    /**
+     * @public Checks if a value is a valid PositionOffset
+     * @param value - The value to check
+     */
+    export function is(value: any): value is PositionOffset {
+        return Array.isArray(value) 
+            && value.length === 2 
+            && typeof value[0] === "number" 
+            && typeof value[1] === "number";
+    }
+}
+
+/**
+ * @public Type for Rainlang/RainDocument problem
+ */
+export interface Problem {
     msg: string;
-    position: RDPosition;
+    position: PositionOffset;
     code: number;
-};
+}
 
 /**
- * @public Type of RainDocument's Value node
+ * @public The namespace provides functionality to type check
  */
-export type RDValueNode = {
+export namespace Problem {
+
+    /**
+     * @public Checks if a value is a valid ProblemASTNode
+     * @param value - The value to check
+     */
+    export function is(value: any): value is Problem {
+        return value !== null 
+            && typeof value === "object"
+            && typeof value.msg === "string"
+            && PositionOffset.is(value.position)
+            && typeof value.code === "number";
+    }
+}
+
+/**
+ * @public Type Rainlang AST Value node
+ */
+export interface ValueASTNode {
     value: string;
-    position: RDPosition;
-    lhs?: RDAliasNode;
-};
+    position: PositionOffset;
+    lhsAlias?: AliasASTNode[];
+}
 
 /**
- * @public Type of RainDocument's Opcode node
+ * @public The namespace provides functionality to type check
  */
-export type RDOpNode = {
+export namespace ValueASTNode {
+
+    /**
+     * @public Checks if a value is a valid ValueASTNode
+     * @param value - The value to check
+     */
+    export function is(value: any): value is ValueASTNode {
+        return value !== null 
+            && typeof value === "object"
+            && typeof value.value === "string"
+            && PositionOffset.is(value.position)
+            && (
+                typeof value.lhsAlias === "undefined" || (
+                    Array.isArray(value.lhsAlias) &&
+                    value.lhsAlias.length === 1 &&
+                    AliasASTNode.is(value.lhsAlias[0])
+                )
+            );
+    }
+}
+
+/**
+ * @public Type for Rainlang AST Opcode node
+ */
+export interface OpASTNode {
     opcode: {
         name: string;
         description: string;
-        position: RDPosition;
+        position: PositionOffset;
     };
     operand: number;
     output: number;
-    position: RDPosition;
-    parens: RDPosition;
-    parameters: RDNode[];
+    position: PositionOffset;
+    parens: PositionOffset;
+    parameters: ASTNode[];
     operandArgs?: {
-        position: RDPosition;
+        position: PositionOffset;
         args: {
-            value: number;
+            value: string;
             name: string;
-            position: RDPosition;
-            description?: string;
+            position: PositionOffset;
+            description: string;
         }[];
     };
-    lhs?: RDAliasNode[];
-};
+    lhsAlias?: AliasASTNode[];
+}
 
 /**
- * @public Type of RainDocument's lhs aliases
+ * @public The namespace provides functionality to type check
  */
-export type RDAliasNode = {
+export namespace OpASTNode {
+
+    /**
+     * @public Checks if a value is a valid OpASTNode
+     * @param value - The value to check
+     */
+    export function is(value: any): value is OpASTNode {
+        return value !== null 
+            && typeof value === "object"
+            && value.opcode !== null
+            && typeof value.opcode === "object"
+            && typeof value.opcode.name === "string"
+            && typeof value.opcode.description === "string"
+            && PositionOffset.is(value.opcode.position)
+            && typeof value.operand === "number"
+            && typeof value.output === "number"
+            && PositionOffset.is(value.position)
+            && PositionOffset.is(value.parens)
+            && Array.isArray(value.parameters)
+            && value.parameters.every((v: any) => ASTNode.is(v))
+            && (
+                typeof value.lhsAlias === "undefined" || (
+                    Array.isArray(value.lhsAlias) &&
+                    value.lhsAlias.every((v: any) => AliasASTNode.is(v))
+                )
+            )
+            && (
+                typeof value.operandArgs === "undefined" || (
+                    value.operandArgs !== null 
+                    && typeof value.operandArgs === "object"
+                    && PositionOffset.is(value.operandArgs.position)
+                    && Array.isArray(value.operandArgs.args)
+                    && value.operandArgs.args.every(
+                        (v: any) => v !== null
+                            && typeof v === "object"
+                            && typeof v.value === "string"
+                            && typeof v.name === "string"
+                            && PositionOffset.is(v.position)
+                            && typeof v.description === "string"
+                    )
+                )
+            );
+    }
+}
+
+/**
+ * @public Type for Rainlang/RainDocument alias
+ */
+export interface AliasASTNode {
     name: string;
-    position: RDPosition;
-    lhs?: RDAliasNode;
+    position: PositionOffset;
+    lhsAlias?: AliasASTNode[];
 }
 
 /**
- * @public Type of RainDocument's comments
+ * @public The namespace provides functionality to type check
  */
-export type RDComment = {
+export namespace AliasASTNode {
+
+    /**
+     * @public Checks if a value is a valid AliasASTNode
+     * @param value - The value to check
+     */
+    export function is(value: any): value is AliasASTNode {
+        return value !== null 
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && PositionOffset.is(value.position)
+            && (
+                typeof value.lhsAlias === "undefined" || (
+                    Array.isArray(value.lhsAlias) &&
+                    value.lhsAlias.length === 1 &&
+                    AliasASTNode.is(value.lhsAlias[0])
+                )
+            );
+    }
+}
+
+/**
+ * @public Type for Rainlang/RainDocument comments
+ */
+export interface Comment {
     comment: string;
-    position: RDPosition;
+    position: PositionOffset;
 }
 
 /**
- * @public Type of meta hash specified in a RainDocument
+ * @public The namespace provides functionality to type check
  */
-export type RDMetaHash = {
+export namespace Comment {
+
+    /**
+     * @public Checks if a value is a valid CommentASTNode
+     * @param value - The value to check
+     */
+    export function is(value: any): value is Comment {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.comment === "string"
+            && PositionOffset.is(value.position);
+    }
+}
+
+/**
+ * @public Type of import statements specified in a RainDocument
+ */
+export interface Import {
+    name: string;
     hash: string;
-    position: RDPosition;
+    position: PositionOffset;
 }
 
 /**
- * @public Type of RainDocument's parse node
+ * @public The namespace provides functionality to type check
  */
-export type RDNode = RDValueNode | RDOpNode | RDAliasNode;
+export namespace Import {
+
+    /**
+     * @public Checks if a value is a valid ImportASTNode
+     * @param value - The value to check
+     */
+    export function is(value: any): value is Import {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && typeof value.hash === "string"
+            && PositionOffset.is(value.position);
+    }
+}
 
 /**
-* @public Type of a RainDocument parse tree
-*/
-export type RDParseTree = { tree: RDNode[]; position: RDPosition; }[];
-
-/**
- * @public Type of RainParser state
+ * @public Type of an AST node
  */
-export type RainParseState = {
-    parse: {
-        tree: RDNode[];
-        aliases: RDAliasNode[];
-    };
-    track: {
-        char: number;
-        parens: {
-            open: number[];
-            close: number[];
-        };
-    };
-    depthLevel: number;
-    runtimeError: Error | undefined;
-};
+export type ASTNode = ValueASTNode | OpASTNode | AliasASTNode;
 
 /**
- * @public Type for contract context alias
+ * @public The namespace provides functionality to type check
+ */
+export namespace ASTNode {
+
+    /**
+     * @public Checks if a value is a valid ASTNode
+     * @param value - The value to check
+     */
+    export function is(value: any): value is ASTNode {
+        return ValueASTNode.is(value) 
+            || AliasASTNode.is(value)
+            || OpASTNode.is(value);
+    }
+}
+
+/**
+ * @public Type of a Rainlang AST
+ */
+export type RainlangAST = { 
+    lines: {
+        nodes: ASTNode[]; 
+        position: PositionOffset; 
+        aliases: AliasASTNode[];
+    }[]
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace RainlangAST {
+
+    /**
+     * @public Checks if a value is a valid RainlangAST
+     * @param value - The value to check
+     */
+    export function is(value: any): value is RainlangAST {
+        return value !== null
+            && typeof value === "object"
+            && Array.isArray(value.lines)
+            && value.lines.every((v: any) => PositionOffset.is(v.position)
+                    && Array.isArray(v.nodes)
+                    && v.nodes.every((e: any) => ASTNode.is(e))
+                    && Array.isArray(v.aliases)
+                    && v.aliases.every((e: any) => AliasASTNode.is(e))
+            );
+    }
+
+    /**
+     * @public Checks if a value is a valid RainlangAST Constant
+     * @param value - The value to check
+     */
+    export function isConstant(value: any): boolean {
+        return value !== null
+            && typeof value === "object"
+            && Array.isArray(value.lines)
+            && value.lines.length === 1
+            && value.lines.every((v: any) => PositionOffset.is(v.position)
+                    && Array.isArray(v.nodes)
+                    && v.nodes.length === 1
+                    && ValueASTNode.is(v.nodes[0])
+                    && typeof v.nodes[0].lhsAlias === "undefined"
+                    && Array.isArray(v.aliases)
+                    && v.aliases.length === 0
+            );
+    }
+
+    /**
+     * @public Checks if a value is a valid RainlangAST Expression
+     * @param value - The value to check
+     */
+    export function isExpression(value: any): boolean {
+        return value !== null
+            && typeof value === "object"
+            && Array.isArray(value.lines)
+            && value.lines.length > 0
+            && value.lines.every((v: any) => PositionOffset.is(v.position)
+                && Array.isArray(v.nodes)
+                && Array.isArray(v.aliases)
+                && (
+                    v.aliases.length > 0 ||
+                    v.nodes.every(
+                        (e: any) => ASTNode.is(e) && e.lhsAlias !== undefined
+                    )
+                )
+            );
+    }
+}
+
+/**
+ * @public Type for a named expression
+ */
+export type NamedExpression = {
+    name: string;
+    namePosition: PositionOffset;
+    text: string;
+    position: PositionOffset;
+    parseObj?: RainlangParser;
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace NamedExpression {
+
+    /**
+     * @public Checks if a value is a valid NamedExpression
+     * @param value - The value to check
+     */
+    export function is(value: any): value is NamedExpression {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && PositionOffset.is(value.namePosition)
+            && typeof value.text === "string"
+            && PositionOffset.is(value.position)
+            && (
+                typeof value.parseObj === "undefined" ||
+                value.parseObj instanceof RainlangParser
+            );
+    }
+
+    /**
+     * @public Checks if a value is a valid NamedExpression Constant
+     * @param value - The value to check
+     */
+    export function isConstant(value: any): boolean {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && PositionOffset.is(value.namePosition)
+            && typeof value.text === "string"
+            && PositionOffset.is(value.position)
+            && value.parseObj instanceof RainlangParser
+            && RainlangAST.isConstant(value.parseObj.ast);
+    }
+
+    /**
+     * @public Checks if a value is a valid NamedExpression Expression
+     * @param value - The value to check
+     */
+    export function isExpression(value: any): boolean {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && PositionOffset.is(value.namePosition)
+            && typeof value.text === "string"
+            && PositionOffset.is(value.position)
+            && value.parseObj instanceof RainlangParser
+            && RainlangAST.isExpression(value.parseObj.ast);
+    }
+}
+
+/**
+ * @public Type for context aliases from a contract caller meta
  */
 export type ContextAlias = {
     name: string;

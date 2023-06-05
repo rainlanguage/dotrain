@@ -5,12 +5,12 @@ import {
     Position,
     rainlang,
     MetaStore, 
+    RainDocument, 
     TextDocument,
     CompletionItem,
     CompletionItemKind, 
     LanguageServiceParams, 
     getRainLanguageServices, 
-    RainDocument
 } from "../../src";
 
 
@@ -61,37 +61,10 @@ describe("Rainlang Code Completion Service Tests", async function () {
         }));
     });
 
-    it("should provide no suggestions for lhs", async () => {
-        await testCompletion(
-            rainlang`@${opMetaHash}`, 
-            Position.create(0, 0),
-            null,
-            { metaStore: store }
-        );
-    });
-
-    it("should provide no suggestions for lhs", async () => {
-        await testCompletion(
-            rainlang`@${opMetaHash} _ name`,  
-            Position.create(0, 6),
-            null,
-            { metaStore: store }
-        );
-    });
-
-    it("should provide no suggestions for lhs", async () => {
-        await testCompletion(
-            rainlang`@${opMetaHash} _: ad`,  
-            Position.create(0, 1),
-            null,
-            { metaStore: store }
-        );
-    });
-
     it("should provide all opcode suggestions for rhs when there is no lhs aliases", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
         const _rd = await RainDocument.create(
-            TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} _: `), 
+            TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} #exp _: `), 
             store
         );
         Object.keys(_rd.getConstants()).forEach(v => {
@@ -102,7 +75,7 @@ describe("Rainlang Code Completion Service Tests", async function () {
         });
         await testCompletion(
             rainlang`@${opMetaHash} _: `, 
-            Position.create(0, 71),
+            Position.create(0, 76),
             _allCompletions,
             { metaStore: store }
         );
@@ -110,8 +83,8 @@ describe("Rainlang Code Completion Service Tests", async function () {
 
     it("should provide correct suggestions based on trailing characters", async () => {
         await testCompletion(
-            rainlang`@${opMetaHash} _: ad`,  
-            Position.create(0, 73),
+            rainlang`@${opMetaHash} #exp _: ad`,  
+            Position.create(0, 78),
             AllOpcodeCompletions.filter(v => v.label.includes("ad")),
             { metaStore: store }
         );
@@ -119,8 +92,8 @@ describe("Rainlang Code Completion Service Tests", async function () {
 
     it("should provide no suggestions if cursor is in middle of a word", async () => {
         await testCompletion(
-            rainlang`@${opMetaHash} _: add`,  
-            Position.create(0, 5),
+            rainlang`@${opMetaHash} #exp _: add`,  
+            Position.create(0, 10),
             null,
             { metaStore: store }
         );
@@ -128,8 +101,8 @@ describe("Rainlang Code Completion Service Tests", async function () {
 
     it("should provide correct suggestions if leading character is non-word", async () => {
         await testCompletion(
-            rainlang`@${opMetaHash} _: add(1 2)`,  
-            Position.create(0, 74),
+            rainlang`@${opMetaHash} #exp _: add(1 2)`,  
+            Position.create(0, 79),
             AllOpcodeCompletions.filter(v => v.label.includes("add")),
             { metaStore: store }
         );
@@ -148,8 +121,8 @@ describe("Rainlang Code Completion Service Tests", async function () {
             });
         });
         await testCompletion(
-            rainlang`@${opMetaHash} name: n`,  
-            Position.create(0, 75),
+            rainlang`@${opMetaHash} #exp name: n`,  
+            Position.create(0, 80),
             [
                 {
                     label: "name",
@@ -164,8 +137,9 @@ describe("Rainlang Code Completion Service Tests", async function () {
     it("should include contract context in suggestions", async () => {
         await testCompletion(
             rainlang`@${opMetaHash} @${contractMetaHash} 
+            #exp 
             _: counterpa`,  
-            Position.create(1, 24),
+            Position.create(2, 24),
             [{
                 label: "counterparty",
                 kind: CompletionItemKind.Function
