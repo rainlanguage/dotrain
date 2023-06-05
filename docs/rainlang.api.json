@@ -684,22 +684,22 @@
         },
         {
           "kind": "Interface",
-          "canonicalReference": "@rainprotocol/rainlang!CommentASTNode:interface",
+          "canonicalReference": "@rainprotocol/rainlang!Comment:interface",
           "docComment": "/**\n * Type for Rainlang/RainDocument comments\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export interface CommentASTNode "
+              "text": "export interface Comment "
             }
           ],
           "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
-          "name": "CommentASTNode",
+          "name": "Comment",
           "preserveMemberOrder": false,
           "members": [
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!CommentASTNode#comment:member",
+              "canonicalReference": "@rainprotocol/rainlang!Comment#comment:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -726,7 +726,7 @@
             },
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!CommentASTNode#position:member",
+              "canonicalReference": "@rainprotocol/rainlang!Comment#position:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -757,22 +757,22 @@
         },
         {
           "kind": "Namespace",
-          "canonicalReference": "@rainprotocol/rainlang!CommentASTNode:namespace",
+          "canonicalReference": "@rainprotocol/rainlang!Comment:namespace",
           "docComment": "/**\n * The namespace provides functionality to type check\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export declare namespace CommentASTNode "
+              "text": "export declare namespace Comment "
             }
           ],
           "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
-          "name": "CommentASTNode",
+          "name": "Comment",
           "preserveMemberOrder": false,
           "members": [
             {
               "kind": "Function",
-              "canonicalReference": "@rainprotocol/rainlang!CommentASTNode.is:function(1)",
+              "canonicalReference": "@rainprotocol/rainlang!Comment.is:function(1)",
               "docComment": "/**\n * Checks if a value is a valid CommentASTNode\n *\n * @param value - The value to check\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
@@ -798,8 +798,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "CommentASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!CommentASTNode:interface"
+                  "text": "Comment",
+                  "canonicalReference": "@rainprotocol/rainlang!Comment:interface"
                 },
                 {
                   "kind": "Content",
@@ -3070,22 +3070,22 @@
         },
         {
           "kind": "Interface",
-          "canonicalReference": "@rainprotocol/rainlang!ImportASTNode:interface",
+          "canonicalReference": "@rainprotocol/rainlang!Import:interface",
           "docComment": "/**\n * Type of import statements specified in a RainDocument\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export interface ImportASTNode "
+              "text": "export interface Import "
             }
           ],
           "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
-          "name": "ImportASTNode",
+          "name": "Import",
           "preserveMemberOrder": false,
           "members": [
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!ImportASTNode#hash:member",
+              "canonicalReference": "@rainprotocol/rainlang!Import#hash:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -3112,7 +3112,7 @@
             },
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!ImportASTNode#name:member",
+              "canonicalReference": "@rainprotocol/rainlang!Import#name:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -3139,7 +3139,7 @@
             },
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!ImportASTNode#position:member",
+              "canonicalReference": "@rainprotocol/rainlang!Import#position:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -3170,22 +3170,22 @@
         },
         {
           "kind": "Namespace",
-          "canonicalReference": "@rainprotocol/rainlang!ImportASTNode:namespace",
+          "canonicalReference": "@rainprotocol/rainlang!Import:namespace",
           "docComment": "/**\n * The namespace provides functionality to type check\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export declare namespace ImportASTNode "
+              "text": "export declare namespace Import "
             }
           ],
           "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
-          "name": "ImportASTNode",
+          "name": "Import",
           "preserveMemberOrder": false,
           "members": [
             {
               "kind": "Function",
-              "canonicalReference": "@rainprotocol/rainlang!ImportASTNode.is:function(1)",
+              "canonicalReference": "@rainprotocol/rainlang!Import.is:function(1)",
               "docComment": "/**\n * Checks if a value is a valid ImportASTNode\n *\n * @param value - The value to check\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
@@ -3211,8 +3211,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "ImportASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!ImportASTNode:interface"
+                  "text": "Import",
+                  "canonicalReference": "@rainprotocol/rainlang!Import:interface"
                 },
                 {
                   "kind": "Content",
@@ -5320,22 +5320,22 @@
         },
         {
           "kind": "Interface",
-          "canonicalReference": "@rainprotocol/rainlang!ProblemASTNode:interface",
+          "canonicalReference": "@rainprotocol/rainlang!Problem:interface",
           "docComment": "/**\n * Type for Rainlang/RainDocument problem\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export interface ProblemASTNode "
+              "text": "export interface Problem "
             }
           ],
           "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
-          "name": "ProblemASTNode",
+          "name": "Problem",
           "preserveMemberOrder": false,
           "members": [
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!ProblemASTNode#code:member",
+              "canonicalReference": "@rainprotocol/rainlang!Problem#code:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -5362,7 +5362,7 @@
             },
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!ProblemASTNode#msg:member",
+              "canonicalReference": "@rainprotocol/rainlang!Problem#msg:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -5389,7 +5389,7 @@
             },
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!ProblemASTNode#position:member",
+              "canonicalReference": "@rainprotocol/rainlang!Problem#position:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -5420,22 +5420,22 @@
         },
         {
           "kind": "Namespace",
-          "canonicalReference": "@rainprotocol/rainlang!ProblemASTNode:namespace",
+          "canonicalReference": "@rainprotocol/rainlang!Problem:namespace",
           "docComment": "/**\n * The namespace provides functionality to type check\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export declare namespace ProblemASTNode "
+              "text": "export declare namespace Problem "
             }
           ],
           "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
-          "name": "ProblemASTNode",
+          "name": "Problem",
           "preserveMemberOrder": false,
           "members": [
             {
               "kind": "Function",
-              "canonicalReference": "@rainprotocol/rainlang!ProblemASTNode.is:function(1)",
+              "canonicalReference": "@rainprotocol/rainlang!Problem.is:function(1)",
               "docComment": "/**\n * Checks if a value is a valid ProblemASTNode\n *\n * @param value - The value to check\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
@@ -5461,8 +5461,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "ProblemASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!ProblemASTNode:interface"
+                  "text": "Problem",
+                  "canonicalReference": "@rainprotocol/rainlang!Problem:interface"
                 },
                 {
                   "kind": "Content",
@@ -5666,8 +5666,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "ProblemASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!~ProblemASTNode"
+                  "text": "Problem",
+                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
                 },
                 {
                   "kind": "Content",
@@ -5702,8 +5702,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "CommentASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!~CommentASTNode"
+                  "text": "Comment",
+                  "canonicalReference": "@rainprotocol/rainlang!~Comment"
                 },
                 {
                   "kind": "Content",
@@ -5841,8 +5841,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "ProblemASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!~ProblemASTNode"
+                  "text": "Problem",
+                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
                 },
                 {
                   "kind": "Content",
@@ -5877,8 +5877,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "ProblemASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!~ProblemASTNode"
+                  "text": "Problem",
+                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
                 },
                 {
                   "kind": "Content",
@@ -5913,8 +5913,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "ImportASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!~ImportASTNode"
+                  "text": "Import",
+                  "canonicalReference": "@rainprotocol/rainlang!~Import"
                 },
                 {
                   "kind": "Content",
@@ -6114,8 +6114,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "ProblemASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!~ProblemASTNode"
+                  "text": "Problem",
+                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
                 },
                 {
                   "kind": "Content",
@@ -6218,8 +6218,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "ProblemASTNode",
-                  "canonicalReference": "@rainprotocol/rainlang!~ProblemASTNode"
+                  "text": "Problem",
+                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
                 },
                 {
                   "kind": "Content",

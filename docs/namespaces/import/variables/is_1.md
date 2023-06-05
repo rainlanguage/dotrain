@@ -1,13 +1,13 @@
-[Home](../../../index.md) &gt; [ImportASTNode](../../importastnode.md) &gt; [is](./is_1.md)
+[Home](../../../index.md) &gt; [Import](../../import.md) &gt; [is](./is_1.md)
 
-# Function ImportASTNode.is()
+# Function Import.is()
 
 Checks if a value is a valid ImportASTNode
 
 <b>Signature:</b>
 
 ```typescript
-function is(value: any): value is ImportASTNode;
+function is(value: any): value is Import;
 ```
 
 ## Parameters
@@ -18,5 +18,5 @@ function is(value: any): value is ImportASTNode;
 
 <b>Returns:</b>
 
-`value is ImportASTNode`
+`value is Import`
 

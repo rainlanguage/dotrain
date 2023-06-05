@@ -55,11 +55,11 @@
 |  --- | --- |
 |  [AliasASTNode](./interfaces/aliasastnode.md) | Type for Rainlang/RainDocument alias |
 |  [ClientCapabilities](./interfaces/clientcapabilities.md) | Describes what LSP capabilities the client supports |
-|  [CommentASTNode](./interfaces/commentastnode.md) | Type for Rainlang/RainDocument comments |
-|  [ImportASTNode](./interfaces/importastnode.md) | Type of import statements specified in a RainDocument |
+|  [Comment](./interfaces/comment.md) | Type for Rainlang/RainDocument comments |
+|  [Import](./interfaces/import.md) | Type of import statements specified in a RainDocument |
 |  [LanguageServiceParams](./interfaces/languageserviceparams.md) | Parameters for initiating Language Services |
 |  [OpASTNode](./interfaces/opastnode.md) | Type for Rainlang AST Opcode node |
-|  [ProblemASTNode](./interfaces/problemastnode.md) | Type for Rainlang/RainDocument problem |
+|  [Problem](./interfaces/problem.md) | Type for Rainlang/RainDocument problem |
 |  [RainLanguageServices](./interfaces/rainlanguageservices.md) | Interface for Rain language services |
 |  [ValueASTNode](./interfaces/valueastnode.md) | Type Rainlang AST Value node |
 
@@ -70,12 +70,12 @@
 |  [AliasASTNode](./namespaces/aliasastnode.md) | The namespace provides functionality to type check |
 |  [ASTNode](./namespaces/astnode.md) | The namespace provides functionality to type check |
 |  [ClientCapabilities](./namespaces/clientcapabilities.md) | Predefined latest client capabilities |
-|  [CommentASTNode](./namespaces/commentastnode.md) | The namespace provides functionality to type check |
-|  [ImportASTNode](./namespaces/importastnode.md) | The namespace provides functionality to type check |
+|  [Comment](./namespaces/comment.md) | The namespace provides functionality to type check |
+|  [Import](./namespaces/import.md) | The namespace provides functionality to type check |
 |  [NamedExpression](./namespaces/namedexpression.md) | The namespace provides functionality to type check |
 |  [OpASTNode](./namespaces/opastnode.md) | The namespace provides functionality to type check |
 |  [PositionOffset](./namespaces/positionoffset.md) | The namespace provides functionality to type check |
-|  [ProblemASTNode](./namespaces/problemastnode.md) | The namespace provides functionality to type check |
+|  [Problem](./namespaces/problem.md) | The namespace provides functionality to type check |
 |  [RainlangAST](./namespaces/rainlangast.md) | The namespace provides functionality to type check |
 |  [ValueASTNode](./namespaces/valueastnode.md) | The namespace provides functionality to type check |
 

@@ -8,7 +8,7 @@ import {
     ASTNode, 
     OpASTNode, 
     RainlangAST,
-    ProblemASTNode, 
+    Problem, 
 } from "../rainLanguageTypes";
 import {
     deepCopy,
@@ -41,7 +41,7 @@ export class RainlangParser {
 
     public text: string;
     public ast: RainlangAST = { lines: [] };
-    public problems: ProblemASTNode[] = [];
+    public problems: Problem[] = [];
     // public comments: CommentASTNode[] = [];
     public constants: Record<string, string>;
     public namedExpressions: NamedExpression[] = [];

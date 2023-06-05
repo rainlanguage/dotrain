@@ -1,22 +1,22 @@
-[Home](../index.md) &gt; [ImportASTNode](./importastnode.md)
+[Home](../index.md) &gt; [Import](./import.md)
 
-# Interface ImportASTNode
+# Interface Import
 
 Type of import statements specified in a RainDocument
 
 <b>Signature:</b>
 
 ```typescript
-interface ImportASTNode 
+interface Import 
 ```
 
 ## Properties
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [hash](./importastnode.md#hash-property) | `string` |  |
-|  [name](./importastnode.md#name-property) | `string` |  |
-|  [position](./importastnode.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
+|  [hash](./import.md#hash-property) | `string` |  |
+|  [name](./import.md#name-property) | `string` |  |
+|  [position](./import.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
 
 ## Property Details
 

@@ -1,21 +1,21 @@
-[Home](../index.md) &gt; [CommentASTNode](./commentastnode.md)
+[Home](../index.md) &gt; [Comment](./comment.md)
 
-# Interface CommentASTNode
+# Interface Comment
 
 Type for Rainlang/RainDocument comments
 
 <b>Signature:</b>
 
 ```typescript
-interface CommentASTNode 
+interface Comment 
 ```
 
 ## Properties
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [comment](./commentastnode.md#comment-property) | `string` |  |
-|  [position](./commentastnode.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
+|  [comment](./comment.md#comment-property) | `string` |  |
+|  [position](./comment.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
 
 ## Property Details
 

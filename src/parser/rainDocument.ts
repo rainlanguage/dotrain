@@ -2,7 +2,7 @@ import toposort from "toposort";
 import { MetaStore } from "./metaStore";
 import { RainlangParser } from "./rainlangParser";
 import { inclusiveParse, exclusiveParse } from "../utils";
-import { ImportASTNode, ProblemASTNode, CommentASTNode } from "../rainLanguageTypes";
+import { Import, Problem, Comment } from "../rainLanguageTypes";
 import { 
     ErrorCode, 
     HASH_PATTERN, 
@@ -60,11 +60,11 @@ export class RainDocument {
     private opmetaIndex = -1;
     private opMetaBytes = "";
     private opmeta: OpMeta[] = [];
-    private imports: ImportASTNode[] = [];
-    private comments: CommentASTNode[] = [];
+    private imports: Import[] = [];
+    private comments: Comment[] = [];
     private ctxAliases: ContextAlias[] = []; 
-    private problems: ProblemASTNode[] = [];
-    private depProblems: ProblemASTNode[] = [];
+    private problems: Problem[] = [];
+    private depProblems: Problem[] = [];
     private dependencies: [string, string][] = [];
 
 
@@ -159,47 +159,47 @@ export class RainDocument {
     /**
      * @public Get all problems of this RainDocument instance
      */
-    public getAllProblems(): ProblemASTNode[] {
+    public getAllProblems(): Problem[] {
         return [...this.getTopProblems(), ...this.getExpProblems()];
     }
 
     /**
      * @public Get top problems of this RainDocument instance
      */
-    public getTopProblems(): ProblemASTNode[] {
+    public getTopProblems(): Problem[] {
         return [...this.getProblems(), ...this.getDependencyProblems()];
     }
 
     /**
      * @public Get the dependency problems of this RainDocument instance
      */
-    public getDependencyProblems(): ProblemASTNode[] {
+    public getDependencyProblems(): Problem[] {
         return deepCopy(this.depProblems);
     }
 
     /**
      * @public Get the current problems of this RainDocument instance
      */
-    public getProblems(): ProblemASTNode[] {
+    public getProblems(): Problem[] {
         return deepCopy(this.problems);
     }
 
     /**
      * @public Get the expression problems of this RainDocument instance
      */
-    public getExpProblems(): ProblemASTNode[] {
+    public getExpProblems(): Problem[] {
         return deepCopy(
             this.expressions
                 .map(v => v.parseObj?.problems)
                 .filter(v => v !== undefined)
-                .flat() as ProblemASTNode[]
+                .flat() as Problem[]
         );
     }
 
     /**
      * @public Get the current comments inside of the text of this RainDocument instance
      */
-    public getComments(): CommentASTNode[] {
+    public getComments(): Comment[] {
         return deepCopy(this.comments);
     }
 
@@ -213,7 +213,7 @@ export class RainDocument {
     /**
      * @public Get the imports of this RainDocument instance
      */
-    public getImports(): ImportASTNode[] {
+    public getImports(): Import[] {
         return deepCopy(this.imports);
     }
 

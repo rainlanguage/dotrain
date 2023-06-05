@@ -1,13 +1,13 @@
-[Home](../../../index.md) &gt; [ProblemASTNode](../../problemastnode.md) &gt; [is](./is_1.md)
+[Home](../../../index.md) &gt; [Problem](../../problem.md) &gt; [is](./is_1.md)
 
-# Function ProblemASTNode.is()
+# Function Problem.is()
 
 Checks if a value is a valid ProblemASTNode
 
 <b>Signature:</b>
 
 ```typescript
-function is(value: any): value is ProblemASTNode;
+function is(value: any): value is Problem;
 ```
 
 ## Parameters
@@ -18,5 +18,5 @@ function is(value: any): value is ProblemASTNode;
 
 <b>Returns:</b>
 
-`value is ProblemASTNode`
+`value is Problem`
 

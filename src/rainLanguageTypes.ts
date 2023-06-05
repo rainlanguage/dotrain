@@ -237,7 +237,7 @@ export namespace PositionOffset {
 /**
  * @public Type for Rainlang/RainDocument problem
  */
-export interface ProblemASTNode {
+export interface Problem {
     msg: string;
     position: PositionOffset;
     code: number;
@@ -246,13 +246,13 @@ export interface ProblemASTNode {
 /**
  * @public The namespace provides functionality to type check
  */
-export namespace ProblemASTNode {
+export namespace Problem {
 
     /**
      * @public Checks if a value is a valid ProblemASTNode
      * @param value - The value to check
      */
-    export function is(value: any): value is ProblemASTNode {
+    export function is(value: any): value is Problem {
         return value !== null 
             && typeof value === "object"
             && typeof value.msg === "string"
@@ -404,7 +404,7 @@ export namespace AliasASTNode {
 /**
  * @public Type for Rainlang/RainDocument comments
  */
-export interface CommentASTNode {
+export interface Comment {
     comment: string;
     position: PositionOffset;
 }
@@ -412,13 +412,13 @@ export interface CommentASTNode {
 /**
  * @public The namespace provides functionality to type check
  */
-export namespace CommentASTNode {
+export namespace Comment {
 
     /**
      * @public Checks if a value is a valid CommentASTNode
      * @param value - The value to check
      */
-    export function is(value: any): value is CommentASTNode {
+    export function is(value: any): value is Comment {
         return value !== null
             && typeof value === "object"
             && typeof value.comment === "string"
@@ -429,7 +429,7 @@ export namespace CommentASTNode {
 /**
  * @public Type of import statements specified in a RainDocument
  */
-export interface ImportASTNode {
+export interface Import {
     name: string;
     hash: string;
     position: PositionOffset;
@@ -438,13 +438,13 @@ export interface ImportASTNode {
 /**
  * @public The namespace provides functionality to type check
  */
-export namespace ImportASTNode {
+export namespace Import {
 
     /**
      * @public Checks if a value is a valid ImportASTNode
      * @param value - The value to check
      */
-    export function is(value: any): value is ImportASTNode {
+    export function is(value: any): value is Import {
         return value !== null
             && typeof value === "object"
             && typeof value.name === "string"

@@ -1,22 +1,22 @@
-[Home](../index.md) &gt; [ProblemASTNode](./problemastnode.md)
+[Home](../index.md) &gt; [Problem](./problem.md)
 
-# Interface ProblemASTNode
+# Interface Problem
 
 Type for Rainlang/RainDocument problem
 
 <b>Signature:</b>
 
 ```typescript
-interface ProblemASTNode 
+interface Problem 
 ```
 
 ## Properties
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [code](./problemastnode.md#code-property) | `number` |  |
-|  [msg](./problemastnode.md#msg-property) | `string` |  |
-|  [position](./problemastnode.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
+|  [code](./problem.md#code-property) | `number` |  |
+|  [msg](./problem.md#msg-property) | `string` |  |
+|  [position](./problem.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
 
 ## Property Details
 

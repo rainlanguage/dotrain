@@ -159,11 +159,11 @@ Get all problems of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getAllProblems(): ProblemASTNode[];
+getAllProblems(): Problem[];
 ```
 <b>Returns:</b>
 
-`ProblemASTNode[]`
+`Problem[]`
 
 <a id="getComments-method-1"></a>
 
@@ -174,11 +174,11 @@ Get the current comments inside of the text of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getComments(): CommentASTNode[];
+getComments(): Comment[];
 ```
 <b>Returns:</b>
 
-`CommentASTNode[]`
+`Comment[]`
 
 <a id="getConstants-method-1"></a>
 
@@ -234,11 +234,11 @@ Get the dependency problems of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getDependencyProblems(): ProblemASTNode[];
+getDependencyProblems(): Problem[];
 ```
 <b>Returns:</b>
 
-`ProblemASTNode[]`
+`Problem[]`
 
 <a id="getExpProblems-method-1"></a>
 
@@ -249,11 +249,11 @@ Get the expression problems of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getExpProblems(): ProblemASTNode[];
+getExpProblems(): Problem[];
 ```
 <b>Returns:</b>
 
-`ProblemASTNode[]`
+`Problem[]`
 
 <a id="getImports-method-1"></a>
 
@@ -264,11 +264,11 @@ Get the imports of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getImports(): ImportASTNode[];
+getImports(): Import[];
 ```
 <b>Returns:</b>
 
-`ImportASTNode[]`
+`Import[]`
 
 <a id="getOpMeta-method-1"></a>
 
@@ -354,11 +354,11 @@ Get the current problems of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getProblems(): ProblemASTNode[];
+getProblems(): Problem[];
 ```
 <b>Returns:</b>
 
-`ProblemASTNode[]`
+`Problem[]`
 
 <a id="getRuntimeError-method-1"></a>
 
@@ -399,11 +399,11 @@ Get top problems of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getTopProblems(): ProblemASTNode[];
+getTopProblems(): Problem[];
 ```
 <b>Returns:</b>
 
-`ProblemASTNode[]`
+`Problem[]`
 
 <a id="parse-method-1"></a>
 
