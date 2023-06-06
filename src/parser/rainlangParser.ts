@@ -566,11 +566,13 @@ export class RainlangParser {
                 if (_isValid) {
                     let quoteIndex = -1;
                     let quoteValue = -1;
-                    const quote = v[0].match(/^(?:')[a-z][a-z0-9-]*$/);
+                    const quote = v[0].match(/^'[a-z][a-z0-9-]*$/);
                     if (quote) {
-                        quoteIndex = this.namedExpressions.findIndex(v => v.name === quote[0]);
+                        quoteIndex = this.namedExpressions.findIndex(
+                            v => v.name === quote[0].slice(1)
+                        );
                         if (quoteIndex === -1) this.problems.push({
-                            msg: `undefined expression binding key: ${v[0]}`,
+                            msg: `undefined expression binding key: ${v[0].slice(1)}`,
                             position: v[1],
                             code: ErrorCode.UndefinedExpression
                         });
