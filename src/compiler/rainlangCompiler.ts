@@ -147,7 +147,8 @@ export async function rainlangc(
                 _opmeta, 
                 { 
                     constants: _rainDocument.constants,
-                    resolveQuotes: true
+                    resolveQuotes: { constants },
+                    comments: _rainDocument.getComments()
                 }
             );
             else return Promise.reject(new Error(`cannot find expression: ${_deps[i]}`));
@@ -279,7 +280,10 @@ export async function rainlangc(
                                 constants.push(_value.toString());
                             }
                         }
-                        else throw new Error(`cannot find "${_node.name}"`);
+                        else {
+                            if (_extExp) throw new Error(`invalid reference to "${_node.name}"`);
+                            else throw new Error(`cannot find expression: "${_node.name}"`);
+                        }
                     }
                 }
                 else {

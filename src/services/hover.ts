@@ -75,7 +75,7 @@ export async function getRainlangHover(
                 kind: _contentType,
                 value: (await buildMetaInfo(_hash.hash, _rd.metaStore)) + (
                     _index > -1 && _rd.getOpMetaImportIndex() === _index
-                        ? "\n Active Op Meta"
+                        ? "\n\nActive Op Meta"
                         : ""
                 )
             }

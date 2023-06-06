@@ -65,19 +65,19 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         );
     });
 
-    // it("should error: invalid RHS, comments are not allowed", async () => {
-    //     await testDiagnostics(
-    //         rainlang`@${opMetaHash} #exp _ _: add(10 20) /* invalid comment */ mul(1 2)`, 
-    //         store, 
-    //         [{ 
-    //             message: "invalid RHS, comments are not allowed", 
-    //             range: toRange(0, 89, 0, 110), 
-    //             severity: DiagnosticSeverity.Error, 
-    //             code: ErrorCode.UnexpectedRHSComment, 
-    //             source: "rainlang" 
-    //         }]
-    //     );
-    // });
+    it("should error: unexpected RHS comment", async () => {
+        await testDiagnostics(
+            rainlang`@${opMetaHash} #exp _ _: add(10 20) /* invalid comment */ mul(1 2)`, 
+            store, 
+            [{ 
+                message: "unexpected RHS comment", 
+                range: toRange(0, 89, 0, 110), 
+                severity: DiagnosticSeverity.Error, 
+                code: ErrorCode.UnexpectedRHSComment, 
+                source: "rainlang" 
+            }]
+        );
+    });
 
     it("should error: invalid LHS alias: 123add123", async () => {
         await testDiagnostics(

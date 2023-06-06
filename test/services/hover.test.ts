@@ -209,7 +209,7 @@ new-total-amount-sent);
                     value: [
                         "This Rain metadata consists of:",
                         "- Op metadata with 78 opcodes",
-                        " Active Op Meta"
+                        "\nActive Op Meta"
                     ].join("\n")
                 }
             }

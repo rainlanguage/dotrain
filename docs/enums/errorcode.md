@@ -52,6 +52,7 @@ enum ErrorCode
 |  UnexpectedExpression | `517` |  |
 |  UnexpectedExpressionKeyUsage | `515` |  |
 |  UnexpectedFragment | `516` |  |
+|  UnexpectedRHSComment | `519` |  |
 |  UnexpectedString | `518` |  |
 |  UnknownOp | `1792` |  |
 

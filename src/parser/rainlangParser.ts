@@ -1,14 +1,17 @@
 import { 
     OpMeta,
+    BigNumber, 
     InputArgs,
     OperandArgs,
-    ComputedOutput,
+    BigNumberish,
+    ComputedOutput 
 } from "@rainprotocol/meta";
 import { 
+    Problem,
+    Comment,
     ASTNode, 
     OpASTNode, 
-    RainlangAST,
-    Problem, 
+    RainlangAST  
 } from "../rainLanguageTypes";
 import {
     deepCopy,
@@ -42,7 +45,7 @@ export class RainlangParser {
     public text: string;
     public ast: RainlangAST = { lines: [] };
     public problems: Problem[] = [];
-    // public comments: CommentASTNode[] = [];
+    public comments: Comment[] = [];
     public constants: Record<string, string>;
     public namedExpressions: NamedExpression[] = [];
 
@@ -86,13 +89,19 @@ export class RainlangParser {
         opmeta: OpMeta[],
         options?: { 
             /**
-             * Determines if quotes should be resolved into indexes when parsing or not
+             * Determines if quotes should be resolved into indexes when parsing or not by passing the constants array
              */
-            resolveQuotes?: boolean; 
+            resolveQuotes?: {
+                constants: BigNumberish[]
+            }; 
             /**
              * Reserved constant values as k/v
              */
             constants?: Record<string, string>;
+            /**
+             * Comments parsed from RainDocument
+             */
+            comments?: Comment[]
         }
     ) {
         this.namedExpressions = namedExpressions;
@@ -101,6 +110,7 @@ export class RainlangParser {
         this.opmeta = opmeta;
         if (options?.constants) this.constants = options.constants;
         else this.constants = {};
+        if (options?.comments) this.comments = options.comments;
         this.parse(options?.resolveQuotes);
     }
 
@@ -108,7 +118,7 @@ export class RainlangParser {
      * @public
      * Parses this instance of RainParser
      */
-    public parse(resolveQuotes = false) {
+    public parse(resolveQuotes: { constants: BigNumberish[] } | undefined = undefined) {
         if (/[^\s]+/.test(this.text)) {
             try {
                 this._parse(resolveQuotes);
@@ -191,7 +201,7 @@ export class RainlangParser {
      * The main workhorse of RainParser which parses the words used in an
      * expression and is responsible for building the parse tree and collect problems
      */
-    private _parse(resolveQuotes = false) {
+    private _parse(resolveQuotes: { constants: BigNumberish[] } | undefined = undefined) {
         this.resetState();
         this.ast.lines = [];
         this.problems = [];
@@ -246,6 +256,7 @@ export class RainlangParser {
         let type: "exp" | "const";
         const _subExp: string[] = [];
         const _subExpPos: PositionOffset[] = [];
+        const _endDels: number[] = [];
 
         // parse and cache the sub-expressions
         exclusiveParse(_exp, /,/gd, _expPos[0], true).forEach((v, i) => {
@@ -259,6 +270,7 @@ export class RainlangParser {
                 v[1][0] + _trimmed.startDelCount,
                 v[1][1] - _trimmed.endDelCount
             ]);
+            _endDels.push(_trimmed.endDelCount);
         });
         if (_subExp.length > 1) type = "exp";
 
@@ -298,19 +310,18 @@ export class RainlangParser {
                     const _lhs = _subExp[i].slice(0, _subExp[i].indexOf(":"));
                     const _rhs = _subExp[i].slice(_subExp[i].indexOf(":") + 1);
 
-                    // // check for invalid RHS comments
-                    // for (const _cm of this.comments) {
-                    //     if (
-                    //         _cm.position[0] > _positionOffset + 
-                    //             _subExp[i].indexOf(":") &&
-                    //         _cm.position[0] < _positionOffset + 
-                    //             _subExp[i].length
-                    //     ) this.problems.push({
-                    //         msg: "invalid RHS, comments are not allowed",
-                    //         position: [..._cm.position],
-                    //         code: ErrorCode.UnexpectedRHSComment
-                    //     });
-                    // }
+                    // check for invalid RHS comments
+                    for (const _cm of this.comments) {
+                        if (
+                            _cm.position[0] > _positionOffset + 
+                                _subExp[i].indexOf(":") &&
+                            _cm.position[0] < _subExpPos[i][1] + _endDels[i]
+                        ) this.problems.push({
+                            msg: "unexpected RHS comment",
+                            position: [..._cm.position],
+                            code: ErrorCode.UnexpectedRHSComment
+                        });
+                    }
 
                     // begin parsing LHS
                     if (_lhs.length > 0) {
@@ -477,7 +488,11 @@ export class RainlangParser {
     /**
      * @internal Consumes items in an expression
      */
-    private consume(exp: string, offset: number, resolveQuotes = false) {
+    private consume(
+        exp: string, 
+        offset: number, 
+        resolveQuotes: { constants: BigNumberish[] } | undefined = undefined
+    ) {
         while (exp.length > 0) {
             const _currentPosition = offset - exp.length;
             if (exp.startsWith(" ")) {
@@ -512,7 +527,7 @@ export class RainlangParser {
         exp: string, 
         pos: number, 
         op: OpASTNode, 
-        resolveQuotes = false
+        resolveQuotes: { constants: BigNumberish[] } | undefined = undefined
     ): [string, OpASTNode] {
         if (!exp.includes(">")) {
             this.problems.push({
@@ -577,21 +592,39 @@ export class RainlangParser {
                             code: ErrorCode.UndefinedExpression
                         });
                         else {
-                            if (NamedExpression.isConstant(this.namedExpressions[quoteIndex])) {
-                                quoteValue = Number((this.namedExpressions[
+                            if (
+                                resolveQuotes &&
+                                NamedExpression.isConstant(this.namedExpressions[quoteIndex])
+                            ) {
+                                // quoteValue = Number((this.namedExpressions[
+                                //     quoteIndex
+                                // ].parseObj?.ast.lines[0].nodes[0] as ValueASTNode).value);
+                                const _val = (this.namedExpressions[
                                     quoteIndex
-                                ].parseObj?.ast.lines[0].nodes[0] as ValueASTNode).value);
+                                ].parseObj?.ast.lines[0].nodes[0] as ValueASTNode).value;
+                                quoteValue = resolveQuotes.constants.findIndex(
+                                    v => BigNumber.from(v).eq(_val)
+                                );
+                                if (quoteValue === -1) {
+                                    quoteValue = resolveQuotes.constants.length;
+                                    resolveQuotes.constants.push(_val);
+                                }
                             }
                         }
                     }
                     op.operandArgs!.args.push({
                         value: !v[0].startsWith("'") 
-                            ? v[0] 
-                            : quoteValue !== -1
-                                ? quoteValue.toString()
-                                : quoteIndex > -1 && resolveQuotes
-                                    ? quoteIndex.toString() 
-                                    : v[0].slice(1),
+                            ? v[0]
+                            : !resolveQuotes || quoteIndex === -1
+                                ? v[0].slice(1) 
+                                : quoteValue !== -1
+                                    ? quoteValue.toString()
+                                    : quoteIndex.toString(),
+                        // : quoteValue !== -1
+                        //     ? quoteValue.toString()
+                        //     : quoteIndex > -1 && resolveQuotes
+                        //         ? quoteIndex.toString() 
+                        //         : v[0].slice(1),
                         name: _operandMeta[i]?.name ?? "unknown",
                         position: v[1],
                         description: _operandMeta[i]?.desc ?? ""
@@ -805,7 +838,11 @@ export class RainlangParser {
     /**
      * @internal Method that parses an upcoming word to a rainlang AST node
      */
-    private resolveWord(exp: string, entry: number, resolveQuotes = false): string {
+    private resolveWord(
+        exp: string, 
+        entry: number, 
+        resolveQuotes: { constants: BigNumberish[] } | undefined = undefined
+    ): string {
         const _offset = this.findOffset(exp);
         const _index = _offset < 0 
             ? exp.length 
