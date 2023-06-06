@@ -11,7 +11,7 @@ export { TextDocument, TextDocumentContentChangeEvent };
 /**
  * @public Illigal character pattern 
  */
-export const ILLIGAL_CHAR = /[^ -~\s]+/;
+export const ILLEGAL_CHAR = /[^ -~\s]+/;
 
 /**
  * @public Rainlang word pattern 

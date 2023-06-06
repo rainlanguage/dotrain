@@ -374,7 +374,7 @@ describe("Rainlang Compiler (rainlangc) Tests", async function () {
     it("should only accept ASCII characters", async () => {
         await assertError(
             async () => await rainlangc(rainlang`@${opMetaHash} #exp _: add(10𐐀 20);`, ["exp"], store),
-            "illigal character: \\\"𐐀\\\"",
+            "illegal character: \\\"𐐀\\\"",
             "Invalid Error"
         );
     });

@@ -3046,12 +3046,12 @@
         },
         {
           "kind": "Variable",
-          "canonicalReference": "@rainprotocol/rainlang!ILLIGAL_CHAR:var",
+          "canonicalReference": "@rainprotocol/rainlang!ILLEGAL_CHAR:var",
           "docComment": "/**\n * Illigal character pattern\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "ILLIGAL_CHAR: "
+              "text": "ILLEGAL_CHAR: "
             },
             {
               "kind": "Reference",
@@ -3062,7 +3062,7 @@
           "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "isReadonly": true,
           "releaseTag": "Public",
-          "name": "ILLIGAL_CHAR",
+          "name": "ILLEGAL_CHAR",
           "variableTypeTokenRange": {
             "startIndex": 1,
             "endIndex": 2

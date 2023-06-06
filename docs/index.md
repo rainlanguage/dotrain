@@ -91,7 +91,7 @@
 |  [HASH\_PATTERN](./variables/hash_pattern.md) | Import hash pattern |
 |  [hexlify](./variables/hexlify.md) | ethers hexlify |
 |  [hexZeroPad](./variables/hexzeropad.md) | ethers hexZeroPad |
-|  [ILLIGAL\_CHAR](./variables/illigal_char.md) | Illigal character pattern |
+|  [ILLEGAL\_CHAR](./variables/illegal_char.md) | Illigal character pattern |
 |  [isBytes](./variables/isbytes.md) | ethers isBytes |
 |  [isBytesLike](./variables/isbyteslike.md) | ethers isBytesLike |
 |  [isHexString](./variables/ishexstring.md) | ethers isHexString |

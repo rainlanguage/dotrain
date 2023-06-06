@@ -22,7 +22,7 @@ import {
 import { 
     ErrorCode, 
     WORD_PATTERN,
-    ILLIGAL_CHAR,
+    ILLEGAL_CHAR,
     ValueASTNode, 
     AliasASTNode, 
     NUMERIC_PATTERN, 
@@ -200,9 +200,9 @@ export class RainlangParser {
         let document = this.text;
 
         // check for illigal characters
-        inclusiveParse(document, ILLIGAL_CHAR).forEach(v => {
+        inclusiveParse(document, ILLEGAL_CHAR).forEach(v => {
             this.problems.push({
-                msg: `illigal character: "${v[0]}"`,
+                msg: `illegal character: "${v[0]}"`,
                 position: v[1],
                 code: ErrorCode.IlligalChar
             });

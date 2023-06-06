@@ -37,12 +37,12 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         await store.updateStore(opMetaHash);
     });
 
-    it("should error: found illigal character: \"\\u00a2\"", async () => {
+    it("should error: found illegal character: \"\\u00a2\"", async () => {
         await testDiagnostics(
             rainlang`@${opMetaHash} #exp _: add(¢ 2)`, 
             store, 
             [{ 
-                message: "illigal character: \"\u00a2\"", 
+                message: "illegal character: \"\u00a2\"", 
                 range: toRange(0, 80, 0, 81), 
                 severity: DiagnosticSeverity.Error, 
                 code: ErrorCode.IlligalChar, 
