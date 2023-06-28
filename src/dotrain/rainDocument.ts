@@ -1,14 +1,13 @@
 import toposort from "toposort";
 import { MetaStore } from "./metaStore";
-import { RainlangParser } from "./rainlangParser";
-import { inclusiveParse, exclusiveParse } from "../utils";
-import { Import, Problem, Comment } from "../rainLanguageTypes";
+import { Rainlang } from "../rainlang/rainlang";
+import { Import, Problem, Comment, PositionOffset } from "../rainLanguageTypes";
+import { inclusiveParse, exclusiveParse, getRandomInt, inclusiveWhitespaceFill, isDotrainConstant, trim } from "../utils";
 import { 
     ErrorCode, 
     HASH_PATTERN, 
-    TextDocument,
-    ContextAlias,  
-    PositionOffset, 
+    TextDocument, 
+    ContextAlias, 
     NamedExpression, 
 } from "../rainLanguageTypes";
 import { 
@@ -24,15 +23,16 @@ import {
 
 /**
  * @public
- * RainDocument is a class object that provides data and functionalities 
- * in order to be used later on to provide Rain Language Services or in 
- * Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes).
- * It uses Rain parser under the hood which does all the heavy work.
+ * RainDocument is a class object that parses a text to provides data and 
+ * functionalities in order to be used later on to provide Rain Language 
+ * Services or in RainDocument compiler to get the ExpressionConfig 
+ * (deployable bytes). It uses Rain parser under the hood which does all the 
+ * heavy work.
  * 
  * @example
  * ```typescript
  * // to import
- * import { Raindocument } from 'rainlang';
+ * import { RainDocument } from 'rainlang';
  *
  * // to create a new instance of the RainDocument object which parses right after instantiation
  * const myRainDocument = await RainDocument.create(text)
@@ -47,9 +47,9 @@ import {
 export class RainDocument {
 
     public readonly constants: Record<string, string> = {
-        "infinity": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-        "max-uint256": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-        "max-uint-256": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        "infinity"      : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "max-uint256"   : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "max-uint-256"  : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     };
     public metaStore: MetaStore;
     public textDocument: TextDocument;
@@ -80,14 +80,50 @@ export class RainDocument {
     }
 
     /**
-     * @public Creates a new RainDocument object instance
+     * @public Creates a new RainDocument object instance with a TextDocument
      * 
      * @param textDocument - The text document
      * @param metaStore - (optional) The initial MetaStore object
      * @returns A new RainDocument instance
      */
-    public static async create(textDocument: TextDocument, metaStore?: MetaStore) {
-        const _rainDocument = new RainDocument(textDocument, metaStore);
+    public static async create(
+        textDocument: TextDocument, 
+        metaStore?: MetaStore
+    ): Promise<RainDocument>
+
+    /**
+     * @public Creates a new RainDocument object instance from a text string
+     * 
+     * @param text - The text string
+     * @param metaStore - (optional) The initial MetaStore object
+     * @param uri - (optional) The URI of the text, URI is the unique identifier of a TextDocument
+     * @param version - (optional) The version of the text
+     * @returns A new RainDocument instance
+     */
+    public static async create(
+        text: TextDocument, 
+        metaStore?: MetaStore, 
+        uri?: string, 
+        version?: number
+    ): Promise<RainDocument>
+
+    public static async create(
+        content: TextDocument | string, 
+        metaStore?: MetaStore, 
+        uri?: string, 
+        version?: number
+    ): Promise<RainDocument> {
+        let _rainDocument: RainDocument;
+        if (typeof content === "string") _rainDocument = new RainDocument(
+            TextDocument.create(
+                uri ?? "untitled-" + getRandomInt(1000000000).toString(), 
+                "rainlang", 
+                version === undefined || version < 0 ? 0 : version, 
+                content
+            ), 
+            metaStore
+        );
+        else _rainDocument = new RainDocument(content, metaStore);
         await _rainDocument.parse();
         return _rainDocument;
     }
@@ -104,21 +140,21 @@ export class RainDocument {
      */
     public async updateText(newTextDocument: TextDocument): Promise<void>;
 
-    public async updateText(newText: string | TextDocument) {
-        if (typeof newText === "string") this.textDocument = TextDocument.update(
+    public async updateText(newContent: string | TextDocument) {
+        if (typeof newContent === "string") this.textDocument = TextDocument.update(
             this.textDocument, 
-            [{ text: newText }], 
+            [{ text: newContent }], 
             this.textDocument.version + 1
         );
-        else this.textDocument = newText;
+        else this.textDocument = newContent;
         await this.parse();
     }
 
     /**
      * @public Get the current text of this RainDocument instance
      */
-    public getTextDocument(): TextDocument {
-        return this.textDocument;
+    public getText(): string {
+        return this.textDocument.getText();
     }
 
     /**
@@ -190,7 +226,16 @@ export class RainDocument {
     public getExpProblems(): Problem[] {
         return deepCopy(
             this.expressions
-                .map(v => v.parseObj?.problems)
+                .map(v => v.rainlang?.getProblems().map(e => {
+                    return {
+                        code: e.code,
+                        msg: e.msg,
+                        position: [
+                            e.position[0] + v.contentPosition[0],
+                            e.position[1] + v.contentPosition[0]
+                        ]
+                    } as Problem;
+                }))
                 .filter(v => v !== undefined)
                 .flat() as Problem[]
         );
@@ -201,13 +246,6 @@ export class RainDocument {
      */
     public getComments(): Comment[] {
         return deepCopy(this.comments);
-    }
-
-    /**
-     * @public Get the current runtime error of this RainDocument instance
-     */
-    public getRuntimeError(): Error | undefined {
-        return deepCopy(this.runtimeError);
     }
 
     /**
@@ -222,13 +260,6 @@ export class RainDocument {
      */
     public getContextAliases(): ContextAlias[] {
         return deepCopy(this.ctxAliases);
-    }
-
-    /**
-     * @public Get constant k/v pairs of this RainDocument instance
-     */
-    public getConstants(): Record<string, string> {
-        return deepCopy(this.constants);
     }
 
     /**
@@ -300,10 +331,7 @@ export class RainDocument {
                 comment: v[0],
                 position: v[1]
             });
-            document = 
-                document.slice(0, v[1][0]) +
-                " ".repeat(v[0].length) +
-                document.slice(v[1][1] + 1);
+            document = inclusiveWhitespaceFill(document, v[1]);
         });
 
         // parse imports
@@ -319,10 +347,7 @@ export class RainDocument {
                         _imports[i][1][1]
                     ],
                 });
-                document = 
-                    document.slice(0, _imports[i][1][0]) +
-                    " ".repeat(_imports[i][0].length) +
-                    document.slice(_imports[i][1][1] + 1);
+                document = inclusiveWhitespaceFill(document, _imports[i][1]);
             }
         }
         else this.problems.push({
@@ -332,38 +357,67 @@ export class RainDocument {
         });
 
         // parse expressions
-        inclusiveParse(document, /#[^#\s]+\s+[^#]*/).forEach(v => {
-            const _name = exclusiveParse(v[0], /\s+/);
-            if (_name[0][0].match(/^#[a-z][a-z0-9-]*$/)) this.expressions.push({
-                name: _name[0][0].slice(1),
-                namePosition: [v[1][0], v[1][0] + _name[0][0].length - 1],
-                text: this.fillOut(
-                    // this.textDocument.getText(), 
-                    document,
-                    [v[1][0] + _name[0][1][1] + 1, v[1][1]]
-                ),
-                position: v[1]
-            });
-            else this.problems.push({
-                msg: "invalid expression name",
-                position: [v[1][0], v[1][0] + _name[0][0].length - 1],
-                code: ErrorCode.InvalidExpressionKey
-            });
-            document = 
-                document.slice(0, v[1][0]) +
-                " ".repeat(v[0].length) +
-                document.slice(v[1][1] + 1);
-
-        });
-
-        // find duplicate expression keys
-        this.expressions.forEach((v, i) => {
-            if (this.expressions.find((e, j) => i !== j && e.name === v.name)) {
-                this.problems.push({
-                    msg: "duplicate expression identifier",
-                    position: v.namePosition,
-                    code: ErrorCode.DuplicateExpressionKey
+        exclusiveParse(document, /#/gd, undefined, true).forEach((v, i) => {
+            if (i > 0) {
+                const _index = v[0].search(/\s/);
+                const position = v[1];
+                let name: string;
+                let namePosition: PositionOffset;
+                let content: string;
+                let contentPosition: PositionOffset;
+                if (_index === -1) {
+                    name = v[0];
+                    namePosition = v[1];
+                    contentPosition = [v[1][1] + 1, v[1][1]];
+                    content = "";
+                }
+                else {
+                    const _trimmed =  trim(v[0].slice(_index + 1));
+                    name = v[0].slice(0, _index);
+                    namePosition = [v[1][0], v[1][0] + _index - 1];
+                    content = !_trimmed.text ? v[0].slice(_index + 1) : _trimmed.text;
+                    contentPosition = !_trimmed.text
+                        ? [v[1][0] + _index + 1, v[1][1]]
+                        : [
+                            v[1][0] + _index + 1 + _trimmed.startDelCount, 
+                            v[1][1] - _trimmed.endDelCount
+                        ];
+                }
+                if (!name.match(/^[a-z][a-z0-9-]*$/)) this.problems.push({
+                    msg: "invalid expression name",
+                    position: deepCopy(namePosition),
+                    code: ErrorCode.InvalidExpressionKey
                 });
+                if (!content || content.match(/^\s+$/)) this.problems.push({
+                    msg: "invalid empty expression",
+                    position: deepCopy(namePosition),
+                    code: ErrorCode.InvalidEmptyExpression
+                });
+
+                const _val = isDotrainConstant(content);
+                if (_val) {
+                    if (this.constants[name] !== undefined) this.problems.push({
+                        msg: "duplicate constant identifier",
+                        position: namePosition,
+                        code: ErrorCode.DuplicateIdentifier
+                    });
+                    else this.constants[name] = _val;
+                }
+                else {
+                    if (this.expressions.find(v => v.name === name)) this.problems.push({
+                        msg: "duplicate expression identifier",
+                        position: namePosition,
+                        code: ErrorCode.DuplicateExpIdentifier
+                    });
+                    this.expressions.push({
+                        name,
+                        namePosition,
+                        content,
+                        contentPosition,
+                        position
+                    });
+                }
+                document = inclusiveWhitespaceFill(document, [v[1][0] - 1, v[1][1]]);
             }
         });
 
@@ -387,6 +441,38 @@ export class RainDocument {
 
         // resolve dependencies and parse expressions
         this.resolveDependencies();
+
+        for (let i = 0; i < this.expressions.length; i++) {
+            this.expressions[i].rainlang = new Rainlang(
+                this.expressions[i].content, 
+                this.opmeta, 
+                {
+                    constants: this.constants, 
+                    expressionNames: this.expressions.map(v => v.name),
+                    comments: this.comments.filter(v => 
+                        v.position[0] >= this.expressions[i].contentPosition[0] && 
+                        v.position[1] <= this.expressions[i].contentPosition[1]
+                    ).map(v => {
+                        return {
+                            comment: v.comment,
+                            position: [
+                                v.position[0] - this.expressions[i].contentPosition[0],
+                                v.position[1] - this.expressions[i].contentPosition[0]
+                            ] 
+                        };
+                    })
+                }
+            );
+        }
+    }
+
+    /**
+     * @public Fills outside of a position with whitespaces
+     */
+    public fillOut(text: string, position: PositionOffset): string {
+        return " ".repeat(text.slice(0, position[0]).length) +
+            text.slice(position[0], position[1] + 1) +
+            " ".repeat(text.slice(position[1] + 1, text.length).length);
     }
 
     /**
@@ -603,7 +689,7 @@ export class RainDocument {
                                 imports[i][1][0] + _offset, 
                                 imports[i][1][1]
                             ],
-                            code: ErrorCode.UndefinedMeta
+                            code: ErrorCode.UndefinedImport
                         });
                     }
                 }
@@ -679,17 +765,16 @@ export class RainDocument {
         ));
         for (let i = 0; i < this.expressions.length; i++) {
             for (let j = 0; j < regexpes.length; j++) {
-                if (i !== j && regexpes[j].test(this.expressions[i].text)) {
+                if (i !== j && regexpes[j].test(this.expressions[i].content)) {
                     this.dependencies.push([nodes[i], nodes[j]]);
                     edges.push([nodes[i], nodes[j]]);
                 }
             }
         }
 
-        let deps: string[] = [];
-        for (let i = 0; i < nodes.length; i++) {
+        while (!nodes.length || !edges.length) {
             try {
-                deps = toposort.array(nodes, edges).reverse();
+                toposort.array(nodes, edges).reverse();
                 break;
             }
             catch(err: any) {
@@ -704,39 +789,19 @@ export class RainDocument {
                             }
                         });
                     }
-                    edges = edges.filter(v => !nodesToDelete.includes(v[1]));
+                    edges = edges.filter(
+                        v => !nodesToDelete.includes(v[1]) || !nodesToDelete.includes(v[0])
+                    );
                     nodes = nodes.filter(v => !nodesToDelete.includes(v));
-                    this.depProblems.push({
+                    for (let i = 0; i < nodesToDelete.length; i++) this.depProblems.push({
                         msg: "circular dependency",
-                        position: this.expressions.find(v => v.name === errorNode)!.namePosition,
+                        position: this.expressions.find(
+                            v => v.name === nodesToDelete[i]
+                        )!.namePosition,
                         code: ErrorCode.CircularDependency
                     });
                 }
             }
         }
-
-        for (let i = 0; i < deps.length; i++) {
-            const _index = this.expressions.findIndex(v => v.name === deps[i]);
-            if (_index > -1) {
-                this.expressions[_index].parseObj = new RainlangParser(
-                    this.expressions, 
-                    _index,
-                    this.opmeta, 
-                    {
-                        constants: this.constants, 
-                        comments: this.comments
-                    }
-                );
-            }
-        }
-    }
-
-    /**
-     * @public Fills outside of a position with whitespaces
-     */
-    private fillOut(text: string, position: PositionOffset): string {
-        return " ".repeat(text.slice(0, position[0]).length) +
-            text.slice(position[0], position[1] + 1) +
-            " ".repeat(text.slice(position[1] + 1, text.length).length);
     }
 }

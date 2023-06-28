@@ -1,6 +1,6 @@
-import { MetaStore } from "../parser/metaStore";
+import { MetaStore } from "./metaStore";
+import { RainDocument } from "./rainDocument";
 import { TextDocument } from "../rainLanguageTypes";
-import { RainDocument } from "../parser/rainDocument";
 import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
 import { 
@@ -22,14 +22,14 @@ import {
 
 /**
  * @public 
- * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document
+ * RainDocument (dotrain) decompiler, decompiles ExpressionConfig (bytes) to a valid RainDocument instance
  * 
  * @param expressionConfig - ExpressionConfig to decompile
  * @param metaHash - The meta hash
  * @param metaStore - (optional) MetaStore object instance
  * @returns A promise that resolves with a RainDocument
  */
-export async function rainlangd(
+export async function dotraind(
     expressionConfig: ExpressionConfig, 
     metaHash: string, 
     metaStore = new MetaStore(),
@@ -266,7 +266,8 @@ export async function rainlangd(
             `#exp-${i + 1}\n` +
             lhs.join(" ") + 
             " : " + 
-            _stack.join(" ")
+            _stack.join(" ") +
+            ";"
         );
         _stack = [];
     }
@@ -277,7 +278,7 @@ export async function rainlangd(
         //     metaStore
         // )
         await RainDocument.create(
-            TextDocument.create("file", "rainlang", 1, `@${metaHash}\n` + _finalStack.join("\n")),
+            TextDocument.create("file", "rainlang", 1, `@${metaHash}\n` + _finalStack.join("\n\n")),
             metaStore
         )
     );

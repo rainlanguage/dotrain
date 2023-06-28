@@ -1,7 +1,14 @@
 import stringMath from "string-math";
-import { ExpressionConfig, Position, Range } from "./rainLanguageTypes";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
-
+import { 
+    Range, 
+    Position, 
+    TextDocument, 
+    PositionOffset, 
+    NUMERIC_PATTERN, 
+    ExpressionConfig, 
+    TextDocumentContentChangeEvent 
+} from "./rainLanguageTypes";
 
 /**
  * @public ethers constants
@@ -49,8 +56,9 @@ export const {
 
 
 /**
- * @public Method to be used as Tagged Templates to activate embedded rainlang in 
- * javascript to typescript that highlights the rainlang syntax. Requires rainlang 
+ * @public 
+ * Method to be used as Tagged Templates to activate embedded rainlang in 
+ * javascript/typescript that highlights the rainlang syntax. Requires rainlang 
  * vscode extension to be installed.
  */
 export function rainlang(
@@ -619,4 +627,145 @@ export function exclusiveParse(
         ]);
     });
     return result;
+}
+
+/**
+ * @public Generates random integer between 0(inclusive) and max(exclusive)
+ * 
+ * @param max - The maximum range to generate random number
+ * @returns The random number
+ */
+export function getRandomInt(max: number) {
+    if (max <= 1) throw "max value must be greater than 1";
+    return Math.floor(Math.random() * max);
+}
+
+/**
+ * @public Method to get a line from a TextDocument
+ * 
+ * @param textDocument - The TextDocument instance
+ * @param line - The line to get its content
+ * @returns The text string of the line
+ */
+export function getLineText(textDocument: TextDocument, line: number): string {
+    if (line < 0) line = 0;
+    if (line >= textDocument.lineCount) return textDocument.getText(
+        Range.create(textDocument.lineCount - 1, 0, textDocument.lineCount, 0)
+    );
+    else return textDocument.getText(Range.create(line, 0, line + 1, 0));
+}
+
+/**
+ * @public Fills a poistion in a text with whitespaces by keeping line structure intact
+ * 
+ * @param text - The text
+ * @param position - The position offsets to include
+ * @returns The edited text string
+ */
+export function inclusiveWhitespaceFill(
+    text: string, 
+    position: PositionOffset
+): string {
+    const _textDocument = TextDocument.create("virtual", "rainlang", 0, text);
+    const _changes: TextDocumentContentChangeEvent[] = [];
+    const _sPos = _textDocument.positionAt(position[0]);
+    const _ePos = _textDocument.positionAt(position[1] + 1);
+    if (_sPos.line === _ePos.line) {
+        _changes.push({
+            range: Range.create(_sPos, _ePos),
+            text: " ".repeat(_ePos.character - _sPos.character)
+        });
+    }
+    else {
+        for (let i = 0; i <= _ePos.line - _sPos.line; i++) {
+            if (i === 0) {
+                const _text = _textDocument.getText(
+                    Range.create(_sPos, {line: _sPos.line + 1, character: 0})
+                );
+                _changes.push({
+                    range: Range.create(_sPos, {line: _sPos.line + 1, character: 0}),
+                    text: _text.endsWith("\r\n") 
+                        ? " ".repeat(_text.length - 2) + _text.slice(-2)
+                        : " ".repeat(_text.length - 1) + _text.slice(-1)
+                });
+            }
+            else if (i === _ePos.line - _sPos.line) {
+                const _text = _textDocument.getText(
+                    Range.create({line: _ePos.line, character: 0}, _ePos)
+                );
+                _changes.push({
+                    range: Range.create({line: _ePos.line, character: 0}, _ePos),
+                    text: " ".repeat(_text.length)
+                });
+            }
+            else {
+                const _text = getLineText(_textDocument, _sPos.line + i);
+                _changes.push({
+                    range: Range.create(_sPos.line + i, 0, _sPos.line + i + 1, 0),
+                    text: _text.endsWith("\r\n") 
+                        ? " ".repeat(_text.length - 2) + _text.slice(-2) 
+                        : " ".repeat(_text.length - 1) + _text.slice(-1)
+                });
+            }
+        }
+    }
+    TextDocument.update(_textDocument, _changes, _textDocument.version);
+    return _textDocument.getText();
+}
+
+/**
+ * @public Fills a text with whitespaces excluding a position by keeping line structure intact
+ * 
+ * @param text - The text
+ * @param position - the position to exclude
+ * @returns The edited text string
+ */
+export function exclusiveWhitespaceFill(
+    text: string, 
+    position: PositionOffset
+): string {
+    const _start = inclusiveWhitespaceFill(text.slice(0, position[0]), [0, position[0] - 1]);
+    const _endText = text.slice(position[1] + 1);
+    const _end = inclusiveWhitespaceFill(
+        _endText, 
+        [0, _endText.length - 1]
+    );
+    return _start + text.slice(position[0], position[1] + 1) + _end;
+}
+
+/**
+ * @public Checks if a text contains a single numeric value and returns it
+ * 
+ * @param text - The text to process
+ * @returns The numeric value if present, and an empty string if false
+ */
+export function isDotrainConstant(text: string): string {
+    const _items = exclusiveParse(text, /\s+/gd);
+    if (_items.length !== 1) return "";
+    else {
+        if (NUMERIC_PATTERN.test(_items[0][0])) {
+            if (/^[1-9]\d*e\d+$/.test(_items[0][0])) {
+                const _index = _items[0][0].indexOf("e");
+                return _items[0][0].slice(0, _index)
+                    + "0".repeat(Number(_items[0][0].slice(_index + 1)));
+            }
+            else {
+                if (/^0x[0-9a-zA-Z]+$/.test(_items[0][0])) return _items[0][0];
+                else return BigInt(_items[0][0]).toString();
+            }
+        }
+        else return "";
+    }
+}
+
+/**
+ * Trims a text (removing start/end whitespaces) with reporting the number of deletions
+ * @param str - The text to trim
+ */
+export function trim(str: string): {text: string, startDelCount: number, endDelCount: number} {
+    return {
+        text: str.trim(),
+        startDelCount: str.length - str.trimStart().length,
+        endDelCount: str.length - str.trimEnd().length
+    };
 }

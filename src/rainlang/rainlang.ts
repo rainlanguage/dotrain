@@ -1,9 +1,10 @@
+import { MetaStore } from "../dotrain/metaStore";
 import { 
     OpMeta,
-    BigNumber, 
     InputArgs,
     OperandArgs,
-    BigNumberish,
+    OpMetaSchema,
+    metaFromBytes, 
     ComputedOutput 
 } from "@rainprotocol/meta";
 import { 
@@ -14,6 +15,7 @@ import {
     RainlangAST  
 } from "../rainLanguageTypes";
 import {
+    trim,
     deepCopy,
     CONSTANTS,
     extractByBits, 
@@ -21,36 +23,39 @@ import {
     inclusiveParse,
     exclusiveParse,
     constructByBits, 
+    inclusiveWhitespaceFill
 } from "../utils";
 import { 
     ErrorCode, 
     WORD_PATTERN,
     ILLEGAL_CHAR,
-    ValueASTNode, 
     AliasASTNode, 
-    NUMERIC_PATTERN, 
     PositionOffset, 
-    NamedExpression,  
+    NUMERIC_PATTERN 
 } from "../rainLanguageTypes";
 
 
 /**
  * @public
- * Rainlang Parser is a the main workhorse that does all the heavy work of parsing a document, 
+ * Rainlang class is a the main workhorse that does all the heavy work of parsing a document, 
  * written in TypeScript in order to parse a text document using an op meta into known types 
  * which later will be used in RainDocument object and Rain Language Services and Compiler
  */
-export class RainlangParser {
+export class Rainlang {
 
-    public text: string;
-    public ast: RainlangAST = { lines: [] };
-    public problems: Problem[] = [];
-    public comments: Comment[] = [];
-    public constants: Record<string, string>;
-    public namedExpressions: NamedExpression[] = [];
+    public readonly isDotRain: boolean;
+    public readonly constants: Record<string, string> = {
+        "infinity"      : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "max-uint256"   : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "max-uint-256"  : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    };
 
-    private expIndex: number;
+    private text: string;
+    private ast: RainlangAST = [];
+    private problems: Problem[] = [];
+    private comments: Comment[] = [];
     private opmeta: OpMeta[] = [];
+    private expNames: string[] = [];
     private state: {
         nodes: ASTNode[];
         aliases: AliasASTNode[];
@@ -72,84 +77,141 @@ export class RainlangParser {
         };
 
     /**
-     * @public Constructs a new RainParser object
-     * @param textDocument - TextDocument
-     * @param metaStore - (optional) MetaStore object
-     */
-    /**
-     * @public Constructs a new RainParser object
-     * @param namedExpressions - The named expressions from parent RainDocument
-     * @param currentExpIndex - Current index of this expression among all parent RainDocument expression
-     * @param opmeta - The op meta
-     * @param options - Options to instantiate
+     * Constructor of Rainlang class
+     * @param text - the text
+     * @param opmeta - Array of ops metas
+     * @param dotrainOptions - (optional) RainDocument (dotrain) options
      */
     constructor(
-        namedExpressions: NamedExpression[],
-        currentExpIndex: number,
+        text: string,
         opmeta: OpMeta[],
-        options?: { 
+        dotrainOptions?: { 
             /**
-             * Determines if quotes should be resolved into indexes when parsing or not by passing the constants array
-             */
-            resolveQuotes?: {
-                constants: BigNumberish[]
-            }; 
-            /**
-             * Reserved constant values as k/v
+             * Reserved constant values from RainDocument
              */
             constants?: Record<string, string>;
             /**
              * Comments parsed from RainDocument
              */
-            comments?: Comment[]
+            comments?: Comment[];
+            /**
+             * Array of expression names from corresponding RainDocument
+             */
+            expressionNames?: string[],
         }
     ) {
-        this.namedExpressions = namedExpressions;
-        this.text = namedExpressions[currentExpIndex].text;
-        this.expIndex = currentExpIndex;
+        this.text = text;
         this.opmeta = opmeta;
-        if (options?.constants) this.constants = options.constants;
-        else this.constants = {};
-        if (options?.comments) this.comments = options.comments;
-        this.parse(options?.resolveQuotes);
+        this.isDotRain = false;
+        if (dotrainOptions?.comments) {
+            this.comments = dotrainOptions.comments;
+            this.isDotRain = true;
+        }
+        if (dotrainOptions?.constants) {
+            this.constants = dotrainOptions.constants;
+            this.isDotRain = true;
+        }
+        if (dotrainOptions?.expressionNames) {
+            this.expNames = dotrainOptions.expressionNames;
+            this.isDotRain = true;
+        }
+        this.parse();
+    }
+
+    /**
+     * Creates a new Rainlang instance with a opmeta hash
+     * @param text - The text
+     * @param opmetaHash - The op meta hash
+     * @param metaStore - (optional) The MetaStore instance
+     */
+    public static async create(
+        text: string, 
+        opmetaHash: string, 
+        metaStore?: MetaStore
+    ): Promise<Rainlang> {
+        if (!/^0x[a-fA-F0-9]{64}$/.test(opmetaHash)) throw "invalid opmeta hash";
+        const _metaStore = metaStore ?? new MetaStore();
+        let _opmetaBytes = _metaStore.getOpMeta(opmetaHash);
+        if (!_opmetaBytes) {
+            await _metaStore.updateStore(opmetaHash);
+            _opmetaBytes = _metaStore.getOpMeta(opmetaHash);
+            if (!_opmetaBytes) throw "cannot find settlement for provided opmeta hash";
+        }
+        const _opmeta = metaFromBytes(_opmetaBytes, OpMetaSchema);
+        return new Rainlang(text, _opmeta);
     }
 
     /**
      * @public
-     * Parses this instance of RainParser
+     * Parses this instance of Rainlang
      */
-    public parse(resolveQuotes: { constants: BigNumberish[] } | undefined = undefined) {
-        if (/[^\s]+/.test(this.text)) {
-            try {
-                this._parse(resolveQuotes);
+    public parse() {
+        try { this._parse(); }
+        catch (runtimeError) {
+            console.log(runtimeError);
+            if (runtimeError instanceof Error) {
+                this.state.runtimeError = runtimeError;
             }
-            catch (runtimeError) {
-                console.log(runtimeError);
-                if (runtimeError instanceof Error) {
-                    this.state.runtimeError = runtimeError;
-                }
-                else this.state.runtimeError = new Error(runtimeError as string);
-                this.problems.push({
-                    msg: `Runtime Error: ${
-                        this.state.runtimeError.message
-                    }`,
-                    position: [0, -1],
-                    code: ErrorCode.RuntimeError
-                });
-            }
-        }
-        else {
-            this.resetState();
-            this.ast.lines = [];
-            this.problems = [];
-            // this.comments = [];
-            this.state.runtimeError = undefined;
+            else this.state.runtimeError = new Error(runtimeError as string);
             this.problems.push({
-                msg: "invalid empty expression",
-                position: deepCopy(this.namedExpressions[this.expIndex].namePosition),
-                code: ErrorCode.InvalidEmptyExpression
+                msg: `Runtime Error: ${
+                    this.state.runtimeError.message
+                }`,
+                position: [0, -1],
+                code: ErrorCode.RuntimeError
             });
         }
+    }
+
+    /**
+     * @public Updates the text of this Rainlang instance and parse it right after that
+     * @param newText - The new text
+     */
+    public updateText(newText: string) {
+        this.text = newText;
+        this.parse();
+    }
+
+    /**
+     * @public Get the current text of this Rainlang instance
+     */
+    public getText(): string {
+        return this.text;
+    }
+
+    /**
+     * @public Get the current text of this Rainlang instance
+     */
+    public getOpMeta(): OpMeta[] {
+        return deepCopy(this.opmeta);
+    }
+
+    /**
+     * @public Get the current problems of this Rainlang instance
+     */
+    public getProblems(): Problem[] {
+        return deepCopy(this.problems);
+    }
+
+    /**
+     * @public Get the current comments inside of the text of this Rainlang instance
+     */
+    public getComments(): Comment[] {
+        return deepCopy(this.comments);
+    }
+
+    /**
+     * @public Get the current runtime error of this Rainlang instance
+     */
+    public getRuntimeError(): Error | undefined {
+        return deepCopy(this.state.runtimeError);
+    }
+
+    /**
+     * @public Get AST of this Rainlang instance
+     */
+    public getAst(): RainlangAST {
+        return deepCopy(this.ast);
     }
 
     /**
@@ -171,17 +233,6 @@ export class RainlangParser {
     };
 
     /**
-     * @internal Trims the trailing and leading whitespaces and newline characters from a string
-     */
-    private trim = (str: string): {text: string, startDelCount: number, endDelCount: number} => {
-        return {
-            text: str.trim(),
-            startDelCount: str.length - str.trimStart().length,
-            endDelCount: str.length - str.trimEnd().length
-        };
-    };
-
-    /**
      * @internal Method to count outputs of nodes in a parse tree
      */
     private countOutputs(nodes: ASTNode[]): number {
@@ -198,128 +249,148 @@ export class RainlangParser {
 
     /**
      * @internal 
-     * The main workhorse of RainParser which parses the words used in an
+     * The main workhorse of Rainlang which parses the words used in an
      * expression and is responsible for building the parse tree and collect problems
      */
-    private _parse(resolveQuotes: { constants: BigNumberish[] } | undefined = undefined) {
+    private _parse() {
         this.resetState();
-        this.ast.lines = [];
+        this.ast = [];
         this.problems = [];
         // this.comments = [];
         this.state.runtimeError = undefined;
         let document = this.text;
 
-        // check for illigal characters
+        // check for illegal characters
         inclusiveParse(document, ILLEGAL_CHAR).forEach(v => {
             this.problems.push({
                 msg: `illegal character: "${v[0]}"`,
                 position: v[1],
-                code: ErrorCode.IlligalChar
+                code: ErrorCode.IllegalChar
             });
-            document = 
-              document.slice(0, v[1][0]) +
-              " ".repeat(v[0].length) +
-              document.slice(v[1][1] + 1);
+            document = inclusiveWhitespaceFill(document, v[1]);
         });
 
-        // remove indents, tabs, new lines
-        document = document.replace(/\t/g, " ");
-        document = document.replace(/\r\n/g, "  ");
-        document = document.replace(/\r/g, " ");
-        document = document.replace(/\n/g, " ");
+        // parse comments
+        if (!this.isDotRain) {
+            this.comments = [];
+            inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
+                if (!v[0].endsWith("*/")) this.problems.push({
+                    msg: "unexpected end of comment",
+                    position: v[1],
+                    code: ErrorCode.UnexpectedEndOfComment
+                });
+                this.comments.push({
+                    comment: v[0],
+                    position: v[1]
+                });
+                document = inclusiveWhitespaceFill(document, v[1]);
+            });
+        }
+        
+        const _sourceExp: string[] = [];
+        const _sourceExpPos: [number, number][] = []; 
 
-        // // parse comments
-        // inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
-        //     if (!v[0].endsWith("*/")) this.problems.push({
-        //         msg: "unexpected end of comment",
-        //         position: v[1],
-        //         code: ErrorCode.UnexpectedEndOfComment
-        //     });
-        //     this.comments.push({
-        //         comment: v[0],
-        //         position: v[1]
-        //     });
-        //     document = 
-        //       document.slice(0, v[1][0]) +
-        //       " ".repeat(v[0].length) +
-        //       document.slice(v[1][1] + 1);
-        // });
+        // begin parsing expression sources and cache them
+        exclusiveParse(document, /;/gd).forEach((v, i, a) => {
+            // trim excess whitespaces from start and end of the whole text
+            const _trimmed = trim(v[0]);
 
-        // trim excess whitespaces from start and end of the whole text
-        const _trimmed = this.trim(document);
-        const _exp = _trimmed.text;
-        const _expPos: [number, number] = [
-            _trimmed.startDelCount,
-            document.length - _trimmed.endDelCount - 1
-        ];
-        let multiNode = false;
-        let type: "exp" | "const";
-        const _subExp: string[] = [];
-        const _subExpPos: PositionOffset[] = [];
-        const _endDels: number[] = [];
-
-        // parse and cache the sub-expressions
-        exclusiveParse(_exp, /,/gd, _expPos[0], true).forEach((v, i) => {
-            if (i === 0) {
-                if (v[0].includes(":")) type = "exp";
-                else type = "const";
+            if (i === a.length - 1) {
+                if (_trimmed.text) {
+                    if (document[v[1][1] + 1] !== ";") this.problems.push({
+                        msg: "source item expressions must end with semi",
+                        position: [
+                            v[1][1] - _trimmed.endDelCount + 1, 
+                            v[1][1] - _trimmed.endDelCount
+                        ],
+                        code: ErrorCode.ExpectedSemi
+                    });
+                    _sourceExp.push(_trimmed.text);
+                    _sourceExpPos.push([
+                        v[1][0] + _trimmed.startDelCount, 
+                        v[1][1] - _trimmed.endDelCount
+                    ]);
+                }
+                else {
+                    if (document[v[1][1] + 1] === ";") this.problems.push({
+                        msg: "invalid empty expression",
+                        position: [
+                            v[1][1] - _trimmed.endDelCount + 1, 
+                            v[1][1] - _trimmed.endDelCount
+                        ],
+                        code: ErrorCode.InvalidEmptyExpression
+                    });
+                }
             }
-            const _trimmed = this.trim(v[0]);
-            _subExp.push(_trimmed.text);
-            _subExpPos.push([
-                v[1][0] + _trimmed.startDelCount,
-                v[1][1] - _trimmed.endDelCount
-            ]);
-            _endDels.push(_trimmed.endDelCount);
-        });
-        if (_subExp.length > 1) type = "exp";
-
-        const _reservedKeys = [
-            ...this.opmeta.map(v => v.name),
-            ...this.opmeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
-            ...Object.keys(this.constants),
-            ...this.namedExpressions.map(v => v.name)
-        ];
-
-        // begin parsing individual sub-expressions
-        for (let i = 0; i < _subExp.length; i++) {
-            this.resetState();
-            const _positionOffset = _subExpPos[i][0];
-            _reservedKeys.push(...(
-                this.ast.lines[this.ast.lines.length - 1]
-                    ? this.ast.lines[
-                        this.ast.lines.length - 1
-                    ].aliases.map(v => v.name).filter(v => v !== "_")
-                    : []
-            ));
-
-            // error if sub expressions is empty
-            if (!_subExp[i] || _subExp[i].match(/^\s+$/)) this.problems.push({
-                msg: "invalid empty expression",
-                position: _subExpPos[i],
-                code: ErrorCode.InvalidExpression
-            });
-            // check for LHS/RHS delimitter and parse accordingly
-            else if (_subExp[i].includes(":")) {
-                if (type! === "const") this.problems.push({
-                    msg: "unexpected expression",
-                    position: _subExpPos[i],
-                    code: ErrorCode.UnexpectedExpression
+            else {
+                if (!_trimmed.text) this.problems.push({
+                    msg: "invalid empty expression",
+                    position: [
+                        v[1][1] - _trimmed.endDelCount + 1, 
+                        v[1][1] - _trimmed.endDelCount
+                    ],
+                    code: ErrorCode.InvalidEmptyExpression
                 });
                 else {
-                    const _lhs = _subExp[i].slice(0, _subExp[i].indexOf(":"));
-                    const _rhs = _subExp[i].slice(_subExp[i].indexOf(":") + 1);
+                    _sourceExp.push(_trimmed.text);
+                    _sourceExpPos.push([
+                        v[1][0] + _trimmed.startDelCount, 
+                        v[1][1] - _trimmed.endDelCount
+                    ]);
+                }
+            }
+        });
 
-                    // check for invalid RHS comments
+        for (let i = 0; i < _sourceExp.length; i++) {
+            const _reservedKeys = [
+                ...this.opmeta.map(v => v.name),
+                ...this.opmeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
+                ...Object.keys(this.constants),
+                ...this.expNames
+            ];
+            const _endDels: number[] = [];
+            const _subExp: string[] = [];
+            const _subExpPos: PositionOffset[] = [];
+            this.ast.push({ lines: [], position: [..._sourceExpPos[i]] });
+
+            // parse and cache the sub-expressions
+            exclusiveParse(_sourceExp[i], /,/gd, _sourceExpPos[i][0], true).forEach(v => {
+                const _trimmed = trim(v[0]);
+                _subExp.push(_trimmed.text);
+                _subExpPos.push([
+                    v[1][0] + _trimmed.startDelCount,
+                    v[1][1] - _trimmed.endDelCount
+                ]);
+                _endDels.push(_trimmed.endDelCount);
+            });
+
+            // begin parsing individual sub-expressions
+            for (let j = 0; j < _subExp.length; j++) {
+                this.resetState();
+                const _positionOffset = _subExpPos[j][0];
+                _reservedKeys.push(...(
+                    this.ast[i].lines[j - 1]
+                        ? this.ast[i].lines[j - 1].aliases
+                            .map(v => v.name)
+                            .filter(v => v !== "_")
+                        : []
+                ));
+
+                // check for LHS/RHS delimitter and parse accordingly
+                if (_subExp[j].includes(":")) {
+                    const _lhs = _subExp[j].slice(0, _subExp[j].indexOf(":"));
+                    const _rhs = _subExp[j].slice(_subExp[j].indexOf(":") + 1);
+
+                    // check for invalid comments
                     for (const _cm of this.comments) {
                         if (
-                            _cm.position[0] > _positionOffset + 
-                                _subExp[i].indexOf(":") &&
-                            _cm.position[0] < _subExpPos[i][1] + _endDels[i]
+                            _cm.position[0] > _positionOffset
+                            // + _subExp[j].indexOf(":")
+                            && _cm.position[0] < _subExpPos[j][1] + _endDels[j] + 1
                         ) this.problems.push({
-                            msg: "unexpected RHS comment",
+                            msg: "unexpected comment",
                             position: [..._cm.position],
-                            code: ErrorCode.UnexpectedRHSComment
+                            code: ErrorCode.UnexpectedComment
                         });
                     }
 
@@ -353,18 +424,22 @@ export class RainlangParser {
                     }
 
                     // parsing RHS
-                    this.consume(_rhs, _positionOffset + _subExp[i].length, resolveQuotes);
+                    this.consume(
+                        _rhs, 
+                        _positionOffset + _subExp[j].length, 
+                        // resolveQuotes
+                    );
 
                     // validating RHS against LHS
                     const _outputCount = this.countOutputs(this.state.nodes);
                     if (!isNaN(_outputCount)) {
                         const _tags = [...this.state.aliases];
                         if (!(
-                            this.ast.lines.map(v => v.nodes).flat().length === 0 && 
+                            this.ast[i].lines.map(v => v.nodes).flat().length === 0 && 
                             this.state.nodes.length === 0
                         )) {
-                            for (let j = 0; j < this.state.nodes.length; j++) {
-                                const _node = this.state.nodes[j];
+                            for (let k = 0; k < this.state.nodes.length; k++) {
+                                const _node = this.state.nodes[k];
                                 _node.lhsAlias = [];
                                 if (OpASTNode.is(_node)) {
                                     if (_node.output > 0) {
@@ -374,12 +449,12 @@ export class RainlangParser {
                                             }
                                         }
                                         else {
-                                            for (let k = 0; k < _tags.length; k++) {
+                                            for (let l = 0; l < _tags.length; l++) {
                                                 _node.lhsAlias.push(_tags.shift()!);
                                             }
                                             this.problems.push({
                                                 msg: "no LHS item exists to match this RHS item",
-                                                position: _node.position,
+                                                position: [..._node.position],
                                                 code: ErrorCode.MismatchLHS
                                             });
                                         }
@@ -389,95 +464,60 @@ export class RainlangParser {
                                     if (_tags.length >= 1) _node.lhsAlias.push(_tags.shift()!);
                                     else this.problems.push({
                                         msg: "no LHS item exists to match this RHS item",
-                                        position: _node.position,
+                                        position: [..._node.position],
                                         code: ErrorCode.MismatchLHS
                                     });
                                 }
                             }
                             if (_tags.length > 0) {
-                                for (let j = 0; j < _tags.length; j++) {
+                                for (let k = 0; k < _tags.length; k++) {
                                     this.problems.push({
                                         msg: `no RHS item exists to match this LHS item: ${
-                                            _tags[j].name
+                                            _tags[k].name
                                         }`,
-                                        position: _tags[j].position,
+                                        position: [..._tags[k].position],
                                         code: ErrorCode.MismatchRHS
                                     });
                                 }
                             }
                         }
                     }
-                    else for (let j = 0; j < this.state.nodes.length; j++) {
-                        this.state.nodes[j].lhsAlias = [];
+                    else for (let k = 0; k < this.state.nodes.length; k++) {
+                        this.state.nodes[k].lhsAlias = [];
                     }
                 }
-            }
-            // parse accordingly if there is no lhs/rhs delimiter
-            else {
-                this.consume(
-                    _subExp[i], 
-                    _positionOffset + _subExp[i].length, 
-                    resolveQuotes
-                );
-                if (type! === "exp") this.problems.push({
-                    msg: "invalid expression",
-                    position: _subExpPos[i],
-                    code: ErrorCode.InvalidExpression
-                });
                 else {
-                    if (
-                        this.state.nodes.length + 
-                        this.ast.lines.map(v => v.nodes).flat().length !== 1
-                    ) {
-                        for (let j = 0; j < this.state.nodes.length; j++) {
-                            if (multiNode) this.problems.push({
-                                msg: "unexpected fragment",
-                                position: this.state.nodes[j].position,
-                                code: ErrorCode.UnexpectedFragment
-                            });
-                            else {
-                                if (j === 0) {
-                                    multiNode = true;
-                                    if (!ValueASTNode.is(this.state.nodes[j])) {
-                                        this.problems.push({
-                                            msg: "expected a constant value",
-                                            position: this.state.nodes[j].position,
-                                            code: ErrorCode.ExpectedConstant
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        if (!ValueASTNode.is(this.state.nodes[0])) {
-                            this.problems.push({
-                                msg: "expected a constant value",
-                                position: this.state.nodes[0].position,
-                                code: ErrorCode.ExpectedConstant
-                            });
-                        }
-                    }
+                    // error if sub expressions is empty
+                    if (!_subExp[j] || _subExp[j].match(/^\s+$/)) this.problems.push({
+                        msg: "invalid empty expression line",
+                        position: [..._subExpPos[j]],
+                        code: ErrorCode.InvalidEmptyExpression
+                    });
+                    else this.problems.push({
+                        msg: "invalid expression line",
+                        position: [..._subExpPos[j]],
+                        code: ErrorCode.InvalidExpression
+                    });
                 }
-            }
 
-            // uppdate AST
-            this.ast.lines.push({
-                nodes: this.state.nodes.splice(
-                    -this.state.nodes.length
-                ),
-                aliases: this.state.aliases.splice(
-                    -this.state.aliases.length
-                ),
-                position: _subExpPos[i]
-            });
+                // uppdate AST
+                this.ast[i].lines.push({
+                    nodes: this.state.nodes.splice(
+                        -this.state.nodes.length
+                    ),
+                    aliases: this.state.aliases.splice(
+                        -this.state.aliases.length
+                    ),
+                    position: [..._subExpPos[j]]
+                });
+            }
         }
     }
 
     /**
-     * @internal Method to update the parse tree
+     * @internal Method to update the parse state
      */
-    private updateAST(node: ASTNode) {
+    private updateState(node: ASTNode) {
         let _nodes: ASTNode[] = this.state.nodes;
         for (let i = 0; i < this.state.depth; i++) {
             _nodes = (_nodes[_nodes.length - 1] as OpASTNode).parameters;
@@ -488,14 +528,10 @@ export class RainlangParser {
     /**
      * @internal Consumes items in an expression
      */
-    private consume(
-        exp: string, 
-        offset: number, 
-        resolveQuotes: { constants: BigNumberish[] } | undefined = undefined
-    ) {
+    private consume(exp: string, offset: number) {
         while (exp.length > 0) {
             const _currentPosition = offset - exp.length;
-            if (exp.startsWith(" ")) {
+            if (exp.match(/^\s/)) {
                 exp = exp.slice(1);
             }
             else if (exp.startsWith(")")) {
@@ -516,19 +552,14 @@ export class RainlangParser {
                     code: ErrorCode.ExpectedSpace
                 });
             }
-            else exp = this.resolveWord(exp, _currentPosition, resolveQuotes);
+            else exp = this.resolveWord(exp, _currentPosition);
         }
     }
 
     /**
      * @internal Method to handle operand arguments
      */
-    private resolveOperand(
-        exp: string, 
-        pos: number, 
-        op: OpASTNode, 
-        resolveQuotes: { constants: BigNumberish[] } | undefined = undefined
-    ): [string, OpASTNode] {
+    private resolveOperand(exp: string, pos: number, op: OpASTNode): [string, OpASTNode] {
         if (!exp.includes(">")) {
             this.problems.push({
                 msg: "expected \">\"",
@@ -577,54 +608,32 @@ export class RainlangParser {
                 });
             }
             _parsedVals.forEach((v, i) => {
-                const _isValid = /^[0-9]+$|^0x[a-fA-F0-9]+$|^(?:')[a-z][a-z0-9-]*$/.test(v[0]);
-                if (_isValid) {
-                    let quoteIndex = -1;
-                    let quoteValue = -1;
-                    const quote = v[0].match(/^'[a-z][a-z0-9-]*$/);
-                    if (quote) {
-                        quoteIndex = this.namedExpressions.findIndex(
-                            v => v.name === quote[0].slice(1)
-                        );
-                        if (quoteIndex === -1) this.problems.push({
-                            msg: `undefined expression binding key: ${v[0].slice(1)}`,
-                            position: v[1],
-                            code: ErrorCode.UndefinedExpression
-                        });
-                        else {
-                            if (
-                                resolveQuotes &&
-                                NamedExpression.isConstant(this.namedExpressions[quoteIndex])
-                            ) {
-                                // quoteValue = Number((this.namedExpressions[
-                                //     quoteIndex
-                                // ].parseObj?.ast.lines[0].nodes[0] as ValueASTNode).value);
-                                const _val = (this.namedExpressions[
-                                    quoteIndex
-                                ].parseObj?.ast.lines[0].nodes[0] as ValueASTNode).value;
-                                quoteValue = resolveQuotes.constants.findIndex(
-                                    v => BigNumber.from(v).eq(_val)
-                                );
-                                if (quoteValue === -1) {
-                                    quoteValue = resolveQuotes.constants.length;
-                                    resolveQuotes.constants.push(_val);
-                                }
+                const _validArgPattern = this.isDotRain 
+                    ? /^[0-9]+$|^0x[a-fA-F0-9]+$|^(?:')[a-z][a-z0-9-]*$/
+                    : /^[0-9]+$|^0x[a-fA-F0-9]+$/;
+                if (_validArgPattern.test(v[0])) {
+                    const _quote = v[0].match(/^'[a-z][a-z0-9-]*$/);
+                    if (_quote) {
+                        const _q = _quote[0].slice(1);
+                        if (this.expNames.indexOf(_q) === -1) {
+                            if (this.constants[_q]) {
+                                this.problems.push({
+                                    msg: `invalid quote: ${_q}`,
+                                    position: v[1],
+                                    code: ErrorCode.InvalidQuote
+                                });
                             }
+                            else this.problems.push({
+                                msg: `undefined quote: ${_q}`,
+                                position: v[1],
+                                code: ErrorCode.UndefinedQuote
+                            });
                         }
                     }
                     op.operandArgs!.args.push({
                         value: !v[0].startsWith("'") 
                             ? v[0]
-                            : !resolveQuotes || quoteIndex === -1
-                                ? v[0].slice(1) 
-                                : quoteValue !== -1
-                                    ? quoteValue.toString()
-                                    : quoteIndex.toString(),
-                        // : quoteValue !== -1
-                        //     ? quoteValue.toString()
-                        //     : quoteIndex > -1 && resolveQuotes
-                        //         ? quoteIndex.toString() 
-                        //         : v[0].slice(1),
+                            : v[0].slice(1) ,
                         name: _operandMeta[i]?.name ?? "unknown",
                         position: v[1],
                         description: _operandMeta[i]?.desc ?? ""
@@ -633,7 +642,7 @@ export class RainlangParser {
                 else this.problems.push({
                     msg: `invalid argument pattern: ${v[0]}`,
                     position: v[1],
-                    code: ErrorCode.InvalidWordPattern
+                    code: ErrorCode.InvalidOperandArg
                 });
                 if (_index > -1 && i >= _operandMeta.length) this.problems.push({
                     msg: `unexpected operand argument for ${op.opcode.name}`,
@@ -677,7 +686,7 @@ export class RainlangParser {
                     _node.operand = NaN;
                     this.problems.push({
                         msg: `opcode ${_node.opcode.name} doesn't have argumented operand`,
-                        position: _node.operandArgs.position,
+                        position: [..._node.operandArgs.position],
                         code: ErrorCode.MismatchOperandArgs
                     });
                 }
@@ -702,24 +711,22 @@ export class RainlangParser {
             else {
                 let _argIndex = 0;
                 let _inputsIndex = -1;
-                const _argsLength = (
-                  this.opmeta[_index].operand as OperandArgs
-                ).find(
-                    v => v.name === "inputs"
-                )
+                const _argsLength = (this.opmeta[_index].operand as OperandArgs)
+                    .find(v => v.name === "inputs")
                     ? (this.opmeta[_index].operand as OperandArgs).length - 1
                     : (this.opmeta[_index].operand as OperandArgs).length;
+
                 if (_argsLength === (_node.operandArgs?.args.length ?? 0)) {
                     if ((_argsLength === 0 && !_node.operandArgs) || _argsLength > 0) {
-                        let hasQuote = false;
+                        let _hasQuote = false;
                         if (_node.operandArgs?.args) {
                             for (let i = 0; i < _node.operandArgs.args.length; i++) {
                                 if (WORD_PATTERN.test(_node.operandArgs!.args[i].value)) {
-                                    hasQuote = true;
+                                    _hasQuote = true;
                                 }
                             }
                         }
-                        if (hasQuote) {
+                        if (_hasQuote) {
                             _node.operand = NaN;
                             if (typeof this.opmeta[_index].outputs !== "number") _node.output = NaN;
                         }
@@ -817,7 +824,7 @@ export class RainlangParser {
                     _node.operand = NaN;
                     if (_argsLength > 0 && !_node.operandArgs) this.problems.push({
                         msg: `expected operand arguments for opcode ${_node.opcode.name}`,
-                        position: _node.opcode.position,
+                        position: [..._node.opcode.position],
                         code: ErrorCode.ExpectedOperandArgs
                     });
                 }
@@ -838,11 +845,7 @@ export class RainlangParser {
     /**
      * @internal Method that parses an upcoming word to a rainlang AST node
      */
-    private resolveWord(
-        exp: string, 
-        entry: number, 
-        resolveQuotes: { constants: BigNumberish[] } | undefined = undefined
-    ): string {
+    private resolveWord(exp: string, entry: number): string {
         const _offset = this.findOffset(exp);
         const _index = _offset < 0 
             ? exp.length 
@@ -850,9 +853,12 @@ export class RainlangParser {
         const _word = exp.slice(0, _index);
         const _wordPos: [number, number] = [entry, entry + _word.length - 1];
         exp = exp.replace(_word, "");
-        const _aliasIndex = this.ast.lines.findIndex(v => !!v.aliases.find(e => e.name === _word));
+
+        const _aliasIndex = this.ast[this.ast.length - 1].lines.findIndex(
+            v => !!v.aliases.find(e => e.name === _word)
+        );
         const _currentAliasIndex = this.state.aliases.findIndex(v => v.name === _word);
-        const _bindingsAliasIndex = this.namedExpressions.findIndex(v => v.name === _word);
+        const _bindingsAliasIndex = this.expNames.indexOf(_word);
 
         if (exp.startsWith("(") || exp.startsWith("<")) {
             if (!_word) this.problems.push({
@@ -887,8 +893,7 @@ export class RainlangParser {
             if (exp.startsWith("<")) [exp, _op] = this.resolveOperand(
                 exp, 
                 entry + _word.length, 
-                _op, 
-                resolveQuotes
+                _op
             );
             if (exp.startsWith("(")) {
                 const _pos = _op.operandArgs 
@@ -897,7 +902,7 @@ export class RainlangParser {
                 exp = exp.replace("(", "");
                 this.state.parens.open.push(_pos);
                 _op.parens[0] = _pos;
-                this.updateAST(_op);
+                this.updateState(_op);
                 this.state.depth++;
                 this.problems.push({
                     msg: "expected \")\"",
@@ -925,15 +930,13 @@ export class RainlangParser {
                 code: ErrorCode.InvalidSelfReferenceLHS
             });
             if (_aliasIndex === -1 && _currentAliasIndex === -1 && _bindingsAliasIndex > -1) {
-                if (!NamedExpression.isConstant(this.namedExpressions[_bindingsAliasIndex])) {
-                    this.problems.push({
-                        msg: "unexpected usage of expression key",
-                        position: [..._wordPos],
-                        code: ErrorCode.UnexpectedExpressionKeyUsage
-                    });
-                }
+                this.problems.push({
+                    msg: "unexpected usage of expression key",
+                    position: [..._wordPos],
+                    code: ErrorCode.UnexpectedExpressionKeyUsage
+                });
             }
-            this.updateAST({
+            this.updateState({
                 name: _word,
                 position: [..._wordPos]
             });
@@ -952,14 +955,14 @@ export class RainlangParser {
                     code: ErrorCode.OutOfRangeValue
                 });
             }
-            this.updateAST({
+            this.updateState({
                 value: _val,
                 position: [..._wordPos],
             });
         }
         else if (WORD_PATTERN.test(_word)) {
             if (Object.keys(this.constants).includes(_word)) {
-                this.updateAST({
+                this.updateState({
                     value: _word,
                     position: [..._wordPos],
                 });
@@ -970,7 +973,7 @@ export class RainlangParser {
                     position: [..._wordPos],
                     code: ErrorCode.UndefinedWord
                 });
-                this.updateAST({
+                this.updateState({
                     name: _word,
                     position: [..._wordPos]
                 });
@@ -982,7 +985,7 @@ export class RainlangParser {
                 position: [..._wordPos],
                 code: ErrorCode.InvalidWordPattern
             });
-            this.updateAST({
+            this.updateState({
                 name: _word,
                 position: [..._wordPos]
             });

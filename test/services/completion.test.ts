@@ -67,7 +67,7 @@ describe("Rainlang Code Completion Service Tests", async function () {
             TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} #exp _: `), 
             store
         );
-        Object.keys(_rd.getConstants()).forEach(v => {
+        Object.keys(_rd.constants).forEach(v => {
             _allCompletions.unshift({
                 label: v,
                 kind: CompletionItemKind.Constant,
@@ -114,7 +114,7 @@ describe("Rainlang Code Completion Service Tests", async function () {
             TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} name: n`), 
             store
         );
-        Object.keys(_rd.getConstants()).forEach(v => {
+        Object.keys(_rd.constants).forEach(v => {
             _allCompletions.unshift({
                 label: v,
                 kind: CompletionItemKind.Constant,

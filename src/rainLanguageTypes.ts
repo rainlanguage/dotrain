@@ -1,7 +1,7 @@
-import { MetaStore } from "./parser/metaStore";
+import { Rainlang } from "./rainlang/rainlang";
+import { MetaStore } from "./dotrain/metaStore";
 import { BigNumberish, BytesLike } from "./utils";
 import { MarkupKind } from "vscode-languageserver-types";
-import { RainlangParser } from "./parser/rainlangParser";
 import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
 
 export * from "vscode-languageserver-types";
@@ -35,9 +35,9 @@ export const NUMERIC_PATTERN = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$
 export enum ErrorCode {
     UndefinedOpMeta = 0,
     UndefinedWord = 1,
-    IlligalChar = 2,
-    UndefinedMeta = 3,
-    UndefinedExpression = 4,
+    IllegalChar = 2,
+    UndefinedImport = 3,
+    UndefinedQuote = 4,
 
     InvalidWordPattern = 0x101,
     InvalidExpression = 0x102,
@@ -49,6 +49,8 @@ export enum ErrorCode {
     InvalidImport = 0x108,
     InvalidEmptyExpression = 0x109,
     InvalidExpressionKey = 0x110,
+    InvalidQuote = 0x111,
+    InvalidOperandArg = 0x112,
 
     UnexpectedEndOfComment = 0x201,
     UnexpectedClosingParen = 0x202,
@@ -56,7 +58,7 @@ export enum ErrorCode {
     UnexpectedFragment = 0x204,
     UnexpectedExpression = 0x205,
     UnexpectedString = 0x206,
-    UnexpectedRHSComment = 0x207,
+    UnexpectedComment = 0x207,
 
     ExpectedOpcode = 0x301,
     ExpectedSpace = 0x302,
@@ -65,6 +67,7 @@ export enum ErrorCode {
     ExpectedOpeningParen = 0x305,
     ExpectedClosingAngleBracket = 0x306,
     ExpectedConstant = 0x307,
+    ExpectedSemi = 0x308,
 
     MismatchRHS = 0x401,
     MismatchLHS = 0x402,
@@ -76,7 +79,8 @@ export enum ErrorCode {
 
     DuplicateAlias = 0x801,
     DuplicateContextAlias = 0x802,
-    DuplicateExpressionKey = 0x803,
+    DuplicateExpIdentifier = 0x803,
+    DuplicateIdentifier = 0x804,
 
     UnknownOp = 0x700,
 
@@ -482,46 +486,29 @@ export type RainlangAST = {
         nodes: ASTNode[]; 
         position: PositionOffset; 
         aliases: AliasASTNode[];
-    }[]
-}
+    }[];
+    position: PositionOffset;
+}[];
 
 /**
  * @public The namespace provides functionality to type check
  */
 export namespace RainlangAST {
-
     /**
      * @public Checks if a value is a valid RainlangAST
      * @param value - The value to check
      */
     export function is(value: any): value is RainlangAST {
-        return value !== null
-            && typeof value === "object"
-            && Array.isArray(value.lines)
-            && value.lines.every((v: any) => PositionOffset.is(v.position)
-                    && Array.isArray(v.nodes)
-                    && v.nodes.every((e: any) => ASTNode.is(e))
-                    && Array.isArray(v.aliases)
-                    && v.aliases.every((e: any) => AliasASTNode.is(e))
-            );
-    }
-
-    /**
-     * @public Checks if a value is a valid RainlangAST Constant
-     * @param value - The value to check
-     */
-    export function isConstant(value: any): boolean {
-        return value !== null
-            && typeof value === "object"
-            && Array.isArray(value.lines)
-            && value.lines.length === 1
-            && value.lines.every((v: any) => PositionOffset.is(v.position)
-                    && Array.isArray(v.nodes)
-                    && v.nodes.length === 1
-                    && ValueASTNode.is(v.nodes[0])
-                    && typeof v.nodes[0].lhsAlias === "undefined"
-                    && Array.isArray(v.aliases)
-                    && v.aliases.length === 0
+        return Array.isArray(value)
+            && value.every(v => v !== null
+                && typeof v === "object"
+                && Array.isArray(v.lines)
+                && v.lines.every((l: any) => PositionOffset.is(l.position)
+                        && Array.isArray(l.nodes)
+                        && l.nodes.every((n: any) => ASTNode.is(n))
+                        && Array.isArray(l.aliases)
+                        && l.aliases.every((n: any) => AliasASTNode.is(n))
+                )
             );
     }
 
@@ -530,17 +517,19 @@ export namespace RainlangAST {
      * @param value - The value to check
      */
     export function isExpression(value: any): boolean {
-        return value !== null
-            && typeof value === "object"
-            && Array.isArray(value.lines)
-            && value.lines.length > 0
-            && value.lines.every((v: any) => PositionOffset.is(v.position)
-                && Array.isArray(v.nodes)
-                && Array.isArray(v.aliases)
-                && (
-                    v.aliases.length > 0 ||
-                    v.nodes.every(
-                        (e: any) => ASTNode.is(e) && e.lhsAlias !== undefined
+        return Array.isArray(value)
+            && value.every(v => v !== null
+                && typeof v === "object"
+                && Array.isArray(v.lines)
+                && v.lines.length > 0
+                && v.lines.every((l: any) => PositionOffset.is(l.position)
+                    && Array.isArray(l.nodes)
+                    && Array.isArray(l.aliases)
+                    && (
+                        l.aliases.length > 0 ||
+                        l.nodes.every(
+                            (n: any) => ASTNode.is(n) && n.lhsAlias !== undefined
+                        )
                     )
                 )
             );
@@ -553,9 +542,10 @@ export namespace RainlangAST {
 export type NamedExpression = {
     name: string;
     namePosition: PositionOffset;
-    text: string;
+    content: string;
+    contentPosition: PositionOffset;
     position: PositionOffset;
-    parseObj?: RainlangParser;
+    rainlang?: Rainlang;
 }
 
 /**
@@ -575,24 +565,9 @@ export namespace NamedExpression {
             && typeof value.text === "string"
             && PositionOffset.is(value.position)
             && (
-                typeof value.parseObj === "undefined" ||
-                value.parseObj instanceof RainlangParser
+                typeof value.rainlang === "undefined" ||
+                value.rainlang instanceof Rainlang
             );
-    }
-
-    /**
-     * @public Checks if a value is a valid NamedExpression Constant
-     * @param value - The value to check
-     */
-    export function isConstant(value: any): boolean {
-        return value !== null
-            && typeof value === "object"
-            && typeof value.name === "string"
-            && PositionOffset.is(value.namePosition)
-            && typeof value.text === "string"
-            && PositionOffset.is(value.position)
-            && value.parseObj instanceof RainlangParser
-            && RainlangAST.isConstant(value.parseObj.ast);
     }
 
     /**
@@ -606,8 +581,8 @@ export namespace NamedExpression {
             && PositionOffset.is(value.namePosition)
             && typeof value.text === "string"
             && PositionOffset.is(value.position)
-            && value.parseObj instanceof RainlangParser
-            && RainlangAST.isExpression(value.parseObj.ast);
+            && value.rainlang instanceof Rainlang
+            && RainlangAST.isExpression(value.rainlang.ast);
     }
 }
 

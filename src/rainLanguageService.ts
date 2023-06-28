@@ -1,6 +1,6 @@
-import { MetaStore } from "./parser/metaStore";
+import { MetaStore } from "./dotrain/metaStore";
 import { getRainlangHover } from "./services/hover";
-import { RainDocument } from "./parser/rainDocument";
+import { RainDocument } from "./dotrain/rainDocument";
 import { getRainlangCompletion } from "./services/completion";
 import { getRainlangDiagnostics } from "./services/diagnostics";
 import {

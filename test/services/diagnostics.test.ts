@@ -39,13 +39,13 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: found illegal character: \"\\u00a2\"", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _: add(¢ 2)`, 
+            rainlang`@${opMetaHash} #exp _: add(¢ 2);`, 
             store, 
             [{ 
                 message: "illegal character: \"\u00a2\"", 
                 range: toRange(0, 80, 0, 81), 
                 severity: DiagnosticSeverity.Error, 
-                code: ErrorCode.IlligalChar, 
+                code: ErrorCode.IllegalChar, 
                 source: "rainlang" 
             }]
         );
@@ -65,15 +65,15 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         );
     });
 
-    it("should error: unexpected RHS comment", async () => {
+    it("should error: unexpected comment", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _ _: add(10 20) /* invalid comment */ mul(1 2)`, 
+            rainlang`@${opMetaHash} #exp _ _: add(10 20) /* invalid comment */ mul(1 2);`, 
             store, 
             [{ 
-                message: "unexpected RHS comment", 
+                message: "unexpected comment", 
                 range: toRange(0, 89, 0, 110), 
                 severity: DiagnosticSeverity.Error, 
-                code: ErrorCode.UnexpectedRHSComment, 
+                code: ErrorCode.UnexpectedComment, 
                 source: "rainlang" 
             }]
         );
@@ -81,7 +81,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: invalid LHS alias: 123add123", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp 123add123: add(10 20)`, 
+            rainlang`@${opMetaHash} #exp 123add123: add(10 20);`, 
             store, 
             [{ 
                 message: "invalid LHS alias: 123add123", 
@@ -95,7 +95,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: ()`, 
+            rainlang`@${opMetaHash} #exp x: ();`, 
             store, 
             [{ 
                 message: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis", 
@@ -109,7 +109,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: unexpected \")\"", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: )`, 
+            rainlang`@${opMetaHash} #exp x: );`, 
             store, 
             [{ 
                 message: "unexpected \")\"", 
@@ -123,7 +123,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: expected to be seperated by space", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: sub(add(10 20)add(1 2))`, 
+            rainlang`@${opMetaHash} #exp x: sub(add(10 20)add(1 2));`, 
             store, 
             [{ 
                 message: "expected to be seperated by space", 
@@ -137,7 +137,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: no RHS item exists to match this LHS item: z", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: add(10 20), z: `, 
+            rainlang`@${opMetaHash} #exp x: add(10 20), z: ;`, 
             store, 
             [{ 
                 message: "no RHS item exists to match this LHS item: z", 
@@ -151,7 +151,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: no LHS item exists to match this RHS item", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp : add(10 20)`, 
+            rainlang`@${opMetaHash} #exp : add(10 20);`, 
             store, 
             [{ 
                 message: "no LHS item exists to match this RHS item", 
@@ -165,11 +165,11 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: undefined word", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp this-is-an-invalid-rain-expression`, 
+            rainlang`@${opMetaHash} #exp _: this-is-an-invalid-rain-expression;`, 
             store, 
             [{ 
                 message: "undefined word: this-is-an-invalid-rain-expression", 
-                range: toRange(0, 73, 0, 107), 
+                range: toRange(0, 76, 0, 110), 
                 severity: DiagnosticSeverity.Error, 
                 code: ErrorCode.UndefinedWord, 
                 source: "rainlang" 
@@ -179,7 +179,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: invalid argument pattern", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: read-memory<error-argument>()`, 
+            rainlang`@${opMetaHash} #exp x: read-memory<error-argument>();`, 
             store, 
             [
                 {
@@ -193,7 +193,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
                     message: "invalid argument pattern: error-argument", 
                     range: toRange(0, 88, 0, 102), 
                     severity: DiagnosticSeverity.Error, 
-                    code: ErrorCode.InvalidWordPattern, 
+                    code: ErrorCode.InvalidOperandArg, 
                     source: "rainlang" 
                 }
             ]
@@ -202,7 +202,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: opcode mul doesn't have argumented operand", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: mul<10>(10 20)`, 
+            rainlang`@${opMetaHash} #exp x: mul<10>(10 20);`, 
             store, 
             [{ 
                 message: "opcode mul doesn't have argumented operand", 
@@ -216,7 +216,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: unexpected operand argument for opcode", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: read-memory<1 2 3>(1)`, 
+            rainlang`@${opMetaHash} #exp x: read-memory<1 2 3>(1);`, 
             store, 
             [{ 
                 message: "unexpected operand argument for read-memory", 
@@ -230,7 +230,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: expected more operand args for opcode", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: read-memory<>()`, 
+            rainlang`@${opMetaHash} #exp x: read-memory<>();`, 
             store, 
             [{ 
                 message: "expected 2 operand arguments for read-memory", 
@@ -244,7 +244,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: out-of-range inputs", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: read-memory<0 1>(1)`, 
+            rainlang`@${opMetaHash} #exp x: read-memory<0 1>(1);`, 
             store, 
             [{ 
                 message: "out-of-range inputs", 
@@ -258,7 +258,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: out-of-range inputs", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: read-memory<0 1>(1)`, 
+            rainlang`@${opMetaHash} #exp x: read-memory<0 1>(1);`, 
             store, 
             [{ 
                 message: "out-of-range inputs", 
@@ -272,7 +272,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: out-of-range inputs", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: erc-20-balance-of(10 20 30)`, 
+            rainlang`@${opMetaHash} #exp x: erc-20-balance-of(10 20 30);`, 
             store, 
             [{ 
                 message: "out-of-range inputs", 
@@ -286,7 +286,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: out-of-range operand argument", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _ _ _ _: do-while<1233>(1 2 3 1 3 )`, 
+            rainlang`@${opMetaHash} #exp _ _ _ _: do-while<1233>(1 2 3 1 3 );`, 
             store, 
             [{ 
                 message: "out-of-range operand argument", 
@@ -300,7 +300,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: zero output opcodes cannot be nested", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _: add(ensure(2) add(10 20))`, 
+            rainlang`@${opMetaHash} #exp _: add(ensure(2) add(10 20));`, 
             store, 
             [{ 
                 message: "zero output opcodes cannot be nested", 
@@ -314,7 +314,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: multi output opcodes cannot be nested", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _: add(do-while<1>(1 2 3 1 3 ) add(10 20))`, 
+            rainlang`@${opMetaHash} #exp _: add(do-while<1>(1 2 3 1 3 ) add(10 20));`, 
             store, 
             [{ 
                 message: "multi output opcodes cannot be nested", 
@@ -328,7 +328,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: invalid word pattern and unknown opcode", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _: read-mem.ory<1 1>()`, 
+            rainlang`@${opMetaHash} #exp _: read-mem.ory<1 1>();`, 
             store, 
             [
                 { 
@@ -351,7 +351,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: expected operand arguments for opcode loop-n", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _: loop-n()`, 
+            rainlang`@${opMetaHash} #exp _: loop-n();`, 
             store, 
             [{ 
                 message: "expected operand arguments for opcode loop-n", 
@@ -365,7 +365,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: expected \"(\"", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _ _: loop-n<1 2 2>`, 
+            rainlang`@${opMetaHash} #exp _ _: loop-n<1 2 2>;`, 
             store, 
             [{ 
                 message: "expected \"(\"", 
@@ -379,7 +379,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: expected \")\"", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _ _: loop-n<1 2 2>(`, 
+            rainlang`@${opMetaHash} #exp _ _: loop-n<1 2 2>(;`, 
             store, 
             [{ 
                 message: "expected \")\"", 
@@ -393,7 +393,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: invalid LHS alias: addval_as", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp addval_as: add(1 20), x: addval_as`, 
+            rainlang`@${opMetaHash} #exp addval_as: add(1 20), x: addval_as;`, 
             store, 
             [{ 
                 message: "invalid LHS alias: addval_as", 
@@ -407,7 +407,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: cannot reference self", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: add(1 x)`, 
+            rainlang`@${opMetaHash} #exp x: add(1 x);`, 
             store, 
             [
                 { 
@@ -423,7 +423,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: value greater than 32 bytes in size", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _: add(1 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)`, 
+            rainlang`@${opMetaHash} #exp _: add(1 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);`, 
             store, 
             [{ 
                 message: "value greater than 32 bytes in size", 
@@ -437,7 +437,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: undefined word: max-uint266", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp x: max-uint266`, 
+            rainlang`@${opMetaHash} #exp x: max-uint266;`, 
             store, 
             [{ 
                 message: "undefined word: max-uint266", 
@@ -451,11 +451,11 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: \"_notdefined\" is not a valid rainlang word", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _: add(10 20) #exp1 x: _notdefined`, 
+            rainlang`@${opMetaHash} #exp _: add(10 20); #exp1 x: _notdefined;`, 
             store, 
             [{ 
                 message: "\"_notdefined\" is not a valid rainlang word", 
-                range: toRange(0, 96, 0, 107), 
+                range: toRange(0, 97, 0, 108), 
                 severity: DiagnosticSeverity.Error, 
                 code: ErrorCode.InvalidWordPattern, 
                 source: "rainlang" 
@@ -465,7 +465,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: expected > and (", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp _: read-memory<1 2()`, 
+            rainlang`@${opMetaHash} #exp _: read-memory<1 2();`, 
             store, 
             [
                 { 
@@ -488,7 +488,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
 
     it("should error: invalid LHS alias: invalid_alias", async () => {
         await testDiagnostics(
-            rainlang`@${opMetaHash} #exp invalid_alias: add(1 20)`, 
+            rainlang`@${opMetaHash} #exp invalid_alias: add(1 20);`, 
             store, 
             [{ 
                 message: "invalid LHS alias: invalid_alias", 
@@ -516,7 +516,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
             io-multiplier: prb-powu(102e106 batch-index),
             amount: max(batch-remaining 0),
             
-            io-ratio: prb-mul(io_multiplier 3)`;
+            io-ratio: prb-mul(io_multiplier 3);`;
 
         await testDiagnostics(
             expression0, 
@@ -558,21 +558,21 @@ describe("Rainlang Diagnostics Service Tests", async function () {
             c0: 1,
             c1: 2,
             condition: 1, 
-            _ _: do-while<1 2 3>(c0 c1 condition)
+            _ _: do-while<1 2 3>(c0 c1 condition);
 
             #exp2
             s0 s1: ,
             o0 o1: 1 2,
-            condition: 3 3 4
+            condition: 3 3 4;
 
             #exp3
             s0: ,
-            _: less-than(s0 3 3)
+            _: less-than(s0 3 3);
 
             #exp4
             s0 s1: ,
             _: add(s0 4 infinity),
-            _: add(s3 s1 5)
+            _: add(s3 s1 5);
         `;
 
         await testDiagnostics(

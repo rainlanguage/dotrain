@@ -1,4 +1,4 @@
-import { RainDocument } from "../parser/rainDocument";
+import { RainDocument } from "../dotrain/rainDocument";
 import { 
     Range, 
     Position,
@@ -50,7 +50,7 @@ export async function getRainlangCompletion(
     let _td: TextDocument;
     if (document instanceof RainDocument) {
         _rd = document;
-        _td = _rd.getTextDocument();
+        _td = _rd.textDocument;
         if (setting?.metaStore) _rd.metaStore.updateStore(setting.metaStore);
     }
     else {
@@ -146,7 +146,7 @@ export async function getRainlangCompletion(
                     insertText: v.name + _following
                 });
             });
-            const constants = _rd.getConstants();
+            const constants = _rd.constants;
             Object.keys(constants).forEach(v => {
                 _result.unshift({
                     label: v,
@@ -194,56 +194,62 @@ export async function getRainlangCompletion(
                     insertText: v.name
                 });
             });
-            let _currentSource = NaN;
+            let _currentExp = NaN;
             for (let i = 0; i < _exps.length; i++) {
                 if (_exps[i].position[0] <= _offset && _exps[i].position[1] + 1 >= _offset) {
-                    _currentSource = i;
+                    _currentExp = i;
                     break;
                 }
             }
             let _pos: [number, number] | undefined;
-            if (!isNaN(_currentSource)) _rd.expressions[_currentSource].parseObj?.ast.lines
-                .map(v => v.aliases)
-                .flat()
-                ?.filter(v => v.name !== "_")
-                .forEach(v => {
-                    let _text = "";
-                    _pos = _exps[_currentSource].parseObj?.ast.lines
-                        .map(e => e.nodes)
-                        .flat()
-                        .find(e => {
-                            if (e.lhsAlias?.find(i => i.name === v.name)) return true;
-                            else return false;
-                        })?.position;
-                    if (_pos) _text = `${
-                        _rd!.getTextDocument().getText(
-                            Range.create(
-                                _td.positionAt(_pos[0]),
-                                _td.positionAt(_pos[1] + 1)
+            if (!isNaN(_currentExp)) {
+                const _currentSource = _exps[_currentExp].rainlang?.getAst().find(v => 
+                    v.position[0] + _exps[_currentExp].contentPosition[0] <= _offset &&
+                    v.position[1] + _exps[_currentExp].contentPosition[0]+ 1 >= _offset
+                );
+                if (_currentSource) _currentSource.lines
+                    .map(v => v.aliases)
+                    .flat()
+                    .filter(v => v.name !== "_")
+                    .forEach(v => {
+                        let _text = "";
+                        _pos = _currentSource.lines
+                            .map(e => e.nodes)
+                            .flat()
+                            .find(e => {
+                                if (e.lhsAlias?.find(i => i.name === v.name)) return true;
+                                else return false;
+                            })?.position;
+                        if (_pos) _text = `${
+                            _rd!.textDocument.getText(
+                                Range.create(
+                                    _td.positionAt(_pos[0]),
+                                    _td.positionAt(_pos[1] + 1)
+                                )
                             )
-                        )
-                    }`;
-                    _result.unshift({
-                        label: v.name,
-                        labelDetails: {
-                            description: "alias"
-                        },
-                        kind: CompletionItemKind.Variable,
-                        detail: v.name,
-                        documentation: {
-                            kind: _documentionType,
-                            value: _documentionType === "markdown" 
-                                ? [
-                                    "LHS alias for:",
-                                    "```rainlang",
-                                    _text,
-                                    "```"
-                                ].join("\n")
-                                : `LHS alias for: ${_text}`
-                        },
-                        insertText: v.name
+                        }`;
+                        _result.unshift({
+                            label: v.name,
+                            labelDetails: {
+                                description: "alias"
+                            },
+                            kind: CompletionItemKind.Variable,
+                            detail: v.name,
+                            documentation: {
+                                kind: _documentionType,
+                                value: _documentionType === "markdown" 
+                                    ? [
+                                        "LHS alias for:",
+                                        "```rainlang",
+                                        _text,
+                                        "```"
+                                    ].join("\n")
+                                    : `LHS alias for: ${_text}`
+                            },
+                            insertText: v.name
+                        });
                     });
-                });
+            }
             
             // filter the items based on previous characters
             let _prefixMatch = "";

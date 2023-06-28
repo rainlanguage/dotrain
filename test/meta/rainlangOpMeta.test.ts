@@ -1,6 +1,6 @@
 import { assertError, opMetaHash } from "../utils";
 import { invalidOpMetas } from "../fixtures/opmeta";
-import { MetaStore, rainlang, rainlangc } from "../../src";
+import { MetaStore, rainlang, dotrainc } from "../../src";
 
 
 describe("Rainlang Op Meta Tests", async function () {
@@ -13,7 +13,7 @@ describe("Rainlang Op Meta Tests", async function () {
     it("should fail if no opmeta hash is specified", async () => {
         await assertError(
             async () =>
-                await rainlangc(rainlang`#exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`#exp _: add(1 2);`, ["exp"], store),
             "cannot find op meta import",
             "Invalid Error"
         );
@@ -22,7 +22,7 @@ describe("Rainlang Op Meta Tests", async function () {
     it("should fail if an invalid opmeta hash is specified", async () => {
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${opMetaHash + "ab"} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${opMetaHash + "ab"} #exp _: add(1 2);`, ["exp"], store),
             "invalid meta hash, must be 32 bytes",
             "Invalid Error"
         );
@@ -31,7 +31,7 @@ describe("Rainlang Op Meta Tests", async function () {
     it("should fail if an opmeta with no settlement is specified", async () => {
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${opMetaHash.slice(0, -1) + "a"} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${opMetaHash.slice(0, -1) + "a"} #exp _: add(1 2);`, ["exp"], store),
             "cannot find any valid settlement for op meta from specified hash",
             "Invalid Error"
         );
@@ -40,7 +40,7 @@ describe("Rainlang Op Meta Tests", async function () {
     it("should fail if no settlement is found for multiple meta hashes", async () => {
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${opMetaHash.slice(0, -1) + "a"} @${opMetaHash.slice(0, -1) + "a"} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${opMetaHash.slice(0, -1) + "a"} @${opMetaHash.slice(0, -1) + "a"} #exp _: add(1 2);`, ["exp"], store),
             "cannot find any valid settlement for op meta from specified hashes",
             "Invalid Error"
         );
@@ -53,7 +53,7 @@ describe("Rainlang Op Meta Tests", async function () {
         );
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${invalidOpMetas.invalid_header.metaHash} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${invalidOpMetas.invalid_header.metaHash} #exp _: add(1 2);`, ["exp"], store),
             "incorrect header check",
             "Invalid Error"
         );
@@ -66,7 +66,7 @@ describe("Rainlang Op Meta Tests", async function () {
         );
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${invalidOpMetas.invalid_operand_args.metaHash} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${invalidOpMetas.invalid_operand_args.metaHash} #exp _: add(1 2);`, ["exp"], store),
             "invalid meta for call, reason: bad operand args order",
             "Invalid Error"
         );
@@ -79,7 +79,7 @@ describe("Rainlang Op Meta Tests", async function () {
         );
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${invalidOpMetas.invalid_by_schema.metaHash} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${invalidOpMetas.invalid_by_schema.metaHash} #exp _: add(1 2);`, ["exp"], store),
             "invalid meta for add, reason: failed schema validation",
             "Invalid Error"
         );
@@ -92,7 +92,7 @@ describe("Rainlang Op Meta Tests", async function () {
         );
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${invalidOpMetas.duplicate_alias.metaHash} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${invalidOpMetas.duplicate_alias.metaHash} #exp _: add(1 2);`, ["exp"], store),
             "invalid meta, reason: duplicated names or aliases",
             "Invalid Error"
         );
@@ -105,7 +105,7 @@ describe("Rainlang Op Meta Tests", async function () {
         );
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${invalidOpMetas.invalid_bits.metaHash} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${invalidOpMetas.invalid_bits.metaHash} #exp _: add(1 2);`, ["exp"], store),
             "invalid meta for scale-18, reason: start bit greater than end bit for saturate",
             "Invalid Error"
         );
@@ -118,7 +118,7 @@ describe("Rainlang Op Meta Tests", async function () {
         );
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${invalidOpMetas.missing_bits.metaHash} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${invalidOpMetas.missing_bits.metaHash} #exp _: add(1 2);`, ["exp"], store),
             "invalid meta for call, reason: must have specified \\\"bits\\\" field for inputs",
             "Invalid Error"
         );
@@ -131,7 +131,7 @@ describe("Rainlang Op Meta Tests", async function () {
         );
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${invalidOpMetas.missing_computation.metaHash} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${invalidOpMetas.missing_computation.metaHash} #exp _: add(1 2);`, ["exp"], store),
             "invalid meta for do-while, reason: must have specified \\\"computation\\\" field for inputs",
             "Invalid Error"
         );
@@ -144,7 +144,7 @@ describe("Rainlang Op Meta Tests", async function () {
         );
         await assertError(
             async () =>
-                await rainlangc(rainlang`@${invalidOpMetas.unexpected_computation.metaHash} #exp _: add(1 2)`, ["exp"], store),
+                await dotrainc(rainlang`@${invalidOpMetas.unexpected_computation.metaHash} #exp _: add(1 2);`, ["exp"], store),
             "invalid meta for do-while, reason: unexpected \\\"computation\\\" field for inputs",
             "Invalid Error"
         );
