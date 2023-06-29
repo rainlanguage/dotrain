@@ -4,7 +4,7 @@ import { invalidOpMetas } from "../fixtures/opmeta";
 import { ExpressionConfig, rainlang, hexlify, dotraind, dotrainc, MetaStore } from "../../src";
 
 
-async function testRainlangDecompiler(
+async function testDotrainDecompiler(
     expression: string, 
     expectedExpression: string, 
     metaHash: string, 
@@ -72,7 +72,7 @@ describe("RainDocument Decompiler (dotraind) Tests", async function () {
         const expression = rainlang`@${opMetaHash}
 #exp-1
 _ : add(0x0a 0x14);`;
-        await testRainlangDecompiler(expression, expression, opMetaHash, store, ["exp-1"]);
+        await testDotrainDecompiler(expression, expression, opMetaHash, store, ["exp-1"]);
     });
 
     it("should decompile an expression referencing top stack items", async () => {
@@ -80,7 +80,7 @@ _ : add(0x0a 0x14);`;
         const expectedExpression0 = rainlang`@${opMetaHash}
 #exp-1
 _ _ _ : 0x0a 0x14 read-memory<1 0>();`;
-        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp"]);
+        await testDotrainDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp"]);
 
         const expression1 = rainlang`@${opMetaHash} 
             #exp
@@ -103,7 +103,7 @@ _ _ _ : 0x0a 0x14 read-memory<1 0>();`;
 #exp-1
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ : max-uint256 max-uint256 context<0 0>() 0x0a 0x14 read-memory<0 0>() read-memory<0 0>() read-memory<0 0>() read-memory<0 0>() read-memory<1 0>() read-memory<2 0>() read-memory<4 0>() read-memory<1 0>() read-memory<2 0>() read-memory<3 0>();`;
 
-        await testRainlangDecompiler(expression1, expectedExpression1, opMetaHash, store, ["exp"]);
+        await testDotrainDecompiler(expression1, expectedExpression1, opMetaHash, store, ["exp"]);
 
     });
 
@@ -143,7 +143,7 @@ _ : less-than(read-memory<0 0>() 0x03);
 #exp-4
 _ _ : add(read-memory<0 0>() 0x04) add(read-memory<1 0>() 0x05);`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp1", "exp2", "exp3", "exp4"]);
+        await testDotrainDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp1", "exp2", "exp3", "exp4"]);
     });
 
     it("should decompile an expression with loop-n opcode having multiple outputs", async () => {
@@ -183,7 +183,7 @@ _ _ _ : add(read-memory<0 0>() 0x05) call<3 1>(read-memory<3 0>() read-memory<1 
 #exp-3
 _ _ _ _ : mul(0x06 read-memory<2 0>()) exp(0x02 read-memory<3 0>()) mul(read-memory<4 0>() read-memory<0 0>()) add(read-memory<5 0>() read-memory<1 0>());`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp1", "exp2", "exp3"]);
+        await testDotrainDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp1", "exp2", "exp3"]);
     });
 
     it("should decompile an expression with call opcode having multiple outputs", async () => {
@@ -197,7 +197,7 @@ _ _ _ _ : mul(0x06 read-memory<2 0>()) exp(0x02 read-memory<3 0>()) mul(read-mem
 #exp-1
 _ _ _ : call<1 3>(0x02 0x02);`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp"]);
+        await testDotrainDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp"]);
     });
 
     it("should decompile an expression with an opcode having multiple outputs", async () => {
@@ -216,7 +216,7 @@ _ _ _ : call<1 3>(0x02 0x02);`;
 #exp-1
 _ _ : erc-1155-balance-of-batch(0x01 0x02 0x03 0x02 0x03);`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp"]);
+        await testDotrainDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp"]);
     });
 
     it("should decompile an expression with fold-context opcode having multiple outputs", async () => {
@@ -229,7 +229,7 @@ _ _ : erc-1155-balance-of-batch(0x01 0x02 0x03 0x02 0x03);`;
 #exp-1
 _ _ : fold-context<2 3 1>(0x00 0x00);`;
 
-        await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp"]);
+        await testDotrainDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp"]);
     });
 
     it("should decompile an expression with existing stack items", async () => {
@@ -239,7 +239,7 @@ _ _ : fold-context<2 3 1>(0x00 0x00);`;
 #exp-1
 _ _ : 0x14 add(read-memory<0 0>() read-memory<1 0>());`;
         
-        await testRainlangDecompiler(expression, expectedText, opMetaHash, store, ["exp"]);
+        await testDotrainDecompiler(expression, expectedText, opMetaHash, store, ["exp"]);
     });
 
     it("should fail if an opcode is not found in opmeta", async () => {
