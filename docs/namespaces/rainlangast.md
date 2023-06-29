@@ -15,6 +15,5 @@ namespace RainlangAST
 |  Function | Description |
 |  --- | --- |
 |  [is(value)](./rainlangast/variables/is_1.md) | Checks if a value is a valid RainlangAST |
-|  [isConstant(value)](./rainlangast/variables/isconstant_1.md) | Checks if a value is a valid RainlangAST Constant |
 |  [isExpression(value)](./rainlangast/variables/isexpression_1.md) | Checks if a value is a valid RainlangAST Expression |
 

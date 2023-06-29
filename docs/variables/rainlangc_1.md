@@ -7,7 +7,7 @@ Rain Language Compiler (rainlangc), compiles a text into valid ExpressionConfig 
 <b>Signature:</b>
 
 ```typescript
-function rainlangc(text: string, entrypoints: string[], metaStore?: MetaStore): Promise<ExpressionConfig>;
+function rainlangc(text: string, opmeta: OpMeta[]): Promise<ExpressionConfig>;
 ```
 
 ## Parameters
@@ -15,12 +15,11 @@ function rainlangc(text: string, entrypoints: string[], metaStore?: MetaStore): 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  text | `string` | The raw string to compile |
-|  entrypoints | `string[]` |  |
-|  metaStore | [MetaStore](../classes/metastore.md) | (optional) MetaStore object |
+|  opmeta | `OpMeta[]` | Array of ops metas |
 
 <b>Returns:</b>
 
 `Promise<ExpressionConfig>`
 
-A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text
+A promise that resolves with ExpressionConfig and rejects with problems found in text
 

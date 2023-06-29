@@ -2,7 +2,7 @@
 
 # Class RainDocument
 
-RainDocument is a class object that provides data and functionalities in order to be used later on to provide Rain Language Services or in Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.
+RainDocument is a class object that parses a text to provides data and functionalities in order to be used later on to provide Rain Language Services or in RainDocument compiler to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.
 
 <b>Signature:</b>
 
@@ -15,7 +15,7 @@ class RainDocument
 
 ```typescript
 // to import
-import { Raindocument } from 'rainlang';
+import { RainDocument } from 'rainlang';
 
 // to create a new instance of the RainDocument object which parses right after instantiation
 const myRainDocument = await RainDocument.create(text)
@@ -42,15 +42,16 @@ await myRainDocument.updateText(newText)
 
 |  Method | Description |
 |  --- | --- |
-|  [create(textDocument, metaStore)](./raindocument.md#create-method-static-1) | Creates a new RainDocument object instance |
+|  [create(textDocument, metaStore)](./raindocument.md#create-method-static-1) | Creates a new RainDocument object instance with a TextDocument |
+|  [create(text, metaStore, uri, version)](./raindocument.md#create-method-static-2) | Creates a new RainDocument object instance from a text string |
 
 ## Methods
 
 |  Method | Description |
 |  --- | --- |
+|  [fillOut(text, position)](./raindocument.md#fillOut-method-1) | Fills outside of a position with whitespaces |
 |  [getAllProblems()](./raindocument.md#getAllProblems-method-1) | Get all problems of this RainDocument instance |
 |  [getComments()](./raindocument.md#getComments-method-1) | Get the current comments inside of the text of this RainDocument instance |
-|  [getConstants()](./raindocument.md#getConstants-method-1) | Get constant k/v pairs of this RainDocument instance |
 |  [getContextAliases()](./raindocument.md#getContextAliases-method-1) | Get the context aliases of specified meta hashes in this RainDocument instance |
 |  [getDependencies()](./raindocument.md#getDependencies-method-1) | Get the expression dependencies of this RainDocument instance |
 |  [getDependencyProblems()](./raindocument.md#getDependencyProblems-method-1) | Get the dependency problems of this RainDocument instance |
@@ -62,8 +63,7 @@ await myRainDocument.updateText(newText)
 |  [getOpMetaLength()](./raindocument.md#getOpMetaLength-method-1) | Get the current text of this RainDocument instance |
 |  [getOpMetaWithCtxAliases()](./raindocument.md#getOpMetaWithCtxAliases-method-1) | Get the current text of this RainDocument instance |
 |  [getProblems()](./raindocument.md#getProblems-method-1) | Get the current problems of this RainDocument instance |
-|  [getRuntimeError()](./raindocument.md#getRuntimeError-method-1) | Get the current runtime error of this RainDocument instance |
-|  [getTextDocument()](./raindocument.md#getTextDocument-method-1) | Get the current text of this RainDocument instance |
+|  [getText()](./raindocument.md#getText-method-1) | Get the current text of this RainDocument instance |
 |  [getTopProblems()](./raindocument.md#getTopProblems-method-1) | Get top problems of this RainDocument instance |
 |  [parse()](./raindocument.md#parse-method-1) | Parses this instance of RainDocument |
 |  [updateText(newText)](./raindocument.md#updateText-method-1) | Updates the TextDocument of this RainDocument instance with new text |
@@ -127,7 +127,7 @@ textDocument: TextDocument;
 
 ### create(textDocument, metaStore)
 
-Creates a new RainDocument object instance
+Creates a new RainDocument object instance with a TextDocument
 
 <b>Signature:</b>
 
@@ -148,7 +148,57 @@ static create(textDocument: TextDocument, metaStore?: MetaStore): Promise<RainDo
 
 A new RainDocument instance
 
+<a id="create-method-static-2"></a>
+
+### create(text, metaStore, uri, version)
+
+Creates a new RainDocument object instance from a text string
+
+<b>Signature:</b>
+
+```typescript
+static create(text: TextDocument, metaStore?: MetaStore, uri?: string, version?: number): Promise<RainDocument>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  text | `TextDocument` | The text string |
+|  metaStore | [MetaStore](./metastore.md) | (optional) The initial MetaStore object |
+|  uri | `string` | (optional) The URI of the text, URI is the unique identifier of a TextDocument |
+|  version | `number` | (optional) The version of the text |
+
+<b>Returns:</b>
+
+`Promise<RainDocument>`
+
+A new RainDocument instance
+
 ## Method Details
+
+<a id="fillOut-method-1"></a>
+
+### fillOut(text, position)
+
+Fills outside of a position with whitespaces
+
+<b>Signature:</b>
+
+```typescript
+fillOut(text: string, position: PositionOffset): string;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  text | `string` |  |
+|  position | [PositionOffset](../types/positionoffset.md) |  |
+
+<b>Returns:</b>
+
+`string`
 
 <a id="getAllProblems-method-1"></a>
 
@@ -179,21 +229,6 @@ getComments(): Comment[];
 <b>Returns:</b>
 
 `Comment[]`
-
-<a id="getConstants-method-1"></a>
-
-### getConstants()
-
-Get constant k/v pairs of this RainDocument instance
-
-<b>Signature:</b>
-
-```typescript
-getConstants(): Record<string, string>;
-```
-<b>Returns:</b>
-
-`Record<string, string>`
 
 <a id="getContextAliases-method-1"></a>
 
@@ -360,35 +395,20 @@ getProblems(): Problem[];
 
 `Problem[]`
 
-<a id="getRuntimeError-method-1"></a>
+<a id="getText-method-1"></a>
 
-### getRuntimeError()
-
-Get the current runtime error of this RainDocument instance
-
-<b>Signature:</b>
-
-```typescript
-getRuntimeError(): Error | undefined;
-```
-<b>Returns:</b>
-
-`Error | undefined`
-
-<a id="getTextDocument-method-1"></a>
-
-### getTextDocument()
+### getText()
 
 Get the current text of this RainDocument instance
 
 <b>Signature:</b>
 
 ```typescript
-getTextDocument(): TextDocument;
+getText(): string;
 ```
 <b>Returns:</b>
 
-`TextDocument`
+`string`
 
 <a id="getTopProblems-method-1"></a>
 

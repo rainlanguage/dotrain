@@ -1,7 +1,7 @@
 {
   "metadata": {
     "toolPackage": "@microsoft/api-extractor",
-    "toolVersion": "7.34.4",
+    "toolVersion": "7.36.0",
     "schemaVersion": 1011,
     "oldestForwardsCompatibleVersion": 1001,
     "tsdocConfig": {
@@ -1137,6 +1137,377 @@
           "name": "deepFreeze"
         },
         {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!dotrainc:function(1)",
+          "docComment": "/**\n * RainDocument (dotrain) compiler, compiles a text into valid ExpressionConfig (deployable bytes)\n *\n * @param text - The raw string to compile\n *\n * @param metaStore - (optional) MetaStore object\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function dotrainc(text: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", entrypoints: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ", metaStore?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MetaStore",
+              "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/dotrain/rainDocumentCompiler.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "text",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "entrypoints",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "metaStore",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "dotrainc"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!dotrainc:function(2)",
+          "docComment": "/**\n * RainDocument (dotrain) compiler, compiles Text Documents into valid ExpressionConfig (deployable bytes)\n *\n * @param document - The TextDocument to compile\n *\n * @param metaStore - (optional) MetaStore object\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function dotrainc(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TextDocument",
+              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ", entrypoints: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ", metaStore?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MetaStore",
+              "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/dotrain/rainDocumentCompiler.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "entrypoints",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "metaStore",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "dotrainc"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!dotrainc:function(3)",
+          "docComment": "/**\n * RainDocument (dotrain) compiler, compiles Rain Documents into valid ExpressionConfig (deployable bytes)\n *\n * @param rainDocument - The RainDocument to compile\n *\n * @param metaStore - (optional) MetaStore object to get merged with the RainDocument's MetaStore\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function dotrainc(rainDocument: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": ", entrypoints: "
+            },
+            {
+              "kind": "Content",
+              "text": "string[]"
+            },
+            {
+              "kind": "Content",
+              "text": ", metaStore?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MetaStore",
+              "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/dotrain/rainDocumentCompiler.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 3,
+          "parameters": [
+            {
+              "parameterName": "rainDocument",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "entrypoints",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "metaStore",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "dotrainc"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!dotraind:function(1)",
+          "docComment": "/**\n * RainDocument (dotrain) decompiler, decompiles ExpressionConfig (bytes) to a valid RainDocument instance\n *\n * @param expressionConfig - ExpressionConfig to decompile\n *\n * @param metaHash - The meta hash\n *\n * @param metaStore - (optional) MetaStore object instance\n *\n * @returns A promise that resolves with a RainDocument\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function dotraind(expressionConfig: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ", metaHash: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", metaStore?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "MetaStore",
+              "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/dotrain/rainDocumentDecompiler.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "expressionConfig",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "metaHash",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "metaStore",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "dotraind"
+        },
+        {
           "kind": "Enum",
           "canonicalReference": "@rainprotocol/rainlang!ErrorCode:enum",
           "docComment": "/**\n * Error codes of Rainlang/RainDocument problem and LSP Diagnostics\n *\n * @public\n */\n",
@@ -1216,12 +1587,12 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.DuplicateExpressionKey:member",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.DuplicateExpIdentifier:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "DuplicateExpressionKey = "
+                  "text": "DuplicateExpIdentifier = "
                 },
                 {
                   "kind": "Content",
@@ -1233,7 +1604,28 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "DuplicateExpressionKey"
+              "name": "DuplicateExpIdentifier"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.DuplicateIdentifier:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "DuplicateIdentifier = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "2052"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "DuplicateIdentifier"
             },
             {
               "kind": "EnumMember",
@@ -1363,6 +1755,27 @@
             },
             {
               "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedSemi:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ExpectedSemi = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "776"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "ExpectedSemi"
+            },
+            {
+              "kind": "EnumMember",
               "canonicalReference": "@rainprotocol/rainlang!ErrorCode.ExpectedSpace:member",
               "docComment": "",
               "excerptTokens": [
@@ -1384,12 +1797,12 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.IlligalChar:member",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.IllegalChar:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "IlligalChar = "
+                  "text": "IllegalChar = "
                 },
                 {
                   "kind": "Content",
@@ -1401,7 +1814,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "IlligalChar"
+              "name": "IllegalChar"
             },
             {
               "kind": "EnumMember",
@@ -1552,6 +1965,27 @@
             },
             {
               "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidOperandArg:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "InvalidOperandArg = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "274"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "InvalidOperandArg"
+            },
+            {
+              "kind": "EnumMember",
               "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidOpMeta:member",
               "docComment": "",
               "excerptTokens": [
@@ -1570,6 +2004,27 @@
               },
               "releaseTag": "Public",
               "name": "InvalidOpMeta"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.InvalidQuote:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "InvalidQuote = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "273"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "InvalidQuote"
             },
             {
               "kind": "EnumMember",
@@ -1762,33 +2217,12 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UndefinedExpression:member",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UndefinedImport:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "UndefinedExpression = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "4"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "UndefinedExpression"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UndefinedMeta:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "UndefinedMeta = "
+                  "text": "UndefinedImport = "
                 },
                 {
                   "kind": "Content",
@@ -1800,7 +2234,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "UndefinedMeta"
+              "name": "UndefinedImport"
             },
             {
               "kind": "EnumMember",
@@ -1822,6 +2256,27 @@
               },
               "releaseTag": "Public",
               "name": "UndefinedOpMeta"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UndefinedQuote:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UndefinedQuote = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "4"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UndefinedQuote"
             },
             {
               "kind": "EnumMember",
@@ -1864,6 +2319,27 @@
               },
               "releaseTag": "Public",
               "name": "UnexpectedClosingParen"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedComment:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UnexpectedComment = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "519"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UnexpectedComment"
             },
             {
               "kind": "EnumMember",
@@ -1948,27 +2424,6 @@
               },
               "releaseTag": "Public",
               "name": "UnexpectedFragment"
-            },
-            {
-              "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedRHSComment:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "UnexpectedRHSComment = "
-                },
-                {
-                  "kind": "Content",
-                  "text": "519"
-                }
-              ],
-              "initializerTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "name": "UnexpectedRHSComment"
             },
             {
               "kind": "EnumMember",
@@ -2107,6 +2562,68 @@
             }
           ],
           "name": "exclusiveParse"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!exclusiveWhitespaceFill:function(1)",
+          "docComment": "/**\n * Fills a text with whitespaces excluding a position by keeping line structure intact\n *\n * @param text - The text\n *\n * @param position - the position to exclude\n *\n * @returns The edited text string\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function exclusiveWhitespaceFill(text: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "PositionOffset",
+              "canonicalReference": "@rainprotocol/rainlang!~PositionOffset"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "text",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "exclusiveWhitespaceFill"
         },
         {
           "kind": "TypeAlias",
@@ -2407,6 +2924,68 @@
             }
           ],
           "name": "extractFromRecord"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getLineText:function(1)",
+          "docComment": "/**\n * Method to get a line from a TextDocument\n *\n * @param textDocument - The TextDocument instance\n *\n * @param line - The line to get its content\n *\n * @returns The text string of the line\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getLineText(textDocument: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TextDocument",
+              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ", line: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "textDocument",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "line",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "getLineText"
         },
         {
           "kind": "Function",
@@ -2986,6 +3565,51 @@
           "name": "getRainLanguageServices"
         },
         {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getRandomInt:function(1)",
+          "docComment": "/**\n * Generates random integer between 0(inclusive) and max(exclusive)\n *\n * @param max - The maximum range to generate random number\n *\n * @returns The random number\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getRandomInt(max: "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "number"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "max",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "getRandomInt"
+        },
+        {
           "kind": "Variable",
           "canonicalReference": "@rainprotocol/rainlang!HASH_PATTERN:var",
           "docComment": "/**\n * Import hash pattern\n *\n * @public\n */\n",
@@ -3340,6 +3964,68 @@
         },
         {
           "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!inclusiveWhitespaceFill:function(1)",
+          "docComment": "/**\n * Fills a poistion in a text with whitespaces by keeping line structure intact\n *\n * @param text - The text\n *\n * @param position - The position offsets to include\n *\n * @returns The edited text string\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function inclusiveWhitespaceFill(text: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "PositionOffset",
+              "canonicalReference": "@rainprotocol/rainlang!~PositionOffset"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "text",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "inclusiveWhitespaceFill"
+        },
+        {
+          "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!isBigNumberish:function(1)",
           "docComment": "/**\n * function to check if the a value is of type BigNumberish, from EthersJS library\n *\n * @param value - the value to check\n *\n * @returns boolean\n *\n * @public\n */\n",
           "excerptTokens": [
@@ -3438,6 +4124,51 @@
             "startIndex": 1,
             "endIndex": 3
           }
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!isDotrainConstant:function(1)",
+          "docComment": "/**\n * Checks if a text contains a single numeric value and returns it\n *\n * @param text - The text to process\n *\n * @returns The numeric value if present, and an empty string if false\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function isDotrainConstant(text: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "text",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "isDotrainConstant"
         },
         {
           "kind": "Function",
@@ -3935,7 +4666,7 @@
               "text": "export declare class MetaStore "
             }
           ],
-          "fileUrlPath": "dist/types/parser/metaStore.d.ts",
+          "fileUrlPath": "dist/types/dotrain/metaStore.d.ts",
           "releaseTag": "Public",
           "isAbstract": false,
           "name": "MetaStore",
@@ -4499,50 +5230,6 @@
             },
             {
               "kind": "Function",
-              "canonicalReference": "@rainprotocol/rainlang!NamedExpression.isConstant:function(1)",
-              "docComment": "/**\n * Checks if a value is a valid NamedExpression Constant\n *\n * @param value - The value to check\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "function isConstant(value: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "any"
-                },
-                {
-                  "kind": "Content",
-                  "text": "): "
-                },
-                {
-                  "kind": "Content",
-                  "text": "boolean"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "returnTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "releaseTag": "Public",
-              "overloadIndex": 1,
-              "parameters": [
-                {
-                  "parameterName": "value",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 1,
-                    "endIndex": 2
-                  },
-                  "isOptional": false
-                }
-              ],
-              "name": "isConstant"
-            },
-            {
-              "kind": "Function",
               "canonicalReference": "@rainprotocol/rainlang!NamedExpression.isExpression:function(1)",
               "docComment": "/**\n * Checks if a value is a valid NamedExpression Expression\n *\n * @param value - The value to check\n *\n * @public\n */\n",
               "excerptTokens": [
@@ -4607,7 +5294,7 @@
             },
             {
               "kind": "Content",
-              "text": ";\n    text: string;\n    position: "
+              "text": ";\n    content: string;\n    contentPosition: "
             },
             {
               "kind": "Reference",
@@ -4616,12 +5303,21 @@
             },
             {
               "kind": "Content",
-              "text": ";\n    parseObj?: "
+              "text": ";\n    position: "
             },
             {
               "kind": "Reference",
-              "text": "RainlangParser",
-              "canonicalReference": "@rainprotocol/rainlang!~RainlangParser:class"
+              "text": "PositionOffset",
+              "canonicalReference": "@rainprotocol/rainlang!PositionOffset:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n    rainlang?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Rainlang",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang:class"
             },
             {
               "kind": "Content",
@@ -4637,7 +5333,7 @@
           "name": "NamedExpression",
           "typeTokenRange": {
             "startIndex": 1,
-            "endIndex": 8
+            "endIndex": 10
           }
         },
         {
@@ -5513,14 +6209,14 @@
         {
           "kind": "Class",
           "canonicalReference": "@rainprotocol/rainlang!RainDocument:class",
-          "docComment": "/**\n * RainDocument is a class object that provides data and functionalities in order to be used later on to provide Rain Language Services or in Rain Language Compiler (rlc) to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.\n *\n * @example\n * ```typescript\n * // to import\n * import { Raindocument } from 'rainlang';\n *\n * // to create a new instance of the RainDocument object which parses right after instantiation\n * const myRainDocument = await RainDocument.create(text)\n *\n * // to get the problems\n * const problems = myRainDocument.getAllProblems()\n *\n * // to update the text\n * await myRainDocument.updateText(newText)\n * ```\n *\n * @public\n */\n",
+          "docComment": "/**\n * RainDocument is a class object that parses a text to provides data and functionalities in order to be used later on to provide Rain Language Services or in RainDocument compiler to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.\n *\n * @example\n * ```typescript\n * // to import\n * import { RainDocument } from 'rainlang';\n *\n * // to create a new instance of the RainDocument object which parses right after instantiation\n * const myRainDocument = await RainDocument.create(text)\n *\n * // to get the problems\n * const problems = myRainDocument.getAllProblems()\n *\n * // to update the text\n * await myRainDocument.updateText(newText)\n * ```\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
               "text": "export declare class RainDocument "
             }
           ],
-          "fileUrlPath": "dist/types/parser/rainDocument.d.ts",
+          "fileUrlPath": "dist/types/dotrain/rainDocument.d.ts",
           "releaseTag": "Public",
           "isAbstract": false,
           "name": "RainDocument",
@@ -5564,7 +6260,7 @@
             {
               "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument.create:member(1)",
-              "docComment": "/**\n * Creates a new RainDocument object instance\n *\n * @param textDocument - The text document\n *\n * @param metaStore - (optional) The initial MetaStore object\n *\n * @returns A new RainDocument instance\n *\n * @public\n */\n",
+              "docComment": "/**\n * Creates a new RainDocument object instance with a TextDocument\n *\n * @param textDocument - The text document\n *\n * @param metaStore - (optional) The initial MetaStore object\n *\n * @returns A new RainDocument instance\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -5642,6 +6338,118 @@
               "name": "create"
             },
             {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument.create:member(2)",
+              "docComment": "/**\n * Creates a new RainDocument object instance from a text string\n *\n * @param text - The text string\n *\n * @param metaStore - (optional) The initial MetaStore object\n *\n * @param uri - (optional) The URI of the text, URI is the unique identifier of a TextDocument\n *\n * @param version - (optional) The version of the text\n *\n * @returns A new RainDocument instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "static create(text: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "TextDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", metaStore?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "MetaStore",
+                  "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", uri?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", version?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "number"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Promise",
+                  "canonicalReference": "!Promise:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "<"
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RainDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+                },
+                {
+                  "kind": "Content",
+                  "text": ">"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": true,
+              "returnTypeTokenRange": {
+                "startIndex": 9,
+                "endIndex": 13
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 2,
+              "parameters": [
+                {
+                  "parameterName": "text",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "metaStore",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 4
+                  },
+                  "isOptional": true
+                },
+                {
+                  "parameterName": "uri",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 5,
+                    "endIndex": 6
+                  },
+                  "isOptional": true
+                },
+                {
+                  "parameterName": "version",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 7,
+                    "endIndex": 8
+                  },
+                  "isOptional": true
+                }
+              ],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "create"
+            },
+            {
               "kind": "Property",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#expressions:member",
               "docComment": "",
@@ -5675,6 +6483,71 @@
               "isStatic": false,
               "isProtected": false,
               "isAbstract": false
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#fillOut:member(1)",
+              "docComment": "/**\n * Fills outside of a position with whitespaces\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "fillOut(text: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", position: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "PositionOffset",
+                  "canonicalReference": "@rainprotocol/rainlang!~PositionOffset"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "text",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "position",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 4
+                  },
+                  "isOptional": false
+                }
+              ],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "fillOut"
             },
             {
               "kind": "Method",
@@ -5747,42 +6620,6 @@
               "isOptional": false,
               "isAbstract": false,
               "name": "getComments"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getConstants:member(1)",
-              "docComment": "/**\n * Get constant k/v pairs of this RainDocument instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getConstants(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Record",
-                  "canonicalReference": "!Record:type"
-                },
-                {
-                  "kind": "Content",
-                  "text": "<string, string>"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getConstants"
             },
             {
               "kind": "Method",
@@ -6162,53 +6999,16 @@
             },
             {
               "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getRuntimeError:member(1)",
-              "docComment": "/**\n * Get the current runtime error of this RainDocument instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getRuntimeError(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Error",
-                  "canonicalReference": "!Error:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": " | undefined"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getRuntimeError"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getTextDocument:member(1)",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getText:member(1)",
               "docComment": "/**\n * Get the current text of this RainDocument instance\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "getTextDocument(): "
+                  "text": "getText(): "
                 },
                 {
-                  "kind": "Reference",
-                  "text": "TextDocument",
-                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                  "kind": "Content",
+                  "text": "string"
                 },
                 {
                   "kind": "Content",
@@ -6226,7 +7026,7 @@
               "parameters": [],
               "isOptional": false,
               "isAbstract": false,
-              "name": "getTextDocument"
+              "name": "getText"
             },
             {
               "kind": "Method",
@@ -6508,9 +7308,561 @@
           "implementsTokenRanges": []
         },
         {
+          "kind": "Class",
+          "canonicalReference": "@rainprotocol/rainlang!Rainlang:class",
+          "docComment": "/**\n * Rainlang class is a the main workhorse that does all the heavy work of parsing a document, written in TypeScript in order to parse a text document using an op meta into known types which later will be used in RainDocument object and Rain Language Services and Compiler\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare class Rainlang "
+            }
+          ],
+          "fileUrlPath": "dist/types/rainlang/rainlang.d.ts",
+          "releaseTag": "Public",
+          "isAbstract": false,
+          "name": "Rainlang",
+          "preserveMemberOrder": false,
+          "members": [
+            {
+              "kind": "Constructor",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang:constructor(1)",
+              "docComment": "/**\n * Constructor of Rainlang class\n *\n * @param text - the text\n *\n * @param opmeta - Array of ops metas\n *\n * @param dotrainOptions - (optional) RainDocument (dotrain) options\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "constructor(text: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", opmeta: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "OpMeta",
+                  "canonicalReference": "@rainprotocol/meta!OpMeta:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", dotrainOptions?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "{\n        constants?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Record",
+                  "canonicalReference": "!Record:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "<string, string>;\n        comments?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Comment",
+                  "canonicalReference": "@rainprotocol/rainlang!~Comment"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[];\n        expressionNames?: string[];\n    }"
+                },
+                {
+                  "kind": "Content",
+                  "text": ");"
+                }
+              ],
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "text",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "opmeta",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 5
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "dotrainOptions",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 6,
+                    "endIndex": 11
+                  },
+                  "isOptional": true
+                }
+              ]
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#constants:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "readonly constants: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Record",
+                  "canonicalReference": "!Record:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "<string, string>"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": true,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "constants",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang.create:member(1)",
+              "docComment": "/**\n * Creates a new Rainlang instance with a opmeta hash\n *\n * @param text - The text\n *\n * @param opmetaHash - The op meta hash\n *\n * @param metaStore - (optional) The MetaStore instance\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "static create(text: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", opmetaHash: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ", metaStore?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "MetaStore",
+                  "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Promise",
+                  "canonicalReference": "!Promise:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "<"
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Rainlang",
+                  "canonicalReference": "@rainprotocol/rainlang!Rainlang:class"
+                },
+                {
+                  "kind": "Content",
+                  "text": ">"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": true,
+              "returnTypeTokenRange": {
+                "startIndex": 7,
+                "endIndex": 11
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "text",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "opmetaHash",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 3,
+                    "endIndex": 4
+                  },
+                  "isOptional": false
+                },
+                {
+                  "parameterName": "metaStore",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 5,
+                    "endIndex": 6
+                  },
+                  "isOptional": true
+                }
+              ],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "create"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getAst:member(1)",
+              "docComment": "/**\n * Get AST of this Rainlang instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getAst(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RainlangAST",
+                  "canonicalReference": "@rainprotocol/rainlang!~RainlangAST"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getAst"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getComments:member(1)",
+              "docComment": "/**\n * Get the current comments inside of the text of this Rainlang instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getComments(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Comment",
+                  "canonicalReference": "@rainprotocol/rainlang!~Comment"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getComments"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getOpMeta:member(1)",
+              "docComment": "/**\n * Get the current text of this Rainlang instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getOpMeta(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "OpMeta",
+                  "canonicalReference": "@rainprotocol/meta!OpMeta:type"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getOpMeta"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getProblems:member(1)",
+              "docComment": "/**\n * Get the current problems of this Rainlang instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getProblems(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Problem",
+                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getProblems"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getRuntimeError:member(1)",
+              "docComment": "/**\n * Get the current runtime error of this Rainlang instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getRuntimeError(): "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Error",
+                  "canonicalReference": "!Error:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": " | undefined"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getRuntimeError"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getText:member(1)",
+              "docComment": "/**\n * Get the current text of this Rainlang instance\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "getText(): "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "getText"
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#isDotRain:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "readonly isDotRain: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "boolean"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": true,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "isDotRain",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#parse:member(1)",
+              "docComment": "/**\n * Parses this instance of Rainlang\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "parse(): "
+                },
+                {
+                  "kind": "Content",
+                  "text": "void"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "parse"
+            },
+            {
+              "kind": "Method",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#updateText:member(1)",
+              "docComment": "/**\n * Updates the text of this Rainlang instance and parse it right after that\n *\n * @param newText - The new text\n *\n * @public\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "updateText(newText: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": "): "
+                },
+                {
+                  "kind": "Content",
+                  "text": "void"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isStatic": false,
+              "returnTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "releaseTag": "Public",
+              "isProtected": false,
+              "overloadIndex": 1,
+              "parameters": [
+                {
+                  "parameterName": "newText",
+                  "parameterTypeTokenRange": {
+                    "startIndex": 1,
+                    "endIndex": 2
+                  },
+                  "isOptional": false
+                }
+              ],
+              "isOptional": false,
+              "isAbstract": false,
+              "name": "updateText"
+            }
+          ],
+          "implementsTokenRanges": []
+        },
+        {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!rainlang:function(1)",
-          "docComment": "/**\n * Method to be used as Tagged Templates to activate embedded rainlang in javascript to typescript that highlights the rainlang syntax. Requires rainlang vscode extension to be installed.\n *\n * @public\n */\n",
+          "docComment": "/**\n * Method to be used as Tagged Templates to activate embedded rainlang in javascript/typescript that highlights the rainlang syntax. Requires rainlang vscode extension to be installed.\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -6640,50 +7992,6 @@
             },
             {
               "kind": "Function",
-              "canonicalReference": "@rainprotocol/rainlang!RainlangAST.isConstant:function(1)",
-              "docComment": "/**\n * Checks if a value is a valid RainlangAST Constant\n *\n * @param value - The value to check\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "function isConstant(value: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "any"
-                },
-                {
-                  "kind": "Content",
-                  "text": "): "
-                },
-                {
-                  "kind": "Content",
-                  "text": "boolean"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "returnTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "releaseTag": "Public",
-              "overloadIndex": 1,
-              "parameters": [
-                {
-                  "parameterName": "value",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 1,
-                    "endIndex": 2
-                  },
-                  "isOptional": false
-                }
-              ],
-              "name": "isConstant"
-            },
-            {
-              "kind": "Function",
               "canonicalReference": "@rainprotocol/rainlang!RainlangAST.isExpression:function(1)",
               "docComment": "/**\n * Checks if a value is a valid RainlangAST Expression\n *\n * @param value - The value to check\n *\n * @public\n */\n",
               "excerptTokens": [
@@ -6766,7 +8074,16 @@
             },
             {
               "kind": "Content",
-              "text": "[];\n    }[];\n}"
+              "text": "[];\n    }[];\n    position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "PositionOffset",
+              "canonicalReference": "@rainprotocol/rainlang!PositionOffset:type"
+            },
+            {
+              "kind": "Content",
+              "text": ";\n}[]"
             },
             {
               "kind": "Content",
@@ -6778,13 +8095,13 @@
           "name": "RainlangAST",
           "typeTokenRange": {
             "startIndex": 1,
-            "endIndex": 8
+            "endIndex": 10
           }
         },
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!rainlangc:function(1)",
-          "docComment": "/**\n * Rain Language Compiler (rainlangc), compiles a text into valid ExpressionConfig (deployable bytes)\n *\n * @param text - The raw string to compile\n *\n * @param metaStore - (optional) MetaStore object\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
+          "docComment": "/**\n * Rain Language Compiler (rainlangc), compiles a text into valid ExpressionConfig (deployable bytes)\n *\n * @param text - The raw string to compile\n *\n * @param opmeta - Array of ops metas\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with problems found in text\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -6796,20 +8113,16 @@
             },
             {
               "kind": "Content",
-              "text": ", entrypoints: "
-            },
-            {
-              "kind": "Content",
-              "text": "string[]"
-            },
-            {
-              "kind": "Content",
-              "text": ", metaStore?: "
+              "text": ", opmeta: "
             },
             {
               "kind": "Reference",
-              "text": "MetaStore",
-              "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+              "text": "OpMeta",
+              "canonicalReference": "@rainprotocol/meta!OpMeta:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
             },
             {
               "kind": "Content",
@@ -6838,10 +8151,10 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/types/compiler/rainlangCompiler.d.ts",
+          "fileUrlPath": "dist/types/rainlang/rainlangCompiler.d.ts",
           "returnTypeTokenRange": {
-            "startIndex": 7,
-            "endIndex": 11
+            "startIndex": 6,
+            "endIndex": 10
           },
           "releaseTag": "Public",
           "overloadIndex": 1,
@@ -6855,20 +8168,12 @@
               "isOptional": false
             },
             {
-              "parameterName": "entrypoints",
+              "parameterName": "opmeta",
               "parameterTypeTokenRange": {
                 "startIndex": 3,
-                "endIndex": 4
+                "endIndex": 5
               },
               "isOptional": false
-            },
-            {
-              "parameterName": "metaStore",
-              "parameterTypeTokenRange": {
-                "startIndex": 5,
-                "endIndex": 6
-              },
-              "isOptional": true
             }
           ],
           "name": "rainlangc"
@@ -6876,28 +8181,27 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!rainlangc:function(2)",
-          "docComment": "/**\n * Rain Language Compiler (rainlangc), compiles Text Documents into valid ExpressionConfig (deployable bytes)\n *\n * @param document - The TextDocument to compile\n *\n * @param metaStore - (optional) MetaStore object\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
+          "docComment": "/**\n * Rain Language Compiler (rainlangc), compiles a text into valid ExpressionConfig (deployable bytes)\n *\n * @param text - The raw string to compile\n *\n * @param opmetaHash - The op meta hash\n *\n * @param opmetaStore - (optional) The MetaStore instance to search for op meta hash in its cache\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with problems found in text\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export declare function rainlangc(document: "
-            },
-            {
-              "kind": "Reference",
-              "text": "TextDocument",
-              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+              "text": "export declare function rainlangc(text: "
             },
             {
               "kind": "Content",
-              "text": ", entrypoints: "
+              "text": "string"
             },
             {
               "kind": "Content",
-              "text": "string[]"
+              "text": ", opmetaHash: "
             },
             {
               "kind": "Content",
-              "text": ", metaStore?: "
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", metaStore: "
             },
             {
               "kind": "Reference",
@@ -6931,7 +8235,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/types/compiler/rainlangCompiler.d.ts",
+          "fileUrlPath": "dist/types/rainlang/rainlangCompiler.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 7,
             "endIndex": 11
@@ -6940,7 +8244,7 @@
           "overloadIndex": 2,
           "parameters": [
             {
-              "parameterName": "document",
+              "parameterName": "text",
               "parameterTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 2
@@ -6948,7 +8252,7 @@
               "isOptional": false
             },
             {
-              "parameterName": "entrypoints",
+              "parameterName": "opmetaHash",
               "parameterTypeTokenRange": {
                 "startIndex": 3,
                 "endIndex": 4
@@ -6961,7 +8265,7 @@
                 "startIndex": 5,
                 "endIndex": 6
               },
-              "isOptional": true
+              "isOptional": false
             }
           ],
           "name": "rainlangc"
@@ -6969,33 +8273,16 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!rainlangc:function(3)",
-          "docComment": "/**\n * Rain Language Compiler (rainlangc), compiles Rain Documents into valid ExpressionConfig (deployable bytes)\n *\n * @param rainDocument - The RainDocument to compile\n *\n * @param metaStore - (optional) MetaStore object to get merged with the RainDocument's MetaStore\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text\n *\n * @public\n */\n",
+          "docComment": "/**\n * Rain Language Compiler (rainlangc), compiles a rainlang instance into valid ExpressionConfig (deployable bytes)\n *\n * @param rainlang - The Rainlang instance\n *\n * @returns A promise that resolves with ExpressionConfig and rejects with problems found in text\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
-              "text": "export declare function rainlangc(rainDocument: "
+              "text": "export declare function rainlangc(rainlang: "
             },
             {
               "kind": "Reference",
-              "text": "RainDocument",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
-            },
-            {
-              "kind": "Content",
-              "text": ", entrypoints: "
-            },
-            {
-              "kind": "Content",
-              "text": "string[]"
-            },
-            {
-              "kind": "Content",
-              "text": ", metaStore?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "MetaStore",
-              "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+              "text": "Rainlang",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang:class"
             },
             {
               "kind": "Content",
@@ -7024,37 +8311,21 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/types/compiler/rainlangCompiler.d.ts",
+          "fileUrlPath": "dist/types/rainlang/rainlangCompiler.d.ts",
           "returnTypeTokenRange": {
-            "startIndex": 7,
-            "endIndex": 11
+            "startIndex": 3,
+            "endIndex": 7
           },
           "releaseTag": "Public",
           "overloadIndex": 3,
           "parameters": [
             {
-              "parameterName": "rainDocument",
+              "parameterName": "rainlang",
               "parameterTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 2
               },
               "isOptional": false
-            },
-            {
-              "parameterName": "entrypoints",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "metaStore",
-              "parameterTypeTokenRange": {
-                "startIndex": 5,
-                "endIndex": 6
-              },
-              "isOptional": true
             }
           ],
           "name": "rainlangc"
@@ -7062,7 +8333,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!rainlangd:function(1)",
-          "docComment": "/**\n * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document\n *\n * @param expressionConfig - ExpressionConfig to decompile\n *\n * @param metaHash - The meta hash\n *\n * @param metaStore - (optional) MetaStore object instance\n *\n * @returns A promise that resolves with a RainDocument\n *\n * @public\n */\n",
+          "docComment": "/**\n * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rainlang instance\n *\n * @param expressionConfig - ExpressionConfig to decompile\n *\n * @param opmetaHash - The op meta hash\n *\n * @param metaStore - (optional) MetaStore object instance\n *\n * @returns A promise that resolves with a Rainlang instance\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -7075,7 +8346,7 @@
             },
             {
               "kind": "Content",
-              "text": ", metaHash: "
+              "text": ", opmetaHash: "
             },
             {
               "kind": "Content",
@@ -7105,8 +8376,8 @@
             },
             {
               "kind": "Reference",
-              "text": "RainDocument",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+              "text": "Rainlang",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang:class"
             },
             {
               "kind": "Content",
@@ -7117,7 +8388,7 @@
               "text": ";"
             }
           ],
-          "fileUrlPath": "dist/types/compiler/rainlangDecompiler.d.ts",
+          "fileUrlPath": "dist/types/rainlang/rainlangDecompiler.d.ts",
           "returnTypeTokenRange": {
             "startIndex": 7,
             "endIndex": 11
@@ -7134,7 +8405,7 @@
               "isOptional": false
             },
             {
-              "parameterName": "metaHash",
+              "parameterName": "opmetaHash",
               "parameterTypeTokenRange": {
                 "startIndex": 3,
                 "endIndex": 4
@@ -7148,6 +8419,87 @@
                 "endIndex": 6
               },
               "isOptional": true
+            }
+          ],
+          "name": "rainlangd"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!rainlangd:function(2)",
+          "docComment": "/**\n * Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rainlang instance\n *\n * @param expressionConfig - ExpressionConfig to decompile\n *\n * @param opmeta - Array of ops metas\n *\n * @returns A promise that resolves with a Rainlang instance\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function rainlangd(expressionConfig: "
+            },
+            {
+              "kind": "Reference",
+              "text": "ExpressionConfig",
+              "canonicalReference": "@rainprotocol/rainlang!ExpressionConfig:type"
+            },
+            {
+              "kind": "Content",
+              "text": ", opmeta: "
+            },
+            {
+              "kind": "Reference",
+              "text": "OpMeta",
+              "canonicalReference": "@rainprotocol/meta!OpMeta:type"
+            },
+            {
+              "kind": "Content",
+              "text": "[]"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Rainlang",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang:class"
+            },
+            {
+              "kind": "Content",
+              "text": ">"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/rainlang/rainlangDecompiler.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 6,
+            "endIndex": 10
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "expressionConfig",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "opmeta",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 5
+              },
+              "isOptional": false
             }
           ],
           "name": "rainlangd"
@@ -7535,6 +8887,51 @@
             }
           ],
           "name": "recordToMap"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!trim:function(1)",
+          "docComment": "/**\n * Trims a text (removing start/end whitespaces) with reporting the number of deletions\n *\n * @param str - The text to trim\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function trim(str: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "{\n    text: string;\n    startDelCount: number;\n    endDelCount: number;\n}"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 3,
+            "endIndex": 4
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "str",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "trim"
         },
         {
           "kind": "Interface",

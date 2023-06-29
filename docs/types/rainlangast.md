@@ -13,5 +13,6 @@ type RainlangAST = {
         position: PositionOffset;
         aliases: AliasASTNode[];
     }[];
-};
+    position: PositionOffset;
+}[];
 ```

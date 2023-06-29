@@ -10,8 +10,9 @@ Type for a named expression
 type NamedExpression = {
     name: string;
     namePosition: PositionOffset;
-    text: string;
+    content: string;
+    contentPosition: PositionOffset;
     position: PositionOffset;
-    parseObj?: RainlangParser;
+    rainlang?: Rainlang;
 };
 ```

@@ -1,4 +1,4 @@
-[Home](../index.md) &gt; [rainlangd](./rainlangd_1.md)
+[Home](../index.md) &gt; [rainlangd](./rainlangd_2.md)
 
 # Function rainlangd()
 
@@ -7,7 +7,7 @@ Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid R
 <b>Signature:</b>
 
 ```typescript
-function rainlangd(expressionConfig: ExpressionConfig, opmetaHash: string, metaStore?: MetaStore): Promise<Rainlang>;
+function rainlangd(expressionConfig: ExpressionConfig, opmeta: OpMeta[]): Promise<Rainlang>;
 ```
 
 ## Parameters
@@ -15,8 +15,7 @@ function rainlangd(expressionConfig: ExpressionConfig, opmetaHash: string, metaS
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expressionConfig | [ExpressionConfig](../types/expressionconfig.md) | ExpressionConfig to decompile |
-|  opmetaHash | `string` | The op meta hash |
-|  metaStore | [MetaStore](../classes/metastore.md) | (optional) MetaStore object instance |
+|  opmeta | `OpMeta[]` | Array of ops metas |
 
 <b>Returns:</b>
 

@@ -64,7 +64,7 @@
     },
     "dependencies": {
         "@nohns/algebra.js": "^0.2.9",
-        "@rainprotocol/meta": "^1.1.0",
+        "@rainprotocol/meta": "^1.1.1",
         "ethers": "^5.7.2",
         "magic-string": "^0.30.0",
         "string-math": "^1.2.2",

@@ -2,25 +2,25 @@
 
 # Function rainlangc()
 
-Rain Language Compiler (rainlangc), compiles Text Documents into valid ExpressionConfig (deployable bytes)
+Rain Language Compiler (rainlangc), compiles a text into valid ExpressionConfig (deployable bytes)
 
 <b>Signature:</b>
 
 ```typescript
-function rainlangc(document: TextDocument, entrypoints: string[], metaStore?: MetaStore): Promise<ExpressionConfig>;
+function rainlangc(text: string, opmetaHash: string, metaStore: MetaStore): Promise<ExpressionConfig>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  document | `TextDocument` | The TextDocument to compile |
-|  entrypoints | `string[]` |  |
-|  metaStore | [MetaStore](../classes/metastore.md) | (optional) MetaStore object |
+|  text | `string` | The raw string to compile |
+|  opmetaHash | `string` | The op meta hash |
+|  metaStore | [MetaStore](../classes/metastore.md) |  |
 
 <b>Returns:</b>
 
 `Promise<ExpressionConfig>`
 
-A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text
+A promise that resolves with ExpressionConfig and rejects with problems found in text
 

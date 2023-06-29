@@ -759,6 +759,7 @@ export function isDotrainConstant(text: string): string {
 }
 
 /**
+ * @public 
  * Trims a text (removing start/end whitespaces) with reporting the number of deletions
  * @param str - The text to trim
  */
