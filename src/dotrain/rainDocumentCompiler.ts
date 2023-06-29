@@ -141,7 +141,7 @@ export async function dotrainc(
                         for (let j = 0; j < quotes.length; j++) {
                             const _index = _nodes.indexOf(quotes[j].value).toString();
                             sourcemapGenerator.update(
-                                quotes[j].position[0] - 1,
+                                quotes[j].position[0],
                                 quotes[j].position[1] + 1,
                                 _index
                             );
@@ -201,7 +201,7 @@ export async function dotrainc(
         }
 
         const _finalRainlang = new Rainlang(
-            _sourcemaps.map(v => v.generatedText).join("\n\n"),
+            _sourcemaps.map(v => v.generatedText).join("\n"),
             _opmeta
         );
         const _finalRainlangProblems = _finalRainlang.getProblems();

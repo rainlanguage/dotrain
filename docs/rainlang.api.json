@@ -2301,6 +2301,27 @@
             },
             {
               "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedClosingAngleParen:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UnexpectedClosingAngleParen = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "520"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UnexpectedClosingAngleParen"
+            },
+            {
+              "kind": "EnumMember",
               "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnexpectedClosingParen:member",
               "docComment": "",
               "excerptTokens": [

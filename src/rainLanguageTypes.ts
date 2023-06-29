@@ -59,6 +59,7 @@ export enum ErrorCode {
     UnexpectedExpression = 0x205,
     UnexpectedString = 0x206,
     UnexpectedComment = 0x207,
+    UnexpectedClosingAngleParen = 0x208,
 
     ExpectedOpcode = 0x301,
     ExpectedSpace = 0x302,

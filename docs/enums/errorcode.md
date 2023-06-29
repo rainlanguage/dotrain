@@ -51,6 +51,7 @@ enum ErrorCode
 |  UndefinedOpMeta | `0` |  |
 |  UndefinedQuote | `4` |  |
 |  UndefinedWord | `1` |  |
+|  UnexpectedClosingAngleParen | `520` |  |
 |  UnexpectedClosingParen | `514` |  |
 |  UnexpectedComment | `519` |  |
 |  UnexpectedEndOfComment | `513` |  |

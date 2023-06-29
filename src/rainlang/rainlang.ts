@@ -228,7 +228,7 @@ export class Rainlang {
     /**
      * @internal Method to find index of next element within the text
      */
-    private findOffset = (str: string): number => {
+    private findNextBoundry = (str: string): number => {
         return str.search(/[()<>\s]/g);
     };
 
@@ -531,7 +531,12 @@ export class Rainlang {
     private consume(exp: string, offset: number) {
         while (exp.length > 0) {
             const _currentPosition = offset - exp.length;
-            if (exp.match(/^\s/)) {
+            if (exp.match(/^\s|^>/)) {
+                if (exp.startsWith(">")) this.problems.push({
+                    msg: "unexpected \">\"",
+                    position: [_currentPosition, _currentPosition],
+                    code: ErrorCode.UnexpectedClosingAngleParen
+                });
                 exp = exp.slice(1);
             }
             else if (exp.startsWith(")")) {
@@ -846,7 +851,7 @@ export class Rainlang {
      * @internal Method that parses an upcoming word to a rainlang AST node
      */
     private resolveWord(exp: string, entry: number): string {
-        const _offset = this.findOffset(exp);
+        const _offset = this.findNextBoundry(exp);
         const _index = _offset < 0 
             ? exp.length 
             : _offset;
@@ -979,6 +984,19 @@ export class Rainlang {
                 });
             }
         }
+        // else if (exp.startsWith(">") || exp.startsWith(")")) {
+        //     if (exp.startsWith(">")) this.problems.push({
+        //         msg: "unexpected \">\"",
+        //         position: [_wordPos[0], _wordPos[0] + 1],
+        //         code: ErrorCode.UnexpectedClosingAngleParen
+        //     });
+        //     else this.problems.push({
+        //         msg: "unexpected \")\"",
+        //         position: [_wordPos[0], _wordPos[0] + 1],
+        //         code: ErrorCode.UnexpectedClosingParen
+        //     });
+        //     exp = exp.slice(1); 
+        // }
         else {
             this.problems.push({
                 msg: `"${_word}" is not a valid rainlang word`,
