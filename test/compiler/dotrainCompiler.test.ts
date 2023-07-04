@@ -326,7 +326,7 @@ describe("RainDocument Compiler (dotrainc) Tests", async function () {
     it("should throw error for invalid rainlang fragment `_: add(10 20), _:`", async () => {
         await assertError(
             async () =>
-                await dotrainc(rainlang`@${opMetaHash} #exp _: add(10 20), _:`, ["exp"], store),
+                await dotrainc(rainlang`@${opMetaHash} #exp _: add(10 20), _:;`, ["exp"], store),
             "no RHS item exists to match this LHS item: _",
             "Invalid Error"
         );
@@ -339,17 +339,17 @@ describe("RainDocument Compiler (dotrainc) Tests", async function () {
                 await dotrainc(rainlang`@${opMetaHash}
                 #exp 
                 // This is an invalid comment.
-                _: add(10 20), _:
+                _: add(10 20), _:;
                 `, ["exp"], store),
             "invalid LHS alias: //",
             "Invalid Error"
         );
     });
 
-    it("should throw error for invalid rainlang fragment `_: add(10 20) block-timestamp()`", async () => {
+    it("should throw error for invalid rainlang fragment `_: add(10 20) block-timestamp();`", async () => {
         await assertError(
             async () =>
-                await dotrainc(rainlang`@${opMetaHash} #exp _: add(10 20) block-timestamp()`, ["exp"], store),
+                await dotrainc(rainlang`@${opMetaHash} #exp _: add(10 20) block-timestamp();`, ["exp"], store),
             "no LHS item exists to match this RHS item",
             "Invalid Error"
         );
@@ -358,14 +358,14 @@ describe("RainDocument Compiler (dotrainc) Tests", async function () {
     it("should not accept negative numbers", async () => {
         await assertError(
             async () =>
-                await dotrainc(rainlang`@${opMetaHash} #exp _: add(-10 20)`, ["exp"], store),
+                await dotrainc(rainlang`@${opMetaHash} #exp _: add(-10 20);`, ["exp"], store),
             "is not a valid rainlang word",
             "Invalid Error"
         );
 
         await assertError(
             async () =>
-                await dotrainc(rainlang`@${opMetaHash} #exp _: sub(123941 -123941)`, ["exp"], store),
+                await dotrainc(rainlang`@${opMetaHash} #exp _: sub(123941 -123941);`, ["exp"], store),
             "is not a valid rainlang word",
             "Invalid Error"
         );
@@ -373,7 +373,7 @@ describe("RainDocument Compiler (dotrainc) Tests", async function () {
 
     it("should only accept ASCII characters", async () => {
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: add(10𐐀 20)`, ["exp"], store),
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: add(10𐐀 20);`, ["exp"], store),
             "illegal character: \\\"𐐀\\\"",
             "Invalid Error"
         );
@@ -381,7 +381,7 @@ describe("RainDocument Compiler (dotrainc) Tests", async function () {
 
     it("should error if invalid operand brackets is provided", async () => {
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<10 1()`, ["exp"], store),
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<10 1();`, ["exp"], store),
             "expected \\\">\\\"",
             "Invalid Error"
         );
@@ -389,12 +389,12 @@ describe("RainDocument Compiler (dotrainc) Tests", async function () {
 
     it("should error if invalid parenthesis is provided", async () => {
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<10 1>`, ["exp"], store),
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<10 1>;`, ["exp"], store),
             "expected \\\"(\\\"",
             "Invalid Error"
         );
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<10 1>(`, ["exp"], store),
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<10 1>(;`, ["exp"], store),
             "expected \\\")\\\"",
             "Invalid Error"
         );
@@ -402,7 +402,7 @@ describe("RainDocument Compiler (dotrainc) Tests", async function () {
 
     it("should error if invalid word pattern is provided", async () => {
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: <10 1>()`, ["exp"], store),
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: <10 1>();`, ["exp"], store),
             "unknown opcode",
             "Invalid Error"
         );
@@ -410,7 +410,7 @@ describe("RainDocument Compiler (dotrainc) Tests", async function () {
 
     it("should error if invalid opcode is passed in the rainlang fragment", async () => {
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: readmemory<10 1>()`, ["exp"], store),
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: readmemory<10 1>();`, ["exp"], store),
             "unknown",
             "Invalid Error"
         );
@@ -418,35 +418,35 @@ describe("RainDocument Compiler (dotrainc) Tests", async function () {
 
     it("should error if operand arguments are missing in the rainlang fragment", async () => {
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory()`, ["exp"], store),
-            "771",
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory();`, ["exp"], store),
+            "expected operand arguments for opcode",
             "Invalid Error"
         );
 
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<>()`, ["exp"], store),
-            "1027",
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<>();`, ["exp"], store),
+            "expected 2 operand arguments for read-memory",
             "Invalid Error"
         );
 
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<1>()`, ["exp"], store),
-            "1027",
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<1>();`, ["exp"], store),
+            "expected 1 more operand argument for read-memory",
             "Invalid Error"
         );
     });
 
     it("should error if out-of-range operand arguments is provided", async () => {
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<1 2>()`, ["exp"], store),
-            "1282",
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: read-memory<1 2>();`, ["exp"], store),
+            "out-of-range operand argument",
             "Invalid Error"
         );
     });
 
     it("should error if a word is undefined", async () => {
         await assertError(
-            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: add(ans 1)`, ["exp"], store),
+            async () => await dotrainc(rainlang`@${opMetaHash} #exp _: add(ans 1);`, ["exp"], store),
             "undefined word: ans",
             "Invalid Error"
         );

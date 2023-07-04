@@ -2,7 +2,7 @@
 
 # Function rainlang()
 
-Method to be used as Tagged Templates to activate embedded rainlang in javascript/typescript that highlights the rainlang syntax. Requires rainlang vscode extension to be installed.
+Method to be used as Tagged Templates to activate embedded rainlang in javascript/typescript in vscode that highlights the rainlang syntax. Requires rainlang vscode extension to be installed.
 
 <b>Signature:</b>
 

@@ -5,10 +5,10 @@ import {
     Position, 
     TextDocument, 
     PositionOffset, 
-    NUMERIC_PATTERN, 
     ExpressionConfig, 
     TextDocumentContentChangeEvent 
 } from "./rainLanguageTypes";
+
 
 /**
  * @public ethers constants
@@ -58,8 +58,8 @@ export const {
 /**
  * @public 
  * Method to be used as Tagged Templates to activate embedded rainlang in 
- * javascript/typescript that highlights the rainlang syntax. Requires rainlang 
- * vscode extension to be installed.
+ * javascript/typescript in vscode that highlights the rainlang syntax. 
+ * Requires rainlang vscode extension to be installed.
  */
 export function rainlang(
     stringChunks: TemplateStringsArray,
@@ -662,7 +662,7 @@ export function getLineText(textDocument: TextDocument, line: number): string {
  * @param position - The position offsets to include
  * @returns The edited text string
  */
-export function inclusiveWhitespaceFill(
+export function fillIn(
     text: string, 
     position: PositionOffset
 ): string {
@@ -720,42 +720,17 @@ export function inclusiveWhitespaceFill(
  * @param position - the position to exclude
  * @returns The edited text string
  */
-export function exclusiveWhitespaceFill(
+export function fillOut(
     text: string, 
     position: PositionOffset
 ): string {
-    const _start = inclusiveWhitespaceFill(text.slice(0, position[0]), [0, position[0] - 1]);
+    const _start = fillIn(text.slice(0, position[0]), [0, position[0] - 1]);
     const _endText = text.slice(position[1] + 1);
-    const _end = inclusiveWhitespaceFill(
+    const _end = fillIn(
         _endText, 
         [0, _endText.length - 1]
     );
     return _start + text.slice(position[0], position[1] + 1) + _end;
-}
-
-/**
- * @public Checks if a text contains a single numeric value and returns it
- * 
- * @param text - The text to process
- * @returns The numeric value if present, and an empty string if false
- */
-export function isDotrainConstant(text: string): string {
-    const _items = exclusiveParse(text, /\s+/gd);
-    if (_items.length !== 1) return "";
-    else {
-        if (NUMERIC_PATTERN.test(_items[0][0])) {
-            if (/^[1-9]\d*e\d+$/.test(_items[0][0])) {
-                const _index = _items[0][0].indexOf("e");
-                return _items[0][0].slice(0, _index)
-                    + "0".repeat(Number(_items[0][0].slice(_index + 1)));
-            }
-            else {
-                if (/^0x[0-9a-zA-Z]+$/.test(_items[0][0])) return _items[0][0];
-                else return BigInt(_items[0][0]).toString();
-            }
-        }
-        else return "";
-    }
 }
 
 /**

@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [inclusiveWhitespaceFill](./inclusivewhitespacefill_1.md)
+[Home](../index.md) &gt; [fillIn](./fillin_1.md)
 
-# Function inclusiveWhitespaceFill()
+# Function fillIn()
 
 Fills a poistion in a text with whitespaces by keeping line structure intact
 
 <b>Signature:</b>
 
 ```typescript
-function inclusiveWhitespaceFill(text: string, position: PositionOffset): string;
+function fillIn(text: string, position: PositionOffset): string;
 ```
 
 ## Parameters

@@ -3,21 +3,8 @@ import { RainDocument } from "./rainDocument";
 import { TextDocument } from "../rainLanguageTypes";
 import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
-import { 
-    OpMeta, 
-    InputMeta, 
-    OutputMeta, 
-    OperandArgs, 
-    OpMetaSchema, 
-    metaFromBytes 
-} from "@rainprotocol/meta";
-import { 
-    arrayify, 
-    BigNumber, 
-    CONSTANTS, 
-    isBytesLike,
-    extractByBits 
-} from "../utils";
+import { arrayify, BigNumber, CONSTANTS, isBytesLike, extractByBits } from "../utils";
+import { OpMeta, InputMeta, OutputMeta, OperandArgs, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
 
 
 /**
@@ -173,13 +160,13 @@ export async function dotraind(
 
     // start formatting
     for (let i = 0; i < expressionConfig.sources.length; i++) {
-        const lhs: string[] = [];
-        const src = arrayify(expressionConfig.sources[i], { allowMissingPrefix: true });
-        let zeroOpCounter = 0;
-        let multiOpCounter = 0;
-        for (let j = 0; j < src.length; j += 4) {
-            const _op = (src[j] << 8) + src[j + 1];
-            const _operand = (src[j + 2] << 8) + src[j + 3];
+        const _lhs: string[] = [];
+        const _src = arrayify(expressionConfig.sources[i], { allowMissingPrefix: true });
+        let _zeroOpCounter = 0;
+        let _multiOpCounter = 0;
+        for (let j = 0; j < _src.length; j += 4) {
+            const _op = (_src[j] << 8) + _src[j + 1];
+            const _operand = (_src[j + 2] << 8) + _src[j + 3];
             const _index = _op;
 
             // error if an opcode not found in opmeta
@@ -200,21 +187,21 @@ export async function dotraind(
                     );
                 }
                 else {
-                    let operandArgs = "";
-                    const inputs = calcInputs(_opmeta[_index].inputs, _operand);
-                    const outputs = calcOutputs(_opmeta[_index].outputs, _operand);
+                    let _operandArgs = "";
+                    const _inputs = calcInputs(_opmeta[_index].inputs, _operand);
+                    const _outputs = calcOutputs(_opmeta[_index].outputs, _operand);
 
                     // count zero output ops
-                    if (outputs === 0) zeroOpCounter++;
+                    if (_outputs === 0) _zeroOpCounter++;
 
                     // count multi output ops
-                    if (outputs > 1) multiOpCounter += outputs - 1;
+                    if (_outputs > 1) _multiOpCounter += _outputs - 1;
 
                     // construct operand arguments
                     if (typeof _opmeta[_index].operand !== "number") {
-                        let args;
+                        let _args;
                         try {
-                            args = deconstructByBits(
+                            _args = deconstructByBits(
                                 _operand, 
                                 (_opmeta[_index].operand as OperandArgs).map((v) => {
                                     return {
@@ -228,13 +215,13 @@ export async function dotraind(
                             return Promise.reject(`${err} of opcode ${_opmeta[_index].name}`);
                         }   
                         if (
-                            args.length === (_opmeta[_index].operand as OperandArgs).length
+                            _args.length === (_opmeta[_index].operand as OperandArgs).length
                         ) {
                             const _i = (_opmeta[_index].operand as OperandArgs).findIndex(
                                 v => v.name === "inputs"
                             );
-                            if (_i > -1) args.splice(_i, 1);
-                            if (args.length) operandArgs = "<" + args.join(" ") + ">";
+                            if (_i > -1) _args.splice(_i, 1);
+                            if (_args.length) _operandArgs = "<" + _args.join(" ") + ">";
                         }
                         else return Promise.reject(
                             `decoder of opcode with enum "${
@@ -249,9 +236,9 @@ export async function dotraind(
                     _stack.push(
                         // ..._multiOutputs,
                         _opmeta[_index].name +
-                        operandArgs +
+                        _operandArgs +
                         "(" +
-                        (inputs > 0 ? _stack.splice(-inputs).join(" ") : "") +
+                        (_inputs > 0 ? _stack.splice(-_inputs).join(" ") : "") +
                         ")"
                     );
                 }
@@ -259,12 +246,12 @@ export async function dotraind(
         }
         
         // cache the LHS elements
-        for (let j = 0; j < _stack.length + multiOpCounter - zeroOpCounter; j++) lhs.push("_");
+        for (let j = 0; j < _stack.length + _multiOpCounter - _zeroOpCounter; j++) _lhs.push("_");
 
         // construct the source expression at current index, both LHS and RHS
         _finalStack.push(
             `#exp-${i + 1}\n` +
-            lhs.join(" ") + 
+            _lhs.join(" ") + 
             " : " + 
             _stack.join(" ") +
             ";"

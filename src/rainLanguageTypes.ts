@@ -4,9 +4,9 @@ import { BigNumberish, BytesLike } from "./utils";
 import { MarkupKind } from "vscode-languageserver-types";
 import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
 
+
 export * from "vscode-languageserver-types";
 export { TextDocument, TextDocumentContentChangeEvent };
-
 
 /**
  * @public Illigal character pattern 
@@ -33,61 +33,60 @@ export const NUMERIC_PATTERN = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$
  * Error codes of Rainlang/RainDocument problem and LSP Diagnostics
  */
 export enum ErrorCode {
-    UndefinedOpMeta = 0,
-    UndefinedWord = 1,
-    IllegalChar = 2,
-    UndefinedImport = 3,
-    UndefinedQuote = 4,
+    IllegalChar = 0,
+    RuntimeError = 1,
+    CircularDependency = 2,
+    UnresolvableDependencies = 3,
 
-    InvalidWordPattern = 0x101,
-    InvalidExpression = 0x102,
-    InvalidNestedNode = 0x103,
-    InvalidSelfReferenceLHS = 0x104,
-    InvalidHash = 0x105,
-    InvalidOpMeta = 0x106,
-    InvalidContractMeta = 0x107,
-    InvalidImport = 0x108,
-    InvalidEmptyExpression = 0x109,
-    InvalidExpressionKey = 0x110,
-    InvalidQuote = 0x111,
-    InvalidOperandArg = 0x112,
+    UndefinedWord = 0x101,
+    UndefinedOpMeta = 0x102,
+    UndefinedImport = 0x103,
+    UndefinedQuote = 0x104,
+    UndefinedOpcode = 0x105,
 
-    UnexpectedEndOfComment = 0x201,
-    UnexpectedClosingParen = 0x202,
-    UnexpectedExpressionKeyUsage = 0x203,
-    UnexpectedFragment = 0x204,
-    UnexpectedExpression = 0x205,
-    UnexpectedString = 0x206,
-    UnexpectedComment = 0x207,
-    UnexpectedClosingAngleParen = 0x208,
+    InvalidWordPattern = 0x201,
+    InvalidExpression = 0x202,
+    InvalidNestedNode = 0x203,
+    InvalidSelfReferenceLHS = 0x204,
+    InvalidHash = 0x205,
+    InvalidOpMeta = 0x206,
+    InvalidContractMeta = 0x207,
+    InvalidImport = 0x208,
+    InvalidEmptyExpression = 0x209,
+    InvalidExpressionKey = 0x210,
+    InvalidQuote = 0x211,
+    InvalidOperandArg = 0x212,
 
-    ExpectedOpcode = 0x301,
-    ExpectedSpace = 0x302,
-    ExpectedOperandArgs = 0x303,
-    ExpectedClosingParen = 0x304,
-    ExpectedOpeningParen = 0x305,
-    ExpectedClosingAngleBracket = 0x306,
-    ExpectedConstant = 0x307,
-    ExpectedSemi = 0x308,
+    UnexpectedEndOfComment = 0x301,
+    UnexpectedClosingParen = 0x302,
+    UnexpectedExpressionKeyUsage = 0x303,
+    UnexpectedFragment = 0x304,
+    UnexpectedExpression = 0x305,
+    UnexpectedString = 0x306,
+    UnexpectedComment = 0x307,
+    UnexpectedClosingAngleParen = 0x308,
 
-    MismatchRHS = 0x401,
-    MismatchLHS = 0x402,
-    MismatchOperandArgs = 0x403,
+    ExpectedOpcode = 0x401,
+    ExpectedSpace = 0x402,
+    ExpectedOperandArgs = 0x403,
+    ExpectedClosingParen = 0x404,
+    ExpectedOpeningParen = 0x405,
+    ExpectedClosingAngleBracket = 0x406,
+    ExpectedConstant = 0x407,
+    ExpectedSemi = 0x408,
 
-    OutOfRangeInputs = 0x501,
-    OutOfRangeOperandArgs = 0x502,
-    OutOfRangeValue = 0x503,
+    MismatchRHS = 0x501,
+    MismatchLHS = 0x502,
+    MismatchOperandArgs = 0x503,
 
-    DuplicateAlias = 0x801,
-    DuplicateContextAlias = 0x802,
-    DuplicateExpIdentifier = 0x803,
-    DuplicateIdentifier = 0x804,
+    OutOfRangeInputs = 0x601,
+    OutOfRangeOperandArgs = 0x602,
+    OutOfRangeValue = 0x603,
 
-    UnknownOp = 0x700,
-
-    RuntimeError = 0x800,
-
-    CircularDependency = 0x900
+    DuplicateAlias = 0x701,
+    DuplicateContextAlias = 0x702,
+    DuplicateExpIdentifier = 0x703,
+    DuplicateIdentifier = 0x704
 }
 
 /**
@@ -226,7 +225,6 @@ export type PositionOffset = [number, number];
  * @public The namespace provides functionality to type check
  */
 export namespace PositionOffset {
-
     /**
      * @public Checks if a value is a valid PositionOffset
      * @param value - The value to check
@@ -252,7 +250,6 @@ export interface Problem {
  * @public The namespace provides functionality to type check
  */
 export namespace Problem {
-
     /**
      * @public Checks if a value is a valid ProblemASTNode
      * @param value - The value to check
@@ -279,7 +276,6 @@ export interface ValueASTNode {
  * @public The namespace provides functionality to type check
  */
 export namespace ValueASTNode {
-
     /**
      * @public Checks if a value is a valid ValueASTNode
      * @param value - The value to check
@@ -313,6 +309,7 @@ export interface OpASTNode {
     position: PositionOffset;
     parens: PositionOffset;
     parameters: ASTNode[];
+    lhsAlias?: AliasASTNode[];
     operandArgs?: {
         position: PositionOffset;
         args: {
@@ -322,14 +319,12 @@ export interface OpASTNode {
             description: string;
         }[];
     };
-    lhsAlias?: AliasASTNode[];
 }
 
 /**
  * @public The namespace provides functionality to type check
  */
 export namespace OpASTNode {
-
     /**
      * @public Checks if a value is a valid OpASTNode
      * @param value - The value to check
@@ -386,7 +381,6 @@ export interface AliasASTNode {
  * @public The namespace provides functionality to type check
  */
 export namespace AliasASTNode {
-
     /**
      * @public Checks if a value is a valid AliasASTNode
      * @param value - The value to check
@@ -418,7 +412,6 @@ export interface Comment {
  * @public The namespace provides functionality to type check
  */
 export namespace Comment {
-
     /**
      * @public Checks if a value is a valid CommentASTNode
      * @param value - The value to check
@@ -444,7 +437,6 @@ export interface Import {
  * @public The namespace provides functionality to type check
  */
 export namespace Import {
-
     /**
      * @public Checks if a value is a valid ImportASTNode
      * @param value - The value to check
@@ -467,7 +459,6 @@ export type ASTNode = ValueASTNode | OpASTNode | AliasASTNode;
  * @public The namespace provides functionality to type check
  */
 export namespace ASTNode {
-
     /**
      * @public Checks if a value is a valid ASTNode
      * @param value - The value to check
@@ -553,7 +544,6 @@ export type NamedExpression = {
  * @public The namespace provides functionality to type check
  */
 export namespace NamedExpression {
-
     /**
      * @public Checks if a value is a valid NamedExpression
      * @param value - The value to check

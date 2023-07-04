@@ -2,7 +2,7 @@
 
 # Class RainDocument
 
-RainDocument is a class object that parses a text to provides data and functionalities in order to be used later on to provide Rain Language Services or in RainDocument compiler to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.
+RainDocument aka dotrain is a class object that parses a text to provides data and functionalities in order to be used later on to provide Rain Language Services or in RainDocument compiler to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.
 
 <b>Signature:</b>
 
@@ -49,7 +49,6 @@ await myRainDocument.updateText(newText)
 
 |  Method | Description |
 |  --- | --- |
-|  [fillOut(text, position)](./raindocument.md#fillOut-method-1) | Fills outside of a position with whitespaces |
 |  [getAllProblems()](./raindocument.md#getAllProblems-method-1) | Get all problems of this RainDocument instance |
 |  [getComments()](./raindocument.md#getComments-method-1) | Get the current comments inside of the text of this RainDocument instance |
 |  [getContextAliases()](./raindocument.md#getContextAliases-method-1) | Get the context aliases of specified meta hashes in this RainDocument instance |
@@ -176,29 +175,6 @@ static create(text: TextDocument, metaStore?: MetaStore, uri?: string, version?:
 A new RainDocument instance
 
 ## Method Details
-
-<a id="fillOut-method-1"></a>
-
-### fillOut(text, position)
-
-Fills outside of a position with whitespaces
-
-<b>Signature:</b>
-
-```typescript
-fillOut(text: string, position: PositionOffset): string;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  text | `string` |  |
-|  position | [PositionOffset](../types/positionoffset.md) |  |
-
-<b>Returns:</b>
-
-`string`
 
 <a id="getAllProblems-method-1"></a>
 

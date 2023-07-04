@@ -393,19 +393,19 @@ describe("Rainlang Compiler (rainlangc) Tests", async function () {
     it("should error if operand arguments are missing in the rainlang fragment", async () => {
         await assertError(
             async () => await rainlangc(rainlang`_: read-memory()`, opMetaHash, store),
-            "771",
+            "expected operand arguments for opcode",
             "Invalid Error"
         );
 
         await assertError(
             async () => await rainlangc(rainlang`_: read-memory<>()`, opMetaHash, store),
-            "1027",
+            "expected 2 operand arguments for read-memory",
             "Invalid Error"
         );
 
         await assertError(
             async () => await rainlangc(rainlang`_: read-memory<1>()`, opMetaHash, store),
-            "1027",
+            "expected 1 more operand argument for read-memory",
             "Invalid Error"
         );
     });
@@ -413,7 +413,7 @@ describe("Rainlang Compiler (rainlangc) Tests", async function () {
     it("should error if out-of-range operand arguments is provided", async () => {
         await assertError(
             async () => await rainlangc(rainlang`_: read-memory<1 2>()`, opMetaHash, store),
-            "1282",
+            "out-of-range operand argument",
             "Invalid Error"
         );
     });

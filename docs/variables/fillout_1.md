@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [exclusiveWhitespaceFill](./exclusivewhitespacefill_1.md)
+[Home](../index.md) &gt; [fillOut](./fillout_1.md)
 
-# Function exclusiveWhitespaceFill()
+# Function fillOut()
 
 Fills a text with whitespaces excluding a position by keeping line structure intact
 
 <b>Signature:</b>
 
 ```typescript
-function exclusiveWhitespaceFill(text: string, position: PositionOffset): string;
+function fillOut(text: string, position: PositionOffset): string;
 ```
 
 ## Parameters

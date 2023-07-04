@@ -1,8 +1,8 @@
 import toposort from "toposort";
 import { MetaStore } from "./metaStore";
 import { Rainlang } from "../rainlang/rainlang";
-import { Import, Problem, Comment, PositionOffset } from "../rainLanguageTypes";
-import { inclusiveParse, exclusiveParse, getRandomInt, inclusiveWhitespaceFill, isDotrainConstant, trim } from "../utils";
+import { inclusiveParse, exclusiveParse, getRandomInt, fillIn, trim } from "../utils";
+import { Import, Problem, Comment, PositionOffset, NUMERIC_PATTERN } from "../rainLanguageTypes";
 import { 
     ErrorCode, 
     HASH_PATTERN, 
@@ -23,7 +23,7 @@ import {
 
 /**
  * @public
- * RainDocument is a class object that parses a text to provides data and 
+ * RainDocument aka dotrain is a class object that parses a text to provides data and 
  * functionalities in order to be used later on to provide Rain Language 
  * Services or in RainDocument compiler to get the ExpressionConfig 
  * (deployable bytes). It uses Rain parser under the hood which does all the 
@@ -60,16 +60,17 @@ export class RainDocument {
     private opmetaIndex = -1;
     private opMetaBytes = "";
     private opmeta: OpMeta[] = [];
+
     private imports: Import[] = [];
     private comments: Comment[] = [];
-    private ctxAliases: ContextAlias[] = []; 
-    private problems: Problem[] = [];
-    private depProblems: Problem[] = [];
+    private ctxAliases: ContextAlias[] = [];
     private dependencies: [string, string][] = [];
 
+    private problems: Problem[] = [];
+    private depProblems: Problem[] = [];
 
     /**
-     * @public Constructs a new RainParser object
+     * @public Constructs a new RainDocument instance
      * @param textDocument - TextDocument
      * @param metaStore - (optional) MetaStore object
      */
@@ -275,9 +276,7 @@ export class RainDocument {
      */
     public async parse() {
         if (/[^\s]/.test(this.textDocument.getText())) {
-            try {
-                await this._parse();
-            }
+            try { await this._parse(); }
             catch (runtimeError) {
                 if (runtimeError instanceof Error) this.runtimeError = runtimeError;
                 else this.runtimeError = new Error(runtimeError as string);
@@ -331,7 +330,7 @@ export class RainDocument {
                 comment: v[0],
                 position: v[1]
             });
-            document = inclusiveWhitespaceFill(document, v[1]);
+            document = fillIn(document, v[1]);
         });
 
         // parse imports
@@ -347,7 +346,7 @@ export class RainDocument {
                         _imports[i][1][1]
                     ],
                 });
-                document = inclusiveWhitespaceFill(document, _imports[i][1]);
+                document = fillIn(document, _imports[i][1]);
             }
         }
         else this.problems.push({
@@ -394,7 +393,7 @@ export class RainDocument {
                     code: ErrorCode.InvalidEmptyExpression
                 });
 
-                const _val = isDotrainConstant(content);
+                const _val = this.isConstant(content);
                 if (_val) {
                     if (this.constants[name] !== undefined) this.problems.push({
                         msg: "duplicate constant identifier",
@@ -417,14 +416,14 @@ export class RainDocument {
                         position
                     });
                 }
-                document = inclusiveWhitespaceFill(document, [v[1][0] - 1, v[1][1]]);
+                document = fillIn(document, [v[1][0] - 1, v[1][1]]);
             }
         });
 
         // find non-top level imports
         if (this.expressions.length > 0) this.imports.forEach(v => {
             if (v.position[0] >= this.expressions[0].namePosition[0]) this.problems.push({
-                msg: "imports can only be at top level",
+                msg: "imports can only be stated at top level",
                 position: [...v.position],
                 code: ErrorCode.InvalidImport
             });
@@ -442,6 +441,7 @@ export class RainDocument {
         // resolve dependencies and parse expressions
         this.resolveDependencies();
 
+        // instantiate rainlang for each expression
         for (let i = 0; i < this.expressions.length; i++) {
             this.expressions[i].rainlang = new Rainlang(
                 this.expressions[i].content, 
@@ -458,21 +458,12 @@ export class RainDocument {
                             position: [
                                 v.position[0] - this.expressions[i].contentPosition[0],
                                 v.position[1] - this.expressions[i].contentPosition[0]
-                            ] 
+                            ]
                         };
                     })
                 }
             );
         }
-    }
-
-    /**
-     * @public Fills outside of a position with whitespaces
-     */
-    public fillOut(text: string, position: PositionOffset): string {
-        return " ".repeat(text.slice(0, position[0]).length) +
-            text.slice(position[0], position[1] + 1) +
-            " ".repeat(text.slice(position[1] + 1, text.length).length);
     }
 
     /**
@@ -777,31 +768,63 @@ export class RainDocument {
                 toposort.array(nodes, edges).reverse();
                 break;
             }
-            catch(err: any) {
-                console.log(err);
-                const errorNode = err.message.slice(err.message.indexOf("\"") + 1, -1);
-                if (!errorNode.includes(" ")) {
-                    const nodesToDelete = [errorNode];
-                    for (let i = 0; i < nodesToDelete.length; i++) {
-                        edges.forEach(v => {
-                            if (v[1] === nodesToDelete[i]) {
-                                if (!nodesToDelete.includes(v[0])) nodesToDelete.push(v[0]);
-                            }
+            catch (error: any) {
+                if (error instanceof Error && error.message.includes("Cyclic dependency")) {
+                    const errorExp = error.message.slice(error.message.indexOf("\"") + 1, -1);
+                    if (!errorExp.includes(" ")) {
+                        const nodesToDelete = [errorExp];
+                        for (let i = 0; i < nodesToDelete.length; i++) {
+                            edges.forEach(v => {
+                                if (v[1] === nodesToDelete[i]) {
+                                    if (!nodesToDelete.includes(v[0])) nodesToDelete.push(v[0]);
+                                }
+                            });
+                        }
+                        edges = edges.filter(
+                            v => !nodesToDelete.includes(v[1]) || !nodesToDelete.includes(v[0])
+                        );
+                        nodes = nodes.filter(v => !nodesToDelete.includes(v));
+                        for (let i = 0; i < nodesToDelete.length; i++) this.depProblems.push({
+                            msg: "circular dependency",
+                            position: this.expressions.find(
+                                v => v.name === nodesToDelete[i]
+                            )!.namePosition,
+                            code: ErrorCode.CircularDependency
                         });
                     }
-                    edges = edges.filter(
-                        v => !nodesToDelete.includes(v[1]) || !nodesToDelete.includes(v[0])
-                    );
-                    nodes = nodes.filter(v => !nodesToDelete.includes(v));
-                    for (let i = 0; i < nodesToDelete.length; i++) this.depProblems.push({
-                        msg: "circular dependency",
-                        position: this.expressions.find(
-                            v => v.name === nodesToDelete[i]
-                        )!.namePosition,
-                        code: ErrorCode.CircularDependency
+                }
+                else {
+                    this.depProblems.push({
+                        msg: "cannot resolve dependencies",
+                        position: [0, -1],
+                        code: ErrorCode.UnresolvableDependencies
                     });
+                    break;
                 }
             }
+        }
+    }
+
+    /**
+     * @internal Checks if a text contains a single numeric value and returns it
+     * @returns The numeric value if present, and an empty string if false
+     */
+    private isConstant(text: string): string {
+        const _items = exclusiveParse(text, /\s+/gd);
+        if (_items.length !== 1) return "";
+        else {
+            if (NUMERIC_PATTERN.test(_items[0][0])) {
+                if (/^[1-9]\d*e\d+$/.test(_items[0][0])) {
+                    const _index = _items[0][0].indexOf("e");
+                    return _items[0][0].slice(0, _index)
+                        + "0".repeat(Number(_items[0][0].slice(_index + 1)));
+                }
+                else {
+                    if (/^0x[0-9a-zA-Z]+$/.test(_items[0][0])) return _items[0][0];
+                    else return BigInt(_items[0][0]).toString();
+                }
+            }
+            else return "";
         }
     }
 }

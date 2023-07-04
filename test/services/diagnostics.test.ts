@@ -342,7 +342,7 @@ describe("Rainlang Diagnostics Service Tests", async function () {
                     message: "unknown opcode: \"read-mem.ory\"", 
                     range: toRange(0, 76, 0, 88), 
                     severity: DiagnosticSeverity.Error, 
-                    code: ErrorCode.UnknownOp, 
+                    code: ErrorCode.UndefinedOpcode, 
                     source: "rainlang" 
                 },
             ]

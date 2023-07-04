@@ -1533,7 +1533,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "2304"
+                  "text": "2"
                 }
               ],
               "initializerTokenRange": {
@@ -1554,7 +1554,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "2049"
+                  "text": "1793"
                 }
               ],
               "initializerTokenRange": {
@@ -1575,7 +1575,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "2050"
+                  "text": "1794"
                 }
               ],
               "initializerTokenRange": {
@@ -1596,7 +1596,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "2051"
+                  "text": "1795"
                 }
               ],
               "initializerTokenRange": {
@@ -1617,7 +1617,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "2052"
+                  "text": "1796"
                 }
               ],
               "initializerTokenRange": {
@@ -1638,7 +1638,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "774"
+                  "text": "1030"
                 }
               ],
               "initializerTokenRange": {
@@ -1659,7 +1659,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "772"
+                  "text": "1028"
                 }
               ],
               "initializerTokenRange": {
@@ -1680,7 +1680,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "775"
+                  "text": "1031"
                 }
               ],
               "initializerTokenRange": {
@@ -1701,7 +1701,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "769"
+                  "text": "1025"
                 }
               ],
               "initializerTokenRange": {
@@ -1722,7 +1722,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "773"
+                  "text": "1029"
                 }
               ],
               "initializerTokenRange": {
@@ -1743,7 +1743,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "771"
+                  "text": "1027"
                 }
               ],
               "initializerTokenRange": {
@@ -1764,7 +1764,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "776"
+                  "text": "1032"
                 }
               ],
               "initializerTokenRange": {
@@ -1785,7 +1785,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "770"
+                  "text": "1026"
                 }
               ],
               "initializerTokenRange": {
@@ -1806,7 +1806,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "2"
+                  "text": "0"
                 }
               ],
               "initializerTokenRange": {
@@ -1827,7 +1827,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "263"
+                  "text": "519"
                 }
               ],
               "initializerTokenRange": {
@@ -1848,7 +1848,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "265"
+                  "text": "521"
                 }
               ],
               "initializerTokenRange": {
@@ -1869,7 +1869,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "258"
+                  "text": "514"
                 }
               ],
               "initializerTokenRange": {
@@ -1890,7 +1890,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "272"
+                  "text": "528"
                 }
               ],
               "initializerTokenRange": {
@@ -1911,7 +1911,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "261"
+                  "text": "517"
                 }
               ],
               "initializerTokenRange": {
@@ -1932,7 +1932,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "264"
+                  "text": "520"
                 }
               ],
               "initializerTokenRange": {
@@ -1953,7 +1953,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "259"
+                  "text": "515"
                 }
               ],
               "initializerTokenRange": {
@@ -1974,7 +1974,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "274"
+                  "text": "530"
                 }
               ],
               "initializerTokenRange": {
@@ -1995,7 +1995,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "262"
+                  "text": "518"
                 }
               ],
               "initializerTokenRange": {
@@ -2016,7 +2016,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "273"
+                  "text": "529"
                 }
               ],
               "initializerTokenRange": {
@@ -2037,7 +2037,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "260"
+                  "text": "516"
                 }
               ],
               "initializerTokenRange": {
@@ -2058,7 +2058,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "257"
+                  "text": "513"
                 }
               ],
               "initializerTokenRange": {
@@ -2079,7 +2079,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "1026"
+                  "text": "1282"
                 }
               ],
               "initializerTokenRange": {
@@ -2100,7 +2100,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "1027"
+                  "text": "1283"
                 }
               ],
               "initializerTokenRange": {
@@ -2121,7 +2121,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "1025"
+                  "text": "1281"
                 }
               ],
               "initializerTokenRange": {
@@ -2142,7 +2142,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "1281"
+                  "text": "1537"
                 }
               ],
               "initializerTokenRange": {
@@ -2163,7 +2163,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "1282"
+                  "text": "1538"
                 }
               ],
               "initializerTokenRange": {
@@ -2184,7 +2184,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "1283"
+                  "text": "1539"
                 }
               ],
               "initializerTokenRange": {
@@ -2205,7 +2205,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "2048"
+                  "text": "1"
                 }
               ],
               "initializerTokenRange": {
@@ -2226,7 +2226,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "3"
+                  "text": "259"
                 }
               ],
               "initializerTokenRange": {
@@ -2235,6 +2235,27 @@
               },
               "releaseTag": "Public",
               "name": "UndefinedImport"
+            },
+            {
+              "kind": "EnumMember",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UndefinedOpcode:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "UndefinedOpcode = "
+                },
+                {
+                  "kind": "Content",
+                  "text": "261"
+                }
+              ],
+              "initializerTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "releaseTag": "Public",
+              "name": "UndefinedOpcode"
             },
             {
               "kind": "EnumMember",
@@ -2247,7 +2268,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "0"
+                  "text": "258"
                 }
               ],
               "initializerTokenRange": {
@@ -2268,7 +2289,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "4"
+                  "text": "260"
                 }
               ],
               "initializerTokenRange": {
@@ -2289,7 +2310,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "1"
+                  "text": "257"
                 }
               ],
               "initializerTokenRange": {
@@ -2310,7 +2331,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "520"
+                  "text": "776"
                 }
               ],
               "initializerTokenRange": {
@@ -2331,7 +2352,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "514"
+                  "text": "770"
                 }
               ],
               "initializerTokenRange": {
@@ -2352,7 +2373,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "519"
+                  "text": "775"
                 }
               ],
               "initializerTokenRange": {
@@ -2373,7 +2394,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "513"
+                  "text": "769"
                 }
               ],
               "initializerTokenRange": {
@@ -2394,7 +2415,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "517"
+                  "text": "773"
                 }
               ],
               "initializerTokenRange": {
@@ -2415,7 +2436,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "515"
+                  "text": "771"
                 }
               ],
               "initializerTokenRange": {
@@ -2436,7 +2457,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "516"
+                  "text": "772"
                 }
               ],
               "initializerTokenRange": {
@@ -2457,7 +2478,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "518"
+                  "text": "774"
                 }
               ],
               "initializerTokenRange": {
@@ -2469,16 +2490,16 @@
             },
             {
               "kind": "EnumMember",
-              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnknownOp:member",
+              "canonicalReference": "@rainprotocol/rainlang!ErrorCode.UnresolvableDependencies:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "UnknownOp = "
+                  "text": "UnresolvableDependencies = "
                 },
                 {
                   "kind": "Content",
-                  "text": "1792"
+                  "text": "3"
                 }
               ],
               "initializerTokenRange": {
@@ -2486,7 +2507,7 @@
                 "endIndex": 2
               },
               "releaseTag": "Public",
-              "name": "UnknownOp"
+              "name": "UnresolvableDependencies"
             }
           ]
         },
@@ -2583,68 +2604,6 @@
             }
           ],
           "name": "exclusiveParse"
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!exclusiveWhitespaceFill:function(1)",
-          "docComment": "/**\n * Fills a text with whitespaces excluding a position by keeping line structure intact\n *\n * @param text - The text\n *\n * @param position - the position to exclude\n *\n * @returns The edited text string\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function exclusiveWhitespaceFill(text: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ", position: "
-            },
-            {
-              "kind": "Reference",
-              "text": "PositionOffset",
-              "canonicalReference": "@rainprotocol/rainlang!~PositionOffset"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/types/utils.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 5,
-            "endIndex": 6
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 1,
-          "parameters": [
-            {
-              "parameterName": "text",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "position",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": false
-            }
-          ],
-          "name": "exclusiveWhitespaceFill"
         },
         {
           "kind": "TypeAlias",
@@ -2945,6 +2904,130 @@
             }
           ],
           "name": "extractFromRecord"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!fillIn:function(1)",
+          "docComment": "/**\n * Fills a poistion in a text with whitespaces by keeping line structure intact\n *\n * @param text - The text\n *\n * @param position - The position offsets to include\n *\n * @returns The edited text string\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function fillIn(text: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "PositionOffset",
+              "canonicalReference": "@rainprotocol/rainlang!~PositionOffset"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "text",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "fillIn"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!fillOut:function(1)",
+          "docComment": "/**\n * Fills a text with whitespaces excluding a position by keeping line structure intact\n *\n * @param text - The text\n *\n * @param position - the position to exclude\n *\n * @returns The edited text string\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function fillOut(text: "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "PositionOffset",
+              "canonicalReference": "@rainprotocol/rainlang!~PositionOffset"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Content",
+              "text": "string"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/utils.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 6
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "text",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            }
+          ],
+          "name": "fillOut"
         },
         {
           "kind": "Function",
@@ -3985,68 +4068,6 @@
         },
         {
           "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!inclusiveWhitespaceFill:function(1)",
-          "docComment": "/**\n * Fills a poistion in a text with whitespaces by keeping line structure intact\n *\n * @param text - The text\n *\n * @param position - The position offsets to include\n *\n * @returns The edited text string\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function inclusiveWhitespaceFill(text: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ", position: "
-            },
-            {
-              "kind": "Reference",
-              "text": "PositionOffset",
-              "canonicalReference": "@rainprotocol/rainlang!~PositionOffset"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/types/utils.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 5,
-            "endIndex": 6
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 1,
-          "parameters": [
-            {
-              "parameterName": "text",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "position",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": false
-            }
-          ],
-          "name": "inclusiveWhitespaceFill"
-        },
-        {
-          "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!isBigNumberish:function(1)",
           "docComment": "/**\n * function to check if the a value is of type BigNumberish, from EthersJS library\n *\n * @param value - the value to check\n *\n * @returns boolean\n *\n * @public\n */\n",
           "excerptTokens": [
@@ -4145,51 +4166,6 @@
             "startIndex": 1,
             "endIndex": 3
           }
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!isDotrainConstant:function(1)",
-          "docComment": "/**\n * Checks if a text contains a single numeric value and returns it\n *\n * @param text - The text to process\n *\n * @returns The numeric value if present, and an empty string if false\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function isDotrainConstant(text: "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Content",
-              "text": "string"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/types/utils.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 3,
-            "endIndex": 4
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 1,
-          "parameters": [
-            {
-              "parameterName": "text",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            }
-          ],
-          "name": "isDotrainConstant"
         },
         {
           "kind": "Function",
@@ -6230,7 +6206,7 @@
         {
           "kind": "Class",
           "canonicalReference": "@rainprotocol/rainlang!RainDocument:class",
-          "docComment": "/**\n * RainDocument is a class object that parses a text to provides data and functionalities in order to be used later on to provide Rain Language Services or in RainDocument compiler to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.\n *\n * @example\n * ```typescript\n * // to import\n * import { RainDocument } from 'rainlang';\n *\n * // to create a new instance of the RainDocument object which parses right after instantiation\n * const myRainDocument = await RainDocument.create(text)\n *\n * // to get the problems\n * const problems = myRainDocument.getAllProblems()\n *\n * // to update the text\n * await myRainDocument.updateText(newText)\n * ```\n *\n * @public\n */\n",
+          "docComment": "/**\n * RainDocument aka dotrain is a class object that parses a text to provides data and functionalities in order to be used later on to provide Rain Language Services or in RainDocument compiler to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.\n *\n * @example\n * ```typescript\n * // to import\n * import { RainDocument } from 'rainlang';\n *\n * // to create a new instance of the RainDocument object which parses right after instantiation\n * const myRainDocument = await RainDocument.create(text)\n *\n * // to get the problems\n * const problems = myRainDocument.getAllProblems()\n *\n * // to update the text\n * await myRainDocument.updateText(newText)\n * ```\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -6504,71 +6480,6 @@
               "isStatic": false,
               "isProtected": false,
               "isAbstract": false
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#fillOut:member(1)",
-              "docComment": "/**\n * Fills outside of a position with whitespaces\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "fillOut(text: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": ", position: "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "PositionOffset",
-                  "canonicalReference": "@rainprotocol/rainlang!~PositionOffset"
-                },
-                {
-                  "kind": "Content",
-                  "text": "): "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 5,
-                "endIndex": 6
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [
-                {
-                  "parameterName": "text",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 1,
-                    "endIndex": 2
-                  },
-                  "isOptional": false
-                },
-                {
-                  "parameterName": "position",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 3,
-                    "endIndex": 4
-                  },
-                  "isOptional": false
-                }
-              ],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "fillOut"
             },
             {
               "kind": "Method",
@@ -7347,7 +7258,7 @@
             {
               "kind": "Constructor",
               "canonicalReference": "@rainprotocol/rainlang!Rainlang:constructor(1)",
-              "docComment": "/**\n * Constructor of Rainlang class\n *\n * @param text - the text\n *\n * @param opmeta - Array of ops metas\n *\n * @param dotrainOptions - (optional) RainDocument (dotrain) options\n */\n",
+              "docComment": "/**\n * Constructor of Rainlang class\n *\n * @param text - the text\n *\n * @param opmeta - Array of ops metas\n *\n * @param dotrainOptions - RainDocument (dotrain) only options\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
@@ -7770,12 +7681,12 @@
             },
             {
               "kind": "Property",
-              "canonicalReference": "@rainprotocol/rainlang!Rainlang#isDotRain:member",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#isDotrain:member",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "readonly isDotRain: "
+                  "text": "readonly isDotrain: "
                 },
                 {
                   "kind": "Content",
@@ -7789,7 +7700,7 @@
               "isReadonly": true,
               "isOptional": false,
               "releaseTag": "Public",
-              "name": "isDotRain",
+              "name": "isDotrain",
               "propertyTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 2
@@ -7883,7 +7794,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!rainlang:function(1)",
-          "docComment": "/**\n * Method to be used as Tagged Templates to activate embedded rainlang in javascript/typescript that highlights the rainlang syntax. Requires rainlang vscode extension to be installed.\n *\n * @public\n */\n",
+          "docComment": "/**\n * Method to be used as Tagged Templates to activate embedded rainlang in javascript/typescript in vscode that highlights the rainlang syntax. Requires rainlang vscode extension to be installed.\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",

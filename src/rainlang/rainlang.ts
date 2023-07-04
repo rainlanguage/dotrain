@@ -1,18 +1,20 @@
 import { MetaStore } from "../dotrain/metaStore";
+import { Problem, Comment, ASTNode, OpASTNode, RainlangAST } from "../rainLanguageTypes";
 import { 
-    OpMeta,
-    InputArgs,
-    OperandArgs,
-    OpMetaSchema,
+    OpMeta, 
+    InputArgs, 
+    OperandArgs, 
+    OpMetaSchema, 
     metaFromBytes, 
     ComputedOutput 
 } from "@rainprotocol/meta";
 import { 
-    Problem,
-    Comment,
-    ASTNode, 
-    OpASTNode, 
-    RainlangAST  
+    ErrorCode, 
+    WORD_PATTERN, 
+    ILLEGAL_CHAR, 
+    AliasASTNode, 
+    PositionOffset, 
+    NUMERIC_PATTERN 
 } from "../rainLanguageTypes";
 import {
     trim,
@@ -23,16 +25,9 @@ import {
     inclusiveParse,
     exclusiveParse,
     constructByBits, 
-    inclusiveWhitespaceFill
+    fillIn
 } from "../utils";
-import { 
-    ErrorCode, 
-    WORD_PATTERN,
-    ILLEGAL_CHAR,
-    AliasASTNode, 
-    PositionOffset, 
-    NUMERIC_PATTERN 
-} from "../rainLanguageTypes";
+
 
 
 /**
@@ -43,7 +38,7 @@ import {
  */
 export class Rainlang {
 
-    public readonly isDotRain: boolean;
+    public readonly isDotrain: boolean;
     public readonly constants: Record<string, string> = {
         "infinity"      : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "max-uint256"   : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -80,7 +75,7 @@ export class Rainlang {
      * Constructor of Rainlang class
      * @param text - the text
      * @param opmeta - Array of ops metas
-     * @param dotrainOptions - (optional) RainDocument (dotrain) options
+     * @param dotrainOptions - RainDocument (dotrain) only options
      */
     constructor(
         text: string,
@@ -102,18 +97,18 @@ export class Rainlang {
     ) {
         this.text = text;
         this.opmeta = opmeta;
-        this.isDotRain = false;
+        this.isDotrain = false;
         if (dotrainOptions?.comments) {
             this.comments = dotrainOptions.comments;
-            this.isDotRain = true;
+            this.isDotrain = true;
         }
         if (dotrainOptions?.constants) {
             this.constants = dotrainOptions.constants;
-            this.isDotRain = true;
+            this.isDotrain = true;
         }
         if (dotrainOptions?.expressionNames) {
             this.expNames = dotrainOptions.expressionNames;
-            this.isDotRain = true;
+            this.isDotrain = true;
         }
         this.parse();
     }
@@ -267,11 +262,11 @@ export class Rainlang {
                 position: v[1],
                 code: ErrorCode.IllegalChar
             });
-            document = inclusiveWhitespaceFill(document, v[1]);
+            document = fillIn(document, v[1]);
         });
 
         // parse comments
-        if (!this.isDotRain) {
+        if (!this.isDotrain) {
             this.comments = [];
             inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
                 if (!v[0].endsWith("*/")) this.problems.push({
@@ -283,7 +278,7 @@ export class Rainlang {
                     comment: v[0],
                     position: v[1]
                 });
-                document = inclusiveWhitespaceFill(document, v[1]);
+                document = fillIn(document, v[1]);
             });
         }
         
@@ -613,7 +608,7 @@ export class Rainlang {
                 });
             }
             _parsedVals.forEach((v, i) => {
-                const _validArgPattern = this.isDotRain 
+                const _validArgPattern = this.isDotrain 
                     ? /^[0-9]+$|^0x[a-fA-F0-9]+$|^(?:')[a-z][a-z0-9-]*$/
                     : /^[0-9]+$|^0x[a-fA-F0-9]+$/;
                 if (_validArgPattern.test(v[0])) {
@@ -881,7 +876,7 @@ export class Rainlang {
             if (_enum === -1) this.problems.push({
                 msg: `unknown opcode: "${_word}"`,
                 position: [..._wordPos],
-                code: ErrorCode.UnknownOp
+                code: ErrorCode.UndefinedOpcode
             });
             let _op: OpASTNode = {
                 opcode: {
