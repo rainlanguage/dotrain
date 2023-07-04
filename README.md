@@ -43,10 +43,10 @@ const diagnostics = await langServices.doValidate(myTextDocument);
 // importing
 import { dotrainc, dotraind } from "@rainprotocol/rainlang";
 
-// compiling a Rain document to get ExpressionConfig aka deployable bytes
+// compiling a RainDocument to get ExpressionConfig aka deployable bytes
 const expressionConfig = await dotrainc(myDocument, [...metaStore]);
 
-// decompiling an ExpressionConfig to a valid Rain document
+// decompiling an ExpressionConfig to a valid RainDocument
 const rainDocument = await dotraind(expressionConfig, [...metaStore]);
 ```
 <br>
@@ -56,10 +56,10 @@ const rainDocument = await dotraind(expressionConfig, [...metaStore]);
 // importing
 import { rainlangc, rainlangd } from "@rainprotocol/rainlang";
 
-// compiling a Rain document to get ExpressionConfig aka deployable bytes
+// compiling a rainlang text to get ExpressionConfig aka deployable bytes
 const expressionConfig = await rainlangc(rainlangText, opMetaOrOpMetaHash);
 
-// decompiling an ExpressionConfig to a valid Rain document
+// decompiling an ExpressionConfig to a valid Rainlang instance
 const rainlangInstance = await rainlangd(expressionConfig, opMetaOrOpMetaHash);
 ```
 
