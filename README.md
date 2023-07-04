@@ -60,7 +60,7 @@ import { rainlangc, rainlangd } from "@rainprotocol/rainlang";
 const expressionConfig = await rainlangc(rainlangText, opMetaOrOpMetaHash);
 
 // decompiling an ExpressionConfig to a valid Rain document
-const rainlangInstance = await rainlangd(expressionConfig, opMetaOrOpMetaHash?);
+const rainlangInstance = await rainlangd(expressionConfig, opMetaOrOpMetaHash);
 ```
 
 <br>
