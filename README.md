@@ -37,17 +37,30 @@ const diagnostics = await langServices.doValidate(myTextDocument);
 ```
 <br>
 
-### **Rain Language Compiler (rlc) and Decompiler (rld)**
-Rain Language compiler/decompiler, compiles a Rain document to a valid ExpressionConfig and vice versa for decompiler.
+### **Rain Language Compiler and Decompiler**
+- `dotrainc()` and `dotraind()` for compiling/decompiling `RainDocument` aka dotrain instances:
 ```typescript
 // importing
-import { rlc, rld } from "@rainprotocol/rainlang";
+import { dotrainc, dotraind } from "@rainprotocol/rainlang";
 
 // compiling a Rain document to get ExpressionConfig aka deployable bytes
-const expressionConfig = await rlc(myDocument, metaStore?);
+const expressionConfig = await dotrainc(myDocument, [...metaStore]);
 
 // decompiling an ExpressionConfig to a valid Rain document
-const rainDocument = await rld(expressionConfig, metaStore?);
+const rainDocument = await dotraind(expressionConfig, [...metaStore]);
+```
+<br>
+
+- `rainlangc()` and `rainlangd()` for compiling/decompiling `Rainlang` instances:
+```typescript
+// importing
+import { rainlangc, rainlangd } from "@rainprotocol/rainlang";
+
+// compiling a Rain document to get ExpressionConfig aka deployable bytes
+const expressionConfig = await rainlangc(rainlangText, opMetaOrOpMetaHash);
+
+// decompiling an ExpressionConfig to a valid Rain document
+const rainlangInstance = await rainlangd(expressionConfig, opMetaOrOpMetaHash?);
 ```
 
 <br>
