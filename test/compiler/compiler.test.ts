@@ -1,5 +1,6 @@
 import assert from "assert";
 import * as chai from "chai";
+import { METAS } from "../fixtures/opmeta";
 import chaiAsPromised from "chai-as-promised";
 import { assertError, opMetaHash } from "../utils";
 import { ExpressionConfig, MetaStore, rainlang, rainlangc } from "../../src";
@@ -12,7 +13,7 @@ describe("Rainlang Compiler (rainlangc) Tests", async function () {
     const store = new MetaStore();
 
     before(async () => {
-        await store.updateStore(opMetaHash);
+        await store.updateStore(opMetaHash, METAS.validOpMeta.metaBytes);
     });
 
     it("should fail if an invalid opmeta is specified", async () => {
@@ -249,19 +250,6 @@ describe("Rainlang Compiler (rainlangc) Tests", async function () {
         return expect(rainlangc(expression, ["exp"], store)).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 1);
-                assert.equal(response.sources.length, 1);
-            });
-    });
-
-    it("should successfully compile an expression with call opcode having multiple outputs", async () => {
-        const expression = rainlang`@${opMetaHash} 
-            #exp
-            _ _: fold-context<2 3 1>(0 1)
-        `;
-
-        return expect(rainlangc(expression, ["exp"], store)).to.eventually.be.fulfilled
-            .then((response: ExpressionConfig) => {
-                assert.equal(response.constants.length, 2);
                 assert.equal(response.sources.length, 1);
             });
     });

@@ -1,6 +1,6 @@
+import { METAS } from "../fixtures/opmeta";
 import assert, { AssertionError } from "assert";
 import { assertError, opMetaHash } from "../utils";
-import { invalidOpMetas } from "../fixtures/opmeta";
 import { ExpressionConfig, rainlang, hexlify, rainlangd, rainlangc, MetaStore } from "../../src";
 
 
@@ -49,7 +49,7 @@ describe("Rainlang Decompiler (rld) Tests", async function () {
     const store = new MetaStore();
 
     before(async () => {
-        await store.updateStore(opMetaHash);
+        await store.updateStore(opMetaHash, METAS.validOpMeta.metaBytes);
     });
 
     it("should fail if an invalid bytes opmeta is specified", async () => {
@@ -58,7 +58,7 @@ describe("Rainlang Decompiler (rld) Tests", async function () {
         const expressionConfig = await rainlangc(expression, ["exp"], store);
         await assertError(
             async () =>
-                await rainlangd(expressionConfig, invalidOpMetas.invalid_bytes, store),
+                await rainlangd(expressionConfig, METAS.invalid_bytes, store),
             "invalid meta hash, must be in hex string",
             "Invalid Error"
         );
@@ -213,12 +213,12 @@ _ _ : erc-1155-balance-of-batch(0x01 0x02 0x03 0x02 0x03)`;
     it("should decompile an expression with fold-context opcode having multiple outputs", async () => {
         const expression0 = rainlang`@${opMetaHash}  
             #exp       
-           _ _: fold-context<2 3 1>(0 0)
+           _ _: fold-context<2 3 1 0>(0 0)
         `;
 
         const expectedExpression0 = rainlang`@${opMetaHash}
 #exp-1
-_ _ : fold-context<2 3 1>(0x00 0x00)`;
+_ _ : fold-context<2 3 1 0>(0x00 0x00)`;
 
         await testRainlangDecompiler(expression0, expectedExpression0, opMetaHash, store, ["exp"]);
     });
