@@ -1,4 +1,5 @@
 import assert from "assert";
+import { METAS } from "../fixtures/opmeta";
 import { contractMetaHash, opMetaHash } from "../utils";
 import { OpMeta, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
 import {
@@ -36,13 +37,13 @@ async function testCompletion(
     }
 }
 
-describe("Rainlang Code Completion Service Tests", async function () {
+describe("LSP Code Completion Language Service Tests", async function () {
     const store = new MetaStore();
     let AllOpcodeCompletions: CompletionItem[];
 
     before(async () => {
-        await store.updateStore(opMetaHash);
-        await store.updateStore(contractMetaHash);
+        await store.updateStore(opMetaHash, METAS.validOpMeta.metaBytes);
+        await store.updateStore(contractMetaHash, METAS.validContractMeta.metaBytes);
         const OpcodeMetas = metaFromBytes(
             store.getOpMeta(opMetaHash)!, 
             OpMetaSchema
@@ -141,7 +142,7 @@ describe("Rainlang Code Completion Service Tests", async function () {
             _: counterpa`,  
             Position.create(2, 24),
             [{
-                label: "counterparty",
+                label: "counterparty-address",
                 kind: CompletionItemKind.Function
             }],
             { metaStore: store }

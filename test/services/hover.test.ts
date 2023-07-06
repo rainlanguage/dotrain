@@ -1,4 +1,5 @@
 import assert from "assert";
+import { METAS } from "../fixtures/opmeta";
 import { contractMetaHash, opMetaHash, toRange } from "../utils";
 import {
     Hover, 
@@ -23,13 +24,13 @@ async function testHover(
     ));
 }
 
-describe("Rainlang Hover Service Tests", async function () {
+describe("LSP Hover Language Service Tests", async function () {
     let expression: string;
     const store = new MetaStore();
 
     before(async () => {
-        await store.updateStore(opMetaHash);
-        await store.updateStore(contractMetaHash);
+        await store.updateStore(opMetaHash, METAS.validOpMeta.metaBytes);
+        await store.updateStore(contractMetaHash, METAS.validContractMeta.metaBytes);
         expression = rainlang`@${opMetaHash} @${contractMetaHash}
 #exp1
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,

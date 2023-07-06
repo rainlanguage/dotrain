@@ -1,4 +1,5 @@
 import assert from "assert";
+import { METAS } from "../fixtures/opmeta";
 import { opMetaHash, toRange } from "../utils";
 import { 
     rainlang,
@@ -30,11 +31,11 @@ async function testDiagnostics(
     });
 }
 
-describe("Rainlang Diagnostics Service Tests", async function () {
+describe("LSP Diagnostics Language Service Tests", async function () {
     const store = new MetaStore();
 
     before(async () => {
-        await store.updateStore(opMetaHash);
+        await store.updateStore(opMetaHash, METAS.validOpMeta.metaBytes);
     });
 
     it("should error: found illegal character: \"\\u00a2\"", async () => {
