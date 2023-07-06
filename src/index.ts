@@ -2,6 +2,7 @@ export * from "./compiler/rainlangCompiler";
 export * from "./compiler/rainlangDecompiler";
 export * from "./parser/rainDocument";
 export * from "./parser/metaStore";
+export * from "./parser/rainlangParser";
 export * from "./services/hover";
 export * from "./services/diagnostics";
 export * from "./services/completion";

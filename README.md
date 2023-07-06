@@ -52,6 +52,39 @@ const rainDocument = await rld(expressionConfig, metaStore?);
 
 <br>
 
+## CLI
+Dotrain compiler/decompiler can be executed through CLI with:
+- if on current repo:
+```bash
+node cli/dotrain [options]
+```
+- if the package is already installed:
+```bash
+npx dotrain [options]
+```
+- for executing the command if package is not installed (executing remotely): 
+`--yes` will accept the prompt to cache the package
+```bash
+npx @rainprotocol/rainlang [options] --yes
+```
+or
+```bash
+npx --p @rainprotocol/rainlang dotrain [options] --yes
+```
+<br>
+Command details:
+
+    CLI command to compile/decompile a source file.
+
+    Options:
+      -c, --compile <expressions...>  Use compiling mode with specified expression names, to compile a .rain file to ExpressionConfig output in a .json
+      -d, --decompile <op meta hash>  Use decompiling mode with a specific opmeta hash, to decompile an ExpressionConfig in a .json to a .rain
+      -i, --input <path>              Path to input file, either a .rain file for compiling or .json for decompiling
+      -o, --output <path>             Path to output file, will output .json for compile mode and .rain for decompile mode
+      -s, --stdout                    Log the result in terminal
+      -V, --version                   output the version number
+      -h, --help                      display help for command
+
 ## **Developers**
 To get started, clone the repo and install the dependencies:
 ```bash

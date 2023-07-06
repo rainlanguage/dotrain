@@ -18,6 +18,7 @@
     "browser": "./dist/esm/index.js",
     "types": "./dist/types/index.d.ts",
     "files": [
+        "/cli",
         "/dist",
         "/src",
         "/docs",
@@ -26,6 +27,9 @@
         "/cjs.d.ts",
         "/esm.d.ts"
     ],
+    "bin": {
+        "dotrain": "./cli/dotrain.js"
+    },
     "scripts": {
         "prepare": "npm run build",
         "build": "rimraf ./dist && npm run build-cjs && npm run build-esm && npm run build-types",
@@ -65,6 +69,7 @@
     "dependencies": {
         "@nohns/algebra.js": "^0.2.9",
         "@rainprotocol/meta": "^1.1.0",
+        "commander": "^11.0.0",
         "ethers": "^5.7.2",
         "string-math": "^1.2.2",
         "toposort": "^2.0.2",
