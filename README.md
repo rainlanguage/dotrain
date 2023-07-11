@@ -37,17 +37,17 @@ const diagnostics = await langServices.doValidate(myTextDocument);
 ```
 <br>
 
-### **Rain Language Compiler (rlc) and Decompiler (rld)**
+### **Rain Language Compiler and Decompiler**
 Rain Language compiler/decompiler, compiles a Rain document to a valid ExpressionConfig and vice versa for decompiler.
 ```typescript
 // importing
-import { rlc, rld } from "@rainprotocol/rainlang";
+import { rainlangc, rainlangd } from "@rainprotocol/rainlang";
 
 // compiling a Rain document to get ExpressionConfig aka deployable bytes
-const expressionConfig = await rlc(myDocument, metaStore?);
+const expressionConfig = await rainlangc(myDocument, ...[ metaStore ]);
 
 // decompiling an ExpressionConfig to a valid Rain document
-const rainDocument = await rld(expressionConfig, metaStore?);
+const rainDocument = await rainlangd(expressionConfig, ...[ metaStore ]);
 ```
 
 <br>
@@ -71,19 +71,45 @@ or
 ```bash
 npx --p @rainprotocol/rainlang dotrain [options] --yes
 ```
+
 <br>
+
 Command details:
 
-    CLI command to compile/decompile a source file.
+    CLI command to compile/decompile dotrain.
 
     Options:
       -c, --compile <expressions...>  Use compiling mode with specified expression names, to compile a .rain file to ExpressionConfig output in a .json
-      -d, --decompile <op meta hash>  Use decompiling mode with a specific opmeta hash, to decompile an ExpressionConfig in a .json to a .rain
+      -d, --decompile <opmeta hash>  Use decompiling mode with a specific opmeta hash, to decompile an ExpressionConfig in a .json to a .rain
       -i, --input <path>              Path to input file, either a .rain file for compiling or .json for decompiling
       -o, --output <path>             Path to output file, will output .json for compile mode and .rain for decompile mode
+      -b, --batch-compile <path>      Path to a json file of mappings of dotrain files paths, expression names and output json files paths to batch compile
       -s, --stdout                    Log the result in terminal
       -V, --version                   output the version number
       -h, --help                      display help for command
+
+<br>
+
+example of a mapping file content (see `./example.mapping.json`):
+```json
+[
+  {
+    "dotrain": "./path/to/dotrain1.rain",
+    "json": "./path/to/compiled1.json",
+    "expressions": [
+      "exp-1", 
+      "exp-2"
+    ]
+  },
+  {
+    "dotrain": "./path/to/dotrain12.rain",
+    "json": "./path/to/compiled2.json",
+    "expressions": [
+      "main"
+    ]
+  }
+]
+
 
 ## **Developers**
 To get started, clone the repo and install the dependencies:
@@ -93,18 +119,15 @@ cd rainlang
 npm install
 ```
 
-
 To build from source code:
 ```bash
 npm run build
 ```
 
-
 To generate documents:
 ```bash
 npm run docgen
 ```
-
 
 To run tests:
 ```bash
