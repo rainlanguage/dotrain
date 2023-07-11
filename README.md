@@ -97,11 +97,33 @@ npx --p @rainprotocol/rainlang dotrain [options] --yes
       -d, --decompile <op meta hash>  Use decompiling mode with a specific opmeta hash, to decompile an ExpressionConfig in a .json to a .rain
       -i, --input <path>              Path to input file, either a .rain file for compiling or .json for decompiling (always required)
       -o, --output <path>             Path to output file, will output .json for compile mode and .rain for decompile mode (always required)
+      -b, --batch-compile <path>      Path to a json file containing mappings of dotrain files paths, expression names and output json files paths to compile
       -s, --stdout                    Log the result in terminal
       -V, --version                   output the version number
       -h, --help                      display help for command
 
 <br>
+
+example of a mapping file content (see `./example.mapping.json`):
+```json
+[
+  {
+    "dotrain": "./path/to/dotrain1.rain",
+    "json": "./path/to/compiled1.json",
+    "expressions": [
+      "exp-1", 
+      "exp-2"
+    ]
+  },
+  {
+    "dotrain": "./path/to/dotrain12.rain",
+    "json": "./path/to/compiled2.json",
+    "expressions": [
+      "main"
+    ]
+  }
+]
+```
 
 ## **Developers**
 To get started, clone the repo and install the dependencies:
