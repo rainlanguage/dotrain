@@ -15,7 +15,6 @@ class Rainlang
 |  Property | Type | Description |
 |  --- | --- | --- |
 |  [constants](./rainlang.md#constants-property) | `Record<string, string>` |  |
-|  [isDotrain](./rainlang.md#isDotrain-property) | `boolean` |  |
 
 ## Static Methods
 
@@ -46,16 +45,6 @@ class Rainlang
 
 ```typescript
 readonly constants: Record<string, string>;
-```
-
-<a id="isDotrain-property"></a>
-
-### isDotrain
-
-<b>Signature:</b>
-
-```typescript
-readonly isDotrain: boolean;
 ```
 
 ## Static Method Details

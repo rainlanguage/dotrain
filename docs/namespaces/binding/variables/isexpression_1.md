@@ -1,6 +1,6 @@
-[Home](../../../index.md) &gt; [NamedExpression](../../namedexpression.md) &gt; [isExpression](./isexpression_1.md)
+[Home](../../../index.md) &gt; [Binding](../../binding.md) &gt; [isExpression](./isexpression_1.md)
 
-# Function NamedExpression.isExpression()
+# Function Binding.isExpression()
 
 Checks if a value is a valid NamedExpression Expression
 

@@ -1,13 +1,13 @@
-[Home](../../../index.md) &gt; [NamedExpression](../../namedexpression.md) &gt; [is](./is_1.md)
+[Home](../../../index.md) &gt; [Binding](../../binding.md) &gt; [is](./is_1.md)
 
-# Function NamedExpression.is()
+# Function Binding.is()
 
 Checks if a value is a valid NamedExpression
 
 <b>Signature:</b>
 
 ```typescript
-function is(value: any): value is NamedExpression;
+function is(value: any): value is Binding;
 ```
 
 ## Parameters
@@ -18,5 +18,5 @@ function is(value: any): value is NamedExpression;
 
 <b>Returns:</b>
 
-`value is NamedExpression`
+`value is Binding`
 

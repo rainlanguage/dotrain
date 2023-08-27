@@ -14,6 +14,7 @@ interface OpASTNode
 
 |  Property | Type | Description |
 |  --- | --- | --- |
+|  [isCtx](./opastnode.md#isCtx-property) | `boolean` |  |
 |  [lhsAlias](./opastnode.md#lhsAlias-property) | `AliasASTNode[]` |  |
 |  [opcode](./opastnode.md#opcode-property) | <pre>{&#010;    name: string;&#010;    description: string;&#010;    position: PositionOffset;&#010;}</pre> |  |
 |  [operand](./opastnode.md#operand-property) | `number` |  |
@@ -24,6 +25,16 @@ interface OpASTNode
 |  [position](./opastnode.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
 
 ## Property Details
+
+<a id="isCtx-property"></a>
+
+### isCtx
+
+<b>Signature:</b>
+
+```typescript
+isCtx?: boolean;
+```
 
 <a id="lhsAlias-property"></a>
 

@@ -581,6 +581,10 @@ export function matchRange(range1: Range, range2: Range): boolean {
  * @public Type for result of matches found in a string
  */
 export type ParsedChunk = [string, [number, number]];
+
+/**
+ * @public The namespace provides function to type checking
+ */
 export namespace ParsedChunk {
     export function is(value: any): value is ParsedChunk {
         return Array.isArray(value)
@@ -837,9 +841,8 @@ export function hasDuplicate(arr1: string[], arr2: string[]): boolean {
 }
 
 /**
- * @public 
- * @param value 
- * @returns 
+ * @public Convert Rainlang numeric values to covenient numeric value
+ * @param value - The value to convert
  */
 export function toConvNumber(value: string): string {
     let _val;
@@ -853,10 +856,10 @@ export function toConvNumber(value: string): string {
 }
 
 /**
- * @public
- * @param name 
- * @param namespace 
- * @returns 
+ * @public Search in a Namespace for a given name
+ * @param name - The name
+ * @param namespace - The Namespace
+ * @returns An object that contains the found item and the parent namespace
  */
 export function namespaceSearch(
     name: string, 

@@ -1205,11 +1205,7 @@ export class Rainlang {
     }
 
     /**
-     * 
-     * @param name 
-     * @param offset 
-     * @param publishDiagnostics 
-     * @returns 
+     * @internal Search in namespaces for a name
      */
     private searchName(
         name: string, 
@@ -1269,9 +1265,7 @@ export class Rainlang {
     }
 
     /**
-     * 
-     * @param node 
-     * @returns 
+     * @internal search for OpMeta in namespaces
      */
     private searchOpmeta(node: OpASTNode | string): OpMeta | undefined {
         let _opmeta;

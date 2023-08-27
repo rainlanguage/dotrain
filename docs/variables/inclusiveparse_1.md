@@ -7,7 +7,7 @@ Parses an string by extracting matching strings
 <b>Signature:</b>
 
 ```typescript
-function inclusiveParse(str: string, pattern: RegExp, offset?: number): [string, [number, number]][];
+function inclusiveParse(str: string, pattern: RegExp, offset?: number): ParsedChunk[];
 ```
 
 ## Parameters
@@ -20,7 +20,5 @@ function inclusiveParse(str: string, pattern: RegExp, offset?: number): [string,
 
 <b>Returns:</b>
 
-`[string, [number, number]][]`
-
-An array of matching strings and their position inclusive at both ends
+`ParsedChunk[]`
 

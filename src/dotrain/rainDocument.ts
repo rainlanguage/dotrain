@@ -86,7 +86,6 @@ export class RainDocument {
      * @public Constructs a new RainDocument instance, should not be used for instantiating, use "creat()" instead
      * @param textDocument - TextDocument
      * @param metaStore - (optional) MetaStore object
-     * @param 
      */
     constructor(
         textDocument: TextDocument,
