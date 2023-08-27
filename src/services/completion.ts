@@ -22,10 +22,10 @@ function findNamespaceMach(
 ): [string, (Namespace | NamespaceNode)][] | undefined {
     let _ns: any = namespace;
     const _names = exclusiveParse(name, /\./gd, undefined, true);
+    if (name.startsWith(".")) _names.shift();
     const _last = _names.pop();
     if (!_names.every(v => WORD_PATTERN.test(v[0]))) return undefined;
     if (_last?.[0] && !WORD_PATTERN.test(_last[0])) return undefined;
-    if (name.startsWith(".")) _names.shift();
     for (let i = 0; i < _names.length; i++) {
         if (_ns[_names[i][0]]) {
             _ns = _ns[_names[i][0]];
