@@ -26,7 +26,7 @@ export interface RainLanguageServices {
 
 /**
  * @public
- * Main function to get Rain language services initiated and ready to recieve 
+ * Main function to get Rain language services initiated and ready to receive 
  * TextDocuments to provide the desired language services
  * 
  * @example

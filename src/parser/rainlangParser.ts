@@ -199,7 +199,7 @@ export class RainlangParser {
         this.state.runtimeError = undefined;
         let document = this.text;
 
-        // check for illigal characters
+        // check for illegal characters
         inclusiveParse(document, ILLEGAL_CHAR).forEach(v => {
             this.problems.push({
                 msg: `illegal character: "${v[0]}"`,

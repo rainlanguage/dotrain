@@ -1,6 +1,6 @@
 # **Rain Language - Standalone**
 The Rain language (rainlang) standalone encapsulates the Rain language compiler (rlc) and Rain language services (in [LSP specs](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/)) that are written in typescript. This is well suited for editors and IDE support, which can be intracted with directly through API and/or be used in tools like Slate and/or be utilized in any text editor that supports [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) such as vscode, monaco or codemirror.
-- Rainlang has been implemented for vscode and codemirror, see [rainlang-vscode](https://github.com/rainprotocol/rainlang-vscode) and [rainlang-codemirror](https://github.com/rainprotocol/rainlang-codemirror) repositories for more deatils.
+- Rainlang has been implemented for vscode and codemirror, see [rainlang-vscode](https://github.com/rainprotocol/rainlang-vscode) and [rainlang-codemirror](https://github.com/rainprotocol/rainlang-codemirror) repositories for more details.
 - Rainlang vscode extension can be found [here](https://marketplace.visualstudio.com/items?itemName=rainprotocol.rainlang-vscode).
 
 
@@ -24,7 +24,7 @@ yarn add @rainprotocol/rainlang
 
 
 ### **Language Services**
-Rain Language Services provide validation of a Rain docuemtn and services like completion, hover, etc.
+Rain Language Services provide validation of a Rain document and services like completion, hover, etc.
 ```typescript
 // importing
 import { getRainLanguageServices } from "@rainprotocol/rainlang";

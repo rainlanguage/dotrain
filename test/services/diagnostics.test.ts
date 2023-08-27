@@ -19,7 +19,7 @@ async function testDiagnostics(
         TextDocument.create("file", "rainlang", 1, text), 
     );
     if (actualDiagnostics.length == 0)
-        throw new Error(`No Diagnostics available for the expresion : \n${text}`);
+        throw new Error(`No Diagnostics available for the expression : \n${text}`);
     expectedDiagnostics.forEach((expectedDiagnostic, i) => {
         const actualDiagnostic = actualDiagnostics[i];
         assert.equal(actualDiagnostic.message, expectedDiagnostic.message);
@@ -121,12 +121,12 @@ describe("Rainlang Diagnostics Service Tests", async function () {
         );
     });
 
-    it("should error: expected to be seperated by space", async () => {
+    it("should error: expected to be separated by space", async () => {
         await testDiagnostics(
             rainlang`@${opMetaHash} #exp x: sub(add(10 20)add(1 2))`, 
             store, 
             [{ 
-                message: "expected to be seperated by space", 
+                message: "expected to be separated by space", 
                 range: toRange(0, 89, 0, 91), 
                 severity: DiagnosticSeverity.Error, 
                 code: ErrorCode.ExpectedSpace, 

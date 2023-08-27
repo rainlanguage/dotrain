@@ -203,7 +203,7 @@ export function isBigNumberish(value: any): boolean {
 
 /**
  * @public
- * Extract some of the properites from a Map as a new Map with same keys.
+ * Extract some of the properties from a Map as a new Map with same keys.
  *
  * @param map - the map to extract from
  * @param properties - name of the properties in second item of the map elements
@@ -266,7 +266,7 @@ export function extractFromRecord<T extends string | number | symbol>(
 
 /**
  * @public
- * Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type 
+ * Conver a Map to a equivalent Record (a key/value pair object). Map keys must be of type 
  * acceptable by Record constructor, which are string, number or symbol.
  *
  * @param map - The Map to conver to Record
@@ -297,7 +297,7 @@ export function mapToRecord<K extends string | number | symbol>(
 
 /**
  * @public
- * Conver a Record (a key/value pair object) to a equivelant Map. Map keys will 
+ * Conver a Record (a key/value pair object) to a equivalent Map. Map keys will 
  * be of type acceptable by Record constructor, which are string, number or symbol.
  *
  * @param record - The Record to convert to a Map
@@ -353,7 +353,7 @@ export const areEqualStateConfigs = (
  * @public
  * Deeply freezes an object, all of the properties of propterties gets frozen
  * 
- * @param object - object to freez
+ * @param object - object to freeze
  * @returns frozen object
  */
 export function deepFreeze(object: any) {
@@ -405,7 +405,7 @@ export function deepCopy<T>(variable: T): T {
  * @param value - Operand value
  * @param bits - Bits indexes to extract
  * @param computation - Any arethmetical operation to apply to extracted value
- * @param computationVar - The variavle in compuation to solve for, default is "bits"
+ * @param computationVar - The variable in computation to solve for, default is "bits"
  * @returns Extracted value
  */
 export function extractByBits(
