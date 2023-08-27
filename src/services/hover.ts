@@ -1,7 +1,7 @@
 import { ASTNode } from "../rainLanguageTypes";
-import { MetaStore } from "../dotrain/metaStore";
+// import { MetaStore } from "../dotrain/metaStore";
 import { RainDocument } from "../dotrain/rainDocument";
-import { ContractMetaSchema, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
+// import { ContractMetaSchema, MAGIC_NUMBERS, OpMetaSchema, metaFromBytes, toOpMeta } from "@rainprotocol/meta";
 import { LanguageServiceParams, MarkupKind, TextDocument, Position, Hover, Range } from "../rainLanguageTypes";
 
 
@@ -68,7 +68,7 @@ export async function getRainlangHover(
             ) {
                 if ("opcode" in _n) {
                     if (
-                        _n.parens[0]  < _targetOffset && 
+                        _n.parens[0] < _targetOffset && 
                         _n.parens[1] > _targetOffset
                     ) return search(_n.parameters, offset);
                     else {
@@ -119,7 +119,7 @@ export async function getRainlangHover(
                         ),
                         contents: {
                             kind: _contentType,
-                            value: "Value"
+                            value: _n.id ? _n.value : "Value"
                         }
                     } as Hover;
                 }
@@ -130,7 +130,7 @@ export async function getRainlangHover(
                     ),
                     contents: {
                         kind: _contentType,
-                        value: "Alias"
+                        value: "Stack Alias"
                     }
                 } as Hover;
             }
@@ -201,31 +201,39 @@ export async function getRainlangHover(
         const _hash = _rd.getImports().find(
             v => v.position[0] <= _targetOffset && v.position[1] >= _targetOffset
         );
-        const _index = _rd.getImports().findIndex(
-            v => v.position[0] <= _targetOffset && v.position[1] >= _targetOffset
-        );
-        if (_hash) return {
+        // const _index = _rd.getImports().findIndex(
+        //     v => v.position[0] <= _targetOffset && v.position[1] >= _targetOffset
+        // );
+        if (_hash && _hash.sequence && Object.keys(_hash.sequence).length) return {
             range: Range.create(
                 _td.positionAt(_hash.position[0]),
                 _td.positionAt(_hash.position[1] + 1)
             ),
             contents: {
                 kind: _contentType,
-                value: (await buildMetaInfo(_hash.hash, _rd.metaStore)) + (
-                    _index > -1 && _rd.getOpMetaImportIndex() === _index
-                        ? "\n\nActive Op Meta"
-                        : ""
-                )
+                value: `this import contains:${
+                    _hash.sequence.opmeta ? " -OpMeta" : ""
+                }${
+                    _hash.sequence.ctxmeta ? " -ContractMeta" : ""
+                }${
+                    _hash.sequence.dotrain ? " -DotRain" : ""
+                }`
+                // (await buildMetaInfo(_hash.hash, _rd.metaStore)) 
+                // + (
+                //     _index > -1 && _rd.getOpMetaImportIndex() === _index
+                //         ? "\n\nActive Op Meta"
+                //         : ""
+                // )
             }
         };
         else {
-            const _currentExp = _rd.expressions.find(v =>
+            const _currentExp = _rd.bindings.find(v =>
                 v.position[0] <= _targetOffset && v.position[1] >= _targetOffset
             );
             if (_currentExp) {
                 _targetOffset -= _currentExp.contentPosition[0];
                 return search(
-                    _currentExp?.rainlang?.getAst().find(v => 
+                    _currentExp?.exp?.getAst().find(v => 
                         v.position[0] <= _targetOffset &&
                         v.position[1] >= _targetOffset
                     )?.lines.map(v => v.nodes).flat() ?? [],
@@ -241,38 +249,49 @@ export async function getRainlangHover(
     }
 }
 
-/**
- * @public Build a general info from a meta content (used as hover info for a meta hash)
- * @param hash - The meta hash to build info from
- * @param metaStore - The meta store instance that keeps this hash as record
- * @returns A promise that resolves with general info about the meta
- */
-async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise<string> {
-    const _opMeta = metaStore.getOpMeta(hash);
-    const _contMeta = metaStore.getContractMeta(hash);
-    if (!_opMeta && !_contMeta) return "Unfortunately, could not find any info about this meta";
-    else {
-        const info = ["This Rain metadata consists of:"];
-        if (_opMeta) info.push(`- Op metadata with ${
-            (() => {
-                try {
-                    return metaFromBytes(_opMeta, OpMetaSchema).length.toString() + " opcodes";
-                }
-                catch {
-                    return "unknown number of opcodes";
-                }
-            })()
-        }`);
-        if (_contMeta) info.push(`- ${
-            (() => {
-                try {
-                    return metaFromBytes(_contMeta, ContractMetaSchema).name;
-                }
-                catch {
-                    return "unknown";
-                }
-            })()
-        } contract metadata`);
-        return info.join("\n");
-    }
-}
+// /**
+//  * @public Build a general info from a meta content (used as hover info for a meta hash)
+//  * @param hash - The meta hash to build info from
+//  * @param metaStore - The meta store instance that keeps this hash as record
+//  * @returns A promise that resolves with general info about the meta
+//  */
+// async function buildMetaInfo(hash: string, metaStore: MetaStore): Promise<string> {
+//     const _metaRecord = metaStore.getRecord(hash);
+//     let _opmeta;
+//     let _contmeta;
+//     let _dotrain;
+//     const _opMetaContent = _metaRecord?.sequence.find(v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1)?.content;
+//     if (_opMetaContent) {
+//         try {
+//             _opmeta = toOpMeta(metaFromBytes(_opMetaContent));
+//         }
+//         catch {}
+//     }
+    
+//     const _contMeta = metaStore.getContractMeta(hash);
+//     if (!_opMeta && !_contMeta) return "Unfortunately, could not find any info about this meta";
+//     else {
+//         const info = ["This Rain metadata consists of:"];
+//         if (_opMeta) info.push(`- Op metadata with ${
+//             (() => {
+//                 try {
+//                     return metaFromBytes(_opMeta, OpMetaSchema).length.toString() + " opcodes";
+//                 }
+//                 catch {
+//                     return "unknown number of opcodes";
+//                 }
+//             })()
+//         }`);
+//         if (_contMeta) info.push(`- ${
+//             (() => {
+//                 try {
+//                     return metaFromBytes(_contMeta, ContractMetaSchema).name;
+//                 }
+//                 catch {
+//                     return "unknown";
+//                 }
+//             })()
+//         } contract metadata`);
+//         return info.join("\n");
+//     }
+// }

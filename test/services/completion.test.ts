@@ -1,12 +1,11 @@
 import assert from "assert";
 import { METAS } from "../fixtures/opmeta";
 import { contractMetaHash, opMetaHash } from "../utils";
-import { OpMeta, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
+import { metaFromBytes, MAGIC_NUMBERS, toOpMeta } from "@rainprotocol/meta";
 import {
     Position,
     rainlang,
     MetaStore, 
-    RainDocument, 
     TextDocument,
     CompletionItem,
     CompletionItemKind, 
@@ -25,9 +24,7 @@ async function testCompletion(
         TextDocument.create("file", "rainlang", 1, text), 
         position
     );
-    if (expectedCompletions === null) {
-        assert.ok(actualCompletions === null);
-    }
+    if (expectedCompletions === null) assert.ok(actualCompletions === null);
     else {
         assert.ok(actualCompletions?.length == expectedCompletions?.length);
         expectedCompletions.forEach((item, i) => {
@@ -44,39 +41,43 @@ describe("LSP Code Completion Language Service Tests", async function () {
     before(async () => {
         await store.updateStore(opMetaHash, METAS.validOpMeta.metaBytes);
         await store.updateStore(contractMetaHash, METAS.validContractMeta.metaBytes);
-        const OpcodeMetas = metaFromBytes(
-            store.getOpMeta(opMetaHash)!, 
-            OpMetaSchema
-        ) as OpMeta[];
-        AllOpcodeCompletions = OpcodeMetas.map(v => {
-            return {
-                label: v.name,
-                kind: CompletionItemKind.Function,
-            };
+        const OpcodeMetas = toOpMeta(metaFromBytes(
+            store.getRecord(opMetaHash)!.sequence.find(
+                v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1
+            )!.content
+        ));
+        AllOpcodeCompletions = OpcodeMetas.flatMap(v => {
+            return [
+                {
+                    label: v.name,
+                    kind: CompletionItemKind.Function,
+                },
+                ...(
+                    v.aliases ? v.aliases.map(e => {
+                        return {
+                            label: e,
+                            kind: CompletionItemKind.Function
+                        };
+                    })
+                    : []
+                )
+            ];
         });
-        OpcodeMetas.forEach(v => v.aliases?.forEach(e => {
-            AllOpcodeCompletions.push({
-                label: e,
-                kind: CompletionItemKind.Function,
-            });
+        ["infinity", "max-uint256" ,"max-uint-256"].forEach(v => AllOpcodeCompletions.unshift({
+            label: v,
+            kind: CompletionItemKind.Constant
         }));
     });
 
     it("should provide all opcode suggestions for rhs when there is no lhs aliases", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
-        const _rd = await RainDocument.create(
-            TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} #exp _: `), 
-            store
-        );
-        Object.keys(_rd.constants).forEach(v => {
-            _allCompletions.unshift({
-                label: v,
-                kind: CompletionItemKind.Constant,
-            });
+        _allCompletions.unshift({
+            label: "expression",
+            kind: CompletionItemKind.Class
         });
         await testCompletion(
-            rainlang`@${opMetaHash} _: `, 
-            Position.create(0, 76),
+            rainlang`@${opMetaHash} #expression _: `, 
+            Position.create(0, 89),
             _allCompletions,
             { metaStore: store }
         );
@@ -86,7 +87,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
         await testCompletion(
             rainlang`@${opMetaHash} #exp _: ad`,  
             Position.create(0, 78),
-            AllOpcodeCompletions.filter(v => v.label.includes("ad")),
+            AllOpcodeCompletions.filter(v => v.label.startsWith("ad")),
             { metaStore: store }
         );
     });
@@ -104,32 +105,22 @@ describe("LSP Code Completion Language Service Tests", async function () {
         await testCompletion(
             rainlang`@${opMetaHash} #exp _: add(1 2)`,  
             Position.create(0, 79),
-            AllOpcodeCompletions.filter(v => v.label.includes("add")),
+            AllOpcodeCompletions.filter(v => v.label.startsWith("add")),
             { metaStore: store }
         );
     });
 
     it("should include lhs alias in suggestions", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
-        const _rd = await RainDocument.create(
-            TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} name: n`), 
-            store
-        );
-        Object.keys(_rd.constants).forEach(v => {
-            _allCompletions.unshift({
-                label: v,
-                kind: CompletionItemKind.Constant,
-            });
-        });
         await testCompletion(
-            rainlang`@${opMetaHash} #exp name: n`,  
-            Position.create(0, 80),
+            rainlang`@${opMetaHash} #expn name: n`,  
+            Position.create(0, 81),
             [
                 {
                     label: "name",
                     kind: CompletionItemKind.Variable
                 },
-                ..._allCompletions.filter(v => v.label.includes("n"))
+                ..._allCompletions.filter(v => v.label.startsWith("n"))
             ],
             { metaStore: store }
         );

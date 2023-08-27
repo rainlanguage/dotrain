@@ -162,7 +162,7 @@ new-total-amount-sent);
                 range: toRange(14, 0, 14, 18),
                 contents: {
                     kind: "plaintext",
-                    value: "Alias"
+                    value: "Stack Alias"
                 }
             }
         );
@@ -204,14 +204,10 @@ new-total-amount-sent);
                 { metaStore: store },
             ),
             {
-                range: toRange(0, 0, 0, 67),
+                range: toRange(0, 0, 0, 68),
                 contents: {
                     kind: "plaintext",
-                    value: [
-                        "This Rain metadata consists of:",
-                        "- Op metadata with 78 opcodes",
-                        "\nActive Op Meta"
-                    ].join("\n")
+                    value: "this import contains: -OpMeta"
                 }
             }
         );
@@ -225,13 +221,10 @@ new-total-amount-sent);
                 { metaStore: store },
             ),
             {
-                range: toRange(0, 68, 0, 135),
+                range: toRange(0, 68, 1, 0),
                 contents: {
                     kind: "plaintext",
-                    value: [
-                        "This Rain metadata consists of:",
-                        "- Order Book contract metadata"
-                    ].join("\n")
+                    value: "this import contains: -ContractMeta"
                 }
             }
         );

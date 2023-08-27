@@ -29,7 +29,7 @@ describe("Rainlang Compiler (rainlangc) Tests", async function () {
     });
 
     it("should accept valid rainlang fragment `_:;`", async () => {
-        return expect(rainlangc(rainlang`_:;`, opMetaHash, store)).to.eventually.be.fulfilled
+        return expect(rainlangc(rainlang`_:;`, opMetaHash, store).catch(v => console.log(v))).to.eventually.be.fulfilled
             .then((response: ExpressionConfig) => {
                 assert.equal(response.constants.length, 0);
                 assert.equal(response.sources.length, 1);

@@ -1,9 +1,9 @@
 import { Rainlang } from "./rainlang";
-import { MetaStore } from "../dotrain/metaStore";
+import { MetaRecord, MetaStore } from "../dotrain/metaStore";
 import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
 import { arrayify, BigNumber, CONSTANTS, extractByBits } from "../utils";
-import { OpMeta, InputMeta, OutputMeta, OperandArgs, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
+import { OpMeta, InputMeta, OutputMeta, OperandArgs, metaFromBytes, MAGIC_NUMBERS, toOpMeta } from "@rainprotocol/meta";
 
 
 /**
@@ -150,17 +150,28 @@ export async function rainlangd(
 
     let _opmeta: OpMeta[];
     if (typeof opmetaSource === "string") {
-        let _opMetaBytes: string | undefined;
+        let _metaRecord: MetaRecord | null | undefined;
         if (opmetaSource.match(/^0x[a-fA-F0-9]{64}$/)) {
-            _opMetaBytes = metaStore.getOpMeta(opmetaSource);
-            if (!_opMetaBytes) {
+            _metaRecord = metaStore.getRecord(opmetaSource);
+            if (!_metaRecord) {
                 await metaStore.updateStore(opmetaSource);
-                _opMetaBytes = metaStore.getOpMeta(opmetaSource);
-                if (!_opMetaBytes) throw new Error(`cannot find settlement for hash: ${opmetaSource}`);
+                _metaRecord = metaStore.getRecord(opmetaSource);
+                if (!_metaRecord) throw new Error(`cannot find settlement for hash: ${opmetaSource}`);
             }
         }
         else throw new Error(" invalid meta hash, must be 32 bytes hex string");
-        _opmeta = metaFromBytes(_opMetaBytes!, OpMetaSchema) as OpMeta[];
+        try {
+            const _hasOpmeta = _metaRecord.sequence.find(
+                v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1
+            );
+            if (_hasOpmeta) {
+                _opmeta = toOpMeta(metaFromBytes(_hasOpmeta.content));
+            }
+            else throw new Error("provided hash doesn't include an opmeta");
+        }
+        catch (err) {
+            return Promise.reject(err);
+        }
     }
     else {
         if (!opmetaSource || !Array.isArray(opmetaSource) || !opmetaSource.length) 

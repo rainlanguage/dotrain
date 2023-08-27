@@ -4,5 +4,7 @@
       "fileMatch": ["*.op.meta.json"],
       "url": "./src/schema/op.meta.schema.json"
     }
-  ]
+  ],
+  "codegpt.apiKey": "",
+  "codegpt.model": "text-davinci-003"
 }

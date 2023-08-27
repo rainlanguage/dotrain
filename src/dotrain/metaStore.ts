@@ -1,20 +1,56 @@
-import { isBytesLike, deepCopy } from "../utils";
-import { sgBook, searchMeta, MAGIC_NUMBERS, decodeRainMetaDocument, keccak256 } from "@rainprotocol/meta";
+import { isBytesLike, deepCopy, getEncodedMetaType } from "../utils";
+import { RAIN_SUBGRAPHS, searchMeta, MAGIC_NUMBERS, decodeRainMetaDocument, keccak256, cborDecode } from "@rainprotocol/meta";
 
+
+/**
+ * @public Type of a meta sequence resolved from a meta hash
+ */
+export type MetaSequence = {
+    /**
+     * Sequence content
+     */
+    content: string;
+    /**
+     * Sequence magic number
+     */
+    magicNumber: MAGIC_NUMBERS;
+}[];
+
+/**
+ * @public Type of encoded meta bytes
+ */
+export type EncodedMetaType = "sequence" | "single";
+
+/**
+ * @public Type for a record in MetaStore cache
+ */
+export type MetaRecord = {
+    // /**
+    //  * The content bytes as hex string
+    //  */
+    // content: string;
+    /**
+     * The type of the meta
+     */
+    type: EncodedMetaType;
+    /**
+     * The decoded sequence maps
+     */
+    sequence: MetaSequence;
+}
 
 /**
  * @public 
  * Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities 
  * to easliy utilize them. Hashes must 32 bytes (in hex string format) and will 
  * be stored as lower case.
- * Meta bytes must be valid cbor encoded that emitted by the contract.
+ * Meta bytes must be valid cbor encoded.
  * 
- * Subgraph endpoint URLs specified in "sgBook" from 
- * [rainlang-meta](https://github.com/rainprotocol/meta/blob/master/src/subgraphBook.ts) 
+ * Subgraph endpoint URLs specified in "RAIN_SUBGRAPHS" from 
+ * [rainlang-meta](https://github.com/rainprotocol/meta/blob/master/src/rainSubgraphs.ts) 
  * are included by default as subgraph endpoint URLs to search for metas.
  * 
- * Subgraphs URLs can also be provided, either at instantiation or when using `addSubgraph()`, 
- * which must be valid starting with `https"//api.thegraph.com/subgraphs/name/`, else they will be ignored.
+ * Subgraphs URLs can also be provided, either at instantiation or when using `addSubgraphs()`.
  * 
  * Given a k/v pair of meta hash and meta bytes either at instantiation or when using `updateStore()`,
  * it regenrates the hash from the meta to check the validity of the k/v pair and if the check
@@ -22,14 +58,14 @@ import { sgBook, searchMeta, MAGIC_NUMBERS, decodeRainMetaDocument, keccak256 } 
  * 
  * @example
  * ```typescript
- * // to instantiate
+ * // to instantiate with including default subgraphs
  * const metaStore = new MetaStore();
  * 
  * // or to instantiate with initial arguments
  * const metaStore = await MetaStore.create(sgEndpoints, initCache);
  * 
  * // add a new subgraph endpoint url to the subgraph list
- * metaStore.addSubgraph("https://api.thegraph.com...")
+ * metaStore.addSubgraphs(["sg-url-1", "sg-url-2", ...])
  * 
  * // update the store with a new MetaStore object (merges the stores)
  * await metaStore.updateStore(newMetaStore)
@@ -40,11 +76,8 @@ import { sgBook, searchMeta, MAGIC_NUMBERS, decodeRainMetaDocument, keccak256 } 
  * // updates the meta store with a new meta by searching through subgraphs
  * await metaStore.updateStore(metaHash)
  * 
- * // to get an op meta from store
- * const opMeta = metaStore.getOpMeta(metaHash);
- * 
- * // to get a contract meta from store
- * const contractMeta = metaStore.getContractMeta(metaHash);
+ * // to get a record from store
+ * const opMeta = metaStore.getRecord(metaHash);
  * ```
  */
 export class MetaStore {
@@ -53,22 +86,18 @@ export class MetaStore {
      */
     public readonly subgraphs: string[] = [];
     /**
-     * @internal Meta Hash/Op Meta kv pairs of this store instance.
+     * @internal k/v cache for hashs and their contents
      */
-    private opCache: { [hash: string]: string | undefined } = {};
-    /**
-     * @internal Meta Hash/contract Meta kv pairs of this store instance.
-     */
-    private contCache: { [hash: string]: string | undefined } = {};
+    private cache: { [hash: string]: MetaRecord | undefined | null } = {};
 
     /**
      * @public Constructor of the class
      * Use `MetaStore.create` to instantiate with initial options.
      */
-    constructor() {
-        Object.values(sgBook).forEach(v => {
-            if (!this.subgraphs.includes(v)) this.subgraphs.push(v);
-        });
+    constructor(includeDefualtSubgraphs = true) {
+        if (includeDefualtSubgraphs) Object.values(RAIN_SUBGRAPHS).forEach(v => v.forEach(e => {
+            if (!this.subgraphs.includes(e)) this.subgraphs.push(e);
+        }));
     }
 
     /**
@@ -78,24 +107,26 @@ export class MetaStore {
     public static async create(
         options?: {
             /**
+             * Option to include default subgraphs
+             */
+            includeDefaultSubgraphs?: boolean;
+            /**
              * Additional subgraphs endpoint URLs to include
              */
             subgraphs?: string[];
             /**
-             * Initial meta hash and meta bytes k/v pairs to include in the store
-             * Meta bytes must be valid cbor encoded emitted by the contract event
+             * Records to add to the cache
              */
-            initMetas?: { [hash: string]: string }
+            records?: { [hash: string]: string }
         }
     ): Promise<MetaStore> {
-        const metaStore = new MetaStore();
-        if (options?.subgraphs) options.subgraphs.forEach(v => {
-            metaStore.addSubgraph(v);
-        });
-        if (options?.initMetas) {
-            const hashes = Object.keys(options.initMetas);
-            for (const hash of hashes) {
-                await metaStore.updateStore(hash, options.initMetas[hash]);
+        const metaStore = new MetaStore(!!options?.includeDefaultSubgraphs);
+        if (options?.subgraphs && options.subgraphs.length) {
+            metaStore.addSubgraphs(options?.subgraphs, false);
+        }
+        if (options?.records) {
+            for (const hash in options.records) {
+                await metaStore.updateStore(hash, options.records[hash]);
             }
         }
         return metaStore;
@@ -104,37 +135,17 @@ export class MetaStore {
     /**
      * @public Get op meta for a given meta hash
      * @param metaHash - The meta hash
-     * @returns The op meta bytes as hex string if it exists in the store and `undefined` if it doesn't
+     * @returns A MetaRecord or undefined if no matching record exists or null if the record has no sttlement
      */
-    public getOpMeta(metaHash: string): string | undefined {
-        return this.exctractMeta(this.opCache[metaHash.toLowerCase()], "op")
-            ?.toLowerCase();
+    public getRecord(metaHash: string): MetaRecord | undefined | null {
+        return this.cache[metaHash.toLowerCase()];
     }
 
     /**
-     * @public Get contract meta for a given meta hash
-     * @param metaHash - The meta hash
-     * @returns The contract meta bytes as hex string if it exists in the store and `undefined` if it doesn't
+     * @public Get the whole meta cache
      */
-    public getContractMeta(metaHash: string): string | undefined {
-        return this.exctractMeta(this.contCache[metaHash.toLowerCase()], "contract")
-            ?.toLowerCase();
-    }
-
-    /**
-     * @public Get the whole op meta k/v store
-     * @returns The op meta store
-     */
-    public getOpMetaStore(): { [hash: string]: string | undefined } {
-        return deepCopy(this.opCache);
-    }
-
-    /**
-     * @public Get the whole contract meta k/v store
-     * @returns The contract meta store
-     */
-    public getContractMetaStore(): { [hash: string]: string | undefined } {
-        return deepCopy(this.contCache);
+    public getCache(): { [hash: string]: MetaRecord | undefined | null } {
+        return deepCopy(this.cache);
     }
 
     /**
@@ -158,15 +169,10 @@ export class MetaStore {
 
     public async updateStore(hashOrStore: string | MetaStore, metaBytes?: string) {
         if (hashOrStore instanceof MetaStore) {
-            const _opkv = hashOrStore.getOpMetaStore();
-            const _contkv = hashOrStore.getContractMetaStore();
-            this.opCache = {
-                ...this.opCache,
-                ..._opkv
-            };
-            this.contCache = {
-                ...this.contCache,
-                ..._contkv
+            const _kv = hashOrStore.getCache();
+            this.cache = {
+                ...this.cache,
+                ..._kv
             };
             for (const sg of hashOrStore.subgraphs) {
                 if (!this.subgraphs.includes(sg)) this.subgraphs.push(sg);
@@ -175,63 +181,53 @@ export class MetaStore {
         else {
             if (hashOrStore.match(/^0x[a-fA-F0-9]{64}$/)) {
                 if (
-                    metaBytes && 
-                    isBytesLike(metaBytes) && 
-                    keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
+                    this.cache[hashOrStore.toLowerCase()] === null || 
+                    this.cache[hashOrStore.toLowerCase()] === undefined
                 ) {
-                    try {
-                        if (
-                            decodeRainMetaDocument(metaBytes).find(
-                                v => v.get(1) === MAGIC_NUMBERS.OPS_META_V1
-                            )
-                        ) this.opCache[hashOrStore.toLowerCase()] = metaBytes.toLowerCase();
-                        else this.opCache[hashOrStore.toLowerCase()] = undefined;
-                    }
-                    catch {
-                        this.opCache[hashOrStore.toLowerCase()] = undefined;
-                    }
-                    try {
-                        if (
-                            decodeRainMetaDocument(metaBytes).find(
-                                v => v.get(1) === MAGIC_NUMBERS.CONTRACT_META_V1
-                            )
-                        ) this.contCache[hashOrStore.toLowerCase()] = metaBytes.toLowerCase();
-                        else this.contCache[hashOrStore.toLowerCase()] = undefined;
-                    }
-                    catch {
-                        this.contCache[hashOrStore.toLowerCase()] = undefined;
-                    }
-                }
-                else {
-                    try {
-                        const _res = await searchMeta(hashOrStore, this.subgraphs);
+                    if (!metaBytes?.startsWith("0x")) metaBytes = "0x" + metaBytes;
+                    if (
+                        metaBytes && 
+                        isBytesLike(metaBytes) && 
+                        keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
+                    ) {
                         try {
-                            if (
-                                decodeRainMetaDocument(_res).find(
-                                    v => v.get(1) === MAGIC_NUMBERS.OPS_META_V1
-                                )
-                            ) this.opCache[hashOrStore.toLowerCase()] = _res.toLowerCase();
-                            else this.opCache[hashOrStore.toLowerCase()] = undefined;
+                            const _type = getEncodedMetaType(metaBytes);
+                            const _content = metaBytes.toLowerCase();
+                            this.cache[hashOrStore.toLowerCase()] = {
+                                type: _type,
+                                // content: _content,
+                                sequence: this.decodeContent(_content, _type)
+                            };
                         }
                         catch {
-                            this.opCache[hashOrStore.toLowerCase()] = undefined;
-                        }
-                        try {
-                            if (
-                                decodeRainMetaDocument(_res).find(
-                                    v => v.get(1) === MAGIC_NUMBERS.CONTRACT_META_V1
-                                )
-                            ) this.contCache[hashOrStore.toLowerCase()] = _res.toLowerCase();
-                            else this.contCache[hashOrStore.toLowerCase()] = undefined;
-                        }
-                        catch {
-                            this.contCache[hashOrStore.toLowerCase()] = undefined;
+                            this.cache[hashOrStore.toLowerCase()] = null;
                         }
                     }
-                    catch {
-                        this.opCache[hashOrStore.toLowerCase()] = undefined;
-                        this.contCache[hashOrStore.toLowerCase()] = undefined;
-                        console.log(`cannot find a settlement for hash: ${hashOrStore}`);
+                    else {
+                        try {
+                            const _settlement = await searchMeta(hashOrStore, this.subgraphs);
+                            this.cache[hashOrStore.toLowerCase()] = _settlement.rainMetaV1
+                                ? {
+                                    type: "sequence",
+                                    // content: _settlement.rainMetaV1.metaBytes,
+                                    sequence: this.decodeContent(
+                                        _settlement.rainMetaV1.metaBytes,
+                                        "sequence"
+                                    )
+                                }
+                                : {
+                                    type: "single",
+                                    // content: _settlement.metaContentV1.encodedData,
+                                    sequence: this.decodeContent(
+                                        _settlement.metaContentV1.encodedData,
+                                        "single"
+                                    )
+                                };
+                        }
+                        catch {
+                            this.cache[hashOrStore.toLowerCase()] = null;
+                            console.log(`cannot find any settlement for hash: ${hashOrStore}`);
+                        }
                     }
                 }
             }
@@ -240,30 +236,93 @@ export class MetaStore {
     }
 
     /**
-     * @public Adds a new subgraph endpoint URL to the subgraph list
-     * @param subgraphUrl - The subgraph endpoint URL
+     * @public Adds a new subgraphs endpoint URL to the subgraph list
+     * @param subgraphUrls - Array of subgraph endpoint URLs
+     * @param sync - Option to search for settlement for unsetteled hashs in the cache with new added subgraphs, default is true
      */
-    public addSubgraph(subgraphUrl: string) {
-        if (subgraphUrl.startsWith("https://api.thegraph.com/subgraphs/name/")) {
-            if (!this.subgraphs.includes(subgraphUrl)) this.subgraphs.push(subgraphUrl);
+    public async addSubgraphs(subgraphUrls: string[], sync = true) {
+        subgraphUrls.forEach(sg => {
+            if (typeof sg === "string" && sg) {
+                if (!this.subgraphs.includes(sg)) this.subgraphs.push(sg);
+            }
+        });
+        if (sync) for (const hash in this.cache) {
+            if (this.cache[hash] === undefined || this.cache[hash] === null) {
+                try {
+                    const _settlement = await searchMeta(hash, subgraphUrls);
+                    this.cache[hash] = _settlement.rainMetaV1
+                        ? {
+                            type: "sequence",
+                            // content: _settlement.rainMetaV1.metaBytes,
+                            sequence: this.decodeContent(
+                                _settlement.rainMetaV1.metaBytes,
+                                "sequence"
+                            )
+                        }
+                        : {
+                            type: "single",
+                            // content: _settlement.metaContentV1.encodedData,
+                            sequence: this.decodeContent(
+                                _settlement.metaContentV1.encodedData,
+                                "single"
+                            )
+                        };
+                }
+                catch {
+                    this.cache[hash] = null;
+                }
+            }
         }
     }
 
     /**
-     * @internal Extracts the compressed meta bytes out of a cbor encoded bytes
+     * @internal Decode the compressed meta bytes out of a cbor encoded bytes
      */
-    private exctractMeta(
-        metaBytes: string | undefined, 
-        type: "op" | "contract"
-    ): string | undefined {
-        return metaBytes 
-            ? "0x" + decodeRainMetaDocument(metaBytes).find(v => 
-                v.get(1) === (
-                    type === "op" 
-                        ? MAGIC_NUMBERS.OPS_META_V1 
-                        : MAGIC_NUMBERS.CONTRACT_META_V1
-                )
-            )?.get(0)?.toString("hex")
-            : undefined;
+    private decodeContent(
+        metaBytes: any, 
+        type: EncodedMetaType
+    ): MetaSequence {
+        const _metaSequence: MetaSequence = [];
+        if (metaBytes) {
+            try {
+                if (type === "sequence") _metaSequence.push(
+                    ...decodeRainMetaDocument(
+                        metaBytes
+                    )?.map(v => {
+                        try {
+                            return {
+                                content: v.get(0).toString("hex"),
+                                magicNumber: v.get(1)
+                            };
+                        }
+                        catch {
+                            return undefined;
+                        }
+                    })?.filter(
+                        v => v !== undefined
+                    ) as MetaSequence
+                );
+                else _metaSequence.push(
+                    ...cborDecode(
+                        metaBytes.slice(2)
+                    )?.map(v => {
+                        try {
+                            return {
+                                content: v.get(0).toString("hex"),
+                                magicNumber: v.get(1)
+                            };
+                        }
+                        catch {
+                            return undefined;
+                        }
+                    })?.filter(
+                        v => v !== undefined
+                    ) as MetaSequence
+                );
+            }
+            // eslint-disable-next-line no-empty
+            catch {}
+        }
+        return _metaSequence;
     }
 }

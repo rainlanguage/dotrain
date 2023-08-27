@@ -1,23 +1,41 @@
 import toposort from "toposort";
 import { MetaStore } from "./metaStore";
 import { Rainlang } from "../rainlang/rainlang";
-import { inclusiveParse, exclusiveParse, getRandomInt, fillIn, trim } from "../utils";
-import { Import, Problem, Comment, PositionOffset, NUMERIC_PATTERN } from "../rainLanguageTypes";
 import { 
+    trim, 
+    fillIn,
+    ParsedChunk, 
+    hasDuplicate, 
+    getRandomInt, 
+    inclusiveParse, 
+    exclusiveParse, 
+    isConsumableMetaSequence 
+} from "../utils";
+import { 
+    Import, 
+    Problem, 
+    Comment, 
+    Namespace, 
+    HEX_PATTERN, 
+    WORD_PATTERN,
+    PositionOffset, 
+    NUMERIC_PATTERN, 
+    DEFAULT_ELISION 
+} from "../rainLanguageTypes";
+import { 
+    Binding, 
     ErrorCode, 
     HASH_PATTERN, 
     TextDocument, 
     ContextAlias, 
-    NamedExpression, 
 } from "../rainLanguageTypes";
 import { 
     OpMeta,
     deepCopy, 
-    OperandArgs,
     ContractMeta,
-    OpMetaSchema, 
+    validateOpMeta,
     metaFromBytes, 
-    ContractMetaSchema,
+    MAGIC_NUMBERS,
 } from "@rainprotocol/meta";
 
 
@@ -54,27 +72,28 @@ export class RainDocument {
     public metaStore: MetaStore;
     public textDocument: TextDocument;
     public runtimeError: Error | undefined;
-    public expressions: NamedExpression[] = [];
+    public bindings: Binding[] = [];
+    public namespace: Namespace = {};
+    public imports: Import[] = [];
 
-    private opmetaLength = 0;
-    private opmetaIndex = -1;
-    private opMetaBytes = "";
     private opmeta: OpMeta[] = [];
-
-    private imports: Import[] = [];
+    private opmetaPath = "";
+    private importDepth = 0;
     private comments: Comment[] = [];
-    private ctxAliases: ContextAlias[] = [];
-    private dependencies: [string, string][] = [];
-
     private problems: Problem[] = [];
-    private depProblems: Problem[] = [];
 
     /**
-     * @public Constructs a new RainDocument instance
+     * @public Constructs a new RainDocument instance, should not be used for instantiating, use "creat()" instead
      * @param textDocument - TextDocument
      * @param metaStore - (optional) MetaStore object
+     * @param 
      */
-    private constructor(textDocument: TextDocument, metaStore?: MetaStore) {
+    constructor(
+        textDocument: TextDocument,
+        metaStore?: MetaStore,
+        importDepth = 0
+    ) {
+        this.importDepth = importDepth;
         this.textDocument = textDocument;
         if (metaStore) this.metaStore = metaStore;
         else this.metaStore = new MetaStore();
@@ -162,57 +181,60 @@ export class RainDocument {
      * @public Get the current text of this RainDocument instance
      */
     public getOpMeta(): OpMeta[] {
-        return deepCopy(this.opmeta.slice(0, this.opmetaLength));
-    }
-
-    /**
-     * @public Get the current text of this RainDocument instance
-     */
-    public getOpMetaWithCtxAliases(): OpMeta[] {
         return deepCopy(this.opmeta);
     }
 
-    /**
-     * @public Get the current text of this RainDocument instance
-     */
-    public getOpMetaLength(): number {
-        return deepCopy(this.opmetaLength);
-    }
+    // /**
+    //  * @public Get the current text of this RainDocument instance
+    //  */
+    // public getOpMetaWithCtxAliases(): OpMeta[] {
+    //     return deepCopy(this.opmeta);
+    // }
 
-    /**
-     * @public Get the current text of this RainDocument instance
-     */
-    public getOpMetaImportIndex(): number {
-        return deepCopy(this.opmetaIndex);
-    }
+    // /**
+    //  * @public Get the current text of this RainDocument instance
+    //  */
+    // public getOpMetaLength(): number {
+    //     return deepCopy(this.opmetaLength);
+    // }
 
-    /**
-     * @public Get the current text of this RainDocument instance
-     */
-    public getOpMetaBytes(): string {
-        return this.opMetaBytes;
-    }
+    // /**
+    //  * @public Get the current text of this RainDocument instance
+    //  */
+    // public getOpMetaImportIndex(): number {
+    //     return deepCopy(this.opmetaIndex);
+    // }
+
+    // /**
+    //  * @public Get the current text of this RainDocument instance
+    //  */
+    // public getOpMetaBytes(): string {
+    //     return this.opMetaBytes;
+    // }
 
     /**
      * @public Get all problems of this RainDocument instance
      */
     public getAllProblems(): Problem[] {
-        return [...this.getTopProblems(), ...this.getExpProblems()];
+        return [...this.getProblems(), ...this.getExpProblems()];
     }
 
-    /**
-     * @public Get top problems of this RainDocument instance
-     */
-    public getTopProblems(): Problem[] {
-        return [...this.getProblems(), ...this.getDependencyProblems()];
-    }
+    // /**
+    //  * @public Get top problems of this RainDocument instance
+    //  */
+    // public getTopProblems(): Problem[] {
+    //     return [
+    //         ...this.getProblems(), 
+    //         // ...this.getDependencyProblems()
+    //     ];
+    // }
 
-    /**
-     * @public Get the dependency problems of this RainDocument instance
-     */
-    public getDependencyProblems(): Problem[] {
-        return deepCopy(this.depProblems);
-    }
+    // /**
+    //  * @public Get the dependency problems of this RainDocument instance
+    //  */
+    // public getDependencyProblems(): Problem[] {
+    //     return deepCopy(this.depProblems);
+    // }
 
     /**
      * @public Get the current problems of this RainDocument instance
@@ -226,8 +248,8 @@ export class RainDocument {
      */
     public getExpProblems(): Problem[] {
         return deepCopy(
-            this.expressions
-                .map(v => v.rainlang?.getProblems().map(e => {
+            this.bindings
+                .map(v => v.exp?.getProblems().map(e => {
                     return {
                         code: e.code,
                         msg: e.msg,
@@ -257,26 +279,14 @@ export class RainDocument {
     }
 
     /**
-     * @public Get the context aliases of specified meta hashes in this RainDocument instance
-     */
-    public getContextAliases(): ContextAlias[] {
-        return deepCopy(this.ctxAliases);
-    }
-
-    /**
-     * @public Get the expression dependencies of this RainDocument instance
-     */
-    public getDependencies(): [string, string][] {
-        return deepCopy(this.dependencies);
-    }
-
-    /**
      * @public
      * Parses this instance of RainDocument
      */
     public async parse() {
         if (/[^\s]/.test(this.textDocument.getText())) {
-            try { await this._parse(); }
+            try { 
+                await this._parse(); 
+            }
             catch (runtimeError) {
                 if (runtimeError instanceof Error) this.runtimeError = runtimeError;
                 else this.runtimeError = new Error(runtimeError as string);
@@ -290,19 +300,436 @@ export class RainDocument {
             }
         }
         else {
-            this.opmeta         = [];
+            this.opmeta          = [];
             this.imports        = [];
             this.problems       = [];
             this.comments       = [];
-            this.ctxAliases     = [];
-            this.expressions    = [];
-            this.depProblems    = [];
-            this.dependencies   = [];
-            this.opmetaLength   = 0;
-            this.opmetaIndex    = -1;
-            this.opMetaBytes    =  "";
+            // this.ctxAliases     = [];
+            this.bindings       = [];
+            // this.depProblems    = [];
+            // this.dependencies   = [];
+            // this.opmetaLength   = 0;
+            // this.opmetaIndex    = -1;
+            // this.opMetaBytes    =  "";
             this.runtimeError   = undefined;
         }
+    }
+
+    // /**
+    //  * @internal Method to find index of next element within the text
+    //  */
+    // private findNextBoundry(str: string): number {
+    //     return str.search(/[\s]/g);
+    // }
+
+    /**
+     * @internal Get context aliases from a contract meta
+     */
+    private toContextAlias(contractMeta: ContractMeta): ContextAlias[] {
+        const _ctxAliases: ContextAlias[] = [];
+        contractMeta.methods.forEach(method => {
+            method.expressions.forEach(exp => {
+                exp.contextColumns?.forEach(ctxCol => {
+                    const colIndex = _ctxAliases.findIndex(e => 
+                        e.name === ctxCol.alias && (
+                            e.column !== ctxCol.columnIndex || !isNaN(e.row)
+                        )
+                    );
+                    if (colIndex > -1) throw new Error(
+                        `duplicate context alias identifier: ${ctxCol.alias}`
+                    );
+                    else {
+                        if (!_ctxAliases.find(e => e.name === ctxCol.alias)) {
+                            _ctxAliases.push({
+                                name: ctxCol.alias,
+                                column: ctxCol.columnIndex,
+                                row: NaN,
+                                desc: ctxCol.desc ?? ""
+                            }); 
+                        }  
+                    }
+                    ctxCol.cells?.forEach(ctxCell => {
+                        const cellIndex = _ctxAliases.findIndex(
+                            e => e.name === ctxCell.alias && (
+                                e.column !== ctxCol.columnIndex || 
+                                e.row !== ctxCell.cellIndex
+                            )
+                        );
+                        if (cellIndex > -1) throw new Error(
+                            `duplicate context alias identifier: ${ctxCell.alias}`
+                        );
+                        else {
+                            if (!_ctxAliases.find(
+                                e => e.name === ctxCell.alias
+                            )) _ctxAliases.push({
+                                name: ctxCell.alias,
+                                column: ctxCol.columnIndex,
+                                row: ctxCell.cellIndex,
+                                desc: ctxCell.desc ?? ""
+                            });
+                        }
+                    });
+                });
+            });
+        });
+        return _ctxAliases;
+    }
+
+    /**
+     * @internal Checks if an import is deeper than 32 levels
+     */
+    private isDeepImport(imp: Import): boolean {
+        if (imp.sequence?.dotrain) {
+            const _rd = imp.sequence.dotrain;
+            if (_rd.problems.find(v => v.code === ErrorCode.DeepImport)) return true;
+            // else return _rd.imports.some(v => _rd.isDeepImport(v));
+            else return false;
+        }
+        else return false;
+    }
+
+    /**
+     * @internal Handles an import statement
+     */
+    public async handleImport(imp: ParsedChunk): Promise<Import> {
+        const _atPos: PositionOffset = [imp[1][0] - 1, imp[1][0] - 1];
+        let _isValid = false;
+        let _configChunks: ParsedChunk[] = [];
+        const _result: any = {};
+        _result.hash = "";
+        _result.name = ".";
+        // _result.config = [];
+        _result.problems = [];
+        // _result.sequence = null;
+        _result.position = [imp[1][0] - 1, imp[1][1]];
+        // _result.depth = this.importDepth;
+        _result.namePosition = deepCopy(_atPos);
+        _result.hashPosition = deepCopy(_atPos);
+
+        const _chuncks = exclusiveParse(imp[0], /\s+/gd, imp[1][0]);
+        if (WORD_PATTERN.test(_chuncks[0][0]) || HASH_PATTERN.test(_chuncks[0][0])) {
+            if (WORD_PATTERN.test(_chuncks[0][0])) {
+                _result.name = _chuncks[0][0];
+                _result.namePosition = _chuncks[0][1];
+            }
+            else {
+                _result.name = ".";
+                _result.namePosition = _chuncks[0][1];
+                _result.hash = _chuncks[0][0].toLowerCase();
+                _result.hashPosition = _chuncks[0][1];
+                _isValid = true;
+            }
+            if (_result.name !== ".") {
+                if (!_chuncks[1]) _result.problems.push({
+                    msg: "expected import hash",
+                    position: deepCopy(_atPos),
+                    code: ErrorCode.ExpectedHash
+                });
+                else {
+                    if (!HASH_PATTERN.test(_chuncks[1][0])) {
+                        if (HEX_PATTERN.test(_chuncks[1][0])) _result.problems.push({
+                            msg: "invalid hash, must be 32 bytes",
+                            position: _chuncks[1][1],
+                            code: ErrorCode.InvalidHash
+                        });
+                        else _result.problems.push({
+                            msg: "expected hash",
+                            position: _chuncks[1][1],
+                            code: ErrorCode.ExpectedHash
+                        });
+                    }
+                    else {
+                        _result.hash = _chuncks[1][0].toLowerCase();
+                        _result.hashPosition = _chuncks[1][1];
+                        _isValid = true;
+                    }
+                }
+                _configChunks = _chuncks.splice(2);
+            }
+            else _configChunks = _chuncks.splice(1);
+        }
+        else _result.problems.push({
+            msg: "expected a valid name or hash",
+            position: deepCopy(_atPos),
+            code: ErrorCode.InvalidImport
+        });
+
+        if (_result.hash && this.imports.find(v => v.hash === _result.hash)) _result.problems.push({
+            msg: "duplicate import",
+            position: _result.hash,
+            code: ErrorCode.DuplicateImport
+        });
+        else if (_isValid) {
+            await this.metaStore.updateStore(_result.hash as string);
+            const _record = this.metaStore.getRecord(_result.hash as string);
+            if (!_record) this.problems.push({
+                msg: `cannot find any settlement for hash: ${_result.hash}`,
+                position: _result.hashPosition,
+                code: ErrorCode.UndefinedImport
+            });
+            else {
+                if (!isConsumableMetaSequence(_record.sequence)) {
+                    if (!_record.sequence.length) _result.problems.push({
+                        msg: "empty import",
+                        position: _result.hashPosition,
+                        code: ErrorCode.InvalidMetaSequence
+                    });
+                    else _result.problems.push({
+                        msg: "imported hash contains meta sequence that cannot be consumed",
+                        position: _result.hashPosition,
+                        code: ErrorCode.InvalidMetaSequence
+                    });
+                }
+                else {
+                    _result.sequence = {};
+                    let _isCorrupt = false;
+                    const _opmetaSeq = _record.sequence.find(
+                        v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1
+                    );
+                    const _contractMetaSeq = _record.sequence.find(
+                        v => v.magicNumber === MAGIC_NUMBERS.CONTRACT_META_V1
+                    );
+                    const _dotrainSeq = _record.sequence.find(
+                        v => v.magicNumber === MAGIC_NUMBERS.RAIN_META_DOCUMENT
+                    );
+                    if (_opmetaSeq) {
+                        try {
+                            const _parsed = JSON.parse(metaFromBytes(_opmetaSeq.content));
+                            // _result.sequence.opmeta = {
+                            //     instance: undefined,
+                            //     problems: []
+                            // };
+                            try {
+                                if (validateOpMeta(_parsed)) {
+                                    _result.sequence.opmeta = _parsed;
+                                }
+                            }
+                            catch (error) {
+                                const _errorHeader = _record.type === "sequence" 
+                                    ? "meta sequence contains invalid OpMeta, reason: " 
+                                    : "invalid OpMeta, reason: ";
+                                _result.problems.push({
+                                    msg: _errorHeader + (
+                                        error instanceof Error 
+                                            ? error.message 
+                                            : typeof error === "string" ? error : ""
+                                    ),
+                                    position: _result.hashPosition,
+                                    code: ErrorCode.InvalidOpMeta
+                                });
+                            }
+                        }
+                        catch (error) {
+                            _result.problems.push({
+                                msg: _record.type === "sequence" 
+                                    ? "meta sequence contains corrupt OpMeta" 
+                                    : "corrupt OpMeta",
+                                position: _result.hashPosition,
+                                code: ErrorCode.CorruptImport
+                            });
+                            _isCorrupt = true;
+                        }
+                    }
+                    if (!_isCorrupt && _contractMetaSeq) {
+                        try {
+                            const _parsed = JSON.parse(
+                                metaFromBytes(_contractMetaSeq.content)
+                            );
+                            // _result.sequence.ctxmeta = {
+                            //     instance: undefined,
+                            //     problems: []
+                            // };
+                            if (ContractMeta.is(_parsed)) {
+                                try {
+                                    _result.sequence.ctxmeta = 
+                                        this.toContextAlias(_parsed);
+                                }
+                                catch(error) {
+                                    _result.problems.push({
+                                        msg: (_record.type === "sequence" 
+                                            ? "meta sequence contains invalid ContractMeta, reason: " 
+                                            : "invalid ContractMeta, reason: ") + (error as Error).message,
+                                        position: _result.hashPosition,
+                                        code: ErrorCode.InvalidContractMeta
+                                    });
+                                }
+                            }
+                            else _result.problems.push({
+                                msg: _record.type === "sequence" 
+                                    ? "meta sequence contains invalid ContractMeta" 
+                                    : "invalid ContractMeta",
+                                position: _result.hashPosition,
+                                code: ErrorCode.InvalidContractMeta
+                            });
+                        }
+                        catch (error) {
+                            const _errorHeader = _record.type === "sequence" 
+                                ? "meta sequence contains corrupt ContractMeta, reason: " 
+                                : "corrupt ContractMeta, reason: ";
+                            _result.problems.push({
+                                msg: _errorHeader + (
+                                    error instanceof Error 
+                                        ? error.message 
+                                        : typeof error === "string" ? error : ""
+                                ),
+                                position: _result.hashPosition,
+                                code: ErrorCode.CorruptImport
+                            });
+                            _isCorrupt = true;
+                        }
+                    }
+                    if (!_isCorrupt && _dotrainSeq) {
+                        try {
+                            const _dotrainStr = metaFromBytes(_dotrainSeq.content);
+                            // _result.sequence.dotrain = {
+                            //     instance: undefined,
+                            //     problems: []
+                            // };
+                            _result.sequence.dotrain = new RainDocument(
+                                TextDocument.create(
+                                    `imported-dotrain-${_result.hash}`, 
+                                    "rainlang", 
+                                    0, 
+                                    _dotrainStr
+                                ),
+                                this.metaStore,
+                                this.importDepth + 1
+                            );
+                            _result.sequence.dotrain.parse();
+                            if (_result.sequence.dotrain.problems.length) _result.problems.push({
+                                msg: "invalid rain document",
+                                position: _result.hashPosition,
+                                code: ErrorCode.InvalidRainDocument
+                            });
+                        }
+                        catch (error) {
+                            const _errorHeader = _record.type === "sequence" 
+                                ? "meta sequence contains corrupt Dotrain, reason: " 
+                                : "corrupt Dotrain, reason: ";
+                            _result.problems.push({
+                                msg: _errorHeader + (
+                                    error instanceof Error 
+                                        ? error.message 
+                                        : typeof error === "string" ? error : ""
+                                ),
+                                position: _result.hashPosition,
+                                code: ErrorCode.CorruptImport
+                            });
+                            _isCorrupt = true;
+                        }
+                    }
+                    if (!_isCorrupt) {
+                        // const _configProblems: Problem[] = [];
+                        const _reconfigs: [ParsedChunk, ParsedChunk][] = [];
+                        for (let i = 0; i < _configChunks.length; i++) {
+                            if (_configChunks[i][0] === ".") {
+                                const _key = _configChunks[i];
+                                i++;
+                                if (_configChunks[i]) {
+                                    if (_configChunks[i][0] === "!") {
+                                        if (_reconfigs.find(v =>  
+                                            v[0][0] === _key[0] && 
+                                            v[1][0] === _configChunks[i][0]
+                                        )) _result.problems.push({
+                                            msg: "duplicate statement",
+                                            position: [_key[1][0], _configChunks[i][1][1]],
+                                            code: ErrorCode.DuplicateImportStatement
+                                        });
+                                        else _reconfigs.push([_key, _configChunks[i]]);
+                                    }
+                                    else _result.problems.push({
+                                        msg: "unexpected token",
+                                        position: _configChunks[i][1],
+                                        code: ErrorCode.UnexpectedToken
+                                    });
+                                }
+                                else _result.problems.push({
+                                    msg: "expected elision syntax",
+                                    position: deepCopy(_atPos),
+                                    code: ErrorCode.ExpectedElisionOrRebinding
+                                });
+                            }
+                            else if (WORD_PATTERN.test(_configChunks[i][0])) {
+                                const _key = _configChunks[i];
+                                i++;
+                                if (_configChunks[i]) {
+                                    if (NUMERIC_PATTERN.test(_configChunks[i][0]) || _configChunks[i][0] === "!") {
+                                        if (_reconfigs.find(v => 
+                                            v[0][0] === _key[0] && 
+                                            v[1][0] === _configChunks[i][0]
+                                        )) _result.problems.push({
+                                            msg: "duplicate statement",
+                                            position: [_key[1][0], _configChunks[i][1][1]],
+                                            code: ErrorCode.DuplicateImportStatement
+                                        });
+                                        else _reconfigs.push([_key, _configChunks[i]]);
+                                    }
+                                    else _result.problems.push({
+                                        msg: "unexpected token",
+                                        position: _configChunks[i][1],
+                                        code: ErrorCode.UnexpectedToken
+                                    });
+                                }
+                                else _result.problems.push({
+                                    msg: "expected rebinding or elision",
+                                    position: deepCopy(_atPos),
+                                    code: ErrorCode.ExpectedElisionOrRebinding
+                                });
+                            }
+                            else if (_configChunks[i][0].startsWith("'")) {
+                                if (WORD_PATTERN.test(_configChunks[i][0].slice(1))) {
+                                    const _key = _configChunks[i];
+                                    i++;
+                                    if (_configChunks[i]) {
+                                        if (WORD_PATTERN.test(_configChunks[i][0])) {
+                                            if (_reconfigs.find(v => 
+                                                v[0][0] === _key[0] && 
+                                                v[1][0] === _configChunks[i][0]
+                                            )) _result.problems.push({
+                                                msg: "duplicate statement",
+                                                position: [_key[1][0], _configChunks[i][1][1]],
+                                                code: ErrorCode.DuplicateImportStatement
+                                            });
+                                            else _reconfigs.push([_key, _configChunks[i]]);
+                                        }
+                                        else _result.problems.push({
+                                            msg: "invalid word pattern",
+                                            position: _configChunks[i][1],
+                                            code: ErrorCode.InvalidWordPattern
+                                        });
+                                    }
+                                    else _result.problems.push({
+                                        msg: "expected name",
+                                        position: deepCopy(_atPos),
+                                        code: ErrorCode.ExpectedName
+                                    });
+                                }
+                                else {
+                                    _result.problems.push({
+                                        msg: "invalid word pattern",
+                                        position: _configChunks[i][1],
+                                        code: ErrorCode.InvalidWordPattern
+                                    });
+                                    i++;
+                                }
+                            }
+                            else _result.problems.push({
+                                msg: "unexpected token",
+                                position: _configChunks[i][1],
+                                code: ErrorCode.UnexpectedToken
+                            });
+                        }
+                        _result.reconfigs = _reconfigs;
+                        // {
+                        //     statements: _reconfigs,
+                        //     problems: _configProblems
+                        // };
+                    }
+                }
+            }
+        }
+        this.problems.push(..._result.problems);
+        return _result as Import;
     }
 
     /**
@@ -314,8 +741,8 @@ export class RainDocument {
         this.imports = [];
         this.problems = [];
         this.comments = [];
-        this.ctxAliases = [];
-        this.expressions = [];
+        // this.ctxAliases = [];
+        this.bindings = [];
         this.runtimeError = undefined;
         let document = this.textDocument.getText();
 
@@ -334,95 +761,379 @@ export class RainDocument {
         });
 
         // parse imports
-        const _imports = inclusiveParse(document, /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)/gd);
-        if (_imports.length) {
-            await this.resolveMeta(_imports);
-            for (let i = 0; i < _imports.length; i++) {
-                this.imports.push({
-                    name: "root",
-                    hash: _imports[i][0].slice(1 + (/^\s/.test(_imports[i][0]) ? 1 : 0)),
-                    position: [
-                        _imports[i][1][0] + (/^\s/.test(_imports[i][0]) ? 1 : 0), 
-                        _imports[i][1][1]
-                    ],
-                });
-                document = fillIn(document, _imports[i][1]);
+        // const _imports = inclusiveParse(
+        //     document,
+        //     /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)|(?:\s|^)@[a-z][a-z0-9]*\s+0x[a-fA-F0-9]+(?=\s|$)/gd
+        // );
+        // if (_imports.length) {
+        //     await this.resolveMeta(_imports);
+        //     for (let i = 0; i < _imports.length; i++) {
+        //         this.imports.push({
+        //             name: "root",
+        //             hash: _imports[i][0].slice(1 + (/^\s/.test(_imports[i][0]) ? 1 : 0)),
+        //             position: [
+        //                 _imports[i][1][0] + (/^\s/.test(_imports[i][0]) ? 1 : 0), 
+        //                 _imports[i][1][1]
+        //             ],
+        //         });
+        //         document = fillIn(document, _imports[i][1]);
+        //     }
+        // }
+        // const filter = /(?:\s|^)@([a-z][a-z0-9-]*\s+)?0x[a-fA-F0-9]+((\s+'[a-z][a-z0-9-]*\s+[a-z][a-z0-9-]*)|(\s+[a-z][a-z0-9-]*\s+[a-z][a-z0-9-]*))*/
+        // if (this.importDepth >= 32) this.problems.push({
+        //     msg: "import too deep",
+        //     position: [0, 0],
+        //     code: ErrorCode.DeepImport
+        // });
+        const _importStatements = exclusiveParse(document, /@/gd, undefined, true).slice(1);
+        for (let i = 0; i < _importStatements.length; i++) {
+            // filter out irrevelant parts
+            const _index = _importStatements[i][0].indexOf("#");
+            if (_index > -1) {
+                _importStatements[i][0] = _importStatements[i][0].slice(0, _index);
+                _importStatements[i][1][1] = _importStatements[i][1][0] + _index - 1;
+            }
+            if (this.importDepth < 32) this.imports.push(
+                await this.handleImport(_importStatements[i])
+            );
+            else this.problems.push({
+                msg: "import too deep",
+                position: [_importStatements[i][1][0] - 1,_importStatements[i][1][1]],
+                code: ErrorCode.DeepImport
+            });
+            document = fillIn(
+                document, 
+                [_importStatements[i][1][0] - 1, _importStatements[i][1][1]]
+            );
+        }
+
+        // if (!_importStatements.length) this.problems.push({
+        //     msg: "cannot find op meta import",
+        //     position: [0, 0],
+        //     code: ErrorCode.UndefinedOpMeta
+        // });
+        // else 
+        for (let i = 0; i < this.imports.length; i++) {
+            if (this.imports[i].problems.length === 0) {
+                const _imp = this.imports[i];
+                if (this.namespace[_imp.name] && "Element" in this.namespace[_imp.name]) {
+                    this.problems.push({
+                        msg: `cannot import into "${_imp.name}", name already taken`,
+                        position: _imp.namePosition,
+                        code: ErrorCode.InvalidImport
+                    });
+                }
+                else {
+                    // const _isDeep = this.isDeepImport(_imp);
+                    if (this.isDeepImport(_imp)) this.problems.push({
+                        msg: "import too deep",
+                        position: _imp.hashPosition,
+                        code: ErrorCode.DeepImport
+                    });
+                    // if (_isDeep || _imp.reconfigs?.problems?.length || _cfg?.problems.length) {
+                    //     if (_imp.reconfigs?.problems?.length) this.problems.push(
+                    //         ..._imp.reconfigs!.problems
+                    //     );
+                    //     if (_isDeep) this.problems.push({
+                    //         msg: "import too deep",
+                    //         position: _imp.hashPosition,
+                    //         code: ErrorCode.DeepImport
+                    //     });
+                    //     if (_cfg?.problems.length) this.problems.push(
+                    //         ..._cfg.problems
+                    //     );
+                    // }
+                    else {
+                        let _hasDupKeys = false;
+                        let _hasDupWords = false;
+                        let _ns: Namespace = {};
+                        const _cfg = deepCopy(_imp.reconfigs);
+                        if (_imp.sequence?.opmeta) {
+                            if (_imp.sequence.opmeta) {
+                                _ns["Words"] = {
+                                    Hash: _imp.hash,
+                                    ImportIndex: i,
+                                    Element: _imp.sequence.opmeta
+                                };
+                                _imp.sequence.opmeta.forEach((v, j) => {
+                                    _ns[v.name] = {
+                                        Hash: _imp.hash,
+                                        ImportIndex: i,
+                                        Element: (_ns["Words"].Element as OpMeta[])[j]
+                                    };
+                                    if (v.aliases) v.aliases.forEach(e => {
+                                        _ns[e] = {
+                                            Hash: _imp.hash,
+                                            ImportIndex: i,
+                                            Element: (_ns["Words"].Element as OpMeta[])[j]
+                                        };
+                                    });
+                                });
+                            }
+                            // if (_imp.sequence.opmeta.problems.length) this.problems.push(
+                            //     ..._imp.sequence.opmeta.problems
+                            // );
+                        }
+                        if (_imp.sequence?.ctxmeta) {
+                            if (_imp.sequence.ctxmeta) {
+                                if (
+                                    hasDuplicate(
+                                        _imp.sequence.ctxmeta.map(v => v.name), 
+                                        Object.keys(_ns)
+                                    )
+                                ) _hasDupKeys = true;
+                                else _imp.sequence.ctxmeta.forEach(v => {
+                                    _ns[v.name] = {
+                                        Hash: _imp.hash,
+                                        ImportIndex: i,
+                                        Element: v
+                                    };
+                                });
+                            }
+                            // if (_imp.sequence.ctxmeta.problems.length) this.problems.push(
+                            //     ..._imp.sequence.ctxmeta.problems
+                            // );
+                        }
+                        if (_imp.sequence?.dotrain) {
+                            if (!_hasDupKeys) {
+                                if (_imp.sequence.dotrain) {
+                                    const _keys = Object.keys(
+                                        _imp.sequence.dotrain.namespace
+                                    );
+                                    if (_ns["Words"] && _keys.includes("Words")) _hasDupWords = true;
+                                    else {
+                                        if(hasDuplicate(_keys,Object.keys(_ns))) _hasDupKeys = true;
+                                        else _ns = {
+                                            ..._ns,
+                                            ...this.copyNamespace(
+                                                _imp.sequence.dotrain.namespace,
+                                                i,
+                                                _imp.hash
+                                            )
+                                        };
+                                    }
+                                }
+                                // if (_imp.sequence.dotrain.problems.length) this.problems.push(
+                                //     ..._imp.sequence.dotrain.problems
+                                // );
+                            }
+                        }
+                        if (_hasDupKeys || _hasDupWords) {
+                            if (_hasDupKeys) this.problems.push({
+                                msg: "import contains items with duplicate identifiers",
+                                position: _imp.hashPosition,
+                                code: ErrorCode.DuplicateIdentifier
+                            });
+                            else this.problems.push({
+                                msg: "import contains multiple sets of words in its namespace",
+                                position: _imp.hashPosition,
+                                code: ErrorCode.MultipleWords
+                            });
+                        }
+                        else {
+                            if (_cfg) for (let j = 0; j < _cfg.length; i++) {
+                                const _s = _cfg[i];
+                                if (_s[1][0] === "!") {
+                                    if (_s[0][0] === ".") {
+                                        if (_ns["Words"]) {
+                                            (_ns["Words"].Element as OpMeta[]).forEach(v => {
+                                                delete _ns[v.name];
+                                            });
+                                            delete _ns["Words"];
+                                        }
+                                        else this.problems.push({
+                                            msg: "cannot elide undefined words",
+                                            position: [_s[0][1][0], _s[1][1][1]],
+                                            code: ErrorCode.UndefinedOpMeta
+                                        });
+                                    }
+                                    else {
+                                        if (_ns[_s[0][0]]) {
+                                            if (Namespace.isWord(_ns[_s[0][0]])) {
+                                                this.problems.push({
+                                                    msg: `cannot elide single word: "${_s[0][0]}"`,
+                                                    position: [_s[0][1][0], _s[1][1][1]],
+                                                    code: ErrorCode.SingleWordModify
+                                                });
+                                            }
+                                            else delete _ns[_s[0][0]];
+                                        }
+                                        else this.problems.push({
+                                            msg: `undefined identifier "${_s[0][0]}"`,
+                                            position: _s[0][1],
+                                            code: ErrorCode.UndefinedIdentifier
+                                        });
+                                    }
+                                }
+                                else {
+                                    const _key = _s[0][0].startsWith("'") 
+                                        ? _s[0][0].slice(1) 
+                                        : _s[0][0];
+                                    if (_ns[_key]) {
+                                        if (Namespace.isWord(_ns[_key])) {
+                                            this.problems.push({
+                                                msg: `cannot rename or rebind single word: "${_s[0][0]}"`,
+                                                position: [_s[0][1][0], _s[1][1][1]],
+                                                code: ErrorCode.SingleWordModify
+                                            });
+                                        }
+                                        else {
+                                            if (_s[0][0].startsWith("'")) {
+                                                if (_ns[_s[1][0]]) this.problems.push({
+                                                    msg: `cannot rename, name "${_s[1][0]}" already exists`,
+                                                    position: _s[1][1],
+                                                    code: ErrorCode.DuplicateIdentifier
+                                                });
+                                                else {
+                                                    _ns[_s[1][0]] = _ns[_key];
+                                                    delete _ns[_key];
+                                                }
+                                            }
+                                            else {
+                                                if (!Namespace.isBinding(_ns[_key])) {
+                                                    this.problems.push({
+                                                        msg: "unexpected rebinding",
+                                                        position: [_s[0][1][0], _s[1][1][1]],
+                                                        code: ErrorCode.UnexpectedRebinding
+                                                    });
+                                                }
+                                                else {
+                                                    (_ns[_key].Element as Binding)
+                                                        .constant = _s[1][0];
+                                                    if ((_ns[_key].Element as Binding).elided) {
+                                                        delete (
+                                                            _ns[_key].Element as Binding
+                                                        ).elided;
+                                                    }
+                                                    if ((_ns[_key].Element as Binding).exp) {
+                                                        delete (
+                                                            _ns[_key].Element as Binding
+                                                        ).exp;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else this.problems.push({
+                                        msg: `undefined identifier "${_key}"`,
+                                        position: _s[0][1],
+                                        code: ErrorCode.UndefinedIdentifier
+                                    });
+                                }
+                            }
+                        }
+                        this.mergeNamespace(_imp, _ns);
+                    }
+                }
             }
         }
-        else this.problems.push({
-            msg: "cannot find op meta import",
-            position: [0, 0],
-            code: ErrorCode.UndefinedOpMeta
-        });
 
-        // parse expressions
-        exclusiveParse(document, /#/gd, undefined, true).forEach((v, i) => {
-            if (i > 0) {
-                const _index = v[0].search(/\s/);
-                const position = v[1];
-                let name: string;
-                let namePosition: PositionOffset;
-                let content: string;
-                let contentPosition: PositionOffset;
-                if (_index === -1) {
-                    name = v[0];
-                    namePosition = v[1];
-                    contentPosition = [v[1][1] + 1, v[1][1]];
-                    content = "";
-                }
-                else {
-                    const _trimmed =  trim(v[0].slice(_index + 1));
-                    name = v[0].slice(0, _index);
-                    namePosition = [v[1][0], v[1][0] + _index - 1];
-                    content = !_trimmed.text ? v[0].slice(_index + 1) : _trimmed.text;
-                    contentPosition = !_trimmed.text
-                        ? [v[1][0] + _index + 1, v[1][1]]
-                        : [
-                            v[1][0] + _index + 1 + _trimmed.startDelCount, 
-                            v[1][1] - _trimmed.endDelCount
-                        ];
-                }
-                if (!name.match(/^[a-z][a-z0-9-]*$/)) this.problems.push({
-                    msg: "invalid expression name",
-                    position: deepCopy(namePosition),
-                    code: ErrorCode.InvalidExpressionKey
-                });
-                if (!content || content.match(/^\s+$/)) this.problems.push({
-                    msg: "invalid empty expression",
-                    position: deepCopy(namePosition),
-                    code: ErrorCode.InvalidEmptyExpression
-                });
-
-                const _val = this.isConstant(content);
-                if (_val) {
-                    if (this.constants[name] !== undefined) this.problems.push({
-                        msg: "duplicate constant identifier",
-                        position: namePosition,
-                        code: ErrorCode.DuplicateIdentifier
-                    });
-                    else this.constants[name] = _val;
-                }
-                else {
-                    if (this.expressions.find(v => v.name === name)) this.problems.push({
-                        msg: "duplicate expression identifier",
-                        position: namePosition,
-                        code: ErrorCode.DuplicateExpIdentifier
-                    });
-                    this.expressions.push({
-                        name,
-                        namePosition,
-                        content,
-                        contentPosition,
-                        position
-                    });
-                }
-                document = fillIn(document, [v[1][0] - 1, v[1][1]]);
+        // parse bindings
+        exclusiveParse(document, /#/gd, undefined, true).slice(1).forEach((v) => {
+            // if (i > 0) {
+            const _index = v[0].search(/\s/);
+            const position = v[1];
+            let name: string;
+            let namePosition: PositionOffset;
+            let content: string;
+            let contentPosition: PositionOffset;
+            let elided: string;
+            let _invalidId = false;
+            let _dupId = false;
+            if (_index === -1) {
+                name = v[0];
+                namePosition = v[1];
+                contentPosition = [v[1][1] + 1, v[1][1]];
+                content = "";
             }
+            else {
+                const _trimmed =  trim(v[0].slice(_index + 1));
+                name = v[0].slice(0, _index);
+                namePosition = [v[1][0], v[1][0] + _index - 1];
+                content = !_trimmed.text ? v[0].slice(_index + 1) : _trimmed.text;
+                contentPosition = !_trimmed.text
+                    ? [v[1][0] + _index + 1, v[1][1]]
+                    : [
+                        v[1][0] + _index + 1 + _trimmed.startDelCount, 
+                        v[1][1] - _trimmed.endDelCount
+                    ];
+            }
+            if (_invalidId = !name.match(/^[a-z][a-z0-9-]*$/)) this.problems.push({
+                msg: "invalid expression name",
+                position: deepCopy(namePosition),
+                code: ErrorCode.InvalidBindingId
+            });
+            if (_dupId = Object.keys(this.namespace).includes(name)) this.problems.push({
+                msg: "duplicate identifier",
+                position: deepCopy(namePosition),
+                code: ErrorCode.DuplicateIdentifier
+            });
+            if (!content || content.match(/^\s+$/)) this.problems.push({
+                msg: "invalid empty binding",
+                position: deepCopy(namePosition),
+                code: ErrorCode.InvalidEmptyBinding
+            });
+
+            if (!_invalidId && !_dupId) {
+                if (this.isElided(content)) {
+                    const _msg = content.trim().slice(1).trim();
+                    if (_msg) elided = _msg;
+                    else elided = DEFAULT_ELISION;
+                    this.namespace[name] = {
+                        Hash: "",
+                        ImportIndex: -1,
+                        Element: {
+                            name,
+                            namePosition,
+                            content,
+                            contentPosition,
+                            position,
+                            problems: [],
+                            dependencies: [],
+                            elided
+                        }
+                    };
+                }
+                else {
+                    const _val = this.isConstant(content);
+                    if (_val) {
+                        this.namespace[name] = {
+                            Hash: "",
+                            ImportIndex: -1,
+                            Element: {
+                                name,
+                                namePosition,
+                                content,
+                                contentPosition,
+                                position,
+                                problems: [],
+                                dependencies: [],
+                                constant: _val
+                            }
+                        };
+                    }
+                    else this.namespace[name] = {
+                        Hash: "",
+                        ImportIndex: -1,
+                        Element: {
+                            name,
+                            namePosition,
+                            content,
+                            contentPosition,
+                            position,
+                            problems: [],
+                            dependencies: [],
+                        }
+                    };
+                }
+                this.bindings.push(this.namespace[name].Element as Binding);
+            }
+            document = fillIn(document, [v[1][0] - 1, v[1][1]]);
         });
 
         // find non-top level imports
-        if (this.expressions.length > 0) this.imports.forEach(v => {
-            if (v.position[0] >= this.expressions[0].namePosition[0]) this.problems.push({
+        if (this.bindings.length > 0) this.imports.forEach(v => {
+            if (v.position[0] >= this.bindings[0].namePosition[0]) this.problems.push({
                 msg: "imports can only be stated at top level",
                 position: [...v.position],
                 code: ErrorCode.InvalidImport
@@ -432,9 +1143,9 @@ export class RainDocument {
         // find any remaining strings and include them as errors
         exclusiveParse(document, /\s+/).forEach(v => {
             this.problems.push({
-                msg: "unexpected string",
+                msg: "unexpected token",
                 position: v[1],
-                code: ErrorCode.UnexpectedString
+                code: ErrorCode.UnexpectedToken
             });
         });
 
@@ -442,330 +1153,71 @@ export class RainDocument {
         this.resolveDependencies();
 
         // instantiate rainlang for each expression
-        for (let i = 0; i < this.expressions.length; i++) {
-            this.expressions[i].rainlang = new Rainlang(
-                this.expressions[i].content, 
-                this.opmeta, 
-                {
-                    constants: this.constants, 
-                    expressionNames: this.expressions.map(v => v.name),
-                    comments: this.comments.filter(v => 
-                        v.position[0] >= this.expressions[i].contentPosition[0] && 
-                        v.position[1] <= this.expressions[i].contentPosition[1]
-                    ).map(v => {
-                        return {
-                            comment: v.comment,
-                            position: [
-                                v.position[0] - this.expressions[i].contentPosition[0],
-                                v.position[1] - this.expressions[i].contentPosition[0]
-                            ]
-                        };
-                    })
-                }
-            );
-        }
-    }
+        if (this.importDepth === 0) {
 
-    /**
-     * @internal Resolves and settles the metas of this RainDocument instance from import statements
-     * First valid opmeta of a meta hash will be setteld as working op meta
-     */
-    private async resolveMeta(imports: [string, [number, number]][]) {
-        let index = -1;
-        for (let i = 0; i < imports.length; i++) {
-            const _offset = /^\s/.test(imports[i][0]) ? 1 : 0;
-            const _hash = imports[i][0].slice(1 + _offset);
-            if (HASH_PATTERN.test(_hash)) {
-                let _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
-                let _newContMetaBytes = this.metaStore.getContractMeta(_hash);
-                if (index === -1 && _newOpMetaBytes) {
-                    if (_newOpMetaBytes !== this.opMetaBytes) {
-                        this.opMetaBytes = _newOpMetaBytes;
-                        try {
-                            this.opmeta = metaFromBytes(_newOpMetaBytes, OpMetaSchema) as OpMeta[];
-                            index = i;
-                        }
-                        catch (_err) {
-                            this.problems.push({
-                                msg: _err instanceof Error ? _err.message : _err as string,
+            // assign working words for this instance
+            this.getWords();
+
+            for (let i = 0; i < this.bindings.length; i++) {
+                this.bindings[i].exp = new Rainlang(
+                    this.bindings[i].content, 
+                    this.opmeta, 
+                    {
+                        thisBinding: this.bindings[i],
+                        namespaces: this.namespace,
+                        comments: this.comments.filter(v => 
+                            v.position[0] >= this.bindings[i].contentPosition[0] && 
+                            v.position[1] <= this.bindings[i].contentPosition[1]
+                        ).map(v => {
+                            return {
+                                comment: v.comment,
                                 position: [
-                                    imports[i][1][0] + _offset, 
-                                    imports[i][1][1]
-                                ],
-                                code: ErrorCode.InvalidOpMeta
-                            });
-                        }
+                                    v.position[0] - this.bindings[i].contentPosition[0],
+                                    v.position[1] - this.bindings[i].contentPosition[0]
+                                ]
+                            };
+                        })
                     }
-                    else index = i;
-                }
-                if (_newContMetaBytes) {
-                    try {
-                        const _contractMeta = metaFromBytes(
-                            _newContMetaBytes, 
-                            ContractMetaSchema
-                        ) as ContractMeta;
-                        _contractMeta.methods.forEach(method => {
-                            method.expressions.forEach(exp => {
-                                exp.contextColumns?.forEach(ctxCol => {
-                                    const colIndex = this.ctxAliases.findIndex(e => 
-                                        e.name === ctxCol.alias && (
-                                            e.column !== ctxCol.columnIndex || !isNaN(e.row)
-                                        )
-                                    );
-                                    if (colIndex > -1) this.problems.push({
-                                        msg: `duplicate context column alias: ${ctxCol.alias}`,
-                                        position: [
-                                            imports[i][1][0] + _offset, 
-                                            imports[i][1][1]
-                                        ],
-                                        code: ErrorCode.DuplicateContextAlias
-                                    });
-                                    else {
-                                        if (!this.ctxAliases.find(e => e.name === ctxCol.alias)) {
-                                            this.ctxAliases.push({
-                                                name: ctxCol.alias,
-                                                column: ctxCol.columnIndex,
-                                                row: NaN,
-                                                desc: ctxCol.desc ?? ""
-                                            }); 
-                                        }  
-                                    }
-                                    ctxCol.cells?.forEach(ctxCell => {
-                                        const cellIndex = this.ctxAliases.findIndex(
-                                            e => e.name === ctxCell.alias && (
-                                                e.column !== ctxCol.columnIndex || 
-                                                e.row !== ctxCell.cellIndex
-                                            )
-                                        );
-                                        if (cellIndex > -1) this.problems.push({
-                                            msg: `duplicate context cell alias: ${ctxCell.alias}`,
-                                            position: [
-                                                imports[i][1][0] + _offset, 
-                                                imports[i][1][1]
-                                            ],
-                                            code: ErrorCode.DuplicateContextAlias
-                                        });
-                                        else {
-                                            if (!this.ctxAliases.find(
-                                                e => e.name === ctxCell.alias
-                                            )) this.ctxAliases.push({
-                                                name: ctxCell.alias,
-                                                column: ctxCol.columnIndex,
-                                                row: ctxCell.cellIndex,
-                                                desc: ctxCell.desc ?? ""
-                                            });
-                                        }
-                                    });
-                                });
-                            });
-                        });
-                    }
-                    catch (_err) {
-                        this.problems.push({
-                            msg: _err instanceof Error ? _err.message : _err as string,
-                            position: [
-                                imports[i][1][0] + _offset, 
-                                imports[i][1][1]
-                            ],
-                            code: ErrorCode.InvalidContractMeta
-                        });
-                    }
-                }
-                if (!_newContMetaBytes && !_newOpMetaBytes) {
-                    await this.metaStore.updateStore(_hash);
-                    _newOpMetaBytes = this.metaStore.getOpMeta(_hash);
-                    _newContMetaBytes = this.metaStore.getContractMeta(_hash);
-                    if (index === -1 && _newOpMetaBytes) {
-                        if (_newContMetaBytes !== this.opMetaBytes) {
-                            try {
-                                this.opMetaBytes = _newOpMetaBytes;
-                                this.opmeta = metaFromBytes(
-                                    _newOpMetaBytes, 
-                                    OpMetaSchema
-                                ) as OpMeta[];
-                                index = i;
-                            }
-                            catch (_err) {
-                                this.problems.push({
-                                    msg: _err instanceof Error ? _err.message : _err as string,
-                                    position: [
-                                        imports[i][1][0] + _offset, 
-                                        imports[i][1][1]
-                                    ],
-                                    code: ErrorCode.InvalidOpMeta
-                                });
-                            }
-                        }
-                        else index = i;
-                    }
-                    if (_newContMetaBytes) {
-                        try {
-                            const _contractMeta = metaFromBytes(
-                                _newContMetaBytes, 
-                                ContractMetaSchema
-                            ) as ContractMeta;
-                            _contractMeta.methods.forEach(method => {
-                                method.expressions.forEach(exp => {
-                                    exp.contextColumns?.forEach(ctxCol => {
-                                        const colIndex = this.ctxAliases.findIndex(e => 
-                                            e.name === ctxCol.alias && (
-                                                e.column !== ctxCol.columnIndex || !isNaN(e.row)
-                                            )
-                                        );
-                                        if (colIndex > -1) this.problems.push({
-                                            msg: `duplicate context column alias: ${ctxCol.alias}`,
-                                            position: [
-                                                imports[i][1][0] + _offset, 
-                                                imports[i][1][1]
-                                            ],
-                                            code: ErrorCode.DuplicateContextAlias
-                                        });
-                                        else {
-                                            if (!this.ctxAliases.find(
-                                                e => e.name === ctxCol.alias
-                                            )) {
-                                                this.ctxAliases.push({
-                                                    name: ctxCol.alias,
-                                                    column: ctxCol.columnIndex,
-                                                    row: NaN,
-                                                    desc: ctxCol.desc ?? ""
-                                                }); 
-                                            }  
-                                        }
-                                        ctxCol.cells?.forEach(ctxCell => {
-                                            const cellIndex = this.ctxAliases.findIndex(
-                                                e => e.name === ctxCell.alias && (
-                                                    e.column !== ctxCol.columnIndex || 
-                                                    e.row !== ctxCell.cellIndex
-                                                )
-                                            );
-                                            if (cellIndex > -1) this.problems.push({
-                                                msg: `duplicate context cell alias: ${ctxCell.alias}`,
-                                                position: [
-                                                    imports[i][1][0] + _offset, 
-                                                    imports[i][1][1]
-                                                ],
-                                                code: ErrorCode.DuplicateContextAlias
-                                            });
-                                            else {
-                                                if (!this.ctxAliases.find(
-                                                    e => e.name === ctxCell.alias
-                                                )) this.ctxAliases.push({
-                                                    name: ctxCell.alias,
-                                                    column: ctxCol.columnIndex,
-                                                    row: ctxCell.cellIndex,
-                                                    desc: ctxCell.desc ?? ""
-                                                });
-                                            }
-                                        });
-                                    });
-                                });
-                            });
-                        }
-                        catch (_err) {
-                            this.problems.push({
-                                msg: _err instanceof Error ? _err.message : _err as string,
-                                position: [
-                                    imports[i][1][0] + _offset, 
-                                    imports[i][1][1]
-                                ],
-                                code: ErrorCode.InvalidContractMeta
-                            });
-                        }
-                    }
-                    if (!_newContMetaBytes && !_newOpMetaBytes) {
-                        this.problems.push({
-                            msg: `cannot find any settlement for hash: ${_hash}`,
-                            position: [
-                                imports[i][1][0] + _offset, 
-                                imports[i][1][1]
-                            ],
-                            code: ErrorCode.UndefinedImport
-                        });
-                    }
-                }
-            }
-            else this.problems.push({
-                msg: "invalid meta hash, must be 32 bytes",
-                position: [
-                    imports[i][1][0] + _offset, 
-                    imports[i][1][1]
-                ],
-                code: ErrorCode.InvalidHash
-            });
-        }
-        if (index === -1) {
-            this.problems.push({
-                msg: `cannot find any valid settlement for op meta from specified ${
-                    imports.length > 1 ? "hashes" : "hash"
-                }`,
-                position: [0, -1],
-                code: ErrorCode.UndefinedOpMeta
-            });
-            this.opmeta = [];
-            this.opMetaBytes = "";
-            this.opmetaLength = 0;
-        }
-        else {
-            this.opmetaLength = this.opmeta.length;
-            const _reservedKeys = [
-                ...this.opmeta.map(v => v.name),
-                ...this.opmeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
-                ...Object.keys(this.constants)
-            ];
-            const _ctxRowOperand = [
-                deepCopy((this.opmeta.find(v => v.name === "context")?.operand as OperandArgs)?.find(
-                    v => v.name.includes("row") || v.name.includes("Row")
-                )) ?? {
-                    name: "Row Index",
-                    bits: [0, 7]
-                }
-            ];
-            for (const _ctx of this.ctxAliases) {
-                if (_reservedKeys.includes(_ctx.name)) this.problems.push({
-                    msg: `duplicate identifier for contract alias: ${_ctx.name}`,
-                    position: this.imports[index].position,
-                    code: ErrorCode.DuplicateAlias
-                });
-                this.opmeta.push({
-                    name: _ctx.name,
-                    desc: _ctx.desc 
-                        ? _ctx.desc 
-                        : this.opmeta.find(v => v.name === "context")?.desc ?? "",
-                    operand: 0,
-                    inputs: 0,
-                    outputs: 1
-                });
-                if (isNaN(_ctx.row)) {
-                    this.opmeta[this.opmeta.length - 1].operand = _ctxRowOperand;
-                }
+                );
+                this.bindings[i].problems.push(...(this.bindings[i].exp as any).problems);
             }
         }
-        this.opmetaIndex = index;
     }
 
     /**
      * @public Resolves the expressions dependencies and instantiates RainlangParser for them
      */
     private resolveDependencies() {
-        let edges: [string, string][] = [];
-        let nodes = this.expressions.map(v => v.name);
-        const regexpes = this.expressions.map(v => new RegExp(
-            // eslint-disable-next-line no-useless-escape
-            "(?:^|(|)|,|\s|:|')" + v.name + "(?:$|(|)|,|\s|:|>)"
-        ));
-        for (let i = 0; i < this.expressions.length; i++) {
-            for (let j = 0; j < regexpes.length; j++) {
-                if (i !== j && regexpes[j].test(this.expressions[i].content)) {
-                    this.dependencies.push([nodes[i], nodes[j]]);
-                    edges.push([nodes[i], nodes[j]]);
-                }
-            }
+        const _bindings = this.bindings.filter(v => v.exp !== undefined);
+        let _edges: [string, string][] = [];
+        let _nodes = _bindings.map(v => v.name);
+        const regexp = /'\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*/g;
+        for (let i = 0; i < _nodes.length; i++) {
+            Array.from(
+                _bindings[i].content.matchAll(regexp)
+            ).map(
+                v => v[0]
+            ).forEach(v => {
+                _bindings[i].dependencies.push(v);
+                _edges.push([_nodes[i], v]);
+            });
         }
+        // const regexpes = _bindings.map(v => new RegExp(
+        //     // eslint-disable-next-line no-useless-escape
+        //     "(?:^|(|)|,|\s|:|')" + v.name + "(?:$|(|)|,|\s|:|>)"
+        // ));
+        // for (let i = 0; i < _bindings.length; i++) {
+        //     for (let j = 0; j < regexpes.length; j++) {
+        //         if (i !== j && regexpes[j].test(_bindings[i].content)) {
+        //             this.dependencies.push([nodes[i], nodes[j]]);
+        //             edges.push([nodes[i], nodes[j]]);
+        //         }
+        //     }
+        // }
 
-        while (!nodes.length || !edges.length) {
+        while (!_nodes.length || !_edges.length) {
             try {
-                toposort.array(nodes, edges).reverse();
+                toposort.array(_nodes, _edges).reverse();
                 break;
             }
             catch (error: any) {
@@ -774,27 +1226,40 @@ export class RainDocument {
                     if (!errorExp.includes(" ")) {
                         const nodesToDelete = [errorExp];
                         for (let i = 0; i < nodesToDelete.length; i++) {
-                            edges.forEach(v => {
+                            _edges.forEach(v => {
                                 if (v[1] === nodesToDelete[i]) {
                                     if (!nodesToDelete.includes(v[0])) nodesToDelete.push(v[0]);
                                 }
                             });
                         }
-                        edges = edges.filter(
+                        _edges = _edges.filter(
                             v => !nodesToDelete.includes(v[1]) || !nodesToDelete.includes(v[0])
                         );
-                        nodes = nodes.filter(v => !nodesToDelete.includes(v));
-                        for (let i = 0; i < nodesToDelete.length; i++) this.depProblems.push({
-                            msg: "circular dependency",
-                            position: this.expressions.find(
+                        _nodes = _nodes.filter(v => !nodesToDelete.includes(v));
+                        for (let i = 0; i < nodesToDelete.length; i++) {
+                            const _b = _bindings.find(
                                 v => v.name === nodesToDelete[i]
-                            )!.namePosition,
-                            code: ErrorCode.CircularDependency
-                        });
+                            );
+                            _b?.problems.push({
+                                msg: "circular dependency",
+                                position: _b.namePosition,
+                                code: ErrorCode.CircularDependency
+                            });
+                            // this.depProblems.push({
+                            //     msg: "circular dependency",
+                            //     position: this.bindings.find(
+                            //         v => v.name === nodesToDelete[i]
+                            //     )!.namePosition,
+                            //     code: ErrorCode.CircularDependency
+                            // });
+                            // (this.namespace[
+                            //     nodesToDelete[i]
+                            // ].Element as Binding).hasCircularDep = true;
+                        }
                     }
                 }
                 else {
-                    this.depProblems.push({
+                    this.problems.push({
                         msg: "cannot resolve dependencies",
                         position: [0, -1],
                         code: ErrorCode.UnresolvableDependencies
@@ -827,4 +1292,192 @@ export class RainDocument {
             else return "";
         }
     }
+
+    /**
+     * @internal Checks if a binding is elided
+     */
+    private isElided(text: string): boolean {
+        return text.trim().startsWith("!");
+    }
+
+    /**
+     * @internal Method to copy Namespaces
+     */
+    private copyNamespace(ns: Namespace, index: number, hash: string): Namespace {
+        const _ns: Namespace = {};
+        const _keys = Object.keys(ns);
+        for (let i = 0; i < _keys.length; i++) {
+            if ("Element" in ns[_keys[i]]) _ns[_keys[i]] = {
+                Hash: ns[_keys[i]].Hash ? ns[_keys[i]].Hash as string : hash,
+                ImportIndex: index,
+                Element: ns[_keys[i]].Element as OpMeta | OpMeta[] | Binding | ContextAlias
+            };
+            else _ns[_keys[i]] = this.copyNamespace(ns[_keys[i]] as Namespace, index, hash);
+        }
+        return _ns;
+    }
+
+    private mergeNamespace(imp: Import, ns: Namespace): boolean {
+        if (imp.name !== "." && this.namespace[imp.name] === undefined) 
+            this.namespace[imp.name] = {};
+        const _mns = imp.name === "." 
+            ? this.namespace 
+            : this.namespace[imp.name] as Namespace;
+        const _check = (nns: Namespace, cns: Namespace): string => {
+            const _cKeys = Object.keys(cns);
+            if (!_cKeys.length) return "ok";
+            else {
+                if (_cKeys.includes("Element")) return "cannot import into an occupied namespace";
+                else {
+                    let _dupWords = false;
+                    const _nKeys = Object.keys(nns);
+                    if (_cKeys.includes("Words")) {
+                        if (nns["Words"]) {
+                            if (nns["Words"].Hash !== cns["Words"].Hash) {
+                                return "namespace already contains a set of words";
+                            }
+                            else _dupWords = true;
+                        }
+                    }
+                    for (let i = 0; i < _nKeys.length; i++) {
+                        for (let j = 0; j < _cKeys.length; j++) {
+                            if (_nKeys[i] === _cKeys[j]) {
+                                if (!("Element" in nns[_nKeys[i]]) && !("Element" in cns[_cKeys[j]])) {
+                                    const _result = _check(
+                                        nns[_nKeys[i]] as Namespace, 
+                                        cns[_cKeys[j]] as Namespace
+                                    );
+                                    if (_result !== "ok") return _result;
+                                }
+                                else if (
+                                    Namespace.isNode(nns[_nKeys[i]]) && 
+                                    Namespace.isNode(cns[_cKeys[j]])
+                                ) {
+                                    if (
+                                        !Namespace.isWord(nns[_nKeys[i]]) || 
+                                        !Namespace.isWord(cns[_cKeys[j]])
+                                    ) {
+                                        if (
+                                            (
+                                                Namespace.isBinding(nns[_nKeys[i]]) && 
+                                                Namespace.isBinding(cns[_cKeys[j]])
+                                            ) || (
+                                                Namespace.isContextAlias(nns[_nKeys[i]]) && 
+                                                Namespace.isContextAlias(cns[_cKeys[j]])
+                                            )
+                                        ) {
+                                            if (nns[_nKeys[i]].Hash !== cns[_cKeys[j]].Hash) {
+                                                return "duplicate identifier";
+                                            }
+                                        }
+                                        else return "duplicate identifier";
+                                    }
+                                    else {
+                                        if (!_dupWords) return "namespace already contains a set of words";
+                                    }
+                                }
+                                else return "cannot import into an occupied namespace";
+                            }
+                        }
+                    }
+                    return "ok";
+                }
+            }
+        };
+        const _isOk = _check(ns, _mns);
+        if (_isOk !== "ok") {
+            this.problems.push({
+                msg: _isOk,
+                position: imp.hashPosition,
+                code: _isOk.includes("identifier") 
+                    ? ErrorCode.DuplicateIdentifier
+                    : _isOk.includes("words")
+                        ? ErrorCode.MultipleWords
+                        : ErrorCode.InvalidImport
+            });
+            if (imp.name !== "." && !Object.keys(this.namespace[imp.name]).length) 
+                delete this.namespace[imp.name];
+            return false;
+        }
+        else {
+            const _merge = (nns: Namespace, cns: Namespace) => {
+                const _cKeys = Object.keys(cns);
+                const _nKeys = Object.keys(nns);
+                if (!_cKeys.length) {
+                    for (let i = 0; i < _nKeys.length; i++) cns[_nKeys[i]] = nns[_nKeys[i]];
+                }
+                else {
+                    for (let i = 0; i < _nKeys.length; i++) {
+                        if (!_cKeys.includes(_nKeys[i])) cns[_nKeys[i]] = nns[_nKeys[i]];
+                        else {
+                            if (!("Element" in nns[_nKeys[i]])) _merge(
+                                nns[_nKeys[i]] as Namespace,
+                                cns[_nKeys[i]] as Namespace
+                            );
+                        }
+                    }
+                }
+            };
+            _merge(ns, _mns);
+            return true;
+        }
+    }
+
+    /**
+     * @internal Method to assign working words for this instance and store its path
+     */
+    private getWords() {
+        const _validate = (ns: Namespace, hash: string): [number, string] => {
+            let _c = 0;
+            // let _h: string;
+            if (ns["Words"]) {
+                if (!hash) {
+                    _c++;
+                    hash = ns["Words"].Hash as string;
+                }
+                else if (ns["Words"].Hash !== hash) {
+                    return [++_c, hash];
+                }
+            }
+            const _nns = Object.values(ns).filter(v => !v.Element) as Namespace[];
+            for (let i = 0; i < _nns.length; i++) {
+                const _temp = _validate(_nns[i], hash);
+                _c += _temp[0];
+                if (_c > 1) break;
+            }
+            return [_c, hash];
+        };
+        const _wordsCount = _validate(this.namespace, "")[0];
+        if (_wordsCount > 1) this.problems.push({
+            msg: `words must be singleton, but namespaces include ${_wordsCount} sets of words`,
+            position: [0, -1],
+            code: ErrorCode.SingletonWords
+        });
+        else if (_wordsCount === 0) this.problems.push({
+            msg: "cannot find any set of words",
+            position: [0, -1],
+            code: ErrorCode.UndefinedOpMeta
+        });
+        else {
+            const _get = (ns: Namespace, path: string): string => {
+                if (ns["Words"]) {
+                    this.opmeta = ns["Words"].Element as OpMeta[];
+                    return path;
+                }
+                else {
+                    const _nns = Object.entries(ns).filter(v => !v[1].Element);
+                    for (let i = 0; i < _nns.length; i++) {
+                        const _p = _get(_nns[i][1] as Namespace, _nns[i][0]);
+                        if (_p) return path + "." + _p;
+                    }
+                    return "";
+                }
+            };
+            if (this.opmetaPath) { /* empty */ }
+            const _path = _get(this.namespace, "");
+            if (!_path) this.opmetaPath = ".";
+            else this.opmetaPath = _path;
+        }
+    }
 }
+

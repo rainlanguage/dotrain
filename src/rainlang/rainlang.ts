@@ -1,12 +1,13 @@
 import { MetaStore } from "../dotrain/metaStore";
-import { Problem, Comment, ASTNode, OpASTNode, RainlangAST } from "../rainLanguageTypes";
+import { Problem, Comment, ASTNode, OpASTNode, RainlangAST, Namespace, ContextAlias, Binding } from "../rainLanguageTypes";
 import { 
     OpMeta, 
     InputArgs, 
     OperandArgs, 
-    OpMetaSchema, 
+    // OpMetaSchema, 
     metaFromBytes, 
-    ComputedOutput 
+    ComputedOutput, 
+    toOpMeta
 } from "@rainprotocol/meta";
 import { 
     ErrorCode, 
@@ -21,11 +22,11 @@ import {
     deepCopy,
     CONSTANTS,
     extractByBits, 
-    isBigNumberish,
     inclusiveParse,
     exclusiveParse,
     constructByBits, 
-    fillIn
+    fillIn,
+    toConvNumber
 } from "../utils";
 
 
@@ -38,7 +39,7 @@ import {
  */
 export class Rainlang {
 
-    public readonly isDotrain: boolean;
+    // public readonly dotrainMode: boolean;
     public readonly constants: Record<string, string> = {
         "infinity"      : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "max-uint256"   : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -50,7 +51,9 @@ export class Rainlang {
     private problems: Problem[] = [];
     private comments: Comment[] = [];
     private opmeta: OpMeta[] = [];
-    private expNames: string[] = [];
+    // private expNames: string[] = [];
+    private namespaces: Namespace = {};
+    private binding?: Binding;
     private state: {
         nodes: ASTNode[];
         aliases: AliasASTNode[];
@@ -81,10 +84,10 @@ export class Rainlang {
         text: string,
         opmeta: OpMeta[],
         dotrainOptions?: { 
-            /**
-             * Reserved constant values from RainDocument
-             */
-            constants?: Record<string, string>;
+            // /**
+            //  * Reserved constant values from RainDocument
+            //  */
+            // constants?: Record<string, string>;
             /**
              * Comments parsed from RainDocument
              */
@@ -92,24 +95,34 @@ export class Rainlang {
             /**
              * Array of expression names from corresponding RainDocument
              */
-            expressionNames?: string[],
+            // expressionNames?: string[],
+            namespaces?: Namespace;
+            /**
+             * 
+             */
+            thisBinding?: Binding;
         }
     ) {
         this.text = text;
         this.opmeta = opmeta;
-        this.isDotrain = false;
+        // this.dotrainMode = false;
         if (dotrainOptions?.comments) {
             this.comments = dotrainOptions.comments;
-            this.isDotrain = true;
+            // this.dotrainMode = true;
         }
-        if (dotrainOptions?.constants) {
-            this.constants = dotrainOptions.constants;
-            this.isDotrain = true;
+        // if (dotrainOptions?.constants) {
+        //     this.constants = dotrainOptions.constants;
+        //     this.isDotrain = true;
+        // }
+        // if (dotrainOptions?.expressionNames) {
+        //     this.expNames = dotrainOptions.expressionNames;
+        //     this.isDotrain = true;
+        // }
+        if (dotrainOptions?.namespaces) {
+            this.namespaces = dotrainOptions.namespaces;
+            // this.dotrainMode = true;
         }
-        if (dotrainOptions?.expressionNames) {
-            this.expNames = dotrainOptions.expressionNames;
-            this.isDotrain = true;
-        }
+        if (dotrainOptions?.thisBinding) this.binding = dotrainOptions.thisBinding;
         this.parse();
     }
 
@@ -126,13 +139,13 @@ export class Rainlang {
     ): Promise<Rainlang> {
         if (!/^0x[a-fA-F0-9]{64}$/.test(opmetaHash)) throw "invalid opmeta hash";
         const _metaStore = metaStore ?? new MetaStore();
-        let _opmetaBytes = _metaStore.getOpMeta(opmetaHash);
-        if (!_opmetaBytes) {
+        let _record = _metaStore.getRecord(opmetaHash);
+        if (!_record) {
             await _metaStore.updateStore(opmetaHash);
-            _opmetaBytes = _metaStore.getOpMeta(opmetaHash);
-            if (!_opmetaBytes) throw "cannot find settlement for provided opmeta hash";
+            _record = _metaStore.getRecord(opmetaHash);
+            if (!_record) throw "cannot find settlement for provided opmeta hash";
         }
-        const _opmeta = metaFromBytes(_opmetaBytes, OpMetaSchema);
+        const _opmeta = toOpMeta(metaFromBytes(_record.sequence[0].content));
         return new Rainlang(text, _opmeta);
     }
 
@@ -266,7 +279,7 @@ export class Rainlang {
         });
 
         // parse comments
-        if (!this.isDotrain) {
+        if (!this.binding) {
             this.comments = [];
             inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
                 if (!v[0].endsWith("*/")) this.problems.push({
@@ -313,7 +326,7 @@ export class Rainlang {
                             v[1][1] - _trimmed.endDelCount + 1, 
                             v[1][1] - _trimmed.endDelCount
                         ],
-                        code: ErrorCode.InvalidEmptyExpression
+                        code: ErrorCode.InvalidEmptyBinding
                     });
                 }
             }
@@ -324,7 +337,7 @@ export class Rainlang {
                         v[1][1] - _trimmed.endDelCount + 1, 
                         v[1][1] - _trimmed.endDelCount
                     ],
-                    code: ErrorCode.InvalidEmptyExpression
+                    code: ErrorCode.InvalidEmptyBinding
                 });
                 else {
                     _sourceExp.push(_trimmed.text);
@@ -336,12 +349,16 @@ export class Rainlang {
             }
         });
 
+        const _mainResKeys = [
+            ...this.opmeta.map(v => v.name),
+            ...this.opmeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
+            ...Object.keys(this.constants),
+        ];
         for (let i = 0; i < _sourceExp.length; i++) {
             const _reservedKeys = [
-                ...this.opmeta.map(v => v.name),
-                ...this.opmeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
-                ...Object.keys(this.constants),
-                ...this.expNames
+                ..._mainResKeys,
+                // ...this.expNames
+                ...Object.keys(this.namespaces)
             ];
             const _endDels: number[] = [];
             const _subExp: string[] = [];
@@ -486,7 +503,7 @@ export class Rainlang {
                     if (!_subExp[j] || _subExp[j].match(/^\s+$/)) this.problems.push({
                         msg: "invalid empty expression line",
                         position: [..._subExpPos[j]],
-                        code: ErrorCode.InvalidEmptyExpression
+                        code: ErrorCode.InvalidEmptyBinding
                     });
                     else this.problems.push({
                         msg: "invalid expression line",
@@ -576,15 +593,16 @@ export class Rainlang {
             let _operandMeta: OperandArgs = [];
             const _operandArgs = exp.slice(1, exp.indexOf(">"));
             const _parsedVals = inclusiveParse(_operandArgs, /\S+/gd, pos + 1);
-            const _index = this.opmeta.findIndex(v => v.name === op.opcode.name);
+            // const _opmeta = this.opmeta.find(v => v.name === op.opcode.name);
+            const _opmeta = this.searchOpmeta(op);
             exp = exp.slice(exp.indexOf(">") + 1);
             op.operandArgs = {
                 position: [pos, pos + _operandArgs.length + 1],
                 args: []
             };
-            if (_index > -1) {
-                if (typeof this.opmeta[_index].operand !== "number") {
-                    _operandMeta = deepCopy(this.opmeta[_index].operand as OperandArgs);
+            if (_opmeta) {
+                if (typeof _opmeta.operand !== "number") {
+                    _operandMeta = deepCopy(_opmeta.operand as OperandArgs);
                     const _i = _operandMeta.findIndex(v => v.name === "inputs");
                     if (_i > -1) _operandMeta.splice(_i, 1);
                 }
@@ -608,30 +626,70 @@ export class Rainlang {
                 });
             }
             _parsedVals.forEach((v, i) => {
-                const _validArgPattern = this.isDotrain 
-                    ? /^[0-9]+$|^0x[a-fA-F0-9]+$|^(?:')[a-z][a-z0-9-]*$/
+                const _validArgPattern = this.binding 
+                    ? /^[0-9]+$|^0x[a-fA-F0-9]+$|^'\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/
                     : /^[0-9]+$|^0x[a-fA-F0-9]+$/;
                 if (_validArgPattern.test(v[0])) {
-                    const _quote = v[0].match(/^'[a-z][a-z0-9-]*$/);
-                    if (_quote) {
-                        const _q = _quote[0].slice(1);
-                        if (this.expNames.indexOf(_q) === -1) {
-                            if (this.constants[_q]) {
-                                this.problems.push({
-                                    msg: `invalid quote: ${_q}`,
+                    const _isQuote = v[0].startsWith("'");
+                    if (_isQuote) {
+                        const _quote = v[0].slice(1);
+                        if (_quote.includes(".")) {
+                            const _tempItem = this.searchName(_quote, v[1][0] + 1, true);
+                            if (_tempItem) {
+                                if ("content" in _tempItem) {
+                                    if ("elided" in _tempItem) this.problems.push({
+                                        msg: _tempItem.elided!,
+                                        position: v[1],
+                                        code: ErrorCode.ElidedBinding
+                                    });
+                                    if ("constant" in _tempItem) this.problems.push({
+                                        msg: `invalid quote: ${_quote}, cannot quote constants`,
+                                        position: v[1],
+                                        code: ErrorCode.InvalidQuote
+                                    });
+                                    if (_tempItem.problems.find(
+                                        v => v.code === ErrorCode.CircularDependency
+                                    )) this.problems.push({
+                                        msg: "quoted binding has circular dependency",
+                                        position: v[1],
+                                        code: ErrorCode.CircularDependency
+                                    });
+                                }
+                                else this.problems.push({
+                                    msg: `invalid quote: ${_quote}, can only quote bindings`,
+                                    position: v[1],
+                                    code: ErrorCode.InvalidQuote
+                                });
+                            }
+                        }
+                        else {
+                            if (this.namespaces[_quote]) {
+                                if (Namespace.isBinding(this.namespaces[_quote])) {
+                                    if ("elided" in this.namespaces[_quote].Element) {
+                                        this.problems.push({
+                                            msg: (this.namespaces[
+                                                _quote
+                                            ].Element as Binding).elided!,
+                                            position: v[1],
+                                            code: ErrorCode.ElidedBinding
+                                        });
+                                    }
+                                }
+                                else this.problems.push({
+                                    msg: `invalid quote: ${_quote}, can only quote bindings`,
                                     position: v[1],
                                     code: ErrorCode.InvalidQuote
                                 });
                             }
                             else this.problems.push({
-                                msg: `undefined quote: ${_q}`,
+                                msg: `undefined quote: ${_quote}`,
                                 position: v[1],
                                 code: ErrorCode.UndefinedQuote
                             });
                         }
                     }
                     op.operandArgs!.args.push({
-                        value: !v[0].startsWith("'") 
+                        value: !_isQuote 
                             ? v[0]
                             : v[0].slice(1) ,
                         name: _operandMeta[i]?.name ?? "unknown",
@@ -644,7 +702,7 @@ export class Rainlang {
                     position: v[1],
                     code: ErrorCode.InvalidOperandArg
                 });
-                if (_index > -1 && i >= _operandMeta.length) this.problems.push({
+                if (_opmeta && i >= _operandMeta.length) this.problems.push({
                     msg: `unexpected operand argument for ${op.opcode.name}`,
                     position: v[1],
                     code: ErrorCode.MismatchOperandArgs
@@ -675,13 +733,13 @@ export class Rainlang {
         );
         if (_i > -1) this.problems.splice(_i, 1);
 
-        const _index = this.opmeta.findIndex(v => v.name === _node.opcode.name);
-        if (_index !== -1) {
-            if (typeof this.opmeta[_index].outputs === "number") {
-                _node.output = this.opmeta[_index].outputs as number;
+        const _opmeta = this.searchOpmeta(_node);
+        if (_opmeta) {
+            if (typeof _opmeta.outputs === "number") {
+                _node.output = _opmeta.outputs as number;
             }
-            if (this.opmeta[_index].operand === 0) {
-                _node.operand = 0;
+            if (typeof _opmeta.operand === "number") {
+                _node.operand = _opmeta.operand;
                 if (_node.operandArgs) {
                     _node.operand = NaN;
                     this.problems.push({
@@ -690,7 +748,7 @@ export class Rainlang {
                         code: ErrorCode.MismatchOperandArgs
                     });
                 }
-                if (this.opmeta[_index].inputs === 0) {
+                if (_opmeta.inputs === 0) {
                     if (_node.parameters.length) this.problems.push({
                         msg: "out-of-range inputs",
                         position: [..._node.parens],
@@ -700,7 +758,7 @@ export class Rainlang {
                 else {
                     if (
                         _node.parameters.length !== 
-                      (this.opmeta[_index].inputs as InputArgs).parameters.length
+                      (_opmeta.inputs as InputArgs).parameters.length
                     ) this.problems.push({
                         msg: "out-of-range inputs",
                         position: [..._node.parens],
@@ -711,10 +769,10 @@ export class Rainlang {
             else {
                 let _argIndex = 0;
                 let _inputsIndex = -1;
-                const _argsLength = (this.opmeta[_index].operand as OperandArgs)
+                const _argsLength = (_opmeta.operand as OperandArgs)
                     .find(v => v.name === "inputs")
-                    ? (this.opmeta[_index].operand as OperandArgs).length - 1
-                    : (this.opmeta[_index].operand as OperandArgs).length;
+                    ? (_opmeta.operand as OperandArgs).length - 1
+                    : (_opmeta.operand as OperandArgs).length;
 
                 if (_argsLength === (_node.operandArgs?.args.length ?? 0)) {
                     if ((_argsLength === 0 && !_node.operandArgs) || _argsLength > 0) {
@@ -728,11 +786,11 @@ export class Rainlang {
                         }
                         if (_hasQuote) {
                             _node.operand = NaN;
-                            if (typeof this.opmeta[_index].outputs !== "number") _node.output = NaN;
+                            if (typeof _opmeta.outputs !== "number") _node.output = NaN;
                         }
                         else {
                             const _operand = constructByBits(
-                                (this.opmeta[_index].operand as OperandArgs).map((v, i) => {
+                                (_opmeta.operand as OperandArgs).map((v, i) => {
                                     if (v.name === "inputs") {
                                         _inputsIndex = i;
                                         return {
@@ -754,14 +812,17 @@ export class Rainlang {
                             );
                             if (typeof _operand === "number") {
                                 _node.operand = _operand;
-                                if (typeof this.opmeta[_index].outputs !== "number") {
+                                if (_node.isCtx) {
+                                    _node.operand = ((_opmeta as any).column << 8) + _operand;
+                                }
+                                if (typeof _opmeta.outputs !== "number") {
                                     _node.output = extractByBits(
                                         _operand, 
-                                        (this.opmeta[_index].outputs as ComputedOutput).bits, 
-                                        (this.opmeta[_index].outputs as ComputedOutput).computation
+                                        (_opmeta.outputs as ComputedOutput).bits, 
+                                        (_opmeta.outputs as ComputedOutput).computation
                                     );
                                 }
-                                if (this.opmeta[_index].inputs === 0) {
+                                if (_opmeta.inputs === 0) {
                                     if (_node.parameters.length) this.problems.push({
                                         msg: "out-of-range inputs",
                                         position: [..._node.parens],
@@ -772,7 +833,7 @@ export class Rainlang {
                                     if (_inputsIndex === -1) {
                                         if (
                                             _node.parameters.length !== 
-                                            (this.opmeta[_index].inputs as InputArgs)
+                                            (_opmeta.inputs as InputArgs)
                                                 .parameters.length
                                         ) this.problems.push({
                                             msg: "out-of-range inputs",
@@ -784,7 +845,7 @@ export class Rainlang {
                             }
                             else {
                                 _node.operand = NaN;
-                                if (typeof this.opmeta[_index].outputs !== "number") {
+                                if (typeof _opmeta.outputs !== "number") {
                                     _node.output = NaN;
                                 }
                                 for (const _oprnd of _operand) {
@@ -854,34 +915,47 @@ export class Rainlang {
         const _wordPos: [number, number] = [entry, entry + _word.length - 1];
         exp = exp.replace(_word, "");
 
-        const _aliasIndex = this.ast[this.ast.length - 1].lines.findIndex(
-            v => !!v.aliases.find(e => e.name === _word)
-        );
-        const _currentAliasIndex = this.state.aliases.findIndex(v => v.name === _word);
-        const _bindingsAliasIndex = this.expNames.indexOf(_word);
-
         if (exp.startsWith("(") || exp.startsWith("<")) {
+            let _opcode;
             if (!_word) this.problems.push({
                 msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
                 position: [..._wordPos],
                 code: ErrorCode.ExpectedOpcode
             });
-            else if (!_word.match(WORD_PATTERN)) this.problems.push({
-                msg: `invalid word pattern: "${_word}"`,
-                position: [..._wordPos],
-                code: ErrorCode.InvalidWordPattern
-            });
-            let _enum = this.opmeta.findIndex(v => v.name === _word);
-            if (_enum === -1) _enum = this.opmeta.findIndex(v => v.aliases?.includes(_word));
-            if (_enum === -1) this.problems.push({
+            if (_word.includes(".")) {
+                const _tempOpcode = this.searchName(_word, entry, true);
+                if (_tempOpcode && ("operand" in _tempOpcode || "column" in _tempOpcode)) {
+                    _opcode = _tempOpcode;
+                }
+            }
+            else {
+                if (!_word.match(WORD_PATTERN)) this.problems.push({
+                    msg: `invalid word pattern: "${_word}"`,
+                    position: [..._wordPos],
+                    code: ErrorCode.InvalidWordPattern
+                });
+                _opcode = this.opmeta.find(
+                    v => v.name === _word || v.aliases?.includes(_word)
+                );
+                if (!_opcode) {
+                    if (
+                        this.namespaces[_word] && (
+                            Namespace.isWord(this.namespaces[_word]) || 
+                            Namespace.isContextAlias(this.namespaces[_word])
+                        )
+                        
+                    ) _opcode = this.namespaces[_word].Element as OpMeta | ContextAlias;
+                }
+            }
+            if (!_opcode) this.problems.push({
                 msg: `unknown opcode: "${_word}"`,
                 position: [..._wordPos],
                 code: ErrorCode.UndefinedOpcode
             });
             let _op: OpASTNode = {
                 opcode: {
-                    name: _enum > -1 ? this.opmeta[_enum].name : "unknown opcode",
-                    description: _enum > -1 ? this.opmeta[_enum].desc : "",
+                    name: _opcode ? _word : "unknown opcode",
+                    description: _opcode ? _opcode.desc : "",
                     position: [..._wordPos],
                 },
                 operand: NaN,
@@ -890,6 +964,7 @@ export class Rainlang {
                 parens: [NaN, NaN],
                 parameters: []
             };
+            if (_opcode && "column" in _opcode) _op.isCtx = true;
             if (exp.startsWith("<")) [exp, _op] = this.resolveOperand(
                 exp, 
                 entry + _word.length, 
@@ -918,91 +993,324 @@ export class Rainlang {
                 });
             }
         }
-        else if (_aliasIndex > -1 || _currentAliasIndex > -1 || _bindingsAliasIndex > -1) {
-            if (!_word.match(WORD_PATTERN)) this.problems.push({
-                msg: `invalid pattern for alias: ${_word}`,
-                position: [..._wordPos],
-                code: ErrorCode.InvalidWordPattern
-            });
-            if (_currentAliasIndex > -1) this.problems.push({
-                msg: "cannot reference self",
-                position: [..._wordPos],
-                code: ErrorCode.InvalidSelfReferenceLHS
-            });
-            if (_aliasIndex === -1 && _currentAliasIndex === -1 && _bindingsAliasIndex > -1) {
-                this.problems.push({
-                    msg: "unexpected usage of expression key",
-                    position: [..._wordPos],
-                    code: ErrorCode.UnexpectedExpressionKeyUsage
-                });
-            }
-            this.updateState({
-                name: _word,
-                position: [..._wordPos]
-            });
-        }
-        else if (_word.match(NUMERIC_PATTERN)) {
-            let _val = _word;
-            if (_word.startsWith("0b")) _val = Number(_word).toString();
-            else if (!isBigNumberish(_word)) {
-                const _nums = _word.match(/\d+/g)!;
-                _val = _nums[0] + "0".repeat(Number(_nums[1]));
-            }
-            if (CONSTANTS.MaxUint256.lt(_val)) {
-                this.problems.push({
-                    msg: "value greater than 32 bytes in size",
-                    position: [..._wordPos],
-                    code: ErrorCode.OutOfRangeValue
-                });
-            }
-            this.updateState({
-                value: _val,
-                position: [..._wordPos],
-            });
-        }
-        else if (WORD_PATTERN.test(_word)) {
-            if (Object.keys(this.constants).includes(_word)) {
-                this.updateState({
-                    value: _word,
-                    position: [..._wordPos],
-                });
+        else {
+            if (_word.includes(".")) {
+                if (
+                    _word.startsWith(".") && 
+                    WORD_PATTERN.test(_word.slice(1)) &&
+                    _word.slice(1) === this.binding?.name
+                ) {
+                    this.problems.push({
+                        msg: "cannot reference self",
+                        position: [..._wordPos],
+                        code: ErrorCode.InvalidSelfReference
+                    });
+                    this.updateState({
+                        name: _word,
+                        position: [..._wordPos]
+                    });
+                }
+                else {
+                    const _tempItem = this.searchName(_word, entry, true);
+                    if (_tempItem) {
+                        if ("content" in _tempItem) {
+                            if (_tempItem.constant) this.updateState({
+                                id: _word,
+                                value: _tempItem.constant,
+                                position: [..._wordPos],
+                            });
+                            else {
+                                const _msg = _tempItem.elided
+                                    ? _tempItem.elided
+                                    : `invalid reference to binding: ${
+                                        _word
+                                    }, only contant bindings can be referenced`;
+                                this.problems.push({
+                                    msg: _msg,
+                                    position: [..._wordPos],
+                                    code: _tempItem.elided
+                                        ? ErrorCode.ElidedBinding
+                                        : ErrorCode.InvalidReference
+                                });
+                                this.updateState({
+                                    name: _word,
+                                    position: [..._wordPos]
+                                });
+                            }
+                        }
+                        else {
+                            this.problems.push({
+                                msg: `invalid reference to ${
+                                    "operand" in _tempItem
+                                        ? "opcode"
+                                        : "context alias"
+                                }: ${_word}`,
+                                position: [..._wordPos],
+                                code: ErrorCode.InvalidReference
+                            });
+                            this.updateState({
+                                name: _word,
+                                position: [..._wordPos]
+                            });
+                        }
+                    }
+                    else this.updateState({
+                        name: _word,
+                        position: [..._wordPos]
+                    });
+                }
             }
             else {
-                this.problems.push({
-                    msg: `undefined word: ${_word}`,
-                    position: [..._wordPos],
-                    code: ErrorCode.UndefinedWord
-                });
-                this.updateState({
-                    name: _word,
-                    position: [..._wordPos]
-                });
+                if (_word.match(NUMERIC_PATTERN)) {
+                    // let _val = _word;
+                    // if (_word.startsWith("0b")) _val = Number(_word).toString();
+                    // else if (!isBigNumberish(_word)) {
+                    //     const _nums = _word.match(/\d+/g)!;
+                    //     _val = _nums[0] + "0".repeat(Number(_nums[1]));
+                    // }
+                    if (CONSTANTS.MaxUint256.lt(toConvNumber(_word))) {
+                        this.problems.push({
+                            msg: "value greater than 32 bytes in size",
+                            position: [..._wordPos],
+                            code: ErrorCode.OutOfRangeValue
+                        });
+                    }
+                    this.updateState({
+                        value: _word,
+                        position: [..._wordPos],
+                    });
+                }
+                else if (WORD_PATTERN.test(_word)) {
+                    if (Object.keys(this.constants).includes(_word)) {
+                        this.updateState({
+                            id: _word,
+                            value: this.constants[_word],
+                            position: [..._wordPos],
+                        });
+                    }
+                    else {
+                        if (this.state.aliases.find(v => v.name === _word)) {
+                            this.problems.push({
+                                msg: "cannot reference self",
+                                position: [..._wordPos],
+                                code: ErrorCode.InvalidSelfReference
+                            });
+                            this.updateState({
+                                name: _word,
+                                position: [..._wordPos]
+                            });
+                        }
+                        else if (this.ast[this.ast.length - 1].lines.find(
+                            v => !!v.aliases.find(e => e.name === _word)
+                        )) this.updateState({
+                            name: _word,
+                            position: [..._wordPos]
+                        });
+                        else if (_word === this.binding?.name) {
+                            this.problems.push({
+                                msg: "cannot reference self",
+                                position: [..._wordPos],
+                                code: ErrorCode.InvalidSelfReference
+                            });
+                            this.updateState({
+                                name: _word,
+                                position: [..._wordPos]
+                            });
+                        }
+                        else if (this.namespaces[_word]) {
+                            if ("Element" in this.namespaces[_word]) {
+                                const _item = this.namespaces[
+                                    _word
+                                ].Element as Binding | OpMeta | ContextAlias;
+                                if ("content" in _item) {
+                                    if (_item.constant) this.updateState({
+                                        id: _word,
+                                        value: _item.constant,
+                                        position: [..._wordPos],
+                                    });
+                                    else {
+                                        const _msg = _item.elided
+                                            ? _item.elided
+                                            : `invalid reference to binding: ${
+                                                _word
+                                            }, only contant bindings can be referenced`;
+                                        this.problems.push({
+                                            msg: _msg,
+                                            position: [..._wordPos],
+                                            code: _item.elided
+                                                ? ErrorCode.ElidedBinding
+                                                : ErrorCode.InvalidReference
+                                        });
+                                        this.updateState({
+                                            name: _word,
+                                            position: [..._wordPos]
+                                        });
+                                    }
+                                }
+                                else {
+                                    this.problems.push({
+                                        msg: `invalid reference to ${
+                                            "operand" in _item
+                                                ? "opcode"
+                                                : "context alias"
+                                        }: ${_word}`,
+                                        position: [..._wordPos],
+                                        code: ErrorCode.InvalidReference
+                                    });
+                                    this.updateState({
+                                        name: _word,
+                                        position: [..._wordPos]
+                                    });
+                                }
+                            }
+                            else {
+                                this.problems.push({
+                                    msg: `invalid reference to namespace: ${_word}`,
+                                    position: [..._wordPos],
+                                    code: ErrorCode.InvalidReference
+                                });
+                                this.updateState({
+                                    name: _word,
+                                    position: [..._wordPos]
+                                });
+                            }
+                        }
+                        else {
+                            this.problems.push({
+                                msg: `undefined word: ${_word}`,
+                                position: [..._wordPos],
+                                code: ErrorCode.UndefinedWord
+                            });
+                            this.updateState({
+                                name: _word,
+                                position: [..._wordPos]
+                            });
+                        }
+                    }
+                }
+                else {
+                    this.problems.push({
+                        msg: `"${_word}" is not a valid rainlang word`,
+                        position: [..._wordPos],
+                        code: ErrorCode.InvalidWordPattern
+                    });
+                    this.updateState({
+                        name: _word,
+                        position: [..._wordPos]
+                    });
+                }
             }
         }
-        // else if (exp.startsWith(">") || exp.startsWith(")")) {
-        //     if (exp.startsWith(">")) this.problems.push({
-        //         msg: "unexpected \">\"",
-        //         position: [_wordPos[0], _wordPos[0] + 1],
-        //         code: ErrorCode.UnexpectedClosingAngleParen
-        //     });
-        //     else this.problems.push({
-        //         msg: "unexpected \")\"",
-        //         position: [_wordPos[0], _wordPos[0] + 1],
-        //         code: ErrorCode.UnexpectedClosingParen
-        //     });
-        //     exp = exp.slice(1); 
-        // }
-        else {
-            this.problems.push({
-                msg: `"${_word}" is not a valid rainlang word`,
-                position: [..._wordPos],
-                code: ErrorCode.InvalidWordPattern
-            });
-            this.updateState({
-                name: _word,
-                position: [..._wordPos]
-            });
-        }
         return exp;
+    }
+
+    /**
+     * 
+     * @param name 
+     * @param offset 
+     * @param publishDiagnostics 
+     * @returns 
+     */
+    private searchName(
+        name: string, 
+        offset: number, 
+        publishDiagnostics: boolean
+    ): OpMeta | ContextAlias | Binding | undefined {
+        const _names = exclusiveParse(name, /\./gd, offset, true);
+        if (name.startsWith(".")) _names.shift();
+        if (_names.length > 32) {
+            if (publishDiagnostics) this.problems.push({
+                msg: "namespace too depp",
+                position: [offset, offset + name.length - 1],
+                code: ErrorCode.DeepNamespace
+            });
+            return undefined;
+        }
+        if (!_names[_names.length - 1][0]) {
+            if (publishDiagnostics) this.problems.push({
+                msg: "expected to end with a node",
+                position: _names[_names.length - 1][1],
+                code: ErrorCode.UnexpectedNamespacePath
+            });
+            return undefined;
+        }
+        const _invalidNames = _names.filter(v => !WORD_PATTERN.test(v[0]));
+        if (_invalidNames.length) {
+            if (publishDiagnostics) _invalidNames.forEach(v => {
+                this.problems.push({
+                    msg: "invalid word pattern",
+                    position: v[1],
+                    code: ErrorCode.InvalidWordPattern
+                });
+            });
+            return undefined;
+        }
+        let _result: any = this.namespaces;
+        for (let i = 0; i < _names.length; i++) {
+            if (_result[_names[i][0]]) _result = _result[_names[i][0]];
+            else {
+                if (publishDiagnostics) this.problems.push({
+                    msg: "undefined identifier",
+                    position: _names[i][1],
+                    code: ErrorCode.UndefinedIdentifier
+                });
+                return undefined;
+            }
+        }
+        if (!("Element" in _result)) {
+            if (publishDiagnostics) this.problems.push({
+                msg: `expected to end with a node, "${_names[_names.length - 1]}" is a namespace`,
+                position: [offset, offset + name.length - 1],
+                code: ErrorCode.UnexpectedNamespacePath
+            });
+            return undefined;
+        }
+        else return _result.Element;
+    }
+
+    /**
+     * 
+     * @param node 
+     * @returns 
+     */
+    private searchOpmeta(node: OpASTNode | string): OpMeta | undefined {
+        let _opmeta;
+        const _name = typeof node === "string" ? node : node.opcode.name;
+        if (_name.includes(".")) {
+            const _tempOpcode = this.searchName(_name, 0, false);
+            if (_tempOpcode && ("operand" in _tempOpcode || "column" in _tempOpcode)) {
+                _opmeta = _tempOpcode;
+            }
+        }
+        else {
+            _opmeta = this.opmeta.find(
+                v => v.name === _name || v.aliases?.includes(_name)
+            );
+            if (!_opmeta) {
+                if (
+                    this.namespaces[_name] && (
+                        Namespace.isWord(this.namespaces[_name]) || 
+                        Namespace.isContextAlias(this.namespaces[_name])
+                    )
+                ) _opmeta = this.namespaces[_name].Element as OpMeta | ContextAlias;
+            }
+        }
+        if (_opmeta && "column" in _opmeta) {
+            const _temp = {
+                name: _opmeta.name,
+                desc: _opmeta.desc,
+                operand: isNaN(_opmeta.row)
+                    ? [{
+                        name: "Row Index",
+                        bits: [0, 7]
+                    }]
+                    : (_opmeta.column << 8) + _opmeta.row,
+                inputs: 0,
+                outputs: 1
+            } as any;
+            if (isNaN(_opmeta.row)) _temp.column = _opmeta.column;
+            _opmeta = _temp;
+        }
+        return _opmeta;
     }
 }

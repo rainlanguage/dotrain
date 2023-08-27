@@ -2,8 +2,8 @@ import { OpMeta } from "@rainprotocol/meta";
 import { Rainlang } from "../rainlang/rainlang";
 import { MetaStore } from "../dotrain/metaStore";
 import { ExpressionConfig } from "../rainLanguageTypes";
-import { AliasASTNode, ASTNode, MemoryType, OpASTNode, ValueASTNode } from "../rainLanguageTypes";
-import { BigNumber, BigNumberish, BytesLike, concat, hexlify, isBigNumberish, memoryOperand, op } from "../utils";
+import { AliasASTNode, ASTNode, MemoryType, OpASTNode } from "../rainLanguageTypes";
+import { BigNumber, BigNumberish, BytesLike, concat, hexlify, memoryOperand, op, toConvNumber } from "../utils";
 
 
 /**
@@ -94,44 +94,58 @@ export async function rainlangc(
         // compile from parsed tree
         for (let i = 0; i < nodes.length; i++) {
             const _node = nodes[i];
-            if (ValueASTNode.is(_node)) {
-                if (isBigNumberish(_node.value)) {
-                    const _i = constants.findIndex(v => BigNumber.from(_node.value).eq(v));
-                    if (_i > -1) _src.push(
-                        op(_readMemoryIndex, memoryOperand(_i, MemoryType.Constant))
+            if ("value" in _node) {
+                const _val = toConvNumber(_node.value);
+                const _i = constants.findIndex(v => BigNumber.from(_val).eq(v));
+                if (_i > -1) _src.push(
+                    op(_readMemoryIndex, memoryOperand(_i, MemoryType.Constant))
+                );
+                else {
+                    _src.push(
+                        op(
+                            _readMemoryIndex,
+                            memoryOperand(constants.length, MemoryType.Constant)
+                        )
                     );
-                    else {
-                        _src.push(
-                            op(
-                                _readMemoryIndex,
-                                memoryOperand(constants.length, MemoryType.Constant)
-                            )
-                        );
-                        constants.push(_node.value);
-                    }
+                    constants.push(_val);
                 }
-                else if (Object.keys(_rainlang.constants).includes(_node.value)) {
-                    const _i = constants.findIndex(
-                        v => BigNumber.from(_rainlang.constants[_node.value]).eq(v)
-                    );
-                    if (_i > -1) _src.push(
-                        op(_readMemoryIndex, memoryOperand(_i, MemoryType.Constant))
-                    );
-                    else {
-                        _src.push(
-                            op(
-                                _readMemoryIndex,
-                                memoryOperand(constants.length, MemoryType.Constant)
-                            )
-                        );
-                        constants.push(
-                            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-                        );
-                    }
-                }
-                else throw `cannot resolve ${_node.value}`;
+                // if (isBigNumberish(_node.value)) {
+                //     const _i = constants.findIndex(v => BigNumber.from(_node.value).eq(v));
+                //     if (_i > -1) _src.push(
+                //         op(_readMemoryIndex, memoryOperand(_i, MemoryType.Constant))
+                //     );
+                //     else {
+                //         _src.push(
+                //             op(
+                //                 _readMemoryIndex,
+                //                 memoryOperand(constants.length, MemoryType.Constant)
+                //             )
+                //         );
+                //         constants.push(_node.value);
+                //     }
+                // }
+                // else if (Object.keys(_rainlang.constants).includes(_node.value)) {
+                //     const _i = constants.findIndex(
+                //         v => BigNumber.from(_rainlang.constants[_node.value]).eq(v)
+                //     );
+                //     if (_i > -1) _src.push(
+                //         op(_readMemoryIndex, memoryOperand(_i, MemoryType.Constant))
+                //     );
+                //     else {
+                //         _src.push(
+                //             op(
+                //                 _readMemoryIndex,
+                //                 memoryOperand(constants.length, MemoryType.Constant)
+                //             )
+                //         );
+                //         constants.push(
+                //             "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                //         );
+                //     }
+                // }
+                // else throw `cannot resolve ${_node.value}`;
             }
-            else if (AliasASTNode.is(_node)) {
+            else if ("name" in _node) {
                 const _i = aliases.findIndex(v => v.name === _node.name);
                 if (_i > -1) _src.push(op(_readMemoryIndex, memoryOperand(_i, MemoryType.Stack)));
                 else throw new Error(`invalid reference to "${_node.name}"`);

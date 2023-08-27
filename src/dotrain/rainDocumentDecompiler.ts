@@ -1,10 +1,10 @@
-import { MetaStore } from "./metaStore";
+import { MetaRecord, MetaStore } from "./metaStore";
 import { RainDocument } from "./rainDocument";
 import { TextDocument } from "../rainLanguageTypes";
 import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
 import { arrayify, BigNumber, CONSTANTS, isBytesLike, extractByBits } from "../utils";
-import { OpMeta, InputMeta, OutputMeta, OperandArgs, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
+import { OpMeta, InputMeta, OutputMeta, OperandArgs, metaFromBytes, MAGIC_NUMBERS, toOpMeta } from "@rainprotocol/meta";
 
 
 /**
@@ -132,18 +132,24 @@ export async function dotraind(
 
     let _opmeta: OpMeta[];
     if (isBytesLike(metaHash)) {
-        let _opMetaBytes: string | undefined;
+        let _metaRecord: MetaRecord | null | undefined;
         if (metaHash.match(/^0x[a-fA-F0-9]{64}$/)) {
-            _opMetaBytes = metaStore.getOpMeta(metaHash);
-            if (!_opMetaBytes) {
+            _metaRecord = metaStore.getRecord(metaHash);
+            if (!_metaRecord) {
                 await metaStore.updateStore(metaHash);
-                _opMetaBytes = metaStore.getOpMeta(metaHash);
-                if (!_opMetaBytes) throw new Error(`cannot find settlement for hash: ${metaHash}`);
+                _metaRecord = metaStore.getRecord(metaHash);
+                if (!_metaRecord) throw new Error(`cannot find settlement for hash: ${metaHash}`);
             }
         }
-        else throw new Error(" invalid meta hash, must be 32 bytes");
+        else throw new Error("invalid meta hash, must be 32 bytes");
         try {
-            _opmeta = metaFromBytes(_opMetaBytes!, OpMetaSchema) as OpMeta[];
+            const _hasOpmeta = _metaRecord.sequence.find(
+                v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1
+            );
+            if (_hasOpmeta) {
+                _opmeta = toOpMeta(metaFromBytes(_hasOpmeta.content));
+            }
+            else throw new Error("provided hash doesn't include an opmeta");
         }
         catch (err) {
             return Promise.reject(err);
@@ -250,7 +256,7 @@ export async function dotraind(
 
         // construct the source expression at current index, both LHS and RHS
         _finalStack.push(
-            `#exp-${i + 1}\n` +
+            `#expression-${i + 1}\n` +
             _lhs.join(" ") + 
             " : " + 
             _stack.join(" ") +
