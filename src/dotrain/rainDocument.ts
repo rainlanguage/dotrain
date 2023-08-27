@@ -1157,29 +1157,54 @@ export class RainDocument {
             // assign working words for this instance
             this.getWords();
 
-            for (let i = 0; i < this.bindings.length; i++) {
-                this.bindings[i].exp = new Rainlang(
-                    this.bindings[i].content, 
-                    this.opmeta, 
-                    {
-                        thisBinding: this.bindings[i],
-                        namespaces: this.namespace,
-                        comments: this.comments.filter(v => 
-                            v.position[0] >= this.bindings[i].contentPosition[0] && 
-                            v.position[1] <= this.bindings[i].contentPosition[1]
-                        ).map(v => {
-                            return {
-                                comment: v.comment,
-                                position: [
-                                    v.position[0] - this.bindings[i].contentPosition[0],
-                                    v.position[1] - this.bindings[i].contentPosition[0]
-                                ]
-                            };
-                        })
-                    }
-                );
-                this.bindings[i].problems.push(...(this.bindings[i].exp as any).problems);
-            }
+            this.bindings.forEach(v => {
+                if (v.constant === undefined && v.elided === undefined) {
+                    v.exp = new Rainlang(
+                        v.content, 
+                        this.opmeta, 
+                        {
+                            thisBinding: v,
+                            namespaces: this.namespace,
+                            comments: this.comments.filter(e => 
+                                e.position[0] >= v.contentPosition[0] && 
+                                e.position[1] <= v.contentPosition[1]
+                            ).map(e => {
+                                return {
+                                    comment: e.comment,
+                                    position: [
+                                        e.position[0] - v.contentPosition[0],
+                                        e.position[1] - v.contentPosition[0]
+                                    ]
+                                };
+                            })
+                        }
+                    );
+                    v.problems.push(...(v.exp as any).problems);
+                }
+            });
+            // for (let i = 0; i < this.bindings.length; i++) {
+            //     this.bindings[i].exp = new Rainlang(
+            //         this.bindings[i].content, 
+            //         this.opmeta, 
+            //         {
+            //             thisBinding: this.bindings[i],
+            //             namespaces: this.namespace,
+            //             comments: this.comments.filter(v => 
+            //                 v.position[0] >= this.bindings[i].contentPosition[0] && 
+            //                 v.position[1] <= this.bindings[i].contentPosition[1]
+            //             ).map(v => {
+            //                 return {
+            //                     comment: v.comment,
+            //                     position: [
+            //                         v.position[0] - this.bindings[i].contentPosition[0],
+            //                         v.position[1] - this.bindings[i].contentPosition[0]
+            //                     ]
+            //                 };
+            //             })
+            //         }
+            //     );
+            //     this.bindings[i].problems.push(...(this.bindings[i].exp as any).problems);
+            // }
         }
     }
 
