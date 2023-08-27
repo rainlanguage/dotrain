@@ -31,7 +31,7 @@
 |  [dotraind(expressionConfig, metaHash, metaStore)](./variables/dotraind_1.md) | RainDocument (dotrain) decompiler, decompiles ExpressionConfig (bytes) to a valid RainDocument instance |
 |  [exclusiveParse(str, pattern, offset, includeEmptyEnds)](./variables/exclusiveparse_1.md) | Parses an string by extracting the strings outside of matches |
 |  [extractByBits(value, bits, computation, computationVar)](./variables/extractbybits_1.md) | Method to extract value from operand by specified bits indexes |
-|  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properites from a Map as a new Map with same keys. |
+|  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properties from a Map as a new Map with same keys. |
 |  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
 |  [fillIn(text, position)](./variables/fillin_1.md) | Fills a poistion in a text with whitespaces by keeping line structure intact |
 |  [fillOut(text, position)](./variables/fillout_1.md) | Fills a text with whitespaces excluding a position by keeping line structure intact |
@@ -43,7 +43,7 @@
 |  [getRainlangDiagnostics(document, setting)](./variables/getrainlangdiagnostics_2.md) | Provides diagnostics |
 |  [getRainlangHover(document, position, setting)](./variables/getrainlanghover_1.md) | Provides hover items |
 |  [getRainlangHover(document, position, setting)](./variables/getrainlanghover_2.md) | Provides hover items |
-|  [getRainLanguageServices(params)](./variables/getrainlanguageservices_1.md) | Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services |
+|  [getRainLanguageServices(params)](./variables/getrainlanguageservices_1.md) | Main function to get Rain language services initiated and ready to receive TextDocuments to provide the desired language services |
 |  [getRandomInt(max)](./variables/getrandomint_1.md) | Generates random integer between 0(inclusive) and max(exclusive) |
 |  [hasDuplicate(arr1, arr2)](./variables/hasduplicate_1.md) | Method to check there is a duplicate id in 2 arrays of string |
 |  [inclusiveParse(str, pattern, offset)](./variables/inclusiveparse_1.md) | Parses an string by extracting matching strings |
@@ -51,7 +51,7 @@
 |  [isConsumableMetaSequence(sequence)](./variables/isconsumablemetasequence_1.md) | Method to check if a meta sequence is consumable for a dotrain |
 |  [isEmptyRange(range)](./variables/isemptyrange_1.md) | Checks if a range is empty |
 |  [isInRange(range, position)](./variables/isinrange_1.md) | Checks if a position is within a range |
-|  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
+|  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivalent Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [matchRange(range1, range2)](./variables/matchrange_1.md) | Checks if 2 ranges match exactly together |
 |  [memoryOperand(offset, type)](./variables/memoryoperand_1.md) | Constructs operand for standard STATE opecode |
 |  [namespaceSearch(name, namespace)](./variables/namespacesearch_1.md) | Search in a Namespace for a given name |
@@ -61,7 +61,7 @@
 |  [rainlangc(rainlang)](./variables/rainlangc_3.md) | Rain Language Compiler (rainlangc), compiles a rainlang instance into valid ExpressionConfig (deployable bytes) |
 |  [rainlangd(expressionConfig, opmetaHash, metaStore)](./variables/rainlangd_1.md) | Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rainlang instance |
 |  [rainlangd(expressionConfig, opmeta)](./variables/rainlangd_2.md) | Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rainlang instance |
-|  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
+|  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivalent Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [toConvNumber(value)](./variables/toconvnumber_1.md) | Convert Rainlang numeric values to covenient numeric value |
 |  [trim(str)](./variables/trim_1.md) | Trims a text (removing start/end whitespaces) with reporting the number of deletions |
 
@@ -112,7 +112,7 @@
 |  [HEX\_PATTERN](./variables/hex_pattern.md) | Hex pattern |
 |  [hexlify](./variables/hexlify.md) | ethers hexlify |
 |  [hexZeroPad](./variables/hexzeropad.md) | ethers hexZeroPad |
-|  [ILLEGAL\_CHAR](./variables/illegal_char.md) | Illigal character pattern |
+|  [ILLEGAL\_CHAR](./variables/illegal_char.md) | Illegal character pattern |
 |  [isBytes](./variables/isbytes.md) | ethers isBytes |
 |  [isBytesLike](./variables/isbyteslike.md) | ethers isBytesLike |
 |  [isHexString](./variables/ishexstring.md) | ethers isHexString |

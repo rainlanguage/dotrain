@@ -1351,7 +1351,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!deepFreeze:function(1)",
-          "docComment": "/**\n * Deeply freezes an object, all of the properties of propterties gets frozen\n *\n * @param object - object to freez\n *\n * @returns frozen object\n *\n * @public\n */\n",
+          "docComment": "/**\n * Deeply freezes an object, all of the properties of propterties gets frozen\n *\n * @param object - object to freeze\n *\n * @returns frozen object\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -3240,7 +3240,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!extractByBits:function(1)",
-          "docComment": "/**\n * Method to extract value from operand by specified bits indexes\n *\n * @param value - Operand value\n *\n * @param bits - Bits indexes to extract\n *\n * @param computation - Any arethmetical operation to apply to extracted value\n *\n * @param computationVar - The variavle in compuation to solve for, default is \"bits\"\n *\n * @returns Extracted value\n *\n * @public\n */\n",
+          "docComment": "/**\n * Method to extract value from operand by specified bits indexes\n *\n * @param value - Operand value\n *\n * @param bits - Bits indexes to extract\n *\n * @param computation - Any arethmetical operation to apply to extracted value\n *\n * @param computationVar - The variable in computation to solve for, default is \"bits\"\n *\n * @returns Extracted value\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -3333,7 +3333,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!extractFromMap:function(1)",
-          "docComment": "/**\n * Extract some of the properites from a Map as a new Map with same keys.\n *\n * @param map - the map to extract from\n *\n * @param properties - name of the properties in second item of the map elements\n *\n * @returns a new Map with extracted properties\n *\n * @public\n */\n",
+          "docComment": "/**\n * Extract some of the properties from a Map as a new Map with same keys.\n *\n * @param map - the map to extract from\n *\n * @param properties - name of the properties in second item of the map elements\n *\n * @returns a new Map with extracted properties\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -4258,7 +4258,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!getRainLanguageServices:function(1)",
-          "docComment": "/**\n * Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services\n *\n * @example\n * ```ts\n * // importing\n * import { getRainLanguageServices } from \"@rainprotocol/rainlang\";\n *\n * // initiating the services\n * const langServices = getRainLanguageServices({clientCapabilities, metastore});\n *\n * // getting validation results (lsp Diagnostics)\n * const errors = await langServices.doValidate(myTextDocument);\n * ```\n *\n * @public\n */\n",
+          "docComment": "/**\n * Main function to get Rain language services initiated and ready to receive TextDocuments to provide the desired language services\n *\n * @example\n * ```ts\n * // importing\n * import { getRainLanguageServices } from \"@rainprotocol/rainlang\";\n *\n * // initiating the services\n * const langServices = getRainLanguageServices({clientCapabilities, metastore});\n *\n * // getting validation results (lsp Diagnostics)\n * const errors = await langServices.doValidate(myTextDocument);\n * ```\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -4515,7 +4515,7 @@
         {
           "kind": "Variable",
           "canonicalReference": "@rainprotocol/rainlang!ILLEGAL_CHAR:var",
-          "docComment": "/**\n * Illigal character pattern\n *\n * @public\n */\n",
+          "docComment": "/**\n * Illegal character pattern\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -5338,7 +5338,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!mapToRecord:function(1)",
-          "docComment": "/**\n * Conver a Map to a equivelant Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol.\n *\n * @param map - The Map to conver to Record\n *\n * @param properties - (optional) properties to pick from the second item of the Map's elements.\n *\n * @returns a new Record from Map\n *\n * @public\n */\n",
+          "docComment": "/**\n * Conver a Map to a equivalent Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol.\n *\n * @param map - The Map to conver to Record\n *\n * @param properties - (optional) properties to pick from the second item of the Map's elements.\n *\n * @returns a new Record from Map\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -10160,7 +10160,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!recordToMap:function(1)",
-          "docComment": "/**\n * Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol.\n *\n * @param record - The Record to convert to a Map\n *\n * @param properties - (optional) properties to pick from the values of key/value pair items of the Record object.\n *\n * @returns Map Object from Record\n *\n * @public\n */\n",
+          "docComment": "/**\n * Conver a Record (a key/value pair object) to a equivalent Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol.\n *\n * @param record - The Record to convert to a Map\n *\n * @param properties - (optional) properties to pick from the values of key/value pair items of the Record object.\n *\n * @returns Map Object from Record\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",

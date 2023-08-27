@@ -2,7 +2,7 @@
 
 # Function extractFromMap()
 
-Extract some of the properites from a Map as a new Map with same keys.
+Extract some of the properties from a Map as a new Map with same keys.
 
 <b>Signature:</b>
 

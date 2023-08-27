@@ -564,7 +564,7 @@ export class Rainlang {
                 });
                 exp = exp.slice(1);
                 if (exp && !exp.match(/^[\s),]/)) this.problems.push({
-                    msg: "expected to be seperated by space",
+                    msg: "expected to be separated by space",
                     position: [_currentPosition, _currentPosition + 1],
                     code: ErrorCode.ExpectedSpace
                 });

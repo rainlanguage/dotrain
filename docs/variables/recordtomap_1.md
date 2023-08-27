@@ -2,7 +2,7 @@
 
 # Function recordToMap()
 
-Conver a Record (a key/value pair object) to a equivelant Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol.
+Conver a Record (a key/value pair object) to a equivalent Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol.
 
 <b>Signature:</b>
 

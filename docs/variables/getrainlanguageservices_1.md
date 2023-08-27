@@ -2,7 +2,7 @@
 
 # Function getRainLanguageServices()
 
-Main function to get Rain language services initiated and ready to recieve TextDocuments to provide the desired language services
+Main function to get Rain language services initiated and ready to receive TextDocuments to provide the desired language services
 
 <b>Signature:</b>
 
