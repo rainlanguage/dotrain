@@ -8031,9 +8031,8 @@
                   "text": "static create(text: "
                 },
                 {
-                  "kind": "Reference",
-                  "text": "TextDocument",
-                  "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+                  "kind": "Content",
+                  "text": "string"
                 },
                 {
                   "kind": "Content",

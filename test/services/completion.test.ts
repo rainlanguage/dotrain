@@ -7,10 +7,11 @@ import {
     rainlang,
     MetaStore, 
     TextDocument,
+    RainDocument, 
     CompletionItem,
     CompletionItemKind, 
     LanguageServiceParams, 
-    getRainLanguageServices, 
+    getRainLanguageServices,
 } from "../../src";
 
 
@@ -136,6 +137,57 @@ describe("LSP Code Completion Language Service Tests", async function () {
                 label: "counterparty-address",
                 kind: CompletionItemKind.Function
             }],
+            { metaStore: store }
+        );
+    });
+    it("should include root namespaces items in suggestions", async () => {
+        const _expression = rainlang`@${opMetaHash}
+#row
+1
+
+#main
+_: .`;
+        const _dotrain = await RainDocument.create(_expression, store);
+        const _ns = _dotrain.namespace;
+        await testCompletion(
+            _expression,  
+            Position.create(5, 4),
+            Object.entries(_ns).map(v => {
+                return {
+                    label: v[0],
+                    kind: !("Element" in v[1]) 
+                        ? CompletionItemKind.Field 
+                        : "content" in v[1].Element 
+                            ? CompletionItemKind.Class 
+                            : CompletionItemKind.Function
+                };
+            }).filter(v => v.label !== "Words"),
+            { metaStore: store }
+        );
+    });
+
+    it("should include correct namespaces items in suggestions", async () => {
+        const _expression = rainlang`@${opMetaHash}
+#row
+1
+
+#main
+_: .r`;
+        const _dotrain = await RainDocument.create(_expression, store);
+        const _ns = _dotrain.namespace;
+        await testCompletion(
+            _expression,  
+            Position.create(5, 5),
+            Object.entries(_ns).map(v => {
+                return {
+                    label: v[0],
+                    kind: !("Element" in v[1]) 
+                        ? CompletionItemKind.Field 
+                        : "content" in v[1].Element 
+                            ? CompletionItemKind.Class 
+                            : CompletionItemKind.Function
+                };
+            }).filter(v => v.label !== "Words").filter(v => v.label.startsWith("r")),
             { metaStore: store }
         );
     });

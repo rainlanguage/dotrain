@@ -32,7 +32,7 @@ function findNamespaceMach(
         }
         else return undefined;
     }
-    let _result = Object.entries(_ns).filter(v => /^[EIH]/.test(v[0]) );
+    let _result = Object.entries(_ns).filter(v => !/^[EIHW]/.test(v[0]) );
     if (_last?.[0]) _result = _result.filter(v => v[0].startsWith(_last[0]));
     return _result as [string, (Namespace | NamespaceNode)][];
 }
@@ -72,6 +72,7 @@ export async function getRainlangCompletion(
     position: Position,
     setting?: LanguageServiceParams 
 ): Promise<CompletionItem[] | null> {
+    const _triggers = /[a-zA-Z0-9-.]/;
     let _documentionType: MarkupKind = "plaintext";
     let _rd: RainDocument;
     let _td: TextDocument;
@@ -92,18 +93,6 @@ export async function getRainlangCompletion(
         ?.documentationFormat;
     if (format && format[0]) _documentionType = format[0];
 
-    const _triggers = /[a-zA-Z0-9-.]/;
-    // const _prefixText = _td.getText(
-    //     Range.create(Position.create(position.line, 0), position)
-    // );
-    // let _prefix = "";
-    // for (let i = 0; i < _prefixText.length; i++) {
-    //     if (_regexp.test(_prefixText[_prefixText.length - i - 1])) {
-    //         _prefix = _prefixText[_prefixText.length - i - 1] + _prefix;
-    //     }
-    //     else break;
-    // }
-
     try {
         if (
             !_triggers.test(_td.getText(
@@ -123,7 +112,7 @@ export async function getRainlangCompletion(
                 }
                 else break;
             }
-            if (!_prefix || /^\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*\.?$/.test(_prefix)) {
+            if (/^(\.?[a-z][0-9a-z-]*)*\.?$/.test(_prefix)) {
                 const _offset = _td.offsetAt(position);
                 if (_prefix.includes(".")) {
                     const _match = findNamespaceMach(_prefix, _rd.namespace);

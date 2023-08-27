@@ -120,7 +120,7 @@ export class RainDocument {
      * @returns A new RainDocument instance
      */
     public static async create(
-        text: TextDocument, 
+        text: string, 
         metaStore?: MetaStore, 
         uri?: string, 
         version?: number

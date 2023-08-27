@@ -170,14 +170,14 @@ Creates a new RainDocument object instance from a text string
 <b>Signature:</b>
 
 ```typescript
-static create(text: TextDocument, metaStore?: MetaStore, uri?: string, version?: number): Promise<RainDocument>;
+static create(text: string, metaStore?: MetaStore, uri?: string, version?: number): Promise<RainDocument>;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  text | `TextDocument` | The text string |
+|  text | `string` | The text string |
 |  metaStore | [MetaStore](./metastore.md) | (optional) The initial MetaStore object |
 |  uri | `string` | (optional) The URI of the text, URI is the unique identifier of a TextDocument |
 |  version | `number` | (optional) The version of the text |

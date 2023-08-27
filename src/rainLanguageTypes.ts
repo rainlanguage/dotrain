@@ -38,7 +38,7 @@ export const HEX_PATTERN = /^0x[a-fA-F0-9]+$/;
 /**
  * @public RainDocument Namespace pattern
  */
-export const NAMESPACE_PATTERN = /^\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$/;
+export const NAMESPACE_PATTERN = /^(\.?[a-z][0-9a-z-]*)*\.?$/;
 
 /**
  * @public the default elided binding msg
