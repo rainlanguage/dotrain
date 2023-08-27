@@ -11,7 +11,7 @@ export * from "vscode-languageserver-types";
 export { TextDocument, TextDocumentContentChangeEvent };
 
 /**
- * @public Illigal character pattern 
+ * @public Illegal character pattern 
  */
 export const ILLEGAL_CHAR = /[^ -~\s]+/;
 

@@ -25,7 +25,7 @@ yarn add @rainprotocol/rainlang
 
 
 ### **Language Services**
-Rain Language Services provide validation of a Rain docuemtn and services like completion, hover, etc.
+Rain Language Services provide validation of a Rain document and services like completion, hover, etc.
 ```typescript
 // importing
 import { getRainLanguageServices } from "@rainprotocol/rainlang";

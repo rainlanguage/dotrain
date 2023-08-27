@@ -38,7 +38,7 @@ export async function dotraind(
     //     let counter = 0;
     //     const _expressions: string[] = [];
 
-    //     // extract individual expression (sources expressions) that are seperated by semi
+    //     // extract individual expression (sources expressions) that are separated by semi
     //     while (_text.length) {
     //         const _index = _text.search(/;/i);
     //         if (_index > -1) {
@@ -107,7 +107,7 @@ export async function dotraind(
     }
 
     /**
-     * Method deconstruct operand to seperated arguments
+     * Method deconstruct operand to separated arguments
      */
     function deconstructByBits(value: number, args: {
         bits: [number, number], 
