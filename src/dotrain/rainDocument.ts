@@ -1087,7 +1087,11 @@ export class RainDocument {
                             content,
                             contentPosition,
                             position,
-                            problems: [],
+                            problems: [{
+                                msg: _msg,
+                                position: namePosition,
+                                code: ErrorCode.ElidedBinding
+                            }],
                             dependencies: [],
                             elided
                         }
