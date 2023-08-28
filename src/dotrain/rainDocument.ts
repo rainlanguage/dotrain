@@ -283,20 +283,20 @@ export class RainDocument {
      */
     public async parse() {
         if (/[^\s]/.test(this.textDocument.getText())) {
-            // try { 
-            await this._parse(); 
-            // }
-            // catch (runtimeError) {
-            //     if (runtimeError instanceof Error) this.runtimeError = runtimeError;
-            //     else this.runtimeError = new Error(runtimeError as string);
-            //     this.problems.push({
-            //         msg: `Runtime Error: ${
-            //             this.runtimeError.message
-            //         }`,
-            //         position: [0, -1],
-            //         code: ErrorCode.RuntimeError
-            //     });
-            // }
+            try { 
+                await this._parse(); 
+            }
+            catch (runtimeError) {
+                if (runtimeError instanceof Error) this.runtimeError = runtimeError;
+                else this.runtimeError = new Error(runtimeError as string);
+                this.problems.push({
+                    msg: `Runtime Error: ${
+                        this.runtimeError.message
+                    }`,
+                    position: [0, -1],
+                    code: ErrorCode.RuntimeError
+                });
+            }
         }
         else {
             this.opmeta          = [];
