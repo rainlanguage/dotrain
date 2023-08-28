@@ -1504,3 +1504,15 @@ export class RainDocument {
         }
     }
 }
+
+// const x = `@ abcd 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
+// @ efg 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c 'calling-context bn
+
+// #row
+// 1
+
+// #main
+// _: add(1 2 sub(1 2)),
+// _: mul(3 4 efg.bn<'row>());`;
+
+// RainDocument.create(x).then(v => console.log(v.getAllProblems())).catch(v => console.log(v));

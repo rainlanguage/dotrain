@@ -674,6 +674,20 @@ export class Rainlang {
                                             code: ErrorCode.ElidedBinding
                                         });
                                     }
+                                    if ("constant" in this.namespaces[_quote].Element) {
+                                        this.problems.push({
+                                            msg: `invalid quote: ${_quote}, cannot quote constants`,
+                                            position: v[1],
+                                            code: ErrorCode.InvalidQuote
+                                        });
+                                    }
+                                    if ((this.namespaces[_quote].Element as Binding).problems.find(
+                                        v => v.code === ErrorCode.CircularDependency
+                                    )) this.problems.push({
+                                        msg: "quoted binding has circular dependency",
+                                        position: v[1],
+                                        code: ErrorCode.CircularDependency
+                                    });
                                 }
                                 else this.problems.push({
                                     msg: `invalid quote: ${_quote}, can only quote bindings`,
