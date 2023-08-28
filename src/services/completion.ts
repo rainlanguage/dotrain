@@ -1,19 +1,17 @@
-// import { OpMeta } from "@rainprotocol/meta";
+import { exclusiveParse } from "../utils";
 import { RainDocument } from "../dotrain/rainDocument";
 import { 
     Range, 
     Position,
+    Namespace,
     MarkupKind,  
     TextDocument, 
+    WORD_PATTERN, 
+    NamespaceNode,
     CompletionItem, 
     CompletionItemKind, 
     LanguageServiceParams, 
-    // NAMESPACE_PATTERN,
-    Namespace,
-    NamespaceNode,
-    WORD_PATTERN
 } from "../rainLanguageTypes";
-import { exclusiveParse } from "../utils";
 
 
 function findNamespaceMach(
@@ -33,7 +31,7 @@ function findNamespaceMach(
         else return undefined;
     }
     let _result = Object.entries(_ns).filter(v => !/^[EIHW]/.test(v[0]) );
-    if (_last?.[0]) _result = _result.filter(v => v[0].startsWith(_last[0]));
+    if (_last?.[0]) _result = _result.filter(v => v[0].includes(_last[0]));
     return _result as [string, (Namespace | NamespaceNode)][];
 }
 
@@ -205,8 +203,8 @@ export async function getRainlangCompletion(
                 }
                 else {
                     const _result = _rd.getOpMeta().filter(
-                        v => v.name.startsWith(_prefix) || 
-                        v.aliases?.find(e => e.startsWith(_prefix))
+                        v => v.name.includes(_prefix) || 
+                        v.aliases?.find(e => e.includes(_prefix))
                     ).flatMap(v => {
                         const _following = v.operand === 0 
                             ? "()" 
@@ -214,9 +212,9 @@ export async function getRainlangCompletion(
                                 ? "<>()" 
                                 : "()";
                         const _names: string[] = [];
-                        if (v.name.startsWith(_prefix)) _names.push(v.name);
+                        if (v.name.includes(_prefix)) _names.push(v.name);
                         if (v.aliases) v.aliases.forEach(e => {
-                            if (e.startsWith(_prefix)) _names.push(e);
+                            if (e.includes(_prefix)) _names.push(e);
                         });
                         return _names.map(e => {
                             return {
@@ -236,7 +234,7 @@ export async function getRainlangCompletion(
                         });
                     });
                     Object.keys(_rd.constants).filter(
-                        v => v.startsWith(_prefix)
+                        v => v.includes(_prefix)
                     ).forEach(v => {
                         _result.unshift({
                             label: v,
@@ -253,7 +251,7 @@ export async function getRainlangCompletion(
                         });
                     });
                     Object.entries(_rd.namespace).filter(
-                        v => v[0].startsWith(_prefix)
+                        v => v[0].includes(_prefix)
                     ).forEach(v => {
                         if (!("Element" in v[1])) _result.unshift({
                             label: v[0],
@@ -350,7 +348,7 @@ export async function getRainlangCompletion(
                         );
                         if (_currentSource) _currentSource.lines
                             .flatMap(v => v.aliases)
-                            .filter(v => v.name.startsWith(_prefix))
+                            .filter(v => v.name.includes(_prefix))
                             .forEach(v => {
                                 let _text = "";
                                 const _pos = _currentSource.lines

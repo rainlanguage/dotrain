@@ -88,7 +88,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
         await testCompletion(
             rainlang`@${opMetaHash} #exp _: ad`,  
             Position.create(0, 78),
-            AllOpcodeCompletions.filter(v => v.label.startsWith("ad")),
+            AllOpcodeCompletions.filter(v => v.label.includes("ad")),
             { metaStore: store }
         );
     });
@@ -106,7 +106,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
         await testCompletion(
             rainlang`@${opMetaHash} #exp _: add(1 2)`,  
             Position.create(0, 79),
-            AllOpcodeCompletions.filter(v => v.label.startsWith("add")),
+            AllOpcodeCompletions.filter(v => v.label.includes("add")),
             { metaStore: store }
         );
     });
@@ -114,14 +114,14 @@ describe("LSP Code Completion Language Service Tests", async function () {
     it("should include lhs alias in suggestions", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
         await testCompletion(
-            rainlang`@${opMetaHash} #expn name: n`,  
+            rainlang`@${opMetaHash} #expr name: n`,  
             Position.create(0, 81),
             [
                 {
                     label: "name",
                     kind: CompletionItemKind.Variable
                 },
-                ..._allCompletions.filter(v => v.label.startsWith("n"))
+                ..._allCompletions.filter(v => v.label.includes("n"))
             ],
             { metaStore: store }
         );
@@ -187,7 +187,7 @@ _: .r`;
                             ? CompletionItemKind.Class 
                             : CompletionItemKind.Function
                 };
-            }).filter(v => v.label !== "Words").filter(v => v.label.startsWith("r")),
+            }).filter(v => v.label !== "Words").filter(v => v.label.includes("r")),
             { metaStore: store }
         );
     });
