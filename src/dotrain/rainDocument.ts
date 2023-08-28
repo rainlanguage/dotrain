@@ -930,7 +930,6 @@ export class RainDocument {
                             });
                         }
                         else {
-                            console.log(_cfg);
                             if (_cfg) for (let j = 0; j < _cfg.length; j++) {
                                 const _s = _cfg[j];
                                 if (_s[1][0] === "!") {
