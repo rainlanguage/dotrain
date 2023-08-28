@@ -215,7 +215,7 @@ export class RainDocument {
      * @public Get all problems of this RainDocument instance
      */
     public getAllProblems(): Problem[] {
-        return [...this.getProblems(), ...this.getExpProblems()];
+        return [...this.getProblems(), ...this.getBindingsProblems()];
     }
 
     // /**
@@ -245,21 +245,21 @@ export class RainDocument {
     /**
      * @public Get the expression problems of this RainDocument instance
      */
-    public getExpProblems(): Problem[] {
+    public getBindingsProblems(): Problem[] {
         return deepCopy(
-            this.bindings
-                .map(v => v.exp?.getProblems().map(e => {
-                    return {
-                        code: e.code,
-                        msg: e.msg,
-                        position: [
-                            e.position[0] + v.contentPosition[0],
-                            e.position[1] + v.contentPosition[0]
-                        ]
-                    } as Problem;
-                }))
-                .filter(v => v !== undefined)
-                .flat() as Problem[]
+            this.bindings.flatMap(v => v.problems)
+            // .map(v => v.problems.map(e => {
+            //     return {
+            //         code: e.code,
+            //         msg: e.msg,
+            //         position: [
+            //             e.position[0] + v.contentPosition[0],
+            //             e.position[1] + v.contentPosition[0]
+            //         ]
+            //     } as Problem;
+            // }))
+            // .filter(v => v !== undefined)
+            // .flat() as Problem[]
         );
     }
 
@@ -1183,7 +1183,17 @@ export class RainDocument {
                             })
                         }
                     );
-                    v.problems.push(...(v.exp as any).problems);
+                    // v.problems.push(...(v.exp as any).problems);
+                    v.problems.push(...((v.exp as any).problems as Problem[]).map(e => {
+                        return {
+                            msg: e.msg,
+                            position: [
+                                e.position[0] + v.contentPosition[0],
+                                e.position[1] + v.contentPosition[0]
+                            ],
+                            code: e.code,
+                        } as Problem;
+                    }));
                 }
             });
             // for (let i = 0; i < this.bindings.length; i++) {
