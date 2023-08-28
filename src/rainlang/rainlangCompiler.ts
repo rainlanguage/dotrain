@@ -153,7 +153,9 @@ export async function rainlangc(
             else {
                 const _deepSrc = _compile(_node.parameters, aliases);
                 _src.push(_deepSrc!);
-                const _index = _opmeta.findIndex(v => v.name === _node.opcode.name);
+                const _index = _opmeta.findIndex(
+                    v => v.name === _node.opcode.name || v.aliases?.includes(_node.opcode.name)
+                );
                 _src.push(op(_index, _node.operand));
             }
         }

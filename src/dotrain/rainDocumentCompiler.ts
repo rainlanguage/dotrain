@@ -371,6 +371,22 @@ export async function dotrainc(
                         //     );
                         // }
                     }
+                    else {
+                        if (_node.opcode.name.includes(".")) {
+                            const _name = _node.opcode.name.slice(
+                                -(_node.opcode.name.lastIndexOf(".") - 1)
+                            );
+                            const _op = _opmeta.find(
+                                v => v.name === _name || v.aliases?.includes(_name)
+                            )?.name;
+                            if (_op) sourcemapGenerator.update(
+                                _node.opcode.position[0],
+                                _node.opcode.position[1] + 1,
+                                _op
+                            );
+                            else throw "cannot find a match for specified opcode: " + _node.opcode.name;
+                        }
+                    }
                     if (_quotes && _quotes.length) {
                         if (!depsIndexes.length) throw "cannot resolve dependecies";
                         for (let j = 0; j < _quotes.length; j++) {
@@ -498,6 +514,3 @@ export async function dotrainc(
         return Promise.reject(err);
     }
 }
-
-// dotrainc(`
-//  #exp _:;`, ["exp"]).then(v => console.log(v)).catch(v => console.log(v));
