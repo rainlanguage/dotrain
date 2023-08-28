@@ -283,20 +283,20 @@ export class RainDocument {
      */
     public async parse() {
         if (/[^\s]/.test(this.textDocument.getText())) {
-            try { 
-                await this._parse(); 
-            }
-            catch (runtimeError) {
-                if (runtimeError instanceof Error) this.runtimeError = runtimeError;
-                else this.runtimeError = new Error(runtimeError as string);
-                this.problems.push({
-                    msg: `Runtime Error: ${
-                        this.runtimeError.message
-                    }`,
-                    position: [0, -1],
-                    code: ErrorCode.RuntimeError
-                });
-            }
+            // try { 
+            await this._parse(); 
+            // }
+            // catch (runtimeError) {
+            //     if (runtimeError instanceof Error) this.runtimeError = runtimeError;
+            //     else this.runtimeError = new Error(runtimeError as string);
+            //     this.problems.push({
+            //         msg: `Runtime Error: ${
+            //             this.runtimeError.message
+            //         }`,
+            //         position: [0, -1],
+            //         code: ErrorCode.RuntimeError
+            //     });
+            // }
         }
         else {
             this.opmeta          = [];
@@ -930,8 +930,9 @@ export class RainDocument {
                             });
                         }
                         else {
-                            if (_cfg) for (let j = 0; j < _cfg.length; i++) {
-                                const _s = _cfg[i];
+                            console.log(_cfg);
+                            if (_cfg) for (let j = 0; j < _cfg.length; j++) {
+                                const _s = _cfg[j];
                                 if (_s[1][0] === "!") {
                                     if (_s[0][0] === ".") {
                                         if (_ns["Words"]) {
@@ -1504,4 +1505,3 @@ export class RainDocument {
         }
     }
 }
-
