@@ -374,7 +374,7 @@ export async function dotrainc(
                     else {
                         if (_node.opcode.name.includes(".")) {
                             const _name = _node.opcode.name.slice(
-                                -(_node.opcode.name.lastIndexOf(".") - 1)
+                                _node.opcode.name.lastIndexOf(".") + 1
                             );
                             const _op = _opmeta.find(
                                 v => v.name === _name || v.aliases?.includes(_name)
@@ -514,3 +514,15 @@ export async function dotrainc(
         return Promise.reject(err);
     }
 }
+
+// const x = `@ opmeta 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
+// @ contmeta 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c 'calling-context new-na
+
+// #row
+// 1
+
+// #main
+// _: add(1 2 sub(1 2)),
+// _: mul(3 4 .opmeta.add(1 2) contmeta.new-na<1>());`;
+
+// dotrainc(x, ["main"]).then(v => console.log(v)).catch(v => console.log(v));
