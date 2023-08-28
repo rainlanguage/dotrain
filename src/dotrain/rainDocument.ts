@@ -20,7 +20,7 @@ import {
     WORD_PATTERN,
     PositionOffset, 
     NUMERIC_PATTERN, 
-    DEFAULT_ELISION 
+    DEFAULT_ELISION, 
 } from "../rainLanguageTypes";
 import { 
     Binding, 
@@ -455,7 +455,7 @@ export class RainDocument {
 
         if (_result.hash && this.imports.find(v => v.hash === _result.hash)) _result.problems.push({
             msg: "duplicate import",
-            position: _result.hash,
+            position: _result.hashPosition,
             code: ErrorCode.DuplicateImport
         });
         else if (_isValid) {
@@ -930,6 +930,7 @@ export class RainDocument {
                             });
                         }
                         else {
+                            // console.log(_cfg);
                             if (_cfg) for (let j = 0; j < _cfg.length; j++) {
                                 const _s = _cfg[j];
                                 if (_s[1][0] === "!") {
@@ -1519,14 +1520,16 @@ export class RainDocument {
     }
 }
 
-// const x = `@ abcd 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
-// @ efg 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c 'calling-context bn
-
-// #row
-// 1
-
+// const x = `@ opmeta 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f add 8e10
+// @ contmeta 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c calling-context ! calculations 67 base !
+// #x ! lksdfks
+// slkfjsd
+// lksdjf
+// lksjf
+// @ opmeta 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
 // #main
 // _: add(1 2 sub(1 2)),
-// _: mul(3 4 efg.bn<'row>());`;
+// _: mul(3 4);`;
 
 // RainDocument.create(x).then(v => console.log(v.getAllProblems())).catch(v => console.log(v));
+// getRainLanguageServices({clientCapabilities: ClientCapabilities.ALL}).doValidation(TextDocument.create("lk", "rainlang", 1, x)).then(v => console.log(v)).catch(v => console.log(v));
