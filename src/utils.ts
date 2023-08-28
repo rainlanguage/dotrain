@@ -1,4 +1,3 @@
-import { isMap } from "util/types";
 import stringMath from "string-math";
 import { EncodedMetaType, MetaSequence } from "./dotrain/metaStore";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
@@ -784,7 +783,7 @@ export function getEncodedMetaType(metaBytes: string): EncodedMetaType {
             if (
                 Array.isArray(_encoded)
                 && _encoded.length > 0
-                && _encoded.every(v => isMap(v)
+                && _encoded.every(v => v.toString() === "[object Map]"
                     && isBytesLike(v.get(0))
                     && isMagicNumber(v.get(1))
                     && v.get(2) === "application/json"
@@ -800,7 +799,7 @@ export function getEncodedMetaType(metaBytes: string): EncodedMetaType {
             if (
                 Array.isArray(_encoded)
                 && _encoded.length === 1
-                && _encoded.every(v => isMap(v)
+                && _encoded.every(v => v.toString() === "[object Map]"
                     && isBytesLike(v.get(0))
                     && isMagicNumber(v.get(1))
                     && v.get(2) === "application/json"
