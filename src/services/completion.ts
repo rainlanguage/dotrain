@@ -70,7 +70,7 @@ export async function getRainlangCompletion(
     position: Position,
     setting?: LanguageServiceParams 
 ): Promise<CompletionItem[] | null> {
-    const _triggers = /[a-zA-Z0-9-.]/;
+    const _triggers = /[a-zA-Z0-9-.`]/;
     let _documentionType: MarkupKind = "plaintext";
     let _rd: RainDocument;
     let _td: TextDocument;
@@ -110,7 +110,9 @@ export async function getRainlangCompletion(
                 }
                 else break;
             }
-            if (/^(\.?[a-z][0-9a-z-]*)*\.?$/.test(_prefix)) {
+            const _isQuote = _prefix.startsWith("`");
+            if (_isQuote) _prefix = _prefix.slice(1);
+            if (/^`?(\.?[a-z][0-9a-z-]*)*\.?$/.test(_prefix)) {
                 const _offset = _td.offsetAt(position);
                 if (_prefix.includes(".")) {
                     const _match = findNamespaceMach(_prefix, _rd.namespace);
@@ -198,116 +200,138 @@ export async function getRainlangCompletion(
                             }
                             else return null;
                         }
-                    }).filter(v => v !== null) as CompletionItem[];
+                    }).filter(v => {
+                        if (v !== null) {
+                            if (_isQuote) {
+                                if (v.kind === CompletionItemKind.Class) {
+                                    if (v.detail.includes("expression binding: ")) return true;
+                                    else return false;
+                                }
+                                else if (v.kind === CompletionItemKind.Field) return true;
+                                else return false;
+                            }
+                            else return true;
+                        }
+                        else return false;
+                    }) as CompletionItem[];
                     else return null;
                 }
                 else {
-                    const _result = _rd.opmeta.filter(
-                        v => v.name.includes(_prefix) || 
-                        v.aliases?.find(e => e.includes(_prefix))
-                    ).flatMap(v => {
-                        const _following = v.operand === 0 
-                            ? "()" 
-                            : v.operand.find(i => i.name !== "inputs") 
-                                ? "<>()" 
-                                : "()";
-                        const _names: string[] = [];
-                        if (v.name.includes(_prefix)) _names.push(v.name);
-                        if (v.aliases) v.aliases.forEach(e => {
-                            if (e.includes(_prefix)) _names.push(e);
-                        });
-                        return _names.map(e => {
-                            return {
-                                label: e,
+                    const _result: CompletionItem[] = [];
+                    if (!_isQuote) {
+                        _result.push(..._rd.opmeta.filter(
+                            v => v.name.includes(_prefix) || 
+                            v.aliases?.find(e => e.includes(_prefix))
+                        ).flatMap(v => {
+                            const _following = v.operand === 0 
+                                ? "()" 
+                                : v.operand.find(i => i.name !== "inputs") 
+                                    ? "<>()" 
+                                    : "()";
+                            const _names: string[] = [];
+                            if (v.name.includes(_prefix)) _names.push(v.name);
+                            if (v.aliases) v.aliases.forEach(e => {
+                                if (e.includes(_prefix)) _names.push(e);
+                            });
+                            return _names.map(e => {
+                                return {
+                                    label: e,
+                                    labelDetails: {
+                                        detail: _following,
+                                        description: "opcode"
+                                    },
+                                    kind: CompletionItemKind.Function,
+                                    detail: "opcode: " + e + _following,
+                                    documentation: {
+                                        kind: _documentionType,
+                                        value: v.desc
+                                    },
+                                    insertText: e + _following
+                                } as CompletionItem;
+                            });
+                        }));
+                        Object.keys(_rd.constants).filter(
+                            v => v.includes(_prefix)
+                        ).forEach(v => {
+                            _result.unshift({
+                                label: v,
                                 labelDetails: {
-                                    detail: _following,
-                                    description: "opcode"
+                                    description: "constant alias"
                                 },
-                                kind: CompletionItemKind.Function,
-                                detail: "opcode: " + e + _following,
+                                kind: CompletionItemKind.Constant,
+                                detail: "reserved constant alias: " + v,
                                 documentation: {
                                     kind: _documentionType,
-                                    value: v.desc
+                                    value: `value: ${_rd.constants[v]}`
                                 },
-                                insertText: e + _following
-                            } as CompletionItem;
+                                insertText: v
+                            });
                         });
-                    });
-                    Object.keys(_rd.constants).filter(
-                        v => v.includes(_prefix)
-                    ).forEach(v => {
-                        _result.unshift({
-                            label: v,
-                            labelDetails: {
-                                description: "constant alias"
-                            },
-                            kind: CompletionItemKind.Constant,
-                            detail: "reserved constant alias: " + v,
-                            documentation: {
-                                kind: _documentionType,
-                                value: `value: ${_rd.constants[v]}`
-                            },
-                            insertText: v
-                        });
-                    });
+                    }
                     Object.entries(_rd.namespace).filter(
                         v => v[0].includes(_prefix)
                     ).forEach(v => {
-                        if (!("Element" in v[1])) _result.unshift({
-                            label: v[0],
-                            labelDetails: {
-                                description: "namespace"
-                            },
-                            kind: CompletionItemKind.Field,
-                            detail: `namespace: ${v[0]}`,
-                            insertText: v[0]
-                        });
+                        if (!("Element" in v[1])) {
+                            if (!_isQuote) _result.unshift({
+                                label: v[0],
+                                labelDetails: {
+                                    description: "namespace"
+                                },
+                                kind: CompletionItemKind.Field,
+                                detail: `namespace: ${v[0]}`,
+                                insertText: v[0]
+                            });
+                        }
                         else {
                             if ("column" in v[1].Element) {
-                                const _following = isNaN(v[1].Element.row as number)
-                                    ? "<>()" : "()";
-                                _result.unshift({
-                                    label: v[0],
-                                    labelDetails: {
-                                        detail: _following,
-                                        description: "context alias opcode"
-                                    },
-                                    kind: CompletionItemKind.Function,
-                                    detail: "context alias opcode: " + v[0] + (
-                                        _following === "<>()"
-                                            ? `<>() with column index ${v[1].Element.column}` 
-                                            : `() with column index ${
-                                                v[1].Element.column
-                                            } and row index ${v[1].Element.row}`
-                                    ),
-                                    documentation: {
-                                        kind: _documentionType,
-                                        value: v[1].Element.desc as string,
-                                    },
-                                    insertText: v[0] + _following
-                                });
-                            }
-                            else if ("operand" in v[1].Element) {
-                                if (!_result.find(e => e.label === v[0])) {
-                                    const _following = v[1].Element.operand === 0 
-                                        ? "()" 
-                                        : (v[1].Element.operand as any).find(
-                                            (i: any) => i.name !== "inputs"
-                                        ) ? "<>()" : "()";
+                                if (!_isQuote) {
+                                    const _following = isNaN(v[1].Element.row as number)
+                                        ? "<>()" : "()";
                                     _result.unshift({
                                         label: v[0],
                                         labelDetails: {
                                             detail: _following,
-                                            description: "opcode"
+                                            description: "context alias opcode"
                                         },
                                         kind: CompletionItemKind.Function,
-                                        detail: "opcode: " + v[0] + _following,
+                                        detail: "context alias opcode: " + v[0] + (
+                                            _following === "<>()"
+                                                ? `<>() with column index ${v[1].Element.column}` 
+                                                : `() with column index ${
+                                                    v[1].Element.column
+                                                } and row index ${v[1].Element.row}`
+                                        ),
                                         documentation: {
                                             kind: _documentionType,
-                                            value: v[1].Element.desc as string
+                                            value: v[1].Element.desc as string,
                                         },
                                         insertText: v[0] + _following
                                     });
+                                }
+                            }
+                            else if ("operand" in v[1].Element) {
+                                if (!_isQuote) {
+                                    if (!_result.find(e => e.label === v[0])) {
+                                        const _following = v[1].Element.operand === 0 
+                                            ? "()" 
+                                            : (v[1].Element.operand as any).find(
+                                                (i: any) => i.name !== "inputs"
+                                            ) ? "<>()" : "()";
+                                        _result.unshift({
+                                            label: v[0],
+                                            labelDetails: {
+                                                detail: _following,
+                                                description: "opcode"
+                                            },
+                                            kind: CompletionItemKind.Function,
+                                            detail: "opcode: " + v[0] + _following,
+                                            documentation: {
+                                                kind: _documentionType,
+                                                value: v[1].Element.desc as string
+                                            },
+                                            insertText: v[0] + _following
+                                        });
+                                    }
                                 }
                             }
                             else if ("content" in v[1].Element) {
@@ -322,7 +346,7 @@ export async function getRainlangCompletion(
                                         ].join("\n") 
                                         : v[1].Element.content
                                     ];
-                                _result.unshift({
+                                if (!_isQuote || _t[0] === "expression") _result.unshift({
                                     label: v[0],
                                     labelDetails: {
                                         description: "binding"
@@ -338,54 +362,59 @@ export async function getRainlangCompletion(
                             }
                         }
                     });
-                    const _currentExp = _rd.bindings.find(
-                        v => v.contentPosition[0] <= _offset && v.contentPosition[1] + 1 >= _offset
-                    );
-                    if (_currentExp) {
-                        const _currentSource = _currentExp.exp?.ast.find(v => 
-                            v.position[0] + _currentExp.contentPosition[0] <= _offset &&
-                            v.position[1] + _currentExp.contentPosition[0]+ 1 >= _offset
+                    if (!_isQuote) {
+                        const _currentExp = _rd.bindings.find(
+                            v => v.contentPosition[0] <= _offset && 
+                            v.contentPosition[1] + 1 >= _offset
                         );
-                        if (_currentSource) _currentSource.lines
-                            .flatMap(v => v.aliases)
-                            .filter(v => v.name.includes(_prefix))
-                            .forEach(v => {
-                                let _text = "";
-                                const _pos = _currentSource.lines
-                                    .flatMap(e => e.nodes)
-                                    .find(e => {
-                                        if (e.lhsAlias?.find(i => i.name === v.name)) return true;
-                                        else return false;
-                                    })?.position;
-                                if (_pos) _text = `${
-                                    _rd!.textDocument.getText(
-                                        Range.create(
-                                            _td.positionAt(_pos[0]),
-                                            _td.positionAt(_pos[1] + 1)
+                        if (_currentExp) {
+                            const _currentSource = _currentExp.exp?.ast.find(v => 
+                                v.position[0] + _currentExp.contentPosition[0] <= _offset &&
+                                v.position[1] + _currentExp.contentPosition[0]+ 1 >= _offset
+                            );
+                            if (_currentSource) _currentSource.lines
+                                .flatMap(v => v.aliases)
+                                .filter(v => v.name.includes(_prefix))
+                                .forEach(v => {
+                                    let _text = "";
+                                    const _pos = _currentSource.lines
+                                        .flatMap(e => e.nodes)
+                                        .find(e => {
+                                            if (e.lhsAlias?.find(
+                                                i => i.name === v.name)
+                                            ) return true;
+                                            else return false;
+                                        })?.position;
+                                    if (_pos) _text = `${
+                                        _rd!.textDocument.getText(
+                                            Range.create(
+                                                _td.positionAt(_pos[0]),
+                                                _td.positionAt(_pos[1] + 1)
+                                            )
                                         )
-                                    )
-                                }`;
-                                _result.unshift({
-                                    label: v.name,
-                                    labelDetails: {
-                                        description: "stack alias"
-                                    },
-                                    kind: CompletionItemKind.Variable,
-                                    detail: "stack alias: " + v.name,
-                                    documentation: {
-                                        kind: _documentionType,
-                                        value: _documentionType === "markdown" 
-                                            ? [
-                                                "stack alias for:",
-                                                "```rainlang",
-                                                _text,
-                                                "```"
-                                            ].join("\n")
-                                            : `stack alias for: ${_text}`
-                                    },
-                                    insertText: v.name
+                                    }`;
+                                    _result.unshift({
+                                        label: v.name,
+                                        labelDetails: {
+                                            description: "stack alias"
+                                        },
+                                        kind: CompletionItemKind.Variable,
+                                        detail: "stack alias: " + v.name,
+                                        documentation: {
+                                            kind: _documentionType,
+                                            value: _documentionType === "markdown" 
+                                                ? [
+                                                    "stack alias for:",
+                                                    "```rainlang",
+                                                    _text,
+                                                    "```"
+                                                ].join("\n")
+                                                : `stack alias for: ${_text}`
+                                        },
+                                        insertText: v.name
+                                    });
                                 });
-                            });
+                        }
                     }
                     return _result;
                 }
