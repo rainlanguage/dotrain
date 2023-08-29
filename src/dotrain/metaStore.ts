@@ -1,4 +1,4 @@
-import { isBytesLike, deepCopy, getEncodedMetaType } from "../utils";
+import { isBytesLike, getEncodedMetaType } from "../utils";
 import { RAIN_SUBGRAPHS, searchMeta, MAGIC_NUMBERS, decodeRainMetaDocument, keccak256, cborDecode } from "@rainprotocol/meta";
 
 
@@ -145,7 +145,7 @@ export class MetaStore {
      * @public Get the whole meta cache
      */
     public getCache(): { [hash: string]: MetaRecord | undefined | null } {
-        return deepCopy(this.cache);
+        return this.cache;
     }
 
     /**

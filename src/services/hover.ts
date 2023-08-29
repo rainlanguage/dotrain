@@ -198,7 +198,7 @@ export async function getRainlangHover(
         return null;
     };
     try {
-        const _hash = _rd.getImports().find(
+        const _hash = _rd.imports.find(
             v => v.position[0] <= _targetOffset && v.position[1] >= _targetOffset
         );
         // const _index = _rd.getImports().findIndex(
@@ -233,7 +233,7 @@ export async function getRainlangHover(
             if (_currentExp) {
                 _targetOffset -= _currentExp.contentPosition[0];
                 return search(
-                    _currentExp?.exp?.getAst().find(v => 
+                    _currentExp?.exp?.ast.find(v => 
                         v.position[0] <= _targetOffset &&
                         v.position[1] >= _targetOffset
                     )?.lines.map(v => v.nodes).flat() ?? [],

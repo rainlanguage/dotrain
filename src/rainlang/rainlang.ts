@@ -46,14 +46,14 @@ export class Rainlang {
         "max-uint-256"  : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     };
 
-    private text: string;
-    private ast: RainlangAST = [];
-    private problems: Problem[] = [];
-    private comments: Comment[] = [];
-    private opmeta: OpMeta[] = [];
-    // private expNames: string[] = [];
-    private namespaces: Namespace = {};
-    private binding?: Binding;
+    public text: string;
+    public ast: RainlangAST = [];
+    public problems: Problem[] = [];
+    public comments: Comment[] = [];
+    public opmeta: OpMeta[] = [];
+    // public expNames: string[] = [];
+    public namespaces: Namespace = {};
+    public binding?: Binding;
     private state: {
         nodes: ASTNode[];
         aliases: AliasASTNode[];
@@ -180,47 +180,47 @@ export class Rainlang {
         this.parse();
     }
 
-    /**
-     * @public Get the current text of this Rainlang instance
-     */
-    public getText(): string {
-        return this.text;
-    }
+    // /**
+    //  * @public Get the current text of this Rainlang instance
+    //  */
+    // public getText(): string {
+    //     return this.text;
+    // }
 
-    /**
-     * @public Get the current text of this Rainlang instance
-     */
-    public getOpMeta(): OpMeta[] {
-        return deepCopy(this.opmeta);
-    }
+    // /**
+    //  * @public Get the current text of this Rainlang instance
+    //  */
+    // public getOpMeta(): OpMeta[] {
+    //     return deepCopy(this.opmeta);
+    // }
 
-    /**
-     * @public Get the current problems of this Rainlang instance
-     */
-    public getProblems(): Problem[] {
-        return deepCopy(this.problems);
-    }
+    // /**
+    //  * @public Get the current problems of this Rainlang instance
+    //  */
+    // public getProblems(): Problem[] {
+    //     return this.problems;
+    // }
 
-    /**
-     * @public Get the current comments inside of the text of this Rainlang instance
-     */
-    public getComments(): Comment[] {
-        return deepCopy(this.comments);
-    }
+    // /**
+    //  * @public Get the current comments inside of the text of this Rainlang instance
+    //  */
+    // public getComments(): Comment[] {
+    //     return deepCopy(this.comments);
+    // }
 
     /**
      * @public Get the current runtime error of this Rainlang instance
      */
     public getRuntimeError(): Error | undefined {
-        return deepCopy(this.state.runtimeError);
+        return this.state.runtimeError;
     }
 
-    /**
-     * @public Get AST of this Rainlang instance
-     */
-    public getAst(): RainlangAST {
-        return deepCopy(this.ast);
-    }
+    // /**
+    //  * @public Get AST of this Rainlang instance
+    //  */
+    // public getAst(): RainlangAST {
+    //     return deepCopy(this.ast);
+    // }
 
     /**
      * @internal Method to reset the parser state

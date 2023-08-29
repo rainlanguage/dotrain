@@ -15,7 +15,7 @@ async function testRainlangDecompiler(
         expressionConfig, 
         metaHash,
         metaStore
-    )).getText();
+    )).text;
     // Passing decompiled text to compiler again to check for errors
     try {
         const recompiledExpression = await rainlangc(

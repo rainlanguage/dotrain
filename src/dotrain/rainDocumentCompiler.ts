@@ -79,7 +79,7 @@ export async function dotrainc(
             parent: Namespace;
         }[] = [];
         const _nodeKeys: string[] = [...entrypoints];
-        const _rdProblems = _rainDoc.getProblems();
+        const _rdProblems = _rainDoc.problems;
         if (_rdProblems.length) return Promise.reject(_rdProblems.map(v => {
             return {
                 msg: v.msg,
@@ -87,7 +87,7 @@ export async function dotrainc(
                 code: v.code
             };
         }));
-        const _opmeta = _rainDoc.getOpMeta();
+        const _opmeta = _rainDoc.opmeta;
         for (let i = 0; i < entrypoints.length; i++) {
             if (entrypoints[i].includes(".")) {
                 try {
@@ -330,7 +330,7 @@ export async function dotrainc(
                     
                     const _contextOpcode = _node.isCtx;
                     const _quotes = _node.operandArgs?.args.filter(
-                        v => v.value.match(/^'\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/)
+                        v => v.value.match(/^\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/)
                     );
                     if (_contextOpcode) {
                         sourcemapGenerator.update(
@@ -433,7 +433,7 @@ export async function dotrainc(
             const _b = _nodes[i].child.Element as Binding;
             const _smGenerator = new MagicString(_b.content);
             _buildSourcemap(
-                _b.exp!.getAst().map(v => v.lines.map(e => e.nodes)).flat().flat(), 
+                _b.exp!.ast.map(v => v.lines.map(e => e.nodes)).flat().flat(), 
                 _smGenerator,
                 _depsIndexes[i]
             );
@@ -457,7 +457,7 @@ export async function dotrainc(
             _sourcemaps.map(v => v.generatedText).join("\n"),
             _opmeta
         );
-        const _genRainlangProblems = _generatedRainlang.getProblems();
+        const _genRainlangProblems = _generatedRainlang.problems;
 
         if (_genRainlangProblems.length) {
             const _problems = [];
@@ -516,13 +516,16 @@ export async function dotrainc(
 }
 
 // const x = `@ opmeta 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
-// @ contmeta 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c 'calling-context new-na
+// @0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c
 
 // #row
 // 1
 
 // #main
 // _: add(1 2 sub(1 2)),
-// _: mul(3 4 .opmeta.add(1 2) contmeta.new-na<1>());`;
+// _: mul(3 4 calling-context<'x>() .row infinity);
+
+// #x
+// _: add(1 2);`;
 
 // dotrainc(x, ["main"]).then(v => console.log(v)).catch(v => console.log(v));

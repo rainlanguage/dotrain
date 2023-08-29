@@ -63,9 +63,9 @@ export async function rainlangc(
     }
     else _rainlang = source;
 
-    const _ast = _rainlang.getAst();
-    const _opmeta = _rainlang.getOpMeta();
-    const _problems = _rainlang.getProblems();
+    const _ast = _rainlang.ast;
+    const _opmeta = _rainlang.opmeta;
+    const _problems = _rainlang.problems;
     if (_problems.length) return Promise.reject(_problems);
 
     const _readMemoryIndex = _opmeta.findIndex(v => v.name === "read-memory");

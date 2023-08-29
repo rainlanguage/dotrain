@@ -31,7 +31,7 @@ import {
 } from "../rainLanguageTypes";
 import { 
     OpMeta,
-    deepCopy, 
+    // deepCopy, 
     ContractMeta,
     validateOpMeta,
     metaFromBytes, 
@@ -76,11 +76,12 @@ export class RainDocument {
     public namespace: Namespace = {};
     public imports: Import[] = [];
 
-    private opmeta: OpMeta[] = [];
-    private opmetaPath = "";
+    public opmeta: OpMeta[] = [];
+    public opmetaPath = "";
+    public comments: Comment[] = [];
+    public problems: Problem[] = [];
+
     private importDepth = 0;
-    private comments: Comment[] = [];
-    private problems: Problem[] = [];
 
     /**
      * @public Constructs a new RainDocument instance, should not be used for instantiating, use "creat()" instead
@@ -176,12 +177,12 @@ export class RainDocument {
         return this.textDocument.getText();
     }
 
-    /**
-     * @public Get the current text of this RainDocument instance
-     */
-    public getOpMeta(): OpMeta[] {
-        return deepCopy(this.opmeta);
-    }
+    // /**
+    //  * @public Get the current text of this RainDocument instance
+    //  */
+    // public getOpMeta(): OpMeta[] {
+    //     return deepCopy(this.opmeta);
+    // }
 
     // /**
     //  * @public Get the current text of this RainDocument instance
@@ -215,7 +216,7 @@ export class RainDocument {
      * @public Get all problems of this RainDocument instance
      */
     public getAllProblems(): Problem[] {
-        return [...this.getProblems(), ...this.getBindingsProblems()];
+        return [...this.problems, ...this.getBindingsProblems()];
     }
 
     // /**
@@ -235,47 +236,45 @@ export class RainDocument {
     //     return deepCopy(this.depProblems);
     // }
 
-    /**
-     * @public Get the current problems of this RainDocument instance
-     */
-    public getProblems(): Problem[] {
-        return deepCopy(this.problems);
-    }
+    // /**
+    //  * @public Get the current problems of this RainDocument instance
+    //  */
+    // public getProblems(): Problem[] {
+    //     return this.problems;
+    // }
 
     /**
      * @public Get the expression problems of this RainDocument instance
      */
     public getBindingsProblems(): Problem[] {
-        return deepCopy(
-            this.bindings.flatMap(v => v.problems)
-            // .map(v => v.problems.map(e => {
-            //     return {
-            //         code: e.code,
-            //         msg: e.msg,
-            //         position: [
-            //             e.position[0] + v.contentPosition[0],
-            //             e.position[1] + v.contentPosition[0]
-            //         ]
-            //     } as Problem;
-            // }))
-            // .filter(v => v !== undefined)
-            // .flat() as Problem[]
-        );
+        return this.bindings.flatMap(v => v.problems);
+        // .map(v => v.problems.map(e => {
+        //     return {
+        //         code: e.code,
+        //         msg: e.msg,
+        //         position: [
+        //             e.position[0] + v.contentPosition[0],
+        //             e.position[1] + v.contentPosition[0]
+        //         ]
+        //     } as Problem;
+        // }))
+        // .filter(v => v !== undefined)
+        // .flat() as Problem[]
     }
 
-    /**
-     * @public Get the current comments inside of the text of this RainDocument instance
-     */
-    public getComments(): Comment[] {
-        return deepCopy(this.comments);
-    }
+    // /**
+    //  * @public Get the current comments inside of the text of this RainDocument instance
+    //  */
+    // public getComments(): Comment[] {
+    //     return deepCopy(this.comments);
+    // }
 
-    /**
-     * @public Get the imports of this RainDocument instance
-     */
-    public getImports(): Import[] {
-        return deepCopy(this.imports);
-    }
+    // /**
+    //  * @public Get the imports of this RainDocument instance
+    //  */
+    // public getImports(): Import[] {
+    //     return deepCopy(this.imports);
+    // }
 
     /**
      * @public
@@ -394,16 +393,23 @@ export class RainDocument {
         const _atPos: PositionOffset = [imp[1][0] - 1, imp[1][0] - 1];
         let _isValid = false;
         let _configChunks: ParsedChunk[] = [];
-        const _result: any = {};
-        _result.hash = "";
-        _result.name = ".";
-        // _result.config = [];
-        _result.problems = [];
-        // _result.sequence = null;
-        _result.position = [imp[1][0] - 1, imp[1][1]];
-        // _result.depth = this.importDepth;
-        _result.namePosition = deepCopy(_atPos);
-        _result.hashPosition = deepCopy(_atPos);
+        const _result: Import = {
+            name: ".",
+            hash: "",
+            namePosition: _atPos,
+            hashPosition: _atPos,
+            problems: [],
+            position: [imp[1][0] - 1, imp[1][1]]
+        };
+        // _result.hash = "";
+        // _result.name = ".";
+        // // _result.config = [];
+        // _result.problems = [];
+        // // _result.sequence = null;
+        // _result.position = [imp[1][0] - 1, imp[1][1]];
+        // // _result.depth = this.importDepth;
+        // _result.namePosition = deepCopy(_atPos);
+        // _result.hashPosition = deepCopy(_atPos);
 
         const _chuncks = exclusiveParse(imp[0], /\s+/gd, imp[1][0]);
         if (WORD_PATTERN.test(_chuncks[0][0]) || HASH_PATTERN.test(_chuncks[0][0])) {
@@ -421,7 +427,7 @@ export class RainDocument {
             if (_result.name !== ".") {
                 if (!_chuncks[1]) _result.problems.push({
                     msg: "expected import hash",
-                    position: deepCopy(_atPos),
+                    position: _atPos,
                     code: ErrorCode.ExpectedHash
                 });
                 else {
@@ -449,7 +455,7 @@ export class RainDocument {
         }
         else _result.problems.push({
             msg: "expected a valid name or hash",
-            position: deepCopy(_atPos),
+            position: _atPos,
             code: ErrorCode.InvalidImport
         });
 
@@ -644,7 +650,7 @@ export class RainDocument {
                                 }
                                 else _result.problems.push({
                                     msg: "expected elision syntax",
-                                    position: deepCopy(_atPos),
+                                    position: _atPos,
                                     code: ErrorCode.ExpectedElisionOrRebinding
                                 });
                             }
@@ -671,7 +677,7 @@ export class RainDocument {
                                 }
                                 else _result.problems.push({
                                     msg: "expected rebinding or elision",
-                                    position: deepCopy(_atPos),
+                                    position: _atPos,
                                     code: ErrorCode.ExpectedElisionOrRebinding
                                 });
                             }
@@ -699,7 +705,7 @@ export class RainDocument {
                                     }
                                     else _result.problems.push({
                                         msg: "expected name",
-                                        position: deepCopy(_atPos),
+                                        position: _atPos,
                                         code: ErrorCode.ExpectedName
                                     });
                                 }
@@ -846,7 +852,7 @@ export class RainDocument {
                         let _hasDupKeys = false;
                         let _hasDupWords = false;
                         let _ns: Namespace = {};
-                        const _cfg = deepCopy(_imp.reconfigs);
+                        // const _cfg = _imp.reconfigs;
                         if (_imp.sequence?.opmeta) {
                             if (_imp.sequence.opmeta) {
                                 _ns["Words"] = {
@@ -931,8 +937,8 @@ export class RainDocument {
                         }
                         else {
                             // console.log(_cfg);
-                            if (_cfg) for (let j = 0; j < _cfg.length; j++) {
-                                const _s = _cfg[j];
+                            if (_imp.reconfigs) for (let j = 0; j < _imp.reconfigs.length; j++) {
+                                const _s: [ParsedChunk, ParsedChunk] = _imp.reconfigs[j];
                                 if (_s[1][0] === "!") {
                                     if (_s[0][0] === ".") {
                                         if (_ns["Words"]) {
@@ -1060,17 +1066,17 @@ export class RainDocument {
             }
             if (_invalidId = !name.match(/^[a-z][a-z0-9-]*$/)) this.problems.push({
                 msg: "invalid expression name",
-                position: deepCopy(namePosition),
+                position: namePosition,
                 code: ErrorCode.InvalidBindingId
             });
             if (_dupId = Object.keys(this.namespace).includes(name)) this.problems.push({
                 msg: "duplicate identifier",
-                position: deepCopy(namePosition),
+                position: namePosition,
                 code: ErrorCode.DuplicateIdentifier
             });
             if (!content || content.match(/^\s+$/)) this.problems.push({
                 msg: "invalid empty binding",
-                position: deepCopy(namePosition),
+                position: namePosition,
                 code: ErrorCode.InvalidEmptyBinding
             });
 
@@ -1227,7 +1233,9 @@ export class RainDocument {
      * @public Resolves the expressions dependencies and instantiates RainlangParser for them
      */
     private resolveDependencies() {
-        const _bindings = this.bindings.filter(v => v.exp !== undefined);
+        const _bindings = this.bindings.filter(
+            v => v.constant === undefined && v.elided === undefined
+        );
         let _edges: [string, string][] = [];
         let _nodes = _bindings.map(v => v.name);
         const regexp = /'\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*/g;
@@ -1237,8 +1245,8 @@ export class RainDocument {
             ).map(
                 v => v[0]
             ).forEach(v => {
-                _bindings[i].dependencies.push(v);
-                _edges.push([_nodes[i], v]);
+                _bindings[i].dependencies.push(v.slice(1));
+                _edges.push([_nodes[i], v.slice(1)]);
             });
         }
         // const regexpes = _bindings.map(v => new RegExp(

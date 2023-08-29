@@ -202,7 +202,7 @@ export async function getRainlangCompletion(
                     else return null;
                 }
                 else {
-                    const _result = _rd.getOpMeta().filter(
+                    const _result = _rd.opmeta.filter(
                         v => v.name.includes(_prefix) || 
                         v.aliases?.find(e => e.includes(_prefix))
                     ).flatMap(v => {
@@ -342,7 +342,7 @@ export async function getRainlangCompletion(
                         v => v.contentPosition[0] <= _offset && v.contentPosition[1] + 1 >= _offset
                     );
                     if (_currentExp) {
-                        const _currentSource = _currentExp.exp?.getAst().find(v => 
+                        const _currentSource = _currentExp.exp?.ast.find(v => 
                             v.position[0] + _currentExp.contentPosition[0] <= _offset &&
                             v.position[1] + _currentExp.contentPosition[0]+ 1 >= _offset
                         );
