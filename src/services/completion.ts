@@ -70,7 +70,7 @@ export async function getRainlangCompletion(
     position: Position,
     setting?: LanguageServiceParams 
 ): Promise<CompletionItem[] | null> {
-    const _triggers = /[a-zA-Z0-9-.`]/;
+    const _triggers = /[a-zA-Z0-9-.']/;
     let _documentionType: MarkupKind = "plaintext";
     let _rd: RainDocument;
     let _td: TextDocument;
@@ -110,9 +110,9 @@ export async function getRainlangCompletion(
                 }
                 else break;
             }
-            const _isQuote = _prefix.startsWith("`");
+            const _isQuote = _prefix.startsWith("'");
             if (_isQuote) _prefix = _prefix.slice(1);
-            if (/^`?(\.?[a-z][0-9a-z-]*)*\.?$/.test(_prefix)) {
+            if (/^'?(\.?[a-z][0-9a-z-]*)*\.?$/.test(_prefix)) {
                 const _offset = _td.offsetAt(position);
                 if (_prefix.includes(".")) {
                     const _match = findNamespaceMach(_prefix, _rd.namespace);
