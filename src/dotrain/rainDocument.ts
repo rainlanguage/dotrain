@@ -1094,11 +1094,12 @@ export class RainDocument {
                             content,
                             contentPosition,
                             position,
-                            problems: [{
-                                msg: _msg,
-                                position: namePosition,
-                                code: ErrorCode.ElidedBinding
-                            }],
+                            problems: [],
+                            // [{
+                            //     msg: _msg,
+                            //     position: namePosition,
+                            //     code: ErrorCode.ElidedBinding
+                            // }],
                             dependencies: [],
                             elided
                         }
