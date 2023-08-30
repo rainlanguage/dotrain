@@ -1528,16 +1528,26 @@ export class RainDocument {
     }
 }
 
-// const x = `@ opmeta 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f add 8e10
-// @ contmeta 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c calling-context ! calculations 67 base !
-// #x ! lksdfks
-// slkfjsd
-// lksdjf
-// lksjf
-// @ opmeta 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
+// const x = `@ opmeta 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
+// @ contmeta 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c 
+//   'calling-context new-name 
+//   base !
+
+// /**
+//  * This is test
+//  */
+// #const-value
+// 1
+
+// #elided-elided-fragment
+// ! this is elided, rebind before using
+
 // #main
-// _: add(1 2 sub(1 2)),
-// _: mul(3 4);`;
+// _: add(1 2 opmeta.sub(1 2)),
+// _: mul(3 4 contmeta.new-name<'.main>() infinity .const-value);
+
+// #fn
+// _: .opmeta.add(1 2);`;
 
 // RainDocument.create(x).then(v => console.log(v.getAllProblems())).catch(v => console.log(v));
 // getRainLanguageServices({clientCapabilities: ClientCapabilities.ALL}).doValidation(TextDocument.create("lk", "rainlang", 1, x)).then(v => console.log(v)).catch(v => console.log(v));

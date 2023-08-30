@@ -793,9 +793,9 @@ export class Rainlang {
                         let _hasQuote = false;
                         if (_node.operandArgs?.args) {
                             for (let i = 0; i < _node.operandArgs.args.length; i++) {
-                                if (WORD_PATTERN.test(_node.operandArgs!.args[i].value)) {
-                                    _hasQuote = true;
-                                }
+                                if (!/^[0-9]+$|^0x[a-fA-F0-9]+$/.test(
+                                    _node.operandArgs!.args[i].value
+                                )) _hasQuote = true;
                             }
                         }
                         if (_hasQuote) {
