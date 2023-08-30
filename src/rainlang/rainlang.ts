@@ -1269,7 +1269,7 @@ export class Rainlang {
         }
         if (!("Element" in _result)) {
             if (publishDiagnostics) this.problems.push({
-                msg: `expected to end with a node, "${_names[_names.length - 1]}" is a namespace`,
+                msg: `expected to end with a node, "${_names[_names.length - 1][0]}" is a namespace`,
                 position: [offset, offset + name.length - 1],
                 code: ErrorCode.UnexpectedNamespacePath
             });
