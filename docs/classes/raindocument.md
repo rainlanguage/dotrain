@@ -33,10 +33,14 @@ await myRainDocument.updateText(newText)
 |  Property | Type | Description |
 |  --- | --- | --- |
 |  [bindings](./raindocument.md#bindings-property) | `Binding[]` |  |
+|  [comments](./raindocument.md#comments-property) | `Comment[]` |  |
 |  [constants](./raindocument.md#constants-property) | `Record<string, string>` |  |
 |  [imports](./raindocument.md#imports-property) | `Import[]` |  |
 |  [metaStore](./raindocument.md#metaStore-property) | [MetaStore](./metastore.md) |  |
 |  [namespace](./raindocument.md#namespace-property) | [Namespace](../types/namespace.md) |  |
+|  [opmeta](./raindocument.md#opmeta-property) | `OpMeta[]` |  |
+|  [opmetaPath](./raindocument.md#opmetaPath-property) | `string` |  |
+|  [problems](./raindocument.md#problems-property) | `Problem[]` |  |
 |  [runtimeError](./raindocument.md#runtimeError-property) | `Error \| undefined` |  |
 |  [textDocument](./raindocument.md#textDocument-property) | `TextDocument` |  |
 
@@ -52,11 +56,7 @@ await myRainDocument.updateText(newText)
 |  Method | Description |
 |  --- | --- |
 |  [getAllProblems()](./raindocument.md#getAllProblems-method-1) | Get all problems of this RainDocument instance |
-|  [getComments()](./raindocument.md#getComments-method-1) | Get the current comments inside of the text of this RainDocument instance |
-|  [getExpProblems()](./raindocument.md#getExpProblems-method-1) | Get the expression problems of this RainDocument instance |
-|  [getImports()](./raindocument.md#getImports-method-1) | Get the imports of this RainDocument instance |
-|  [getOpMeta()](./raindocument.md#getOpMeta-method-1) | Get the current text of this RainDocument instance |
-|  [getProblems()](./raindocument.md#getProblems-method-1) | Get the current problems of this RainDocument instance |
+|  [getBindingsProblems()](./raindocument.md#getBindingsProblems-method-1) | Get the expression problems of this RainDocument instance |
 |  [getText()](./raindocument.md#getText-method-1) | Get the current text of this RainDocument instance |
 |  [parse()](./raindocument.md#parse-method-1) | Parses this instance of RainDocument |
 |  [updateText(newText)](./raindocument.md#updateText-method-1) | Updates the TextDocument of this RainDocument instance with new text |
@@ -72,6 +72,16 @@ await myRainDocument.updateText(newText)
 
 ```typescript
 bindings: Binding[];
+```
+
+<a id="comments-property"></a>
+
+### comments
+
+<b>Signature:</b>
+
+```typescript
+comments: Comment[];
 ```
 
 <a id="constants-property"></a>
@@ -112,6 +122,36 @@ metaStore: MetaStore;
 
 ```typescript
 namespace: Namespace;
+```
+
+<a id="opmeta-property"></a>
+
+### opmeta
+
+<b>Signature:</b>
+
+```typescript
+opmeta: OpMeta[];
+```
+
+<a id="opmetaPath-property"></a>
+
+### opmetaPath
+
+<b>Signature:</b>
+
+```typescript
+opmetaPath: string;
+```
+
+<a id="problems-property"></a>
+
+### problems
+
+<b>Signature:</b>
+
+```typescript
+problems: Problem[];
 ```
 
 <a id="runtimeError-property"></a>
@@ -205,76 +245,16 @@ getAllProblems(): Problem[];
 
 `Problem[]`
 
-<a id="getComments-method-1"></a>
+<a id="getBindingsProblems-method-1"></a>
 
-### getComments()
-
-Get the current comments inside of the text of this RainDocument instance
-
-<b>Signature:</b>
-
-```typescript
-getComments(): Comment[];
-```
-<b>Returns:</b>
-
-`Comment[]`
-
-<a id="getExpProblems-method-1"></a>
-
-### getExpProblems()
+### getBindingsProblems()
 
 Get the expression problems of this RainDocument instance
 
 <b>Signature:</b>
 
 ```typescript
-getExpProblems(): Problem[];
-```
-<b>Returns:</b>
-
-`Problem[]`
-
-<a id="getImports-method-1"></a>
-
-### getImports()
-
-Get the imports of this RainDocument instance
-
-<b>Signature:</b>
-
-```typescript
-getImports(): Import[];
-```
-<b>Returns:</b>
-
-`Import[]`
-
-<a id="getOpMeta-method-1"></a>
-
-### getOpMeta()
-
-Get the current text of this RainDocument instance
-
-<b>Signature:</b>
-
-```typescript
-getOpMeta(): OpMeta[];
-```
-<b>Returns:</b>
-
-`OpMeta[]`
-
-<a id="getProblems-method-1"></a>
-
-### getProblems()
-
-Get the current problems of this RainDocument instance
-
-<b>Signature:</b>
-
-```typescript
-getProblems(): Problem[];
+getBindingsProblems(): Problem[];
 ```
 <b>Returns:</b>
 

@@ -35,14 +35,14 @@
 |  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
 |  [fillIn(text, position)](./variables/fillin_1.md) | Fills a poistion in a text with whitespaces by keeping line structure intact |
 |  [fillOut(text, position)](./variables/fillout_1.md) | Fills a text with whitespaces excluding a position by keeping line structure intact |
+|  [getCompletion(document, position, setting)](./variables/getcompletion_1.md) | Provides completion items |
+|  [getCompletion(document, position, setting)](./variables/getcompletion_2.md) | Provides completion items |
+|  [getDiagnostics(document, setting)](./variables/getdiagnostics_1.md) | Provides diagnostics |
+|  [getDiagnostics(document, setting)](./variables/getdiagnostics_2.md) | Provides diagnostics |
 |  [getEncodedMetaType(metaBytes)](./variables/getencodedmetatype_1.md) | Checks if metaBytes are a sequence or content or none |
+|  [getHover(document, position, setting)](./variables/gethover_1.md) | Provides hover items |
+|  [getHover(document, position, setting)](./variables/gethover_2.md) | Provides hover items |
 |  [getLineText(textDocument, line)](./variables/getlinetext_1.md) | Method to get a line from a TextDocument |
-|  [getRainlangCompletion(document, position, setting)](./variables/getrainlangcompletion_1.md) | Provides completion items |
-|  [getRainlangCompletion(document, position, setting)](./variables/getrainlangcompletion_2.md) | Provides completion items |
-|  [getRainlangDiagnostics(document, setting)](./variables/getrainlangdiagnostics_1.md) | Provides diagnostics |
-|  [getRainlangDiagnostics(document, setting)](./variables/getrainlangdiagnostics_2.md) | Provides diagnostics |
-|  [getRainlangHover(document, position, setting)](./variables/getrainlanghover_1.md) | Provides hover items |
-|  [getRainlangHover(document, position, setting)](./variables/getrainlanghover_2.md) | Provides hover items |
 |  [getRainLanguageServices(params)](./variables/getrainlanguageservices_1.md) | Main function to get Rain language services initiated and ready to receive TextDocuments to provide the desired language services |
 |  [getRandomInt(max)](./variables/getrandomint_1.md) | Generates random integer between 0(inclusive) and max(exclusive) |
 |  [hasDuplicate(arr1, arr2)](./variables/hasduplicate_1.md) | Method to check there is a duplicate id in 2 arrays of string |

@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [getRainlangHover](./getrainlanghover_1.md)
+[Home](../index.md) &gt; [getHover](./gethover_1.md)
 
-# Function getRainlangHover()
+# Function getHover()
 
 Provides hover items
 
 <b>Signature:</b>
 
 ```typescript
-function getRainlangHover(document: TextDocument, position: Position, setting?: LanguageServiceParams): Promise<Hover | null>;
+function getHover(document: TextDocument, position: Position, setting?: LanguageServiceParams): Promise<Hover | null>;
 ```
 
 ## Parameters

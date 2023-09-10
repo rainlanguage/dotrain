@@ -109,41 +109,6 @@ export async function rainlangc(
                     );
                     constants.push(_val);
                 }
-                // if (isBigNumberish(_node.value)) {
-                //     const _i = constants.findIndex(v => BigNumber.from(_node.value).eq(v));
-                //     if (_i > -1) _src.push(
-                //         op(_readMemoryIndex, memoryOperand(_i, MemoryType.Constant))
-                //     );
-                //     else {
-                //         _src.push(
-                //             op(
-                //                 _readMemoryIndex,
-                //                 memoryOperand(constants.length, MemoryType.Constant)
-                //             )
-                //         );
-                //         constants.push(_node.value);
-                //     }
-                // }
-                // else if (Object.keys(_rainlang.constants).includes(_node.value)) {
-                //     const _i = constants.findIndex(
-                //         v => BigNumber.from(_rainlang.constants[_node.value]).eq(v)
-                //     );
-                //     if (_i > -1) _src.push(
-                //         op(_readMemoryIndex, memoryOperand(_i, MemoryType.Constant))
-                //     );
-                //     else {
-                //         _src.push(
-                //             op(
-                //                 _readMemoryIndex,
-                //                 memoryOperand(constants.length, MemoryType.Constant)
-                //             )
-                //         );
-                //         constants.push(
-                //             "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-                //         );
-                //     }
-                // }
-                // else throw `cannot resolve ${_node.value}`;
             }
             else if ("name" in _node) {
                 const _i = aliases.findIndex(v => v.name === _node.name);

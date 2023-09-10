@@ -44,7 +44,7 @@ function findNamespaceMach(
  * @returns A promise that resolves with Completion items or null if no completion 
  * items were available for that position
  */
-export async function getRainlangCompletion(
+export async function getCompletion(
     document: TextDocument, 
     position: Position,
     setting?: LanguageServiceParams
@@ -59,13 +59,13 @@ export async function getRainlangCompletion(
   * @returns A promise that resolves with Completion items or null if no completion 
  * items were available for that position
  */
-export async function getRainlangCompletion(
+export async function getCompletion(
     document: RainDocument, 
     position: Position,
     setting?: LanguageServiceParams
 ): Promise<CompletionItem[] | null>
 
-export async function getRainlangCompletion(
+export async function getCompletion(
     document: TextDocument | RainDocument,
     position: Position,
     setting?: LanguageServiceParams 
@@ -77,7 +77,10 @@ export async function getRainlangCompletion(
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.textDocument;
-        if (setting?.metaStore) _rd.metaStore.updateStore(setting.metaStore);
+        if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
+            _rd.metaStore.updateStore(setting.metaStore);
+            await _rd.parse();
+        }
     }
     else {
         _td = document;

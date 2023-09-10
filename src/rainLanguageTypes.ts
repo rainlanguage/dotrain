@@ -476,26 +476,10 @@ export interface Import {
     position: PositionOffset;
     problems: Problem[];
     reconfigs?: [ParsedChunk, ParsedChunk][];
-    // {
-    //     statements: [ParsedChunk, ParsedChunk][];
-    //     // problems: Problem[];
-    // };
     sequence?: {
         opmeta?: OpMeta[];
-        // {
-        //     instance?: OpMeta[];
-        //     problems: Problem[];
-        // }
         ctxmeta?: ContextAlias[];
-        // {
-        //     instance?: ContextAlias[];
-        //     problems: Problem[];
-        // }
         dotrain?: RainDocument;
-        // {
-        //     instance?: RainDocument;
-        //     problems: Problem[];
-        // };
     };
 }
 

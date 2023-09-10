@@ -1,20 +1,20 @@
-[Home](../index.md) &gt; [getRainlangCompletion](./getrainlangcompletion_1.md)
+[Home](../index.md) &gt; [getCompletion](./getcompletion_2.md)
 
-# Function getRainlangCompletion()
+# Function getCompletion()
 
 Provides completion items
 
 <b>Signature:</b>
 
 ```typescript
-function getRainlangCompletion(document: TextDocument, position: Position, setting?: LanguageServiceParams): Promise<CompletionItem[] | null>;
+function getCompletion(document: RainDocument, position: Position, setting?: LanguageServiceParams): Promise<CompletionItem[] | null>;
 ```
 
 ## Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  document | `TextDocument` | The TextDocuemnt |
+|  document | [RainDocument](../classes/raindocument.md) | The RainDocument object instance |
 |  position | `Position` | Position of the textDocument to get the completion items for |
 |  setting | [LanguageServiceParams](../interfaces/languageserviceparams.md) | (optional) Language service params |
 

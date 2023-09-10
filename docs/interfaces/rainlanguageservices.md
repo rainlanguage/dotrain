@@ -10,14 +10,43 @@ Interface for Rain language services
 interface RainLanguageServices 
 ```
 
+## Properties
+
+|  Property | Type | Description |
+|  --- | --- | --- |
+|  [metaStore](./rainlanguageservices.md#metaStore-property) | [MetaStore](../classes/metastore.md) |  |
+|  [rainDocuments](./rainlanguageservices.md#rainDocuments-property) | `Map<string, RainDocument>` |  |
+
 ## Methods
 
 |  Method | Description |
 |  --- | --- |
 |  [doComplete(textDocument, position)](./rainlanguageservices.md#doComplete-method-1) |  |
 |  [doHover(textDocument, position)](./rainlanguageservices.md#doHover-method-1) |  |
-|  [doValidation(textDocument)](./rainlanguageservices.md#doValidation-method-1) |  |
+|  [doValidate(textDocument)](./rainlanguageservices.md#doValidate-method-1) |  |
 |  [newRainDocument(textDocument)](./rainlanguageservices.md#newRainDocument-method-1) |  |
+
+## Property Details
+
+<a id="metaStore-property"></a>
+
+### metaStore
+
+<b>Signature:</b>
+
+```typescript
+metaStore: MetaStore;
+```
+
+<a id="rainDocuments-property"></a>
+
+### rainDocuments
+
+<b>Signature:</b>
+
+```typescript
+rainDocuments: Map<string, RainDocument>;
+```
 
 ## Method Details
 
@@ -63,14 +92,14 @@ doHover(textDocument: TextDocument, position: Position): Promise<Hover | null>;
 
 `Promise<Hover | null>`
 
-<a id="doValidation-method-1"></a>
+<a id="doValidate-method-1"></a>
 
-### doValidation(textDocument)
+### doValidate(textDocument)
 
 <b>Signature:</b>
 
 ```typescript
-doValidation(textDocument: TextDocument): Promise<Diagnostic[]>;
+doValidate(textDocument: TextDocument): Promise<Diagnostic[]>;
 ```
 
 #### Parameters

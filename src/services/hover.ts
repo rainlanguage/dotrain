@@ -13,7 +13,7 @@ import { LanguageServiceParams, MarkupKind, TextDocument, Position, Hover, Range
  * @param setting - (optional) Language service params
  * @returns Promise of hover item and null if no item was available for that position
  */
-export async function getRainlangHover(
+export async function getHover(
     document: TextDocument,
     position: Position,
     setting?: LanguageServiceParams
@@ -27,13 +27,13 @@ export async function getRainlangHover(
  * @param setting - (optional) Language service params
  * @returns Promise of hover item and null if no item was available for that position
  */
-export async function getRainlangHover(
+export async function getHover(
     document: RainDocument,
     position: Position,
     setting?: LanguageServiceParams
 ): Promise<Hover | null>
 
-export async function getRainlangHover(
+export async function getHover(
     document: RainDocument | TextDocument,
     position: Position,
     setting?: LanguageServiceParams 
@@ -44,7 +44,10 @@ export async function getRainlangHover(
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.textDocument;
-        if (setting?.metaStore) _rd.metaStore.updateStore(setting.metaStore);
+        if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
+            _rd.metaStore.updateStore(setting.metaStore);
+            await _rd.parse();
+        }
     }
     else {
         _td = document;

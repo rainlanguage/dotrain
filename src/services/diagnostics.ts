@@ -9,7 +9,7 @@ import { Range, ErrorCode, Diagnostic, TextDocument, DiagnosticSeverity, Languag
  * @param setting - (optional) Language service params
  * @returns A promise that resolves with diagnostics
  */
-export async function getRainlangDiagnostics(
+export async function getDiagnostics(
     document: TextDocument, 
     setting?: LanguageServiceParams
 ): Promise<Diagnostic[]>
@@ -21,12 +21,12 @@ export async function getRainlangDiagnostics(
  * @param setting - (optional) Language service params
  * @returns A promise that resolves with diagnostics
  */
-export async function getRainlangDiagnostics(
+export async function getDiagnostics(
     document: RainDocument,
     setting?: LanguageServiceParams
 ): Promise<Diagnostic[]>
 
-export async function getRainlangDiagnostics(
+export async function getDiagnostics(
     document: RainDocument | TextDocument, 
     setting?: LanguageServiceParams 
 ): Promise<Diagnostic[]> {
@@ -36,7 +36,10 @@ export async function getRainlangDiagnostics(
     if (document instanceof RainDocument) {
         _rd = document;
         _td = _rd.textDocument;
-        if (setting?.metaStore) _rd.metaStore.updateStore(setting.metaStore);
+        if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
+            _rd.metaStore.updateStore(setting.metaStore);
+            await _rd.parse();
+        }
     }
     else {
         _td = document;

@@ -25,10 +25,6 @@ export type EncodedMetaType = "sequence" | "single";
  * @public Type for a record in MetaStore cache
  */
 export type MetaRecord = {
-    // /**
-    //  * The content bytes as hex string
-    //  */
-    // content: string;
     /**
      * The type of the meta
      */
@@ -195,7 +191,6 @@ export class MetaStore {
                             const _content = metaBytes.toLowerCase();
                             this.cache[hashOrStore.toLowerCase()] = {
                                 type: _type,
-                                // content: _content,
                                 sequence: this.decodeContent(_content, _type)
                             };
                         }
@@ -209,7 +204,6 @@ export class MetaStore {
                             this.cache[hashOrStore.toLowerCase()] = _settlement.rainMetaV1
                                 ? {
                                     type: "sequence",
-                                    // content: _settlement.rainMetaV1.metaBytes,
                                     sequence: this.decodeContent(
                                         _settlement.rainMetaV1.metaBytes,
                                         "sequence"
@@ -217,7 +211,6 @@ export class MetaStore {
                                 }
                                 : {
                                     type: "single",
-                                    // content: _settlement.metaContentV1.encodedData,
                                     sequence: this.decodeContent(
                                         _settlement.metaContentV1.encodedData,
                                         "single"
@@ -253,7 +246,6 @@ export class MetaStore {
                     this.cache[hash] = _settlement.rainMetaV1
                         ? {
                             type: "sequence",
-                            // content: _settlement.rainMetaV1.metaBytes,
                             sequence: this.decodeContent(
                                 _settlement.rainMetaV1.metaBytes,
                                 "sequence"
@@ -261,7 +253,6 @@ export class MetaStore {
                         }
                         : {
                             type: "single",
-                            // content: _settlement.metaContentV1.encodedData,
                             sequence: this.decodeContent(
                                 _settlement.metaContentV1.encodedData,
                                 "single"

@@ -1,11 +1,11 @@
 import { MetaStore } from "./metaStore";
 import { RainDocument } from "./rainDocument";
 import { Rainlang } from "../rainlang/rainlang";
+import { getRandomInt, namespaceSearch } from "../utils";
 import { rainlangc } from "../rainlang/rainlangCompiler";
 import MagicString, { DecodedSourceMap } from "magic-string";
-import { ExpressionConfig, Namespace, NamespaceNode, Position, PositionOffset } from "../rainLanguageTypes";
 import { Binding, ASTNode, OpASTNode, TextDocument, ValueASTNode } from "../rainLanguageTypes";
-import { namespaceSearch } from "../utils";
+import { ExpressionConfig, Namespace, NamespaceNode, Position, PositionOffset } from "../rainLanguageTypes";
 
 
 /**
@@ -61,14 +61,19 @@ export async function dotrainc(
     let _rainDoc: RainDocument;
     if (document instanceof RainDocument) {
         _rainDoc = document;
-        if (metaStore) {
+        if (metaStore && metaStore !== _rainDoc.metaStore) {
             _rainDoc.metaStore.updateStore(metaStore);
             await _rainDoc.parse();
         }
     }
     else {
         if (typeof document === "string") _rainDoc = await RainDocument.create(
-            TextDocument.create("file", "rainlang", 1, document),
+            TextDocument.create(
+                "untitled-" + getRandomInt(1000000000).toString() + ".rain", 
+                "rainlang", 
+                1, 
+                document
+            ),
             metaStore
         );
         else _rainDoc = await RainDocument.create(document, metaStore);
@@ -141,15 +146,6 @@ export async function dotrainc(
                             })
                         );
                         _nodes.push(_ns);
-                        // return Promise.reject({
-                        //     msg: _exp.Element.problems[0].msg,
-                        //     position: _exp.ImportIndex === -1
-                        //         ? _rainDoc.textDocument.positionAt(_exp.Element.namePosition[0])
-                        //         : _rainDoc.textDocument.positionAt(
-                        //             _rainDoc.imports[_exp.ImportIndex].hashPosition[0]
-                        //         ),
-                        //     code: _exp.Element.problems[0].code
-                        // });
                     }
                 }
                 catch (error) {
@@ -194,22 +190,11 @@ export async function dotrainc(
                             child: _binding,
                             parent: _rainDoc.namespace
                         });
-                        // return Promise.reject({
-                        //     msg: (_exp.Element  as Binding).problems[0].msg,
-                        //     position: _exp.ImportIndex === -1
-                        //         ? _rainDoc.textDocument.positionAt(
-                        //             (_exp.Element as Binding).namePosition[0]
-                        //         )
-                        //         : _rainDoc.textDocument.positionAt(
-                        //             _rainDoc.imports[_exp.ImportIndex as number].hashPosition[0]
-                        //         ),
-                        //     code: (_exp.Element as Binding).problems[0].code
-                        // });
                     }
                 }
             }
         }
-        // const _orgLen = _nodes.length;
+
         const _depsIndexes: number[][] = [];
         for (let i = 0; i < _nodes.length; i++) {
             const _d: number[] = [];
@@ -284,29 +269,6 @@ export async function dotrainc(
             }
             _depsIndexes.push(_d);
         }
-        // const _rdProblems = _rainDoc.getAllProblems();
-        // if (_rdProblems.length) return Promise.reject(_rdProblems.map(v => {
-        //     return {
-        //         msg: v.msg,
-        //         position: _rainDoc.textDocument.positionAt(v.position[0]),
-        //         code: v.code
-        //     };
-        // }));
-
-        // handle the order of expressions required for final text
-        // const _nodes: string[] = [...entrypoints];
-        // const _deps = _rainDoc.getDependencies();
-        // for (let i = 0; i < _nodeKeys.length; i++) {
-        //     if (_nodeKeys[i].includes(".")) {
-
-        //     }
-        //     else {
-
-        //     }
-        //     _deps.forEach(v => {
-        //         if (v[0] === _nodeKeys[i] && !_nodeKeys.includes(v[1])) _nodeKeys.push(v[1]);
-        //     });
-        // }
 
         // Finds replacements and generated sourcemap and new text
         const _buildSourcemap = (
@@ -323,11 +285,7 @@ export async function dotrainc(
                         _node.value
                     );
                 }
-                else if (OpASTNode.is(_node)) {
-                    // const _contextOpcode = _rainDoc.getContextAliases().find(
-                    //     v => v.name === _node.opcode.name
-                    // );
-                    
+                else if (OpASTNode.is(_node)) {                    
                     const _contextOpcode = _node.isCtx;
                     const _quotes = _node.operandArgs?.args.filter(
                         v => v.value.match(/^\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/)
@@ -354,22 +312,6 @@ export async function dotrainc(
                                 + ">"
                             );
                         }
-                        // if (isNaN(_contextOpcode.row)) {
-                        //     sourcemapGenerator.appendLeft(
-                        //         _node.opcode.position[1] + 2,
-                        //         _contextOpcode.column.toString() + " "
-                        //     );
-                        // }
-                        // else {
-                        //     sourcemapGenerator.appendLeft(
-                        //         _node.opcode.position[1] + 1,
-                        //         "<"
-                        //         + _contextOpcode.column.toString()
-                        //         + " "
-                        //         + _contextOpcode.row.toString()
-                        //         + ">"
-                        //     );
-                        // }
                     }
                     else {
                         if (_node.opcode.name.includes(".")) {
@@ -389,14 +331,11 @@ export async function dotrainc(
                     }
                     if (_quotes && _quotes.length) {
                         if (!depsIndexes.length) throw "cannot resolve dependecies";
-                        for (let j = 0; j < _quotes.length; j++) {
-                            // const _index = _nodeKeys.indexOf(_quotes[j].value).toString();
-                            sourcemapGenerator.update(
-                                _quotes[j].position[0],
-                                _quotes[j].position[1] + 1,
-                                depsIndexes.unshift().toString()
-                            );
-                        }
+                        for (let j = 0; j < _quotes.length; j++) sourcemapGenerator.update(
+                            _quotes[j].position[0],
+                            _quotes[j].position[1] + 1,
+                            depsIndexes.unshift().toString()
+                        );
                     }
                     if (_node.parameters.length > 0) {
                         _buildSourcemap(_node.parameters, sourcemapGenerator, depsIndexes);
@@ -429,7 +368,6 @@ export async function dotrainc(
             offset: number;
         }[] = [];
         for (let i = 0; i < _nodes.length; i++) {
-            // const _exp = _rainDoc.bindings.find(v => v.name === _nodeKeys[i])!;
             const _b = _nodes[i].child.Element as Binding;
             const _smGenerator = new MagicString(_b.content);
             _buildSourcemap(
@@ -445,11 +383,6 @@ export async function dotrainc(
                 offset: _sourcemaps.at(-1) 
                     ? _sourcemaps.at(-1)!.offset + _sourcemaps.at(-1)!.generatedText.length + 2
                     : 0,
-                //     (_sourcemap.at(-1) 
-                //         ? _sourcemap.at(-1)!.offset[0] + 
-                //         _sourcemap.at(-1)!.generatedText.length + 2
-                //         : 0) + _generatedText.length - 1,
-                // ]
             });
         }
 
@@ -514,26 +447,3 @@ export async function dotrainc(
         return Promise.reject(err);
     }
 }
-
-// const x = `@ opmeta 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
-// @ contmeta 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c 
-//   'calling-context new-name 
-//   base !
-
-// /**
-//  * This is test
-//  */
-// #const-value
-// 1
-
-// #elided-elided-fragment
-// ! this is elided, rebind before using
-
-// #main
-// _: add(1 2 opmeta.sub(1 2)),
-// _: mul(3 4 contmeta.new-name<'.main>() infinity .const-value);
-
-// #fn
-// _: .opmeta.add(1 2);`;
-
-// dotrainc(x, ["main"]).then(v => console.log(v)).catch(v => console.log(v));

@@ -1,8 +1,8 @@
 import { MetaStore } from "./dotrain/metaStore";
-import { getRainlangHover } from "./services/hover";
+import { getHover } from "./services/hover";
 import { RainDocument } from "./dotrain/rainDocument";
-import { getRainlangCompletion } from "./services/completion";
-import { getRainlangDiagnostics } from "./services/diagnostics";
+import { getCompletion } from "./services/completion";
+import { getDiagnostics } from "./services/diagnostics";
 import {
     Hover, 
     Position, 
@@ -18,10 +18,12 @@ import {
  * Interface for Rain language services
  */
 export interface RainLanguageServices {
+    metaStore: MetaStore;
+    rainDocuments: Map<string, RainDocument>;
 	newRainDocument(textDocument: TextDocument): Promise<RainDocument>;
-    doValidation(textDocument: TextDocument): Promise<Diagnostic[]>;
-	doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
+    doValidate(textDocument: TextDocument): Promise<Diagnostic[]>;
     doHover(textDocument: TextDocument, position: Position): Promise<Hover | null>;
+	doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
 }
 
 /**
@@ -41,27 +43,43 @@ export interface RainLanguageServices {
  * const errors = await langServices.doValidate(myTextDocument);
  * ```
  */
-export function getRainLanguageServices(params?: LanguageServiceParams): RainLanguageServices {
+export function getRainLanguageServices(params: LanguageServiceParams = {}): RainLanguageServices {
 
-    if (!params) params = {
-        metaStore: new MetaStore()
-    };
-    else {
-        if (!params.metaStore) params.metaStore = new MetaStore();
-    }
+    if (!params.metaStore) params.metaStore = new MetaStore();
+    const metaStore = params.metaStore;
+    const rainDocuments: Map<string, RainDocument> = new Map();
 
     return {
+        metaStore,
+        rainDocuments,
         newRainDocument: async(textDocument) => {
-            return await RainDocument.create(textDocument, params?.metaStore);
+            const _rd = await RainDocument.create(textDocument, metaStore);
+            rainDocuments.set(textDocument.uri, _rd);
+            return _rd;
         },
-        doValidation: async(textDocument) => {
-            return getRainlangDiagnostics(textDocument, params);
+        doValidate: async(textDocument) => {
+            let _rd = rainDocuments.get(textDocument.uri);
+            if (!_rd) {
+                _rd = await RainDocument.create(textDocument, metaStore);
+                rainDocuments.set(textDocument.uri, _rd);   
+            }
+            return getDiagnostics(_rd, params);
         },
         doComplete: async(textDocument, position) => {
-            return getRainlangCompletion(textDocument, position, params);
+            let _rd = rainDocuments.get(textDocument.uri);
+            if (!_rd) {
+                _rd = await RainDocument.create(textDocument, metaStore);
+                rainDocuments.set(textDocument.uri, _rd);
+            }
+            return getCompletion(_rd, position, params);
         },
         doHover: async(textDocument, position) => {
-            return getRainlangHover(textDocument, position, params);
+            let _rd = rainDocuments.get(textDocument.uri);
+            if (!_rd) {
+                _rd = await RainDocument.create(textDocument, metaStore);
+                rainDocuments.set(textDocument.uri, _rd);
+            }
+            return getHover(_rd, position, params);
         }
     };
 }

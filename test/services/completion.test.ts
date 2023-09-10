@@ -8,10 +8,10 @@ import {
     MetaStore, 
     TextDocument,
     RainDocument, 
+    getCompletion,
     CompletionItem,
     CompletionItemKind, 
     LanguageServiceParams, 
-    getRainLanguageServices,
 } from "../../src";
 
 
@@ -21,9 +21,10 @@ async function testCompletion(
     expectedCompletions: CompletionItem[] | null,
     serviceParams?: LanguageServiceParams
 ) {
-    const actualCompletions = await getRainLanguageServices(serviceParams).doComplete(
-        TextDocument.create("file", "rainlang", 1, text), 
-        position
+    const actualCompletions = await getCompletion(
+        TextDocument.create("completion.test.rain", "rainlang", 1, text), 
+        position,
+        serviceParams
     );
     if (expectedCompletions === null) assert.ok(actualCompletions === null);
     else {

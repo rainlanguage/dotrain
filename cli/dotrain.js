@@ -10,11 +10,11 @@ const { readFileSync, writeFileSync } = require("fs");
 
 const getOptions = async args => new Command("dotrain")
     .description("CLI command to compile/decompile a source file.")
-    .option("-c, --compile <expressions...>", "Use compiling mode with specified expression names, to compile a .rain file to ExpressionConfig output in a .json")
+    .option("-c, --compile <entrypoints...>", "Use compiling mode with specified entrypoints, to compile a .rain file to ExpressionConfig output in a .json")
     .option("-d, --decompile <op meta hash>", "Use decompiling mode with a specific opmeta hash, to decompile an ExpressionConfig in a .json to a .rain")
     .option("-i, --input <path>", "Path to input file, either a .rain file for compiling or .json for decompiling")
     .option("-o, --output <path>", "Path to output file, will output .json for compile mode and .rain for decompile mode")
-    .option("-b, --batch-compile <path>", "Path to a json file of mappings of dotrain files paths, expression names and output json files paths to batch compile")
+    .option("-b, --batch-compile <path>", "Path to a json file of mappings of dotrain files paths, entrypoints and output json files paths to batch compile")
     .option("-s, --stdout", "Log the result in terminal")
     .version(version)
     .parse(args)
@@ -27,7 +27,7 @@ const main = async args => {
     if (options.batchCompile) {
         if (options.compile || options.decompile) throw "cannot use -c or -d in batch compile mode";
         if (options.input || options.output) throw "cannot use -i or -o in batch compile mode";
-        const EXP_PATTERN = /^[a-z][0-9a-z-]*$/;
+        const ENTRYPOINT_PATTERN = /^[a-z][0-9a-z-]*$/;
         const JSON_PATH_PATTERN = /^(\.?\/)(\.\/|\.\.\/|[^]*\/)*[^]+\.json$/;
         const DOTRAIN_PATH_PATTERN = /^(\.?\/)(\.\/|\.\.\/|[^]*\/)*[^]+\.rain$/;
         const mappingContent = JSON.parse(
@@ -44,12 +44,12 @@ const main = async args => {
                 && typeof v.json === "string"
                 && v.json
                 && JSON_PATH_PATTERN.test(v.json)
-                && Array.isArray(v.expressions)
-                && v.expressions.length
-                && v.expressions.every(name => 
+                && Array.isArray(v.entrypoints)
+                && v.entrypoints.length
+                && v.entrypoints.every(name => 
                     typeof name === "string"
                     && name
-                    && EXP_PATTERN.test(name)
+                    && ENTRYPOINT_PATTERN.test(name)
                 )
             )
         ) {
@@ -57,7 +57,7 @@ const main = async args => {
                 const dotrainContent = readFileSync(
                     path.resolve(parentDir, mappingContent[i].dotrain)
                 ).toString();
-                const result = await dotrainc(dotrainContent, mappingContent[i].expressions);
+                const result = await dotrainc(dotrainContent, mappingContent[i].entrypoints);
                 const text = JSON.stringify(result, null, 2);
                 writeFileSync(
                     path.resolve(parentDir, mappingContent[i].json) ,
@@ -93,7 +93,7 @@ const main = async args => {
                         console.log("\x1b[32m%s\x1b[0m", "Compiled successfully!");
                     }
                 }
-                else throw "invalid expressions!";
+                else throw "invalid entrypoints!";
             }
             if (options.decompile) {
                 if (!options.input.endsWith(".json")) throw "invalid input file!";

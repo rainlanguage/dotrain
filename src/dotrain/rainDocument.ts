@@ -31,7 +31,6 @@ import {
 } from "../rainLanguageTypes";
 import { 
     OpMeta,
-    // deepCopy, 
     ContractMeta,
     validateOpMeta,
     metaFromBytes, 
@@ -136,7 +135,7 @@ export class RainDocument {
         let _rainDocument: RainDocument;
         if (typeof content === "string") _rainDocument = new RainDocument(
             TextDocument.create(
-                uri ?? "untitled-" + getRandomInt(1000000000).toString(), 
+                uri ?? "untitled-" + getRandomInt(1000000000).toString() + ".rain", 
                 "rainlang", 
                 version === undefined || version < 0 ? 0 : version, 
                 content
@@ -177,41 +176,6 @@ export class RainDocument {
         return this.textDocument.getText();
     }
 
-    // /**
-    //  * @public Get the current text of this RainDocument instance
-    //  */
-    // public getOpMeta(): OpMeta[] {
-    //     return deepCopy(this.opmeta);
-    // }
-
-    // /**
-    //  * @public Get the current text of this RainDocument instance
-    //  */
-    // public getOpMetaWithCtxAliases(): OpMeta[] {
-    //     return deepCopy(this.opmeta);
-    // }
-
-    // /**
-    //  * @public Get the current text of this RainDocument instance
-    //  */
-    // public getOpMetaLength(): number {
-    //     return deepCopy(this.opmetaLength);
-    // }
-
-    // /**
-    //  * @public Get the current text of this RainDocument instance
-    //  */
-    // public getOpMetaImportIndex(): number {
-    //     return deepCopy(this.opmetaIndex);
-    // }
-
-    // /**
-    //  * @public Get the current text of this RainDocument instance
-    //  */
-    // public getOpMetaBytes(): string {
-    //     return this.opMetaBytes;
-    // }
-
     /**
      * @public Get all problems of this RainDocument instance
      */
@@ -219,62 +183,12 @@ export class RainDocument {
         return [...this.problems, ...this.getBindingsProblems()];
     }
 
-    // /**
-    //  * @public Get top problems of this RainDocument instance
-    //  */
-    // public getTopProblems(): Problem[] {
-    //     return [
-    //         ...this.getProblems(), 
-    //         // ...this.getDependencyProblems()
-    //     ];
-    // }
-
-    // /**
-    //  * @public Get the dependency problems of this RainDocument instance
-    //  */
-    // public getDependencyProblems(): Problem[] {
-    //     return deepCopy(this.depProblems);
-    // }
-
-    // /**
-    //  * @public Get the current problems of this RainDocument instance
-    //  */
-    // public getProblems(): Problem[] {
-    //     return this.problems;
-    // }
-
     /**
      * @public Get the expression problems of this RainDocument instance
      */
     public getBindingsProblems(): Problem[] {
         return this.bindings.flatMap(v => v.problems);
-        // .map(v => v.problems.map(e => {
-        //     return {
-        //         code: e.code,
-        //         msg: e.msg,
-        //         position: [
-        //             e.position[0] + v.contentPosition[0],
-        //             e.position[1] + v.contentPosition[0]
-        //         ]
-        //     } as Problem;
-        // }))
-        // .filter(v => v !== undefined)
-        // .flat() as Problem[]
     }
-
-    // /**
-    //  * @public Get the current comments inside of the text of this RainDocument instance
-    //  */
-    // public getComments(): Comment[] {
-    //     return deepCopy(this.comments);
-    // }
-
-    // /**
-    //  * @public Get the imports of this RainDocument instance
-    //  */
-    // public getImports(): Import[] {
-    //     return deepCopy(this.imports);
-    // }
 
     /**
      * @public
@@ -298,17 +212,11 @@ export class RainDocument {
             }
         }
         else {
-            this.opmeta          = [];
+            this.opmeta         = [];
             this.imports        = [];
             this.problems       = [];
             this.comments       = [];
-            // this.ctxAliases     = [];
             this.bindings       = [];
-            // this.depProblems    = [];
-            // this.dependencies   = [];
-            // this.opmetaLength   = 0;
-            // this.opmetaIndex    = -1;
-            // this.opMetaBytes    =  "";
             this.runtimeError   = undefined;
         }
     }
@@ -401,15 +309,6 @@ export class RainDocument {
             problems: [],
             position: [imp[1][0] - 1, imp[1][1]]
         };
-        // _result.hash = "";
-        // _result.name = ".";
-        // // _result.config = [];
-        // _result.problems = [];
-        // // _result.sequence = null;
-        // _result.position = [imp[1][0] - 1, imp[1][1]];
-        // // _result.depth = this.importDepth;
-        // _result.namePosition = deepCopy(_atPos);
-        // _result.hashPosition = deepCopy(_atPos);
 
         const _chuncks = exclusiveParse(imp[0], /\s+/gd, imp[1][0]);
         if (WORD_PATTERN.test(_chuncks[0][0]) || HASH_PATTERN.test(_chuncks[0][0])) {
@@ -500,10 +399,6 @@ export class RainDocument {
                     if (_opmetaSeq) {
                         try {
                             const _parsed = JSON.parse(metaFromBytes(_opmetaSeq.content));
-                            // _result.sequence.opmeta = {
-                            //     instance: undefined,
-                            //     problems: []
-                            // };
                             try {
                                 if (validateOpMeta(_parsed)) {
                                     _result.sequence.opmeta = _parsed;
@@ -540,10 +435,6 @@ export class RainDocument {
                             const _parsed = JSON.parse(
                                 metaFromBytes(_contractMetaSeq.content)
                             );
-                            // _result.sequence.ctxmeta = {
-                            //     instance: undefined,
-                            //     problems: []
-                            // };
                             if (ContractMeta.is(_parsed)) {
                                 try {
                                     _result.sequence.ctxmeta = 
@@ -586,10 +477,6 @@ export class RainDocument {
                     if (!_isCorrupt && _dotrainSeq) {
                         try {
                             const _dotrainStr = metaFromBytes(_dotrainSeq.content);
-                            // _result.sequence.dotrain = {
-                            //     instance: undefined,
-                            //     problems: []
-                            // };
                             _result.sequence.dotrain = new RainDocument(
                                 TextDocument.create(
                                     `imported-dotrain-${_result.hash}`, 
@@ -624,7 +511,6 @@ export class RainDocument {
                         }
                     }
                     if (!_isCorrupt) {
-                        // const _configProblems: Problem[] = [];
                         const _reconfigs: [ParsedChunk, ParsedChunk][] = [];
                         for (let i = 0; i < _configChunks.length; i++) {
                             if (_configChunks[i][0] === ".") {
@@ -725,10 +611,6 @@ export class RainDocument {
                             });
                         }
                         _result.reconfigs = _reconfigs;
-                        // {
-                        //     statements: _reconfigs,
-                        //     problems: _configProblems
-                        // };
                     }
                 }
             }
@@ -746,7 +628,6 @@ export class RainDocument {
         this.imports = [];
         this.problems = [];
         this.comments = [];
-        // this.ctxAliases = [];
         this.bindings = [];
         this.runtimeError = undefined;
         let document = this.textDocument.getText();
@@ -765,31 +646,6 @@ export class RainDocument {
             document = fillIn(document, v[1]);
         });
 
-        // parse imports
-        // const _imports = inclusiveParse(
-        //     document,
-        //     /(?:\s|^)@0x[a-fA-F0-9]+(?=\s|$)|(?:\s|^)@[a-z][a-z0-9]*\s+0x[a-fA-F0-9]+(?=\s|$)/gd
-        // );
-        // if (_imports.length) {
-        //     await this.resolveMeta(_imports);
-        //     for (let i = 0; i < _imports.length; i++) {
-        //         this.imports.push({
-        //             name: "root",
-        //             hash: _imports[i][0].slice(1 + (/^\s/.test(_imports[i][0]) ? 1 : 0)),
-        //             position: [
-        //                 _imports[i][1][0] + (/^\s/.test(_imports[i][0]) ? 1 : 0), 
-        //                 _imports[i][1][1]
-        //             ],
-        //         });
-        //         document = fillIn(document, _imports[i][1]);
-        //     }
-        // }
-        // const filter = /(?:\s|^)@([a-z][a-z0-9-]*\s+)?0x[a-fA-F0-9]+((\s+'[a-z][a-z0-9-]*\s+[a-z][a-z0-9-]*)|(\s+[a-z][a-z0-9-]*\s+[a-z][a-z0-9-]*))*/
-        // if (this.importDepth >= 32) this.problems.push({
-        //     msg: "import too deep",
-        //     position: [0, 0],
-        //     code: ErrorCode.DeepImport
-        // });
         const _importStatements = exclusiveParse(document, /@/gd, undefined, true).slice(1);
         for (let i = 0; i < _importStatements.length; i++) {
             // filter out irrevelant parts
@@ -812,12 +668,6 @@ export class RainDocument {
             );
         }
 
-        // if (!_importStatements.length) this.problems.push({
-        //     msg: "cannot find op meta import",
-        //     position: [0, 0],
-        //     code: ErrorCode.UndefinedOpMeta
-        // });
-        // else 
         for (let i = 0; i < this.imports.length; i++) {
             if (this.imports[i].problems.length === 0) {
                 const _imp = this.imports[i];
@@ -829,30 +679,15 @@ export class RainDocument {
                     });
                 }
                 else {
-                    // const _isDeep = this.isDeepImport(_imp);
                     if (this.isDeepImport(_imp)) this.problems.push({
                         msg: "import too deep",
                         position: _imp.hashPosition,
                         code: ErrorCode.DeepImport
                     });
-                    // if (_isDeep || _imp.reconfigs?.problems?.length || _cfg?.problems.length) {
-                    //     if (_imp.reconfigs?.problems?.length) this.problems.push(
-                    //         ..._imp.reconfigs!.problems
-                    //     );
-                    //     if (_isDeep) this.problems.push({
-                    //         msg: "import too deep",
-                    //         position: _imp.hashPosition,
-                    //         code: ErrorCode.DeepImport
-                    //     });
-                    //     if (_cfg?.problems.length) this.problems.push(
-                    //         ..._cfg.problems
-                    //     );
-                    // }
                     else {
                         let _hasDupKeys = false;
                         let _hasDupWords = false;
                         let _ns: Namespace = {};
-                        // const _cfg = _imp.reconfigs;
                         if (_imp.sequence?.opmeta) {
                             if (_imp.sequence.opmeta) {
                                 _ns["Words"] = {
@@ -875,9 +710,6 @@ export class RainDocument {
                                     });
                                 });
                             }
-                            // if (_imp.sequence.opmeta.problems.length) this.problems.push(
-                            //     ..._imp.sequence.opmeta.problems
-                            // );
                         }
                         if (_imp.sequence?.ctxmeta) {
                             if (_imp.sequence.ctxmeta) {
@@ -895,9 +727,6 @@ export class RainDocument {
                                     };
                                 });
                             }
-                            // if (_imp.sequence.ctxmeta.problems.length) this.problems.push(
-                            //     ..._imp.sequence.ctxmeta.problems
-                            // );
                         }
                         if (_imp.sequence?.dotrain) {
                             if (!_hasDupKeys) {
@@ -918,9 +747,6 @@ export class RainDocument {
                                         };
                                     }
                                 }
-                                // if (_imp.sequence.dotrain.problems.length) this.problems.push(
-                                //     ..._imp.sequence.dotrain.problems
-                                // );
                             }
                         }
                         if (_hasDupKeys || _hasDupWords) {
@@ -936,7 +762,6 @@ export class RainDocument {
                             });
                         }
                         else {
-                            // console.log(_cfg);
                             if (_imp.reconfigs) for (let j = 0; j < _imp.reconfigs.length; j++) {
                                 const _s: [ParsedChunk, ParsedChunk] = _imp.reconfigs[j];
                                 if (_s[1][0] === "!") {
@@ -1191,7 +1016,6 @@ export class RainDocument {
                             })
                         }
                     );
-                    // v.problems.push(...(v.exp as any).problems);
                     v.problems.push(...((v.exp as any).problems as Problem[]).map(e => {
                         return {
                             msg: e.msg,
@@ -1204,29 +1028,6 @@ export class RainDocument {
                     }));
                 }
             });
-            // for (let i = 0; i < this.bindings.length; i++) {
-            //     this.bindings[i].exp = new Rainlang(
-            //         this.bindings[i].content, 
-            //         this.opmeta, 
-            //         {
-            //             thisBinding: this.bindings[i],
-            //             namespaces: this.namespace,
-            //             comments: this.comments.filter(v => 
-            //                 v.position[0] >= this.bindings[i].contentPosition[0] && 
-            //                 v.position[1] <= this.bindings[i].contentPosition[1]
-            //             ).map(v => {
-            //                 return {
-            //                     comment: v.comment,
-            //                     position: [
-            //                         v.position[0] - this.bindings[i].contentPosition[0],
-            //                         v.position[1] - this.bindings[i].contentPosition[0]
-            //                     ]
-            //                 };
-            //             })
-            //         }
-            //     );
-            //     this.bindings[i].problems.push(...(this.bindings[i].exp as any).problems);
-            // }
         }
     }
 
@@ -1250,18 +1051,6 @@ export class RainDocument {
                 _edges.push([_nodes[i], v.slice(1)]);
             });
         }
-        // const regexpes = _bindings.map(v => new RegExp(
-        //     // eslint-disable-next-line no-useless-escape
-        //     "(?:^|(|)|,|\s|:|')" + v.name + "(?:$|(|)|,|\s|:|>)"
-        // ));
-        // for (let i = 0; i < _bindings.length; i++) {
-        //     for (let j = 0; j < regexpes.length; j++) {
-        //         if (i !== j && regexpes[j].test(_bindings[i].content)) {
-        //             this.dependencies.push([nodes[i], nodes[j]]);
-        //             edges.push([nodes[i], nodes[j]]);
-        //         }
-        //     }
-        // }
 
         while (!_nodes.length || !_edges.length) {
             try {
@@ -1293,16 +1082,6 @@ export class RainDocument {
                                 position: _b.namePosition,
                                 code: ErrorCode.CircularDependency
                             });
-                            // this.depProblems.push({
-                            //     msg: "circular dependency",
-                            //     position: this.bindings.find(
-                            //         v => v.name === nodesToDelete[i]
-                            //     )!.namePosition,
-                            //     code: ErrorCode.CircularDependency
-                            // });
-                            // (this.namespace[
-                            //     nodesToDelete[i]
-                            // ].Element as Binding).hasCircularDep = true;
                         }
                     }
                 }
@@ -1528,27 +1307,3 @@ export class RainDocument {
         }
     }
 }
-
-// const x = `@ opmeta 0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
-// @ contmeta 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c 
-//   'calling-context new-name 
-//   base !
-
-// /**
-//  * This is test
-//  */
-// #const-value
-// 1
-
-// #elided-elided-fragment
-// ! this is elided, rebind before using
-
-// #main
-// _: add(1 2 opmeta.sub(1 2)),
-// _: mul(3 4 contmeta.new-name<'.main>() infinity .const-value);
-
-// #fn
-// _: .opmeta.add(1 2);`;
-
-// RainDocument.create(x).then(v => console.log(v.getAllProblems())).catch(v => console.log(v));
-// getRainLanguageServices({clientCapabilities: ClientCapabilities.ALL}).doValidation(TextDocument.create("lk", "rainlang", 1, x)).then(v => console.log(v)).catch(v => console.log(v));

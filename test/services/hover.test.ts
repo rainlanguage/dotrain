@@ -3,12 +3,12 @@ import { METAS } from "../fixtures/opmeta";
 import { contractMetaHash, opMetaHash, toRange } from "../utils";
 import {
     Hover, 
+    getHover, 
     Position,
     rainlang,
     MetaStore, 
     TextDocument,
-    LanguageServiceParams, 
-    getRainLanguageServices 
+    LanguageServiceParams 
 } from "../../src";
 
 
@@ -17,10 +17,10 @@ async function testHover(
     position: Position, 
     serviceParams?: LanguageServiceParams
 ): Promise<Hover | null> {
-    const langServices = getRainLanguageServices(serviceParams);
-    return await (langServices.doHover(
-        TextDocument.create("file", "rainlang", 1, text), 
-        position
+    return await (getHover(
+        TextDocument.create("hover.test.rain", "rainlang", 1, text), 
+        position,
+        serviceParams
     ));
 }
 

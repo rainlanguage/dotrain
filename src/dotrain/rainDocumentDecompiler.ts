@@ -1,9 +1,9 @@
-import { MetaRecord, MetaStore } from "./metaStore";
 import { RainDocument } from "./rainDocument";
+import { MetaRecord, MetaStore } from "./metaStore";
 import { TextDocument } from "../rainLanguageTypes";
 import { ExpressionConfig } from "../rainLanguageTypes";
 import { Equation, Expression, parse } from "@nohns/algebra.js";
-import { arrayify, BigNumber, CONSTANTS, isBytesLike, extractByBits } from "../utils";
+import { arrayify, BigNumber, CONSTANTS, isBytesLike, extractByBits, getRandomInt } from "../utils";
 import { OpMeta, InputMeta, OutputMeta, OperandArgs, metaFromBytes, MAGIC_NUMBERS, toOpMeta } from "@rainprotocol/meta";
 
 
@@ -265,13 +265,13 @@ export async function dotraind(
         _stack = [];
     }
     return Promise.resolve(
-        // prettyFormat 
-        // ? await RainDocument.create(
-        //     TextDocument.create("file", "rainlang", 1, rainFormat(`@${metaHash}\n` + _finalStack.join("\n"))), 
-        //     metaStore
-        // )
         await RainDocument.create(
-            TextDocument.create("file", "rainlang", 1, `@${metaHash}\n` + _finalStack.join("\n\n")),
+            TextDocument.create(
+                "untitled-" + getRandomInt(1000000000).toString() + ".rain", 
+                "rainlang", 
+                1, 
+                `@${metaHash}\n` + _finalStack.join("\n\n")
+            ),
             metaStore
         )
     );

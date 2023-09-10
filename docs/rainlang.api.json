@@ -1,7 +1,7 @@
 {
   "metadata": {
     "toolPackage": "@microsoft/api-extractor",
-    "toolVersion": "7.36.1",
+    "toolVersion": "7.36.4",
     "schemaVersion": 1011,
     "oldestForwardsCompatibleVersion": 1001,
     "tsdocConfig": {
@@ -3619,6 +3619,348 @@
         },
         {
           "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getCompletion:function(1)",
+          "docComment": "/**\n * Provides completion items\n *\n * @param document - The TextDocuemnt\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns A promise that resolves with Completion items or null if no completion items were available for that position\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getCompletion(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TextDocument",
+              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Position",
+              "canonicalReference": "@rainprotocol/rainlang!~Position"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "CompletionItem",
+              "canonicalReference": "@rainprotocol/rainlang!~CompletionItem"
+            },
+            {
+              "kind": "Content",
+              "text": "[] | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/services/completion.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getCompletion"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getCompletion:function(2)",
+          "docComment": "/**\n * Provides completion items\n *\n * @param document - The RainDocument object instance\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns A promise that resolves with Completion items or null if no completion items were available for that position\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getCompletion(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Position",
+              "canonicalReference": "@rainprotocol/rainlang!~Position"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "CompletionItem",
+              "canonicalReference": "@rainprotocol/rainlang!~CompletionItem"
+            },
+            {
+              "kind": "Content",
+              "text": "[] | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/services/completion.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getCompletion"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getDiagnostics:function(1)",
+          "docComment": "/**\n * Provides diagnostics\n *\n * @param document - The TextDocument\n *\n * @param setting - (optional) Language service params\n *\n * @returns A promise that resolves with diagnostics\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getDiagnostics(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TextDocument",
+              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Diagnostic",
+              "canonicalReference": "@rainprotocol/rainlang!~Diagnostic"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/services/diagnostics.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 9
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getDiagnostics"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getDiagnostics:function(2)",
+          "docComment": "/**\n * Provides diagnostics\n *\n * @param document - The RainDocument\n *\n * @param setting - (optional) Language service params\n *\n * @returns A promise that resolves with diagnostics\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getDiagnostics(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Diagnostic",
+              "canonicalReference": "@rainprotocol/rainlang!~Diagnostic"
+            },
+            {
+              "kind": "Content",
+              "text": "[]>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/services/diagnostics.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 5,
+            "endIndex": 9
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getDiagnostics"
+        },
+        {
+          "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!getEncodedMetaType:function(1)",
           "docComment": "/**\n * Checks if metaBytes are a sequence or content or none\n *\n * @param metaBytes - The meta bytes to check the type for\n *\n * @public\n */\n",
           "excerptTokens": [
@@ -3662,6 +4004,194 @@
             }
           ],
           "name": "getEncodedMetaType"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getHover:function(1)",
+          "docComment": "/**\n * Provides hover items\n *\n * @param document - The TextDocuemnt\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns Promise of hover item and null if no item was available for that position\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getHover(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "TextDocument",
+              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Position",
+              "canonicalReference": "@rainprotocol/rainlang!~Position"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Hover",
+              "canonicalReference": "@rainprotocol/rainlang!~Hover"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/services/hover.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 1,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getHover"
+        },
+        {
+          "kind": "Function",
+          "canonicalReference": "@rainprotocol/rainlang!getHover:function(2)",
+          "docComment": "/**\n * Provides hover items\n *\n * @param document - The RainDocument object instance\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns Promise of hover item and null if no item was available for that position\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "export declare function getHover(document: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RainDocument",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+            },
+            {
+              "kind": "Content",
+              "text": ", position: "
+            },
+            {
+              "kind": "Reference",
+              "text": "Position",
+              "canonicalReference": "@rainprotocol/rainlang!~Position"
+            },
+            {
+              "kind": "Content",
+              "text": ", setting?: "
+            },
+            {
+              "kind": "Reference",
+              "text": "LanguageServiceParams",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "): "
+            },
+            {
+              "kind": "Reference",
+              "text": "Promise",
+              "canonicalReference": "!Promise:interface"
+            },
+            {
+              "kind": "Content",
+              "text": "<"
+            },
+            {
+              "kind": "Reference",
+              "text": "Hover",
+              "canonicalReference": "@rainprotocol/rainlang!~Hover"
+            },
+            {
+              "kind": "Content",
+              "text": " | null>"
+            },
+            {
+              "kind": "Content",
+              "text": ";"
+            }
+          ],
+          "fileUrlPath": "dist/types/services/hover.d.ts",
+          "returnTypeTokenRange": {
+            "startIndex": 7,
+            "endIndex": 11
+          },
+          "releaseTag": "Public",
+          "overloadIndex": 2,
+          "parameters": [
+            {
+              "parameterName": "document",
+              "parameterTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "position",
+              "parameterTypeTokenRange": {
+                "startIndex": 3,
+                "endIndex": 4
+              },
+              "isOptional": false
+            },
+            {
+              "parameterName": "setting",
+              "parameterTypeTokenRange": {
+                "startIndex": 5,
+                "endIndex": 6
+              },
+              "isOptional": true
+            }
+          ],
+          "name": "getHover"
         },
         {
           "kind": "Function",
@@ -3724,536 +4254,6 @@
             }
           ],
           "name": "getLineText"
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!getRainlangCompletion:function(1)",
-          "docComment": "/**\n * Provides completion items\n *\n * @param document - The TextDocuemnt\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns A promise that resolves with Completion items or null if no completion items were available for that position\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function getRainlangCompletion(document: "
-            },
-            {
-              "kind": "Reference",
-              "text": "TextDocument",
-              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
-            },
-            {
-              "kind": "Content",
-              "text": ", position: "
-            },
-            {
-              "kind": "Reference",
-              "text": "Position",
-              "canonicalReference": "@rainprotocol/rainlang!~Position"
-            },
-            {
-              "kind": "Content",
-              "text": ", setting?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "LanguageServiceParams",
-              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Reference",
-              "text": "Promise",
-              "canonicalReference": "!Promise:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "CompletionItem",
-              "canonicalReference": "@rainprotocol/rainlang!~CompletionItem"
-            },
-            {
-              "kind": "Content",
-              "text": "[] | null>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/types/services/completion.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 7,
-            "endIndex": 11
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 1,
-          "parameters": [
-            {
-              "parameterName": "document",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "position",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "setting",
-              "parameterTypeTokenRange": {
-                "startIndex": 5,
-                "endIndex": 6
-              },
-              "isOptional": true
-            }
-          ],
-          "name": "getRainlangCompletion"
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!getRainlangCompletion:function(2)",
-          "docComment": "/**\n * Provides completion items\n *\n * @param document - The RainDocument object instance\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns A promise that resolves with Completion items or null if no completion items were available for that position\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function getRainlangCompletion(document: "
-            },
-            {
-              "kind": "Reference",
-              "text": "RainDocument",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
-            },
-            {
-              "kind": "Content",
-              "text": ", position: "
-            },
-            {
-              "kind": "Reference",
-              "text": "Position",
-              "canonicalReference": "@rainprotocol/rainlang!~Position"
-            },
-            {
-              "kind": "Content",
-              "text": ", setting?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "LanguageServiceParams",
-              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Reference",
-              "text": "Promise",
-              "canonicalReference": "!Promise:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "CompletionItem",
-              "canonicalReference": "@rainprotocol/rainlang!~CompletionItem"
-            },
-            {
-              "kind": "Content",
-              "text": "[] | null>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/types/services/completion.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 7,
-            "endIndex": 11
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 2,
-          "parameters": [
-            {
-              "parameterName": "document",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "position",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "setting",
-              "parameterTypeTokenRange": {
-                "startIndex": 5,
-                "endIndex": 6
-              },
-              "isOptional": true
-            }
-          ],
-          "name": "getRainlangCompletion"
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!getRainlangDiagnostics:function(1)",
-          "docComment": "/**\n * Provides diagnostics\n *\n * @param document - The TextDocument\n *\n * @param setting - (optional) Language service params\n *\n * @returns A promise that resolves with diagnostics\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function getRainlangDiagnostics(document: "
-            },
-            {
-              "kind": "Reference",
-              "text": "TextDocument",
-              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
-            },
-            {
-              "kind": "Content",
-              "text": ", setting?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "LanguageServiceParams",
-              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Reference",
-              "text": "Promise",
-              "canonicalReference": "!Promise:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "Diagnostic",
-              "canonicalReference": "@rainprotocol/rainlang!~Diagnostic"
-            },
-            {
-              "kind": "Content",
-              "text": "[]>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/types/services/diagnostics.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 5,
-            "endIndex": 9
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 1,
-          "parameters": [
-            {
-              "parameterName": "document",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "setting",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": true
-            }
-          ],
-          "name": "getRainlangDiagnostics"
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!getRainlangDiagnostics:function(2)",
-          "docComment": "/**\n * Provides diagnostics\n *\n * @param document - The RainDocument\n *\n * @param setting - (optional) Language service params\n *\n * @returns A promise that resolves with diagnostics\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function getRainlangDiagnostics(document: "
-            },
-            {
-              "kind": "Reference",
-              "text": "RainDocument",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
-            },
-            {
-              "kind": "Content",
-              "text": ", setting?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "LanguageServiceParams",
-              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Reference",
-              "text": "Promise",
-              "canonicalReference": "!Promise:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "Diagnostic",
-              "canonicalReference": "@rainprotocol/rainlang!~Diagnostic"
-            },
-            {
-              "kind": "Content",
-              "text": "[]>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/types/services/diagnostics.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 5,
-            "endIndex": 9
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 2,
-          "parameters": [
-            {
-              "parameterName": "document",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "setting",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": true
-            }
-          ],
-          "name": "getRainlangDiagnostics"
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!getRainlangHover:function(1)",
-          "docComment": "/**\n * Provides hover items\n *\n * @param document - The TextDocuemnt\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns Promise of hover item and null if no item was available for that position\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function getRainlangHover(document: "
-            },
-            {
-              "kind": "Reference",
-              "text": "TextDocument",
-              "canonicalReference": "@rainprotocol/rainlang!~TextDocument"
-            },
-            {
-              "kind": "Content",
-              "text": ", position: "
-            },
-            {
-              "kind": "Reference",
-              "text": "Position",
-              "canonicalReference": "@rainprotocol/rainlang!~Position"
-            },
-            {
-              "kind": "Content",
-              "text": ", setting?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "LanguageServiceParams",
-              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Reference",
-              "text": "Promise",
-              "canonicalReference": "!Promise:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "Hover",
-              "canonicalReference": "@rainprotocol/rainlang!~Hover"
-            },
-            {
-              "kind": "Content",
-              "text": " | null>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/types/services/hover.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 7,
-            "endIndex": 11
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 1,
-          "parameters": [
-            {
-              "parameterName": "document",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "position",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "setting",
-              "parameterTypeTokenRange": {
-                "startIndex": 5,
-                "endIndex": 6
-              },
-              "isOptional": true
-            }
-          ],
-          "name": "getRainlangHover"
-        },
-        {
-          "kind": "Function",
-          "canonicalReference": "@rainprotocol/rainlang!getRainlangHover:function(2)",
-          "docComment": "/**\n * Provides hover items\n *\n * @param document - The RainDocument object instance\n *\n * @param position - Position of the textDocument to get the completion items for\n *\n * @param setting - (optional) Language service params\n *\n * @returns Promise of hover item and null if no item was available for that position\n *\n * @public\n */\n",
-          "excerptTokens": [
-            {
-              "kind": "Content",
-              "text": "export declare function getRainlangHover(document: "
-            },
-            {
-              "kind": "Reference",
-              "text": "RainDocument",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
-            },
-            {
-              "kind": "Content",
-              "text": ", position: "
-            },
-            {
-              "kind": "Reference",
-              "text": "Position",
-              "canonicalReference": "@rainprotocol/rainlang!~Position"
-            },
-            {
-              "kind": "Content",
-              "text": ", setting?: "
-            },
-            {
-              "kind": "Reference",
-              "text": "LanguageServiceParams",
-              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "): "
-            },
-            {
-              "kind": "Reference",
-              "text": "Promise",
-              "canonicalReference": "!Promise:interface"
-            },
-            {
-              "kind": "Content",
-              "text": "<"
-            },
-            {
-              "kind": "Reference",
-              "text": "Hover",
-              "canonicalReference": "@rainprotocol/rainlang!~Hover"
-            },
-            {
-              "kind": "Content",
-              "text": " | null>"
-            },
-            {
-              "kind": "Content",
-              "text": ";"
-            }
-          ],
-          "fileUrlPath": "dist/types/services/hover.d.ts",
-          "returnTypeTokenRange": {
-            "startIndex": 7,
-            "endIndex": 11
-          },
-          "releaseTag": "Public",
-          "overloadIndex": 2,
-          "parameters": [
-            {
-              "parameterName": "document",
-              "parameterTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "position",
-              "parameterTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "isOptional": false
-            },
-            {
-              "parameterName": "setting",
-              "parameterTypeTokenRange": {
-                "startIndex": 5,
-                "endIndex": 6
-              },
-              "isOptional": true
-            }
-          ],
-          "name": "getRainlangHover"
         },
         {
           "kind": "Function",
@@ -7908,6 +7908,41 @@
             },
             {
               "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#comments:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "comments: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Comment",
+                  "canonicalReference": "@rainprotocol/rainlang!~Comment"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "comments",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
+            },
+            {
+              "kind": "Property",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#constants:member",
               "docComment": "",
               "excerptTokens": [
@@ -8170,48 +8205,12 @@
             },
             {
               "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getComments:member(1)",
-              "docComment": "/**\n * Get the current comments inside of the text of this RainDocument instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getComments(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Comment",
-                  "canonicalReference": "@rainprotocol/rainlang!~Comment"
-                },
-                {
-                  "kind": "Content",
-                  "text": "[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getComments"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getExpProblems:member(1)",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getBindingsProblems:member(1)",
               "docComment": "/**\n * Get the expression problems of this RainDocument instance\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "getExpProblems(): "
+                  "text": "getBindingsProblems(): "
                 },
                 {
                   "kind": "Reference",
@@ -8238,115 +8237,7 @@
               "parameters": [],
               "isOptional": false,
               "isAbstract": false,
-              "name": "getExpProblems"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getImports:member(1)",
-              "docComment": "/**\n * Get the imports of this RainDocument instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getImports(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Import",
-                  "canonicalReference": "@rainprotocol/rainlang!~Import"
-                },
-                {
-                  "kind": "Content",
-                  "text": "[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getImports"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getOpMeta:member(1)",
-              "docComment": "/**\n * Get the current text of this RainDocument instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getOpMeta(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "OpMeta",
-                  "canonicalReference": "@rainprotocol/rainlang!~OpMeta"
-                },
-                {
-                  "kind": "Content",
-                  "text": "[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getOpMeta"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#getProblems:member(1)",
-              "docComment": "/**\n * Get the current problems of this RainDocument instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getProblems(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Problem",
-                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
-                },
-                {
-                  "kind": "Content",
-                  "text": "[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getProblems"
+              "name": "getBindingsProblems"
             },
             {
               "kind": "Method",
@@ -8477,6 +8368,71 @@
               "isAbstract": false
             },
             {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#opmeta:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "opmeta: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "OpMeta",
+                  "canonicalReference": "@rainprotocol/rainlang!~OpMeta"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "opmeta",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#opmetaPath:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "opmetaPath: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "opmetaPath",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
+            },
+            {
               "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!RainDocument#parse:member(1)",
               "docComment": "/**\n * Parses this instance of RainDocument\n *\n * @public\n */\n",
@@ -8511,6 +8467,41 @@
               "isOptional": false,
               "isAbstract": false,
               "name": "parse"
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument#problems:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "problems: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Problem",
+                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "problems",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
             },
             {
               "kind": "Property",
@@ -8802,6 +8793,103 @@
             },
             {
               "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#ast:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "ast: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RainlangAST",
+                  "canonicalReference": "@rainprotocol/rainlang!~RainlangAST"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "ast",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#binding:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "binding?: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Binding",
+                  "canonicalReference": "@rainprotocol/rainlang!~Binding"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "binding",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#comments:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "comments: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Comment",
+                  "canonicalReference": "@rainprotocol/rainlang!~Comment"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "comments",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
+            },
+            {
+              "kind": "Property",
               "canonicalReference": "@rainprotocol/rainlang!Rainlang#constants:member",
               "docComment": "",
               "excerptTokens": [
@@ -8932,146 +9020,6 @@
             },
             {
               "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getAst:member(1)",
-              "docComment": "/**\n * Get AST of this Rainlang instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getAst(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "RainlangAST",
-                  "canonicalReference": "@rainprotocol/rainlang!~RainlangAST"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 2
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getAst"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getComments:member(1)",
-              "docComment": "/**\n * Get the current comments inside of the text of this Rainlang instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getComments(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Comment",
-                  "canonicalReference": "@rainprotocol/rainlang!~Comment"
-                },
-                {
-                  "kind": "Content",
-                  "text": "[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getComments"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getOpMeta:member(1)",
-              "docComment": "/**\n * Get the current text of this Rainlang instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getOpMeta(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "OpMeta",
-                  "canonicalReference": "@rainprotocol/rainlang!~OpMeta"
-                },
-                {
-                  "kind": "Content",
-                  "text": "[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getOpMeta"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getProblems:member(1)",
-              "docComment": "/**\n * Get the current problems of this Rainlang instance\n *\n * @public\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "getProblems(): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Problem",
-                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
-                },
-                {
-                  "kind": "Content",
-                  "text": "[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "getProblems"
-            },
-            {
-              "kind": "Method",
               "canonicalReference": "@rainprotocol/rainlang!Rainlang#getRuntimeError:member(1)",
               "docComment": "/**\n * Get the current runtime error of this Rainlang instance\n *\n * @public\n */\n",
               "excerptTokens": [
@@ -9107,35 +9055,70 @@
               "name": "getRuntimeError"
             },
             {
-              "kind": "Method",
-              "canonicalReference": "@rainprotocol/rainlang!Rainlang#getText:member(1)",
-              "docComment": "/**\n * Get the current text of this Rainlang instance\n *\n * @public\n */\n",
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#namespaces:member",
+              "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "getText(): "
+                  "text": "namespaces: "
                 },
                 {
-                  "kind": "Content",
-                  "text": "string"
+                  "kind": "Reference",
+                  "text": "Namespace",
+                  "canonicalReference": "@rainprotocol/rainlang!~Namespace"
                 },
                 {
                   "kind": "Content",
                   "text": ";"
                 }
               ],
-              "isStatic": false,
-              "returnTypeTokenRange": {
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "namespaces",
+              "propertyTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 2
               },
-              "releaseTag": "Public",
+              "isStatic": false,
               "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [],
+              "isAbstract": false
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#opmeta:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "opmeta: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "OpMeta",
+                  "canonicalReference": "@rainprotocol/rainlang!~OpMeta"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
               "isOptional": false,
-              "isAbstract": false,
-              "name": "getText"
+              "releaseTag": "Public",
+              "name": "opmeta",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
             },
             {
               "kind": "Method",
@@ -9167,6 +9150,71 @@
               "isOptional": false,
               "isAbstract": false,
               "name": "parse"
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#problems:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "problems: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Problem",
+                  "canonicalReference": "@rainprotocol/rainlang!~Problem"
+                },
+                {
+                  "kind": "Content",
+                  "text": "[]"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "problems",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 3
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
+            },
+            {
+              "kind": "Property",
+              "canonicalReference": "@rainprotocol/rainlang!Rainlang#text:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "text: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "string"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "text",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              },
+              "isStatic": false,
+              "isProtected": false,
+              "isAbstract": false
             },
             {
               "kind": "Method",
@@ -10035,12 +10083,12 @@
             },
             {
               "kind": "MethodSignature",
-              "canonicalReference": "@rainprotocol/rainlang!RainLanguageServices#doValidation:member(1)",
+              "canonicalReference": "@rainprotocol/rainlang!RainLanguageServices#doValidate:member(1)",
               "docComment": "",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "doValidation(textDocument: "
+                  "text": "doValidate(textDocument: "
                 },
                 {
                   "kind": "Reference",
@@ -10091,7 +10139,35 @@
                   "isOptional": false
                 }
               ],
-              "name": "doValidation"
+              "name": "doValidate"
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@rainprotocol/rainlang!RainLanguageServices#metaStore:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "metaStore: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "MetaStore",
+                  "canonicalReference": "@rainprotocol/rainlang!MetaStore:class"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "metaStore",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
             },
             {
               "kind": "MethodSignature",
@@ -10152,6 +10228,47 @@
                 }
               ],
               "name": "newRainDocument"
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@rainprotocol/rainlang!RainLanguageServices#rainDocuments:member",
+              "docComment": "",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "rainDocuments: "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "Map",
+                  "canonicalReference": "!Map:interface"
+                },
+                {
+                  "kind": "Content",
+                  "text": "<string, "
+                },
+                {
+                  "kind": "Reference",
+                  "text": "RainDocument",
+                  "canonicalReference": "@rainprotocol/rainlang!RainDocument:class"
+                },
+                {
+                  "kind": "Content",
+                  "text": ">"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": false,
+              "releaseTag": "Public",
+              "name": "rainDocuments",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 5
+              }
             }
           ],
           "extendsTokenRanges": []

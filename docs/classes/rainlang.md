@@ -14,7 +14,14 @@ class Rainlang
 
 |  Property | Type | Description |
 |  --- | --- | --- |
+|  [ast](./rainlang.md#ast-property) | [RainlangAST](../types/rainlangast.md) |  |
+|  [binding](./rainlang.md#binding-property) | [Binding](../types/binding.md) |  |
+|  [comments](./rainlang.md#comments-property) | `Comment[]` |  |
 |  [constants](./rainlang.md#constants-property) | `Record<string, string>` |  |
+|  [namespaces](./rainlang.md#namespaces-property) | [Namespace](../types/namespace.md) |  |
+|  [opmeta](./rainlang.md#opmeta-property) | `OpMeta[]` |  |
+|  [problems](./rainlang.md#problems-property) | `Problem[]` |  |
+|  [text](./rainlang.md#text-property) | `string` |  |
 
 ## Static Methods
 
@@ -26,16 +33,41 @@ class Rainlang
 
 |  Method | Description |
 |  --- | --- |
-|  [getAst()](./rainlang.md#getAst-method-1) | Get AST of this Rainlang instance |
-|  [getComments()](./rainlang.md#getComments-method-1) | Get the current comments inside of the text of this Rainlang instance |
-|  [getOpMeta()](./rainlang.md#getOpMeta-method-1) | Get the current text of this Rainlang instance |
-|  [getProblems()](./rainlang.md#getProblems-method-1) | Get the current problems of this Rainlang instance |
 |  [getRuntimeError()](./rainlang.md#getRuntimeError-method-1) | Get the current runtime error of this Rainlang instance |
-|  [getText()](./rainlang.md#getText-method-1) | Get the current text of this Rainlang instance |
 |  [parse()](./rainlang.md#parse-method-1) | Parses this instance of Rainlang |
 |  [updateText(newText)](./rainlang.md#updateText-method-1) | Updates the text of this Rainlang instance and parse it right after that |
 
 ## Property Details
+
+<a id="ast-property"></a>
+
+### ast
+
+<b>Signature:</b>
+
+```typescript
+ast: RainlangAST;
+```
+
+<a id="binding-property"></a>
+
+### binding
+
+<b>Signature:</b>
+
+```typescript
+binding?: Binding;
+```
+
+<a id="comments-property"></a>
+
+### comments
+
+<b>Signature:</b>
+
+```typescript
+comments: Comment[];
+```
 
 <a id="constants-property"></a>
 
@@ -45,6 +77,46 @@ class Rainlang
 
 ```typescript
 readonly constants: Record<string, string>;
+```
+
+<a id="namespaces-property"></a>
+
+### namespaces
+
+<b>Signature:</b>
+
+```typescript
+namespaces: Namespace;
+```
+
+<a id="opmeta-property"></a>
+
+### opmeta
+
+<b>Signature:</b>
+
+```typescript
+opmeta: OpMeta[];
+```
+
+<a id="problems-property"></a>
+
+### problems
+
+<b>Signature:</b>
+
+```typescript
+problems: Problem[];
+```
+
+<a id="text-property"></a>
+
+### text
+
+<b>Signature:</b>
+
+```typescript
+text: string;
 ```
 
 ## Static Method Details
@@ -75,66 +147,6 @@ static create(text: string, opmetaHash: string, metaStore?: MetaStore): Promise<
 
 ## Method Details
 
-<a id="getAst-method-1"></a>
-
-### getAst()
-
-Get AST of this Rainlang instance
-
-<b>Signature:</b>
-
-```typescript
-getAst(): RainlangAST;
-```
-<b>Returns:</b>
-
-`RainlangAST`
-
-<a id="getComments-method-1"></a>
-
-### getComments()
-
-Get the current comments inside of the text of this Rainlang instance
-
-<b>Signature:</b>
-
-```typescript
-getComments(): Comment[];
-```
-<b>Returns:</b>
-
-`Comment[]`
-
-<a id="getOpMeta-method-1"></a>
-
-### getOpMeta()
-
-Get the current text of this Rainlang instance
-
-<b>Signature:</b>
-
-```typescript
-getOpMeta(): OpMeta[];
-```
-<b>Returns:</b>
-
-`OpMeta[]`
-
-<a id="getProblems-method-1"></a>
-
-### getProblems()
-
-Get the current problems of this Rainlang instance
-
-<b>Signature:</b>
-
-```typescript
-getProblems(): Problem[];
-```
-<b>Returns:</b>
-
-`Problem[]`
-
 <a id="getRuntimeError-method-1"></a>
 
 ### getRuntimeError()
@@ -149,21 +161,6 @@ getRuntimeError(): Error | undefined;
 <b>Returns:</b>
 
 `Error | undefined`
-
-<a id="getText-method-1"></a>
-
-### getText()
-
-Get the current text of this Rainlang instance
-
-<b>Signature:</b>
-
-```typescript
-getText(): string;
-```
-<b>Returns:</b>
-
-`string`
 
 <a id="parse-method-1"></a>
 

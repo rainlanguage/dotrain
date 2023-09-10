@@ -7,17 +7,17 @@ import {
     ErrorCode,
     Diagnostic, 
     TextDocument, 
-    DiagnosticSeverity, 
-    getRainLanguageServices, 
+    getDiagnostics, 
+    DiagnosticSeverity 
 } from "../../src";
 
 
 async function testDiagnostics(
     text: string, metaStore: MetaStore, expectedDiagnostics: Diagnostic[]
 ) {
-    const langServices = getRainLanguageServices({ metaStore });
-    const actualDiagnostics: Diagnostic[] = await langServices.doValidation(
-        TextDocument.create("file", "rainlang", 1, text), 
+    const actualDiagnostics: Diagnostic[] = await getDiagnostics(
+        TextDocument.create("diagnostics.test.rain", "rainlang", 1, text), 
+        {metaStore}
     );
     if (actualDiagnostics.length == 0)
         throw new Error(`No Diagnostics available for the expression : \n${text}`);
