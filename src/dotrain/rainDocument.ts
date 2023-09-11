@@ -13,21 +13,19 @@ import {
 } from "../utils";
 import { 
     Import, 
+    Binding, 
     Problem, 
     Comment, 
+    ErrorCode, 
     Namespace, 
-    HEX_PATTERN, 
+    HEX_PATTERN,
+    HASH_PATTERN, 
+    TextDocument, 
+    ContextAlias,  
     WORD_PATTERN,
     PositionOffset, 
     NUMERIC_PATTERN, 
     DEFAULT_ELISION, 
-} from "../rainLanguageTypes";
-import { 
-    Binding, 
-    ErrorCode, 
-    HASH_PATTERN, 
-    TextDocument, 
-    ContextAlias, 
 } from "../rainLanguageTypes";
 import { 
     OpMeta,
