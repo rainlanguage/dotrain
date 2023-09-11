@@ -180,7 +180,7 @@ export class MetaStore {
                     this.cache[hashOrStore.toLowerCase()] === null || 
                     this.cache[hashOrStore.toLowerCase()] === undefined
                 ) {
-                    if (!metaBytes?.startsWith("0x")) metaBytes = "0x" + metaBytes;
+                    if (metaBytes && !metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
                     if (
                         metaBytes && 
                         isBytesLike(metaBytes) && 
