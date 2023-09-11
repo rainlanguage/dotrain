@@ -44,30 +44,24 @@ export interface RainLanguageServices {
  * const errors = await langServices.doValidate(myTextDocument);
  * ```
  */
-export function getRainLanguageServices(params?: LanguageServiceParams): RainLanguageServices {
-    
-    if (!params) params = {
-        metaStore: new MetaStore()
-    };
-    else {
-        if (!params.metaStore) params.metaStore = new MetaStore();
-    }
-    // if (!params.metaStore) params.metaStore = new MetaStore();
-    // const metaStore = params.metaStore!;
+export function getRainLanguageServices(params: LanguageServiceParams = {}): RainLanguageServices {
+
+    if (!params.metaStore) params.metaStore = new MetaStore();
+    const metaStore = params.metaStore;
     const rainDocuments: Map<string, RainDocument> = new Map();
 
     return {
-        metaStore: params.metaStore!,
+        metaStore,
         rainDocuments,
         newRainDocument: async(textDocument) => {
-            const _rd = await RainDocument.create(textDocument, params?.metaStore);
+            const _rd = await RainDocument.create(textDocument, metaStore);
             rainDocuments.set(textDocument.uri, _rd);
             return _rd;
         },
         doValidate: async(textDocument) => {
             let _rd = rainDocuments.get(textDocument.uri);
             if (!_rd) {
-                _rd = await RainDocument.create(textDocument, params?.metaStore);
+                _rd = await RainDocument.create(textDocument, metaStore);
                 rainDocuments.set(textDocument.uri, _rd);   
             }
             return getDiagnostics(_rd, params);
@@ -75,7 +69,7 @@ export function getRainLanguageServices(params?: LanguageServiceParams): RainLan
         doComplete: async(textDocument, position) => {
             let _rd = rainDocuments.get(textDocument.uri);
             if (!_rd) {
-                _rd = await RainDocument.create(textDocument, params?.metaStore);
+                _rd = await RainDocument.create(textDocument, metaStore);
                 rainDocuments.set(textDocument.uri, _rd);
             }
             return getCompletion(_rd, position, params);
@@ -83,7 +77,7 @@ export function getRainLanguageServices(params?: LanguageServiceParams): RainLan
         doHover: async(textDocument, position) => {
             let _rd = rainDocuments.get(textDocument.uri);
             if (!_rd) {
-                _rd = await RainDocument.create(textDocument, params?.metaStore);
+                _rd = await RainDocument.create(textDocument, metaStore);
                 rainDocuments.set(textDocument.uri, _rd);
             }
             return getHover(_rd, position, params);
