@@ -217,6 +217,8 @@ export class RainDocument {
             this.problems       = [];
             this.comments       = [];
             this.bindings       = [];
+            this.namespace      = {};
+            this.opmetaPath     = "";
             this.runtimeError   = undefined;
         }
     }
@@ -288,7 +290,6 @@ export class RainDocument {
         if (imp.sequence?.dotrain) {
             const _rd = imp.sequence.dotrain;
             if (_rd.problems.find(v => v.code === ErrorCode.DeepImport)) return true;
-            // else return _rd.imports.some(v => _rd.isDeepImport(v));
             else return false;
         }
         else return false;
@@ -625,12 +626,15 @@ export class RainDocument {
      * expression and is responsible for building the AST and collect problems
      */
     private async _parse() {
-        this.imports = [];
-        this.problems = [];
-        this.comments = [];
-        this.bindings = [];
-        this.runtimeError = undefined;
-        let document = this.textDocument.getText();
+        this.opmeta         = [];
+        this.imports        = [];
+        this.problems       = [];
+        this.comments       = [];
+        this.bindings       = [];
+        this.namespace      = {};
+        this.opmetaPath     = "";
+        this.runtimeError   = undefined;
+        let document        = this.textDocument.getText();
 
         // parse comments
         inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
