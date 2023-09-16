@@ -270,7 +270,7 @@ export class MetaStore {
      * @internal Decode the compressed meta bytes out of a cbor encoded bytes
      */
     private decodeContent(
-        metaBytes: any, 
+        metaBytes: string, 
         type: EncodedMetaType
     ): MetaSequence {
         const _metaSequence: MetaSequence = [];
@@ -278,12 +278,12 @@ export class MetaStore {
             try {
                 if (type === "sequence") _metaSequence.push(
                     ...decodeRainMetaDocument(
-                        metaBytes
+                        metaBytes.startsWith("0x") ? metaBytes : "0x" + metaBytes
                     )?.map(v => {
                         try {
                             return {
                                 content: v.get(0).toString("hex"),
-                                magicNumber: v.get(1)
+                                magicNumber: v.get(1) as MAGIC_NUMBERS
                             };
                         }
                         catch {
@@ -295,12 +295,12 @@ export class MetaStore {
                 );
                 else _metaSequence.push(
                     ...cborDecode(
-                        metaBytes.slice(2)
+                        metaBytes.startsWith("0x") ? metaBytes.slice(2) : metaBytes
                     )?.map(v => {
                         try {
                             return {
                                 content: v.get(0).toString("hex"),
-                                magicNumber: v.get(1)
+                                magicNumber: v.get(1) as MAGIC_NUMBERS
                             };
                         }
                         catch {
