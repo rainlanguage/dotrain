@@ -1342,3 +1342,26 @@ export class RainDocument {
         }
     }
 }
+
+// RainDocument.create(`/**
+// * This is test
+// */
+// @ opmeta   0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f
+// @ contmeta 0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c 
+//  'calling-context new-name /* renaming "calling-context" to "new-name" */
+//  base ! /* eliding an item from this imported items */
+
+
+// #const-value
+//  1e13
+
+// #elided-fragment
+//  ! this is elided, rebind before using
+
+// #main
+//  _: add(1 2 opmeta.sub(const-value 2)),
+//  _: mul(3 4 contmeta.new-name<'function>() infinity .const-value);
+
+// #function
+//  _: .opmeta.add(1 2);
+// `).then(v => console.log(v));
