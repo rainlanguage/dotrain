@@ -90,11 +90,10 @@ npx --p @rainprotocol/rainlang dotrain [options] --yes
 
     Usage: dotrain [options]
 
-    CLI command to compile/decompile a source file.
+    CLI command to compile a dotrain source file.
 
     Options:
       -c, --compile <entrypoints...>  Use compiling mode with specified entrypoints, to compile a .rain file to ExpressionConfig output in a .json
-      -d, --decompile <op meta hash>  Use decompiling mode with a specific opmeta hash, to decompile an ExpressionConfig in a .json to a .rain
       -i, --input <path>              Path to input file, either a .rain file for compiling or .json for decompiling (always required)
       -o, --output <path>             Path to output file, will output .json for compile mode and .rain for decompile mode (always required)
       -b, --batch-compile <path>      Path to a json file of mappings of dotrain files paths, entrypoints (bindings names) and output json files paths to batch compile

@@ -1,39 +1,40 @@
-import { isBytesLike, getEncodedMetaType } from "../utils";
-import { RAIN_SUBGRAPHS, searchMeta, MAGIC_NUMBERS, decodeRainMetaDocument, keccak256, cborDecode } from "@rainprotocol/meta";
+import { isBytesLike } from "../utils";
+import { RAIN_SUBGRAPHS, MAGIC_NUMBERS, keccak256, RainMeta, cborMapEncode } from "@rainprotocol/meta";
 
 
-/**
- * @public Type of a meta sequence resolved from a meta hash
- */
-export type MetaSequence = {
-    /**
-     * Sequence content
-     */
-    content: string;
-    /**
-     * Sequence magic number
-     */
-    magicNumber: MAGIC_NUMBERS;
-}[];
+// /**
+//  * @public Type of a meta sequence resolved from a meta hash
+//  */
+// export type MetaSequence = {
+//     /**
+//      * Sequence content
+//      */
+//     content: string;
+//     /**
+//      * Sequence magic number
+//      */
+//     magicNumber: MAGIC_NUMBERS;
+// }[];
 
-/**
- * @public Type of encoded meta bytes
- */
-export type EncodedMetaType = "sequence" | "single";
+// /**
+//  * @public Type of encoded meta bytes
+//  */
+// export type EncodedMetaType = "sequence" | "single";
 
 /**
  * @public Type for a record in MetaStore cache
  */
-export type MetaRecord = {
-    /**
-     * The type of the meta
-     */
-    type: EncodedMetaType;
-    /**
-     * The decoded sequence maps
-     */
-    sequence: MetaSequence;
-}
+export type MetaRecord = string;
+// {
+//     /**
+//      * The type of the meta
+//      */
+//     type: EncodedMetaType;
+//     /**
+//      * The decoded sequence maps
+//      */
+//     sequence: MetaSequence;
+// }
 
 /**
  * @public 
@@ -84,16 +85,20 @@ export class MetaStore {
     /**
      * @internal k/v cache for hashs and their contents
      */
-    private cache: { [hash: string]: MetaRecord | undefined | null } = {};
+    private cache: { [hash: string]: string | undefined | null } = {};
 
     /**
      * @public Constructor of the class
      * Use `MetaStore.create` to instantiate with initial options.
      */
     constructor(includeDefualtSubgraphs = true) {
-        if (includeDefualtSubgraphs) Object.values(RAIN_SUBGRAPHS).forEach(v => v.forEach(e => {
-            if (!this.subgraphs.includes(e)) this.subgraphs.push(e);
-        }));
+        if (includeDefualtSubgraphs) Object.values(RAIN_SUBGRAPHS).forEach(v => {
+            if (typeof v !== "function") v.forEach(e => {
+                if (!this.subgraphs.includes(e) && e.includes("interpreter-registry-np")) {
+                    this.subgraphs.push(e);
+                }
+            });
+        });
     }
 
     /**
@@ -133,14 +138,14 @@ export class MetaStore {
      * @param metaHash - The meta hash
      * @returns A MetaRecord or undefined if no matching record exists or null if the record has no sttlement
      */
-    public getRecord(metaHash: string): MetaRecord | undefined | null {
+    public getRecord(metaHash: string): string | undefined | null {
         return this.cache[metaHash.toLowerCase()];
     }
 
     /**
      * @public Get the whole meta cache
      */
-    public getCache(): { [hash: string]: MetaRecord | undefined | null } {
+    public getCache(): { [hash: string]: string | undefined | null } {
         return this.cache;
     }
 
@@ -151,9 +156,9 @@ export class MetaStore {
     public updateStore(metaStore: MetaStore): void
 
     /**
-     * @public Updates the meta store for the given meta hash and meta bytes
+     * @public Updates the meta store for the given meta hash and meta raw bytes
      * @param metaHash - The meta hash (32 bytes hex string)
-     * @param metaBytes - The meta bytes that are cbor encoded emitted by the deployed contract 
+     * @param metaBytes - The raw meta bytes
      */
     public async updateStore(metaHash: string, metaBytes: string): Promise<void>
 
@@ -187,12 +192,14 @@ export class MetaStore {
                         keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
                     ) {
                         try {
-                            const _type = getEncodedMetaType(metaBytes);
-                            const _content = metaBytes.toLowerCase();
-                            this.cache[hashOrStore.toLowerCase()] = {
-                                type: _type,
-                                sequence: this.decodeContent(_content, _type)
-                            };
+                            // const _type = getEncodedMetaType(metaBytes);
+                            // const _content = metaBytes.toLowerCase();
+                            // this.cache[hashOrStore.toLowerCase()] = {
+                            //     type: _type,
+                            //     sequence: this.decodeContent(_content, _type)
+                            // };
+                            this.cache[hashOrStore.toLowerCase()] = metaBytes.toLowerCase();
+                            this.storeContent(metaBytes);
                         }
                         catch {
                             this.cache[hashOrStore.toLowerCase()] = null;
@@ -200,22 +207,25 @@ export class MetaStore {
                     }
                     else {
                         try {
-                            const _settlement = await searchMeta(hashOrStore, this.subgraphs);
-                            this.cache[hashOrStore.toLowerCase()] = _settlement.rainMetaV1
-                                ? {
-                                    type: "sequence",
-                                    sequence: this.decodeContent(
-                                        _settlement.rainMetaV1.metaBytes,
-                                        "sequence"
-                                    )
-                                }
-                                : {
-                                    type: "single",
-                                    sequence: this.decodeContent(
-                                        _settlement.metaContentV1.encodedData,
-                                        "single"
-                                    )
-                                };
+                            // const _settlement = await searchMeta(hashOrStore, this.subgraphs);
+                            // this.cache[hashOrStore.toLowerCase()] = _settlement.rainMetaV1
+                            //     ? {
+                            //         type: "sequence",
+                            //         sequence: this.decodeContent(
+                            //             _settlement.rainMetaV1.metaBytes,
+                            //             "sequence"
+                            //         )
+                            //     }
+                            //     : {
+                            //         type: "single",
+                            //         sequence: this.decodeContent(
+                            //             _settlement.metaContentV1.encodedData,
+                            //             "single"
+                            //         )
+                            //     };
+                            const _metaBytes = await RainMeta.get(hashOrStore, this.subgraphs);
+                            this.cache[hashOrStore.toLowerCase()] = _metaBytes;
+                            this.storeContent(_metaBytes);
                         }
                         catch {
                             this.cache[hashOrStore.toLowerCase()] = null;
@@ -242,22 +252,25 @@ export class MetaStore {
         if (sync) for (const hash in this.cache) {
             if (this.cache[hash] === undefined || this.cache[hash] === null) {
                 try {
-                    const _settlement = await searchMeta(hash, subgraphUrls);
-                    this.cache[hash] = _settlement.rainMetaV1
-                        ? {
-                            type: "sequence",
-                            sequence: this.decodeContent(
-                                _settlement.rainMetaV1.metaBytes,
-                                "sequence"
-                            )
-                        }
-                        : {
-                            type: "single",
-                            sequence: this.decodeContent(
-                                _settlement.metaContentV1.encodedData,
-                                "single"
-                            )
-                        };
+                    // const _settlement = await searchMeta(hash, subgraphUrls);
+                    // this.cache[hash] = _settlement.rainMetaV1
+                    //     ? {
+                    //         type: "sequence",
+                    //         sequence: this.decodeContent(
+                    //             _settlement.rainMetaV1.metaBytes,
+                    //             "sequence"
+                    //         )
+                    //     }
+                    //     : {
+                    //         type: "single",
+                    //         sequence: this.decodeContent(
+                    //             _settlement.metaContentV1.encodedData,
+                    //             "single"
+                    //         )
+                    //     };
+                    const _metaBytes = await RainMeta.get(hash, subgraphUrls);
+                    this.cache[hash.toLowerCase()] = _metaBytes;
+                    this.storeContent(_metaBytes);
                 }
                 catch {
                     this.cache[hash] = null;
@@ -267,53 +280,74 @@ export class MetaStore {
     }
 
     /**
-     * @internal Decode the compressed meta bytes out of a cbor encoded bytes
+     * @internal Stores the meta content items into the store if a Meta is RainDocument
+     * @param rawBytes - The bytes to check and store
      */
-    private decodeContent(
-        metaBytes: string, 
-        type: EncodedMetaType
-    ): MetaSequence {
-        const _metaSequence: MetaSequence = [];
-        if (metaBytes) {
+    private storeContent(rawBytes: string) {
+        if (!rawBytes.startsWith("0x")) rawBytes = "0x" + rawBytes;
+        if (rawBytes.toLowerCase().startsWith(
+            "0x" + MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase()
+        )) {
             try {
-                if (type === "sequence") _metaSequence.push(
-                    ...decodeRainMetaDocument(
-                        metaBytes.startsWith("0x") ? metaBytes : "0x" + metaBytes
-                    )?.map(v => {
-                        try {
-                            return {
-                                content: v.get(0).toString("hex"),
-                                magicNumber: v.get(1) as MAGIC_NUMBERS
-                            };
-                        }
-                        catch {
-                            return undefined;
-                        }
-                    })?.filter(
-                        v => v !== undefined
-                    ) as MetaSequence
-                );
-                else _metaSequence.push(
-                    ...cborDecode(
-                        metaBytes.startsWith("0x") ? metaBytes.slice(2) : metaBytes
-                    )?.map(v => {
-                        try {
-                            return {
-                                content: v.get(0).toString("hex"),
-                                magicNumber: v.get(1) as MAGIC_NUMBERS
-                            };
-                        }
-                        catch {
-                            return undefined;
-                        }
-                    })?.filter(
-                        v => v !== undefined
-                    ) as MetaSequence
-                );
+                const maps = RainMeta.decode(rawBytes);
+                for (let i = 0; i < maps.length; i++) {
+                    const bytes = "0x" + cborMapEncode(maps[i]).toLowerCase();
+                    const hash = keccak256(bytes).toLowerCase();
+                    if (!this.cache[hash]) this.cache[hash] = bytes;
+                }
             }
-            // eslint-disable-next-line no-empty
-            catch {}
+            catch { /* */ }
         }
-        return _metaSequence;
     }
+
+    // /**
+    //  * @internal Decode the compressed meta bytes out of a cbor encoded bytes
+    //  */
+    // private decodeContent(
+    //     metaBytes: string, 
+    //     type: EncodedMetaType
+    // ): MetaSequence {
+    //     const _metaSequence: MetaSequence = [];
+    //     if (metaBytes) {
+    //         try {
+    //             if (type === "sequence") _metaSequence.push(
+    //                 ...decodeRainMetaDocument(
+    //                     metaBytes.startsWith("0x") ? metaBytes : "0x" + metaBytes
+    //                 )?.map(v => {
+    //                     try {
+    //                         return {
+    //                             content: v.get(0).toString("hex"),
+    //                             magicNumber: v.get(1) as MAGIC_NUMBERS
+    //                         };
+    //                     }
+    //                     catch {
+    //                         return undefined;
+    //                     }
+    //                 })?.filter(
+    //                     v => v !== undefined
+    //                 ) as MetaSequence
+    //             );
+    //             else _metaSequence.push(
+    //                 ...cborDecode(
+    //                     metaBytes.startsWith("0x") ? metaBytes.slice(2) : metaBytes
+    //                 )?.map(v => {
+    //                     try {
+    //                         return {
+    //                             content: v.get(0).toString("hex"),
+    //                             magicNumber: v.get(1) as MAGIC_NUMBERS
+    //                         };
+    //                     }
+    //                     catch {
+    //                         return undefined;
+    //                     }
+    //                 })?.filter(
+    //                     v => v !== undefined
+    //                 ) as MetaSequence
+    //             );
+    //         }
+    //         // eslint-disable-next-line no-empty
+    //         catch {}
+    //     }
+    //     return _metaSequence;
+    // }
 }

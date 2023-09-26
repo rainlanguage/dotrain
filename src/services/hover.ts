@@ -1,7 +1,5 @@
 import { ASTNode } from "../rainLanguageTypes";
-// import { MetaStore } from "../dotrain/metaStore";
 import { RainDocument } from "../dotrain/rainDocument";
-// import { ContractMetaSchema, MAGIC_NUMBERS, OpMetaSchema, metaFromBytes, toOpMeta } from "@rainprotocol/meta";
 import { LanguageServiceParams, MarkupKind, TextDocument, Position, Hover, Range } from "../rainLanguageTypes";
 
 
@@ -215,7 +213,7 @@ export async function getHover(
             contents: {
                 kind: _contentType,
                 value: `this import contains:${
-                    _hash.sequence.opmeta ? " -OpMeta" : ""
+                    _hash.sequence.dispair ? " -DISPair" : ""
                 }${
                     _hash.sequence.ctxmeta ? " -ContractMeta" : ""
                 }${

@@ -3,8 +3,9 @@ import { MetaStore } from "./dotrain/metaStore";
 import { BigNumberish, BytesLike, ParsedChunk } from "./utils";
 import { RainDocument } from "./dotrain/rainDocument";
 import { MarkupKind } from "vscode-languageserver-types";
-import { OpMeta } from "@rainprotocol/meta";
+import { AuthoringMeta } from "@rainprotocol/meta";
 import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
+import { EVM } from "@ethereumjs/evm";
 
 
 export * from "vscode-languageserver-types";
@@ -56,15 +57,17 @@ export enum ErrorCode {
     UnresolvableDependencies = 3,
     DeepImport = 4,
     DeepNamespace = 5,
-    CorruptImport = 6,
-    ForbiddenId = 7,
-    ElidedBinding = 8,
-    SingletonWords = 9,
-    MultipleWords = 10,
-    SingleWordModify = 11,
+    // CorruptImport = 6,
+    CorruptMeta = 6, 
+    // ForbiddenId = 8,
+    ElidedBinding = 7,
+    SingletonWords = 8,
+    MultipleWords = 9,
+    SingleWordModify = 10,
+    InconsumableMeta = 11,
 
     UndefinedWord = 0x101,
-    UndefinedOpMeta = 0x102,
+    UndefinedAuthoringMeta = 0x102,
     UndefinedImport = 0x103,
     UndefinedQuote = 0x104,
     UndefinedOpcode = 0x105,
@@ -72,19 +75,19 @@ export enum ErrorCode {
 
     InvalidWordPattern = 0x201,
     InvalidExpression = 0x202,
-    InvalidNestedNode = 0x203,
+    // InvalidNestedNode = 0x203,
     InvalidSelfReference = 0x204,
     InvalidHash = 0x205,
-    InvalidOpMeta = 0x206,
-    InvalidContractMeta = 0x207,
+    // InvalidOpMeta = 0x206,
+    // InvalidContractMeta = 0x207,
     InvalidImport = 0x208,
     InvalidEmptyBinding = 0x209,
     InvalidBindingId = 0x210,
     InvalidQuote = 0x211,
     InvalidOperandArg = 0x212,
-    InvalidMetaSequence = 0x213,
-    InvalidReference = 0x214,
-    InvalidRainDocument = 0x215,
+    InvalidReference = 0x213,
+    InvalidRainDocument = 0x214,
+    // InvalidMetaSequence = 0x213,
     // InvalidElision = 0x214,
 
     UnexpectedToken = 0x301,
@@ -101,7 +104,7 @@ export enum ErrorCode {
 
     ExpectedOpcode = 0x401,
     ExpectedSpace = 0x402,
-    ExpectedOperandArgs = 0x403,
+    // ExpectedOperandArgs = 0x403,
     ExpectedClosingParen = 0x404,
     ExpectedOpeningParen = 0x405,
     ExpectedClosingAngleBracket = 0x406,
@@ -114,10 +117,10 @@ export enum ErrorCode {
 
     MismatchRHS = 0x501,
     MismatchLHS = 0x502,
-    MismatchOperandArgs = 0x503,
+    // MismatchOperandArgs = 0x503,
 
-    OutOfRangeInputs = 0x601,
-    OutOfRangeOperandArgs = 0x602,
+    // OutOfRangeInputs = 0x601,
+    // OutOfRangeOperandArgs = 0x602,
     OutOfRangeValue = 0x603,
 
     DuplicateAlias = 0x701,
@@ -127,6 +130,139 @@ export enum ErrorCode {
     // DuplicateContextAlias = 0x702,
     // DuplicateBindingId = 0x703,
 }
+
+// /**
+//  * @public Fallback rainlang (native parser) error selectors
+//  */
+// export enum FallbackErrorSelectors {
+//     "AuthoringMetaHashMismatch(bytes32,bytes32)"        = 0x26cc0fec,
+//     "BadDynamicLength(uint256,uint256)"                 = 0xc8b56901,
+//     "BadOpInputsLength(uint256,uint256,uint256)"        = 0xddf56071,
+//     "DanglingSource()"                                  = 0x858f2dcf,
+//     "DecimalLiteralOverflow(uint256)"                   = 0x8f2b5ffd,
+//     "DuplicateFingerprint()"                            = 0x59293c51,
+//     "DuplicateLHSItem(uint256)"                         = 0x53e6feba,
+//     "EntrypointMinOutputs(uint256,uint256,uint256)"     = 0xf7dd619f,
+//     "EntrypointMissing(uint256,uint256)"                = 0xfd9e1af4,
+//     "EntrypointNonZeroInput(uint256,uint256)"           = 0xee8d1081,
+//     "ExcessLHSItems(uint256)"                           = 0x43168e68,
+//     "ExcessRHSItems(uint256)"                           = 0x78ef2782,
+//     "ExpectedLeftParen(uint256)"                        = 0x23b5c6ea,
+//     "ExpectedOperand(uint256)"                          = 0x24027dc4,
+//     "HexLiteralOverflow(uint256)"                       = 0xff2f5949,
+//     "MalformedCommentStart(uint256)"                    = 0x3e47169c,
+//     "MalformedExponentDigits(uint256)"                  = 0x013b2aaa,
+//     "MalformedHexLiteral(uint256)"                      = 0x69f1e3e6,
+//     "MaxSources()"                                      = 0xa8062841,
+//     "MissingFinalSemi(uint256)"                         = 0xf06f54cf,
+//     "NotAcceptingInputs(uint256)"                       = 0xab1d3ea7,
+//     "OddLengthHexLiteral(uint256)"                      = 0xd76d9b57,
+//     "OperandOverflow(uint256)"                          = 0x7480c784,
+//     "OutOfBoundsConstantRead(uint256,uint256,uint256)"  = 0xeb789454,
+//     "OutOfBoundsStackRead(uint256,uint256,uint256)"     = 0xeaa16f33,
+//     "ParenOverflow()"                                   = 0x6232f2d9,
+//     "ParserOutOfBounds()"                               = 0x7d565df6,
+//     "SourceOffsetOutOfBounds(bytes,uint256)"            = 0xd3fc97bd,
+//     "StackAllocationMismatch(uint256,uint256)"          = 0x4d9c18dc,
+//     "StackOutputsMismatch(uint256,uint256)"             = 0x4689f0b3,
+//     "StackOverflow()"                                   = 0xa25cba31,
+//     "StackUnderflow(uint256,uint256,uint256)"           = 0x2cab6bff,
+//     "StackUnderflow()"                                  = 0x04671d00,
+//     "StackUnderflowHighwater(uint256,uint256,uint256)"  = 0x1bc5ab0f,
+//     "UnclosedLeftParen(uint256)"                        = 0x6fb11cdc,
+//     "UnclosedOperand(uint256)"                          = 0x722cd24a,
+//     "UnexpectedComment(uint256)"                        = 0xedad0c58,
+//     "UnexpectedConstructionMetaHash(bytes32)"           = 0xc99c7f98,
+//     "UnexpectedInterpreterBytecodeHash(bytes32)"        = 0x1dd8527e,
+//     "UnexpectedLHSChar(uint256)"                        = 0x5520a517,
+//     "UnexpectedOperand(uint256)"                        = 0xf8216c55,
+//     "UnexpectedPointers(bytes)"                         = 0x9835e402,
+//     "UnexpectedRHSChar(uint256)"                        = 0x4e803df6,
+//     "UnexpectedRightParen(uint256)"                     = 0x7f9db542,
+//     "UnexpectedStoreBytecodeHash(bytes32)"              = 0xcc0415fd,
+//     "UnknownWord(uint256)"                              = 0x81bd48db,
+//     "UnsupportedLiteralType(uint256)"                   = 0xb0e4e5b3,
+//     "WordSize(string)"                                  = 0xe47fe8b7,
+//     "WriteError()"                                      = 0x08d4abb6,
+//     "ZeroLengthDecimal(uint256)"                        = 0xfa65827e,
+//     "ZeroLengthHexLiteral(uint256)"                     = 0xc75cd509,
+// }
+
+/**
+ * @public ExpressionDeployerV2 selectors
+ */
+export const NATIVE_PARSER_ABI = [
+    "error MaxSources()",
+    "error WriteError()",
+    "error ParenOverflow()",
+    "error StackOverflow()",
+    "error DanglingSource()",
+    "error StackUnderflow()",
+    "error ParserOutOfBounds()",
+    "error WordSize(string word)",
+    "error DuplicateFingerprint()",
+    "error UnknownWord(uint256 offset)",
+    "error ExcessLHSItems(uint256 offset)",
+    "error ExcessRHSItems(uint256 offset)",
+    "error ExpectedOperand(uint256 offset)",
+    "error OperandOverflow(uint256 offset)",
+    "error UnclosedOperand(uint256 offset)",
+    "error MissingFinalSemi(uint256 offset)",
+    "error ExpectedLeftParen(uint256 offset)",
+    "error UnclosedLeftParen(uint256 offset)",
+    "error UnexpectedComment(uint256 offset)",
+    "error UnexpectedLHSChar(uint256 offset)",
+    "error UnexpectedOperand(uint256 offset)",
+    "error UnexpectedRHSChar(uint256 offset)",
+    "error ZeroLengthDecimal(uint256 offset)",
+    "error HexLiteralOverflow(uint256 offset)",
+    "error NotAcceptingInputs(uint256 offset)",
+    "error MalformedHexLiteral(uint256 offset)",
+    "error OddLengthHexLiteral(uint256 offset)",
+    "error UnexpectedRightParen(uint256 offset)",
+    "error ZeroLengthHexLiteral(uint256 offset)",
+    "error DuplicateLHSItem(uint256 errorOffset)",
+    "error MalformedCommentStart(uint256 offset)",
+    "error DecimalLiteralOverflow(uint256 offset)",
+    "error UnsupportedLiteralType(uint256 offset)",
+    "error MalformedExponentDigits(uint256 offset)",
+    "error UnexpectedPointers(bytes actualPointers)",
+    "error UnexpectedConstructionMetaHash(bytes32 actualOpMeta)",
+    "error UnexpectedStoreBytecodeHash(bytes32 actualBytecodeHash)",
+    "error AuthoringMetaHashMismatch(bytes32 expected, bytes32 actual)",
+    "error SourceOffsetOutOfBounds(bytes bytecode, uint256 sourceIndex)",
+    "error UnexpectedInterpreterBytecodeHash(bytes32 actualBytecodeHash)",
+    "error StackOutputsMismatch(uint256 stackIndex, uint256 bytecodeOutputs)",
+    "error BadDynamicLength(uint256 dynamicLength, uint256 standardOpsLength)",
+    "error EntrypointNonZeroInput(uint256 entrypointIndex, uint256 inputsLength)",
+    "error EntrypointMissing(uint256 expectedEntrypoints, uint256 actualEntrypoints)",
+    "error StackAllocationMismatch(uint256 stackMaxIndex, uint256 bytecodeAllocation)",
+    "error StackUnderflow(uint256 opIndex, uint256 stackIndex, uint256 calculatedInputs)",
+    "error OutOfBoundsStackRead(uint256 opIndex, uint256 stackTopIndex, uint256 stackRead)",
+    "error BadOpInputsLength(uint256 opIndex, uint256 calculatedInputs, uint256 bytecodeInputs)",
+    "error StackUnderflowHighwater(uint256 opIndex, uint256 stackIndex, uint256 stackHighwater)",
+    "error OutOfBoundsConstantRead(uint256 opIndex, uint256 constantsLength, uint256 constantRead)",
+    "error EntrypointMinOutputs(uint256 entrypointIndex, uint256 outputsLength, uint256 minOutputs)",
+    "function iStore() view returns (address)",
+    "function parseMeta() pure returns (bytes)",
+    "function iInterpreter() view returns (address)",
+    "function authoringMetaHash() pure returns (bytes32)",
+    "function integrityFunctionPointers() view returns (bytes)",
+    "function parse(bytes data) pure returns (bytes, uint256[])",
+    "function buildParseMeta(bytes authoringMeta) pure returns (bytes)",
+    "function supportsInterface(bytes4 interfaceId_) view returns (bool)",
+    "function integrityCheck(bytes bytecode, uint256[] constants, uint256[] minOutputs) view",
+    "function deployExpression(bytes bytecode, uint256[] constants, uint256[] minOutputs) returns (address, address, address)"
+] as const;
+
+/**
+ * @public Native Parser known subgraph endpoints
+ */
+export const NP_SGS = [
+    "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-np-eth",
+    "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-np-matic",
+    "https://api.thegraph.com/subgraphs/name/rainprotocol/interpreter-registry-np",
+] as const;
 
 /**
  * @public
@@ -240,12 +376,19 @@ export type ExpressionConfig = {
     /**
      * Sources verbatim.
      */
-    sources: BytesLike[];
+    bytecode: BytesLike;
     /**
      * Constants verbatim.
      */
     constants: BigNumberish[];
 }
+
+export type NPError = {
+    name: string;
+    args: { [key: string]: any };
+}
+
+// export type NPResult = ExpressionConfig | NPError;
 
 /**
  * @public Type for read-memory opcode
@@ -477,7 +620,10 @@ export interface Import {
     problems: Problem[];
     reconfigs?: [ParsedChunk, ParsedChunk][];
     sequence?: {
-        opmeta?: OpMeta[];
+        dispair?: {
+            bytecode: string;
+            authoringMeta?: AuthoringMeta[];
+        }
         ctxmeta?: ContextAlias[];
         dotrain?: RainDocument;
     };
@@ -652,7 +798,7 @@ export namespace Binding {
 export type NamespaceNode = { 
     Hash: string;
     ImportIndex: number;
-    Element: OpMeta | OpMeta[] | Binding | ContextAlias 
+    Element: AuthoringMeta | AuthoringMeta[] | Binding | ContextAlias 
 }
 
 /**
@@ -681,8 +827,8 @@ export namespace Namespace {
                             v[0] === "Element" && (
                                 ContextAlias.is(v[1]) || 
                                 Binding.is(v[1]) || 
-                                OpMeta.is(v[1]) || 
-                                (Array.isArray(v[1]) && v[1].every(e => OpMeta.is(e)))
+                                AuthoringMeta.is(v[1]) || 
+                                (Array.isArray(v[1]) && v[1].every(e => AuthoringMeta.is(e)))
                             )
                         ) ||
                         (
@@ -711,8 +857,9 @@ export namespace Namespace {
     }
 
     export function isWords(value: any): value is { 
+        Hash: string;
         ImportIndex: number; 
-        Element: OpMeta[]
+        Element: AuthoringMeta[]
     } {
         return value !== null
             && typeof value === "object"
@@ -721,17 +868,19 @@ export namespace Namespace {
     }
 
     export function isWord(value: any): value is { 
+        Hash: string;
         ImportIndex: number; 
-        Element: OpMeta
+        Element: AuthoringMeta
     } {
         return value !== null
             && typeof value === "object"
             && typeof value.ImportIndex === "number"
             && "Element" in value
-            && "operand" in value.Element;
+            && "word" in value.Element;
     }
 
     export function isContextAlias(value: any): value is { 
+        Hash: string;
         ImportIndex: number; 
         Element: ContextAlias
     } {
@@ -743,6 +892,7 @@ export namespace Namespace {
     }
 
     export function isBinding(value: any): value is { 
+        Hash: string;
         ImportIndex: number; 
         Element: Binding
     } {
@@ -759,7 +909,7 @@ export namespace Namespace {
  */
 export type ContextAlias = {
     name: string;
-    desc: string;
+    description: string;
     column: number;
     row: number;
 }
@@ -783,4 +933,26 @@ export namespace ContextAlias {
             && typeof value.row === "number"
             && (isNaN(value.row) || Number.isInteger(value.row));
     }
+}
+
+/**
+ * @public Rainlang compiler options
+ */
+export type CompilerOptions = {
+    /**
+     * MetaStore instance
+     */
+    metastore?: MetaStore;
+    /**
+     * EVM instance
+     */
+    evm?: EVM;
+    /**
+     * ExpressionDeployer ABI
+     */
+    abi?: any;
+    /**
+     * The ExpressionDeployer fn name to execute from bytecode
+     */
+    fn?: string;
 }

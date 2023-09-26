@@ -30,6 +30,9 @@
     "bin": {
         "dotrain": "./cli/dotrain.js"
     },
+    "engines": {
+        "node": ">=18"
+    },
     "scripts": {
         "prepare": "npm run build",
         "build": "rimraf ./dist && npm run build-cjs && npm run build-esm && npm run build-types",
@@ -67,8 +70,11 @@
         "typescript": "^4.8.4"
     },
     "dependencies": {
+        "@ethereumjs/evm": "^2.0.0",
+        "@ethereumjs/util": "^9.0.0",
+        "@ethereumjs/vm": "^7.0.0",
         "@nohns/algebra.js": "^0.2.9",
-        "@rainprotocol/meta": "^2.1.5",
+        "@rainprotocol/meta": "github:rainprotocol/meta#2023-09-21-np-meta",
         "commander": "^11.0.0",
         "ethers": "^5.7.2",
         "magic-string": "^0.30.0",

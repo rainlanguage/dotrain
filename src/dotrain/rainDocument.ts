@@ -9,7 +9,9 @@ import {
     getRandomInt, 
     inclusiveParse, 
     exclusiveParse, 
-    isConsumableMetaSequence 
+    isConsumableMeta, 
+    hexlify,
+    execBytecode
 } from "../utils";
 import { 
     Import, 
@@ -25,14 +27,14 @@ import {
     WORD_PATTERN,
     PositionOffset, 
     NUMERIC_PATTERN, 
-    DEFAULT_ELISION, 
+    DEFAULT_ELISION,
+    NATIVE_PARSER_ABI, 
 } from "../rainLanguageTypes";
 import { 
-    OpMeta,
+    RainMeta,
     ContractMeta,
-    validateOpMeta,
-    metaFromBytes, 
     MAGIC_NUMBERS,
+    AuthoringMeta,
 } from "@rainprotocol/meta";
 
 
@@ -73,8 +75,9 @@ export class RainDocument {
     public namespace: Namespace = {};
     public imports: Import[] = [];
 
-    public opmeta: OpMeta[] = [];
-    public opmetaPath = "";
+    public authoringMeta: AuthoringMeta[] = [];
+    public authoringMetaPath = "";
+    public bytecode = "";
     public comments: Comment[] = [];
     public problems: Problem[] = [];
 
@@ -210,13 +213,13 @@ export class RainDocument {
             }
         }
         else {
-            this.opmeta         = [];
+            this.authoringMeta         = [];
             this.imports        = [];
             this.problems       = [];
             this.comments       = [];
             this.bindings       = [];
             this.namespace      = {};
-            this.opmetaPath     = "";
+            this.authoringMetaPath     = "";
             this.runtimeError   = undefined;
         }
     }
@@ -250,7 +253,7 @@ export class RainDocument {
                                 name: ctxCol.alias,
                                 column: ctxCol.columnIndex,
                                 row: NaN,
-                                desc: ctxCol.desc ?? ""
+                                description: ctxCol.desc ?? ""
                             }); 
                         }  
                     }
@@ -271,7 +274,7 @@ export class RainDocument {
                                 name: ctxCell.alias,
                                 column: ctxCol.columnIndex,
                                 row: ctxCell.cellIndex,
-                                desc: ctxCell.desc ?? ""
+                                description: ctxCell.desc ?? ""
                             });
                         }
                     });
@@ -371,140 +374,176 @@ export class RainDocument {
                 code: ErrorCode.UndefinedImport
             });
             else {
-                if (!isConsumableMetaSequence(_record.sequence)) {
-                    if (!_record.sequence.length) _result.problems.push({
-                        msg: "empty import",
+                let _metaMaps;
+                try {
+                    _metaMaps = RainMeta.decode(_record);
+                }
+                catch {
+                    _metaMaps = undefined;
+                }
+                if (_metaMaps === undefined) _result.problems.push({
+                    msg: "corrupt meta",
+                    position: _result.hashPosition,
+                    code: ErrorCode.CorruptMeta
+                });
+                else if (!isConsumableMeta(_metaMaps)) {
+                    // if (!_record.sequence.length) _result.problems.push({
+                    //     msg: "empty import",
+                    //     position: _result.hashPosition,
+                    //     code: ErrorCode.InvalidMetaSequence
+                    // });
+                    // else _result.problems.push({
+                    //     msg: "imported hash contains meta sequence that cannot be consumed",
+                    //     position: _result.hashPosition,
+                    //     code: ErrorCode.InvalidMetaSequence
+                    // });
+                    _result.problems.push({
+                        msg: "inconsumable import",
                         position: _result.hashPosition,
-                        code: ErrorCode.InvalidMetaSequence
-                    });
-                    else _result.problems.push({
-                        msg: "imported hash contains meta sequence that cannot be consumed",
-                        position: _result.hashPosition,
-                        code: ErrorCode.InvalidMetaSequence
+                        code: ErrorCode.InconsumableMeta
                     });
                 }
                 else {
                     _result.sequence = {};
                     let _isCorrupt = false;
-                    const _opmetaSeq = _record.sequence.find(
-                        v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1
+                    const _dispair = _metaMaps.find(v => 
+                        v.get(1).magicNumber === MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
                     );
-                    const _contractMetaSeq = _record.sequence.find(
-                        v => v.magicNumber === MAGIC_NUMBERS.CONTRACT_META_V1
+                    const _contractMeta = _metaMaps.find(
+                        v => v.get(1).magicNumber === MAGIC_NUMBERS.CONTRACT_META_V1
                     );
-                    const _dotrainSeq = _record.sequence.find(
-                        v => v.magicNumber === MAGIC_NUMBERS.RAIN_META_DOCUMENT
+                    const _dotrain = _metaMaps.find(
+                        v => v.get(1).magicNumber === MAGIC_NUMBERS.DOTRAIN_V1
                     );
-                    if (_opmetaSeq) {
+                    if (_dispair) {
                         try {
-                            const _parsed = JSON.parse(metaFromBytes(_opmetaSeq.content));
-                            try {
-                                if (validateOpMeta(_parsed)) {
-                                    _result.sequence.opmeta = _parsed;
-                                }
-                            }
-                            catch (error) {
-                                const _errorHeader = _record.type === "sequence" 
-                                    ? "meta sequence contains invalid OpMeta, reason: " 
-                                    : "invalid OpMeta, reason: ";
-                                _result.problems.push({
-                                    msg: _errorHeader + (
-                                        error instanceof Error 
-                                            ? error.message 
-                                            : typeof error === "string" ? error : ""
-                                    ),
-                                    position: _result.hashPosition,
-                                    code: ErrorCode.InvalidOpMeta
-                                });
-                            }
-                        }
-                        catch (error) {
-                            _result.problems.push({
-                                msg: _record.type === "sequence" 
-                                    ? "meta sequence contains corrupt OpMeta" 
-                                    : "corrupt OpMeta",
-                                position: _result.hashPosition,
-                                code: ErrorCode.CorruptImport
-                            });
-                            _isCorrupt = true;
-                        }
-                    }
-                    if (!_isCorrupt && _contractMetaSeq) {
-                        try {
-                            const _parsed = JSON.parse(
-                                metaFromBytes(_contractMetaSeq.content)
+                            const _bytecode = RainMeta.decodeMap(_dispair);
+                            if (typeof _bytecode === "string") throw "";
+                            const _authoringMetaHash = (await execBytecode(
+                                _bytecode,
+                                NATIVE_PARSER_ABI,
+                                "authoringMetaHash",
+                                []
+                            ))[0]?.toLowerCase();
+                            await this.metaStore.updateStore(_authoringMetaHash as string);
+                            const _authoringMetaBytes = this.metaStore.getRecord(
+                                _authoringMetaHash
                             );
-                            if (ContractMeta.is(_parsed)) {
-                                try {
-                                    _result.sequence.ctxmeta = 
-                                        this.toContextAlias(_parsed);
-                                }
-                                catch(error) {
-                                    _result.problems.push({
-                                        msg: (_record.type === "sequence" 
-                                            ? "meta sequence contains invalid ContractMeta, reason: " 
-                                            : "invalid ContractMeta, reason: ") + (error as Error).message,
-                                        position: _result.hashPosition,
-                                        code: ErrorCode.InvalidContractMeta
-                                    });
-                                }
-                            }
-                            else _result.problems.push({
-                                msg: _record.type === "sequence" 
-                                    ? "meta sequence contains invalid ContractMeta" 
-                                    : "invalid ContractMeta",
+                            if (!_authoringMetaBytes) this.problems.push({
+                                msg: "cannot find any settlement for authoring meta of specified dispair",
                                 position: _result.hashPosition,
-                                code: ErrorCode.InvalidContractMeta
+                                code: ErrorCode.UndefinedAuthoringMeta
                             });
+                            else {
+                                const _amm = RainMeta.decode(_authoringMetaBytes).find(v => 
+                                    v.get(1).magicNumber === MAGIC_NUMBERS.AUTHORING_META_V1
+                                );
+                                if (!_amm) throw "";
+                                const _authoringMeta = AuthoringMeta.get(_amm);
+                                _result.sequence.dispair = {
+                                    bytecode: hexlify(_bytecode, { allowMissingPrefix: true }),
+                                    authoringMeta: _authoringMeta
+                                };
+                            }
+                            // const _parsed = JSON.parse(metaFromBytes(_dispair.content));
+                            // try {
+                            //     if (validateOpMeta(_parsed)) {
+                            //         _result.sequence.opmeta = _parsed;
+                            //     }
+                            // }
+                            // catch (error) {
+                            //     const _errorHeader = _record.type === "sequence" 
+                            //         ? "meta sequence contains invalid OpMeta, reason: " 
+                            //         : "invalid OpMeta, reason: ";
+                            //     _result.problems.push({
+                            //         msg: _errorHeader + (
+                            //             error instanceof Error 
+                            //                 ? error.message 
+                            //                 : typeof error === "string" ? error : ""
+                            //         ),
+                            //         position: _result.hashPosition,
+                            //         code: ErrorCode.InvalidOpMeta
+                            //     });
+                            // }
                         }
                         catch (error) {
-                            const _errorHeader = _record.type === "sequence" 
-                                ? "meta sequence contains corrupt ContractMeta, reason: " 
-                                : "corrupt ContractMeta, reason: ";
                             _result.problems.push({
-                                msg: _errorHeader + (
-                                    error instanceof Error 
-                                        ? error.message 
-                                        : typeof error === "string" ? error : ""
-                                ),
+                                msg: "corrupt meta",
                                 position: _result.hashPosition,
-                                code: ErrorCode.CorruptImport
+                                code: ErrorCode.CorruptMeta
                             });
                             _isCorrupt = true;
                         }
                     }
-                    if (!_isCorrupt && _dotrainSeq) {
+                    if (!_isCorrupt && _contractMeta) {
                         try {
-                            const _dotrainStr = metaFromBytes(_dotrainSeq.content);
+                            // const _parsed = JSON.parse(
+                            //     metaFromBytes(_contractMeta.content)
+                            // );
+                            // if (ContractMeta.is(_parsed)) {
+                            //     try {
+                            //         _result.sequence.ctxmeta = 
+                            //             this.toContextAlias(_parsed);
+                            //     }
+                            //     catch(error) {
+                            //         _result.problems.push({
+                            //             msg: (_record.type === "sequence" 
+                            //                 ? "meta sequence contains invalid ContractMeta, reason: " 
+                            //                 : "invalid ContractMeta, reason: ") + (error as Error).message,
+                            //             position: _result.hashPosition,
+                            //             code: ErrorCode.InvalidContractMeta
+                            //         });
+                            //     }
+                            // }
+                            // else _result.problems.push({
+                            //     msg: _record.type === "sequence" 
+                            //         ? "meta sequence contains invalid ContractMeta" 
+                            //         : "invalid ContractMeta",
+                            //     position: _result.hashPosition,
+                            //     code: ErrorCode.InvalidContractMeta
+                            // });
+                            const _parsed = ContractMeta.get(_contractMeta);
+                            _result.sequence.ctxmeta = this.toContextAlias(_parsed);
+                        }
+                        catch (error) {
+                            // const _errorHeader = _record.type === "sequence" 
+                            //     ? "meta sequence contains corrupt ContractMeta, reason: " 
+                            //     : "corrupt ContractMeta, reason: ";
+                            _result.problems.push({
+                                msg: "corrupt meta",
+                                position: _result.hashPosition,
+                                code: ErrorCode.CorruptMeta
+                            });
+                            _isCorrupt = true;
+                        }
+                    }
+                    if (!_isCorrupt && _dotrain) {
+                        try {
+                            const _str = String.fromCharCode(
+                                ...RainMeta.decodeMap(_dotrain) as Uint8Array
+                            );
                             _result.sequence.dotrain = new RainDocument(
                                 TextDocument.create(
                                     `imported-dotrain-${_result.hash}`, 
                                     "rainlang", 
                                     0, 
-                                    _dotrainStr
+                                    _str as string
                                 ),
                                 this.metaStore,
                                 this.importDepth + 1
                             );
-                            _result.sequence.dotrain.parse();
+                            await _result.sequence.dotrain.parse();
                             if (_result.sequence.dotrain.problems.length) _result.problems.push({
-                                msg: "invalid rain document",
+                                msg: "imported rain document contains top level errors",
                                 position: _result.hashPosition,
                                 code: ErrorCode.InvalidRainDocument
                             });
                         }
                         catch (error) {
-                            const _errorHeader = _record.type === "sequence" 
-                                ? "meta sequence contains corrupt Dotrain, reason: " 
-                                : "corrupt Dotrain, reason: ";
                             _result.problems.push({
-                                msg: _errorHeader + (
-                                    error instanceof Error 
-                                        ? error.message 
-                                        : typeof error === "string" ? error : ""
-                                ),
+                                msg: "corrupt meta",
                                 position: _result.hashPosition,
-                                code: ErrorCode.CorruptImport
+                                code: ErrorCode.CorruptMeta
                             });
                             _isCorrupt = true;
                         }
@@ -624,13 +663,13 @@ export class RainDocument {
      * expression and is responsible for building the AST and collect problems
      */
     private async _parse() {
-        this.opmeta         = [];
+        this.authoringMeta         = [];
         this.imports        = [];
         this.problems       = [];
         this.comments       = [];
         this.bindings       = [];
         this.namespace      = {};
-        this.opmetaPath     = "";
+        this.authoringMetaPath     = "";
         this.runtimeError   = undefined;
         let document        = this.textDocument.getText();
 
@@ -690,45 +729,35 @@ export class RainDocument {
                         let _hasDupKeys = false;
                         let _hasDupWords = false;
                         let _ns: Namespace = {};
-                        if (_imp.sequence?.opmeta) {
-                            if (_imp.sequence.opmeta) {
-                                _ns["Words"] = {
+                        if (_imp.sequence?.dispair?.authoringMeta) {
+                            _ns["Words"] = {
+                                Hash: _imp.hash,
+                                ImportIndex: i,
+                                Element: _imp.sequence.dispair.authoringMeta
+                            };
+                            (_ns["Words"] as any).bytecode = _imp.sequence.dispair.bytecode;
+                            _imp.sequence.dispair.authoringMeta.forEach(
+                                v => _ns[v.word] = {
                                     Hash: _imp.hash,
                                     ImportIndex: i,
-                                    Element: _imp.sequence.opmeta
-                                };
-                                _imp.sequence.opmeta.forEach((v, j) => {
-                                    _ns[v.name] = {
-                                        Hash: _imp.hash,
-                                        ImportIndex: i,
-                                        Element: (_ns["Words"].Element as OpMeta[])[j]
-                                    };
-                                    if (v.aliases) v.aliases.forEach(e => {
-                                        _ns[e] = {
-                                            Hash: _imp.hash,
-                                            ImportIndex: i,
-                                            Element: (_ns["Words"].Element as OpMeta[])[j]
-                                        };
-                                    });
-                                });
-                            }
+                                    Element: v
+                                }
+                            );
                         }
                         if (_imp.sequence?.ctxmeta) {
-                            if (_imp.sequence.ctxmeta) {
-                                if (
-                                    hasDuplicate(
-                                        _imp.sequence.ctxmeta.map(v => v.name), 
-                                        Object.keys(_ns)
-                                    )
-                                ) _hasDupKeys = true;
-                                else _imp.sequence.ctxmeta.forEach(v => {
-                                    _ns[v.name] = {
-                                        Hash: _imp.hash,
-                                        ImportIndex: i,
-                                        Element: v
-                                    };
-                                });
-                            }
+                            if (
+                                hasDuplicate(
+                                    _imp.sequence.ctxmeta.map(v => v.name), 
+                                    Object.keys(_ns)
+                                )
+                            ) _hasDupKeys = true;
+                            else _imp.sequence.ctxmeta.forEach(v => {
+                                _ns[v.name] = {
+                                    Hash: _imp.hash,
+                                    ImportIndex: i,
+                                    Element: v
+                                };
+                            });
                         }
                         if (_imp.sequence?.dotrain) {
                             if (!_hasDupKeys) {
@@ -769,15 +798,15 @@ export class RainDocument {
                                 if (_s[1][0] === "!") {
                                     if (_s[0][0] === ".") {
                                         if (_ns["Words"]) {
-                                            (_ns["Words"].Element as OpMeta[]).forEach(v => {
-                                                delete _ns[v.name];
+                                            (_ns["Words"].Element as AuthoringMeta[]).forEach(v => {
+                                                delete _ns[v.word];
                                             });
                                             delete _ns["Words"];
                                         }
                                         else this.problems.push({
                                             msg: "cannot elide undefined words",
                                             position: [_s[0][1][0], _s[1][1][1]],
-                                            code: ErrorCode.UndefinedOpMeta
+                                            code: ErrorCode.UndefinedAuthoringMeta
                                         });
                                     }
                                     else {
@@ -988,7 +1017,7 @@ export class RainDocument {
         });
 
         // resolve dependencies and parse expressions
-        this.resolveDependencies();
+        this.processDependencies();
 
         // instantiate rainlang for each expression
         if (this.importDepth === 0) {
@@ -1000,7 +1029,8 @@ export class RainDocument {
                 if (v.constant === undefined && v.elided === undefined) {
                     v.exp = new Rainlang(
                         v.content, 
-                        this.opmeta, 
+                        this.authoringMeta, 
+                        this.bytecode,
                         {
                             thisBinding: v,
                             namespaces: this.namespace,
@@ -1036,7 +1066,7 @@ export class RainDocument {
     /**
      * @public Resolves the expressions dependencies and instantiates RainlangParser for them
      */
-    private resolveDependencies() {
+    private processDependencies() {
         const _bindings = this.bindings.filter(
             v => v.constant === undefined && v.elided === undefined
         );
@@ -1139,7 +1169,9 @@ export class RainDocument {
             if ("Element" in ns[_keys[i]]) _ns[_keys[i]] = {
                 Hash: ns[_keys[i]].Hash ? ns[_keys[i]].Hash as string : hash,
                 ImportIndex: index,
-                Element: ns[_keys[i]].Element as OpMeta | OpMeta[] | Binding | ContextAlias
+                Element: ns[
+                    _keys[i]
+                ].Element as AuthoringMeta | AuthoringMeta[] | Binding | ContextAlias
             };
             else _ns[_keys[i]] = this.copyNamespace(ns[_keys[i]] as Namespace, index, hash);
         }
@@ -1285,12 +1317,13 @@ export class RainDocument {
         else if (_wordsCount === 0) this.problems.push({
             msg: "cannot find any set of words",
             position: [0, -1],
-            code: ErrorCode.UndefinedOpMeta
+            code: ErrorCode.UndefinedAuthoringMeta
         });
         else {
             const _get = (ns: Namespace, path: string): string => {
                 if (ns["Words"]) {
-                    this.opmeta = ns["Words"].Element as OpMeta[];
+                    this.authoringMeta = ns["Words"].Element as AuthoringMeta[];
+                    this.bytecode = (ns["Words"] as any).bytecode as string;
                     return path;
                 }
                 else {
@@ -1302,10 +1335,10 @@ export class RainDocument {
                     return "";
                 }
             };
-            if (this.opmetaPath) { /* empty */ }
+            if (this.authoringMetaPath) { /* empty */ }
             const _path = _get(this.namespace, "");
-            if (!_path) this.opmetaPath = ".";
-            else this.opmetaPath = _path;
+            if (!_path) this.authoringMetaPath = ".";
+            else this.authoringMetaPath = _path;
         }
     }
 }

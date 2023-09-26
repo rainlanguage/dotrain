@@ -1,17 +1,18 @@
 import stringMath from "string-math";
-import { EncodedMetaType, MetaSequence } from "./dotrain/metaStore";
+import { EVM } from "@ethereumjs/evm";
+import { MAGIC_NUMBERS } from "@rainprotocol/meta";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
-import { MAGIC_NUMBERS, cborDecode, isMagicNumber } from "@rainprotocol/meta";
 import { 
     Range, 
     Position, 
+    Namespace, 
     TextDocument, 
+    WORD_PATTERN, 
+    NamespaceNode, 
     PositionOffset, 
     ExpressionConfig, 
-    TextDocumentContentChangeEvent, 
-    WORD_PATTERN,
-    Namespace,
-    NamespaceNode
+    NATIVE_PARSER_ABI, 
+    TextDocumentContentChangeEvent 
 } from "./rainLanguageTypes";
 
 
@@ -56,9 +57,17 @@ export const {
     /**
      * @public ethers isHexString
      */
-    isHexString
+    isHexString,
+    /**
+     * @public ethers isAddress
+     */
+    isAddress
 } = utils;
 
+/**
+ * @public vitalik address used for evm simulations
+ */
+export const VITALIK = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" as const;
 
 /**
  * @public 
@@ -342,20 +351,17 @@ export const areEqualStateConfigs = (
     config2: ExpressionConfig
 ): boolean => {
     if (config1.constants.length !== config2.constants.length) return false;
-    if (config1.sources.length !== config2.sources.length) return false;
+    if (config1.bytecode.length !== config2.bytecode.length) return false;
+    if (
+        hexlify(config1.bytecode, {allowMissingPrefix: true}).toLowerCase() !== 
+        hexlify(config2.bytecode, {allowMissingPrefix: true}).toLowerCase()
+    ) return false;
 
     for (let i = 0; i < config1.constants.length; i++) {
         if (
             !BigNumber.from(config1.constants[i]).eq(
                 BigNumber.from(config2.constants[i])
             )
-        ) return false;
-    }
-
-    for (let i = 0; i < config1.sources.length; i++) {
-        if (
-            hexlify(config1.sources[i], { allowMissingPrefix: true }) !== 
-            hexlify(config2.sources[i], { allowMissingPrefix: true })
         ) return false;
     }
 
@@ -767,61 +773,104 @@ export function trim(str: string): {text: string, startDelCount: number, endDelC
     };
 }
 
-/**
- * @public Checks if metaBytes are a sequence or content or none
- * @param metaBytes - The meta bytes to check the type for
- */
-export function getEncodedMetaType(metaBytes: string): EncodedMetaType {
-    const _rainMetaHeader = MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
-    const _metaBytes = metaBytes.startsWith("0x") 
-        ? metaBytes.slice(2).toLowerCase() 
-        : metaBytes.toLowerCase();
-    if (!isBytesLike("0x" + _metaBytes)) throw "expected BytesLike parameter";
-    if (_metaBytes.startsWith(_rainMetaHeader)) {
-        try {
-            const _encoded = cborDecode(_metaBytes.replace(_rainMetaHeader, ""));
-            if (
-                Array.isArray(_encoded)
-                && _encoded.length > 0
-                && _encoded.every(v => v.toString() === "[object Map]"
-                    && isBytesLike(v.get(0))
-                    && isMagicNumber(v.get(1))
-                    && v.get(2) === "application/json"
-                )
-            ) return "sequence";
-            else throw "invalid rain meta";
-        }
-        catch { throw "invalid rain meta"; }
-    }
-    else {
-        try {
-            const _encoded = cborDecode(_metaBytes);
-            if (
-                Array.isArray(_encoded)
-                && _encoded.length === 1
-                && _encoded.every(v => v.toString() === "[object Map]"
-                    && isBytesLike(v.get(0))
-                    && isMagicNumber(v.get(1))
-                    && v.get(2) === "application/json"
-                )
-            ) return "single";
-            else throw "invalid rain meta";
-        }
-        catch { throw "invalid rain meta"; }
-    }
-}
+// /**
+//  * @public Checks if metaBytes are a sequence or content or none
+//  * @param metaBytes - The meta bytes to check the type for
+//  */
+// export function getEncodedMetaType(metaBytes: string): EncodedMetaType {
+//     const _rainMetaHeader = MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
+//     const _metaBytes = metaBytes.startsWith("0x") 
+//         ? metaBytes.slice(2).toLowerCase() 
+//         : metaBytes.toLowerCase();
+//     if (!isBytesLike("0x" + _metaBytes)) throw "expected BytesLike parameter";
+//     if (_metaBytes.startsWith(_rainMetaHeader)) {
+//         try {
+//             const _encoded = cborDecode(_metaBytes.replace(_rainMetaHeader, ""));
+//             if (
+//                 Array.isArray(_encoded)
+//                 && _encoded.length > 0
+//                 && _encoded.every(v => v.toString() === "[object Map]"
+//                     && isBytesLike(v.get(0))
+//                     && isMagicNumber(v.get(1))
+//                     && v.get(2) === "application/json"
+//                 )
+//             ) return "sequence";
+//             else throw "invalid rain meta";
+//         }
+//         catch { throw "invalid rain meta"; }
+//     }
+//     else {
+//         try {
+//             const _encoded = cborDecode(_metaBytes);
+//             if (
+//                 Array.isArray(_encoded)
+//                 && _encoded.length === 1
+//                 && _encoded.every(v => v.toString() === "[object Map]"
+//                     && isBytesLike(v.get(0))
+//                     && isMagicNumber(v.get(1))
+//                     && v.get(2) === "application/json"
+//                 )
+//             ) return "single";
+//             else throw "invalid rain meta";
+//         }
+//         catch { throw "invalid rain meta"; }
+//     }
+// }
+
+// /**
+//  * @public Decodes a meta raw bytes to CBOR maps
+//  * @param metaBytes - The meta bytes to decode
+//  */
+// export function decodeMeta(metaBytes: string): Map<number, any>[] | Map<number, any> {
+//     const _rainMetaHeader = MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
+//     const _metaBytes = metaBytes.startsWith("0x") 
+//         ? metaBytes.slice(2).toLowerCase() 
+//         : metaBytes.toLowerCase();
+//     if (!isBytesLike("0x" + _metaBytes)) throw "expected BytesLike parameter";
+//     if (_metaBytes.startsWith(_rainMetaHeader)) {
+//         const _decoded = cborDecode(_metaBytes.replace(_rainMetaHeader, ""));
+//         if (
+//             Array.isArray(_decoded)
+//             && _decoded.length > 0
+//             && _decoded.every(v => v.toString() === "[object Map]"
+//                 && isBytesLike(v.get(0))
+//                 && isMagicNumber(v.get(1))
+//             )
+//         ) return _decoded;
+//         else throw "invalid rain meta";
+//     }
+//     else {
+//         const _decoded = cborDecode(_metaBytes);
+//         if (
+//             Array.isArray(_decoded)
+//             && _decoded.length === 1
+//             && _decoded.every(v => v.toString() === "[object Map]"
+//                 && isBytesLike(v.get(0))
+//                 && isMagicNumber(v.get(1))
+//             )
+//         ) return _decoded[0];
+//         else throw "invalid rain meta";
+//     }
+// }
 
 /**
  * @public Method to check if a meta sequence is consumable for a dotrain
- * @param sequence - The sequence to check
+ * @param amps - The meta cbor maps array
  */
-export function isConsumableMetaSequence(sequence: MetaSequence): boolean {
+export function isConsumableMeta(maps: Map<any, any>[]): boolean {
     if (
-        !sequence.length ||
+        !maps.length ||
         (
-            sequence.filter(v => v.magicNumber === MAGIC_NUMBERS.CONTRACT_META_V1).length > 1
-            || sequence.filter(v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1).length > 1
-            || sequence.filter(v => v.magicNumber === MAGIC_NUMBERS.DOTRAIN).length > 1
+            maps.filter(v => v.get(1).magicNumber === MAGIC_NUMBERS.DOTRAIN_V1).length > 1
+            || maps.filter(v => v.get(1).magicNumber === MAGIC_NUMBERS.CONTRACT_META_V1).length > 1
+            || maps.filter(v => 
+                v.get(1).magicNumber === MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
+            ).length > 1
+            || maps.filter(v => 
+                v.get(1).magicNumber === MAGIC_NUMBERS.DOTRAIN_V1 ||
+                v.get(1).magicNumber === MAGIC_NUMBERS.CONTRACT_META_V1 ||
+                v.get(1).magicNumber === MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
+            ).length === 0
         )
     ) return false;
     else return true;
@@ -884,4 +933,123 @@ export function namespaceSearch(
         else throw "undefined identifier";
     }
     return _result;
+}
+
+/**
+ * @public Converts a string to uint8array
+ * @param text - the text to convert
+ */
+export const stringToUint8Array = (text: string): Uint8Array => {
+    return Uint8Array.from(
+        Array.from(text).map(char => char.charCodeAt(0))
+    );
+};
+
+/**
+ * @public Executes a contract bytecode given the contract abi, fnunction name and args
+ * @param bytecode - The contract deployed byetcode
+ * @param abi - The contract ABI
+ * @param fn - The contract function name
+ * @param args - The function args
+ * @param evm - (optional) An EVM instance
+ * @returns A promise that resolves with a execution returned value or rejects if an exception error
+ */
+export async function execBytecode(
+    bytecode: BytesLike,
+    abi: any,
+    fn: string,
+    args: any[],
+    evm?: EVM
+): Promise<utils.Result>
+
+/**
+ * @public Executes a bytecode with given data
+ * @param bytecode - The bytecode to execute
+ * @param data - The data
+ * @param evm - (optional) An EVM instance
+ * @returns The execution results as Uint8Array
+ */
+export async function execBytecode(
+    bytecode: BytesLike,
+    data: BytesLike,
+    evm?: EVM
+): Promise<Uint8Array>
+
+export async function execBytecode(
+    bytecode: BytesLike,
+    dataOrAbi: any,
+    fnOrEvm?: string | EVM,
+    args?: any[],
+    evm?: EVM,
+): Promise<Uint8Array | utils.Result> {
+    // const vitalik = Address.fromString(VITALIK);
+    let _evm;
+    if (typeof fnOrEvm === "string" && args !== undefined) {
+        _evm = evm ? evm : new EVM();
+        const iface = new utils.Interface(dataOrAbi);
+        const data = iface.encodeFunctionData(fnOrEvm, args);
+        const result = await _evm.runCode({
+            // to: vitalik,
+            // caller: vitalik,
+            // origin: vitalik,
+            code: arrayify(bytecode, { allowMissingPrefix: true }),
+            data: arrayify(data, { allowMissingPrefix: true }),
+        });
+        if (result.exceptionError !== undefined) {
+            try {
+                return iface.decodeFunctionResult(fnOrEvm, result.returnValue);
+            }
+            catch (e) {
+                return Promise.reject(e);
+            }
+        }
+        else return Promise.resolve(iface.decodeFunctionResult(fnOrEvm, result.returnValue));
+    }
+    else {
+        _evm = fnOrEvm instanceof EVM ? fnOrEvm : new EVM();
+        const result = await _evm.runCode({
+            // to: vitalik,
+            // caller: vitalik,
+            // origin: vitalik,
+            code: arrayify(bytecode, { allowMissingPrefix: true }),
+            data: arrayify(dataOrAbi, { allowMissingPrefix: true }),
+        });
+        if (result.exceptionError !== undefined) return Promise.reject(
+            result.returnValue
+        );
+        else return Promise.resolve(result.returnValue);
+    }
+}
+
+/**
+ * @public Parse a text using NP bytecode
+ * @param text - the text to parse
+ * @param bytecode - The NP contract bytecode
+ * @param options - options
+ * @returns A Promise that resolves with ExpressionConfig or rejects with NPError
+ */
+export async function npParse(
+    text: string,
+    bytecode: BytesLike,
+    options: {
+        abi?: any,
+        fn?: string,
+        evm?: EVM,
+    } = {}
+): Promise<ExpressionConfig> {
+    const fn = options.fn ? options.fn : "parse";
+    const abi = options.abi ? options.abi : NATIVE_PARSER_ABI;
+    try {
+        const result = await execBytecode(bytecode, abi, fn, [ stringToUint8Array(text) ]);
+        const constants = result.find(v => Array.isArray(v));
+        const _bytecode = result.find(v => !Array.isArray(v));
+        return Promise.resolve({ constants, bytecode: _bytecode });
+    }
+    catch (error) {
+        const { errorArgs, errorName: name } = error as any;
+        const args: any = {};
+        const keys = Object.keys(errorArgs).filter(v => !/^\d+$/.test(v));
+        keys.forEach(v => args[v] = errorArgs[v]);
+        return Promise.reject({ name, args });
+    }
 }

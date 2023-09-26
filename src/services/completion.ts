@@ -149,30 +149,30 @@ export async function getCompletion(
                                     ),
                                     documentation: {
                                         kind: _documentionType,
-                                        value: v[1].Element.desc as string,
+                                        value: v[1].Element.description as string,
                                     },
                                     insertText: v[0] + _following
                                 };
                             }
-                            else if ("operand" in v[1].Element) {
-                                const _following = v[1].Element.operand === 0 
-                                    ? "()" 
-                                    : (v[1].Element.operand as any).find(
-                                        (i: any) => i.name !== "inputs"
-                                    ) ? "<>()" : "()";
+                            else if ("word" in v[1].Element) {
+                                // const _following = v[1].Element.operand === 0 
+                                //     ? "()" 
+                                //     : (v[1].Element.operand as any).find(
+                                //         (i: any) => i.name !== "inputs"
+                                //     ) ? "<>()" : "()";
                                 return {
                                     label: v[0],
                                     labelDetails: {
-                                        detail: _following,
+                                        // detail: _following,
                                         description: "opcode"
                                     },
                                     kind: CompletionItemKind.Function,
-                                    detail: "opcode: " + v[0] + _following,
+                                    detail: "opcode: " + v[0],
                                     documentation: {
                                         kind: _documentionType,
-                                        value: v[1].Element.desc as string
+                                        value: v[1].Element.description as string
                                     },
-                                    insertText: v[0] + _following
+                                    insertText: v[0]
                                 };
                             }
                             else if ("content" in v[1].Element) {
@@ -222,34 +222,33 @@ export async function getCompletion(
                 else {
                     const _result: CompletionItem[] = [];
                     if (!_isQuote) {
-                        _result.push(..._rd.opmeta.filter(
-                            v => v.name.includes(_prefix) || 
-                            v.aliases?.find(e => e.includes(_prefix))
+                        _result.push(..._rd.authoringMeta.filter(
+                            v => v.word.includes(_prefix)
                         ).flatMap(v => {
-                            const _following = v.operand === 0 
-                                ? "()" 
-                                : v.operand.find(i => i.name !== "inputs") 
-                                    ? "<>()" 
-                                    : "()";
+                            // const _following = v.operand === 0 
+                            //     ? "()" 
+                            //     : v.operand.find(i => i.name !== "inputs") 
+                            //         ? "<>()" 
+                            //         : "()";
                             const _names: string[] = [];
-                            if (v.name.includes(_prefix)) _names.push(v.name);
-                            if (v.aliases) v.aliases.forEach(e => {
-                                if (e.includes(_prefix)) _names.push(e);
-                            });
+                            if (v.word.includes(_prefix)) _names.push(v.word);
+                            // if (v.aliases) v.aliases.forEach(e => {
+                            //     if (e.includes(_prefix)) _names.push(e);
+                            // });
                             return _names.map(e => {
                                 return {
                                     label: e,
                                     labelDetails: {
-                                        detail: _following,
+                                        // detail: _following,
                                         description: "opcode"
                                     },
                                     kind: CompletionItemKind.Function,
-                                    detail: "opcode: " + e + _following,
+                                    detail: "opcode: " + e,
                                     documentation: {
                                         kind: _documentionType,
-                                        value: v.desc
+                                        value: v.description
                                     },
-                                    insertText: e + _following
+                                    insertText: e
                                 } as CompletionItem;
                             });
                         }));
@@ -306,33 +305,33 @@ export async function getCompletion(
                                         ),
                                         documentation: {
                                             kind: _documentionType,
-                                            value: v[1].Element.desc as string,
+                                            value: v[1].Element.description as string,
                                         },
                                         insertText: v[0] + _following
                                     });
                                 }
                             }
-                            else if ("operand" in v[1].Element) {
+                            else if ("word" in v[1].Element) {
                                 if (!_isQuote) {
                                     if (!_result.find(e => e.label === v[0])) {
-                                        const _following = v[1].Element.operand === 0 
-                                            ? "()" 
-                                            : (v[1].Element.operand as any).find(
-                                                (i: any) => i.name !== "inputs"
-                                            ) ? "<>()" : "()";
+                                        // const _following = v[1].Element.operand === 0 
+                                        //     ? "()" 
+                                        //     : (v[1].Element.operand as any).find(
+                                        //         (i: any) => i.name !== "inputs"
+                                        //     ) ? "<>()" : "()";
                                         _result.unshift({
                                             label: v[0],
                                             labelDetails: {
-                                                detail: _following,
+                                                // detail: _following,
                                                 description: "opcode"
                                             },
                                             kind: CompletionItemKind.Function,
-                                            detail: "opcode: " + v[0] + _following,
+                                            detail: "opcode: " + v[0],
                                             documentation: {
                                                 kind: _documentionType,
-                                                value: v[1].Element.desc as string
+                                                value: v[1].Element.description as string
                                             },
-                                            insertText: v[0] + _following
+                                            insertText: v[0]
                                         });
                                     }
                                 }

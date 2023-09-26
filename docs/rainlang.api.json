@@ -8682,7 +8682,7 @@
         {
           "kind": "Class",
           "canonicalReference": "@rainprotocol/rainlang!Rainlang:class",
-          "docComment": "/**\n * Rainlang class is a the main workhorse that does all the heavy work of parsing a document, written in TypeScript in order to parse a text document using an op meta into known types which later will be used in RainDocument object and Rain Language Services and Compiler\n *\n * @public\n */\n",
+          "docComment": "/**\n * @deprecated\n *\n * Rainlang class is a the main workhorse that does all the heavy work of parsing a document, written in TypeScript in order to parse a text document using an op meta into known types which later will be used in RainDocument object and Rain Language Services and Compiler\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",

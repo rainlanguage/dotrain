@@ -8,7 +8,7 @@
 |  --- | --- |
 |  [MetaStore](./classes/metastore.md) | Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities to easliy utilize them. Hashes must 32 bytes (in hex string format) and will be stored as lower case. Meta bytes must be valid cbor encoded.<br><br>Subgraph endpoint URLs specified in "RAIN\_SUBGRAPHS" from \[rainlang-meta\](https://github.com/rainprotocol/meta/blob/master/src/rainSubgraphs.ts) are included by default as subgraph endpoint URLs to search for metas.<br><br>Subgraphs URLs can also be provided, either at instantiation or when using `addSubgraphs()`<!-- -->.<br><br>Given a k/v pair of meta hash and meta bytes either at instantiation or when using `updateStore()`<!-- -->, it regenrates the hash from the meta to check the validity of the k/v pair and if the check fails it tries to read the meta from subgraphs and store the result if it finds any. |
 |  [RainDocument](./classes/raindocument.md) | RainDocument aka dotrain is a class object that parses a text to provides data and functionalities in order to be used later on to provide Rain Language Services or in RainDocument compiler to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work. |
-|  [Rainlang](./classes/rainlang.md) | Rainlang class is a the main workhorse that does all the heavy work of parsing a document, written in TypeScript in order to parse a text document using an op meta into known types which later will be used in RainDocument object and Rain Language Services and Compiler |
+|  [Rainlang](./classes/rainlang.md) |  |
 
 ## Enumerations
 

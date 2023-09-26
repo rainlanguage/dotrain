@@ -1,11 +1,20 @@
-import { MetaStore } from "./metaStore";
 import { RainDocument } from "./rainDocument";
 import { Rainlang } from "../rainlang/rainlang";
 import { getRandomInt, namespaceSearch } from "../utils";
 import { rainlangc } from "../rainlang/rainlangCompiler";
 import MagicString, { DecodedSourceMap } from "magic-string";
-import { Binding, ASTNode, OpASTNode, TextDocument, ValueASTNode } from "../rainLanguageTypes";
-import { ExpressionConfig, Namespace, NamespaceNode, Position, PositionOffset } from "../rainLanguageTypes";
+import { 
+    Binding,
+    ASTNode, 
+    // Position, 
+    OpASTNode, 
+    Namespace, 
+    TextDocument, 
+    ValueASTNode, 
+    NamespaceNode, 
+    CompilerOptions, 
+    ExpressionConfig 
+} from "../rainLanguageTypes";
 
 
 /**
@@ -13,13 +22,14 @@ import { ExpressionConfig, Namespace, NamespaceNode, Position, PositionOffset } 
  * RainDocument (dotrain) compiler, compiles a text into valid ExpressionConfig (deployable bytes)
  *
  * @param text - The raw string to compile
- * @param metaStore - (optional) MetaStore object
+ * @param entrypoints - The entrypoints to compile
+ * @param options - (optional) Compiler options
  * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text
  */
 export function dotrainc(
     text: string,
     entrypoints: string[],
-    metaStore?: MetaStore
+    options?: CompilerOptions
 ): Promise<ExpressionConfig>
 
 /**
@@ -27,13 +37,14 @@ export function dotrainc(
  * RainDocument (dotrain) compiler, compiles Text Documents into valid ExpressionConfig (deployable bytes)
  *
  * @param document - The TextDocument to compile
- * @param metaStore - (optional) MetaStore object
+ * @param entrypoints - The entrypoints to compile
+ * @param options - (optional) Compiler options
  * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text
  */
 export async function dotrainc(
     document: TextDocument,
     entrypoints: string[],
-    metaStore?: MetaStore
+    options?: CompilerOptions
 ): Promise<ExpressionConfig>
 
 /**
@@ -41,19 +52,20 @@ export async function dotrainc(
  * RainDocument (dotrain) compiler, compiles Rain Documents into valid ExpressionConfig (deployable bytes)
  *
  * @param rainDocument - The RainDocument to compile
- * @param metaStore - (optional) MetaStore object to get merged with the RainDocument's MetaStore
+ * @param entrypoints - The entrypoints to compile
+ * @param options - (optional) Compiler options
  * @returns A promise that resolves with ExpressionConfig and rejects with `undefined` if problems were found within the text
  */
 export async function dotrainc(
     rainDocument: RainDocument,
     entrypoints: string[],
-    metaStore?: MetaStore
+    options?: CompilerOptions
 ): Promise<ExpressionConfig>
 
 export async function dotrainc(
     document: RainDocument | string | TextDocument,
     entrypoints: string[],
-    metaStore?: MetaStore
+    options?: CompilerOptions
 ): Promise<ExpressionConfig> {
 
     if (entrypoints.length === 0) return Promise.reject("no entrypoints specified");
@@ -61,8 +73,8 @@ export async function dotrainc(
     let _rainDoc: RainDocument;
     if (document instanceof RainDocument) {
         _rainDoc = document;
-        if (metaStore && metaStore !== _rainDoc.metaStore) {
-            _rainDoc.metaStore.updateStore(metaStore);
+        if (options?.metastore && options.metastore !== _rainDoc.metaStore) {
+            _rainDoc.metaStore.updateStore(options.metastore);
             await _rainDoc.parse();
         }
     }
@@ -74,9 +86,9 @@ export async function dotrainc(
                 1, 
                 document
             ),
-            metaStore
+            options?.metastore
         );
-        else _rainDoc = await RainDocument.create(document, metaStore);
+        else _rainDoc = await RainDocument.create(document, options?.metastore);
     }
     try {
         const _nodes: {
@@ -92,7 +104,8 @@ export async function dotrainc(
                 code: v.code
             };
         }));
-        const _opmeta = _rainDoc.opmeta;
+        const _bytecode = _rainDoc.bytecode;
+        const _authoringMeta = _rainDoc.authoringMeta;
         for (let i = 0; i < entrypoints.length; i++) {
             if (entrypoints[i].includes(".")) {
                 try {
@@ -124,7 +137,8 @@ export async function dotrainc(
                         );
                         if (!_ns.child.Element.exp) _ns.child.Element.exp = new Rainlang(
                             _ns.child.Element.content,
-                            _opmeta,
+                            _authoringMeta,
+                            _bytecode,
                             {
                                 thisBinding: _ns.child.Element,
                                 namespaces: _ns.parent
@@ -229,7 +243,8 @@ export async function dotrainc(
                         );
                         if (!_ns.child.Element.exp) _ns.child.Element.exp = new Rainlang(
                             _ns.child.Element.content,
-                            _opmeta,
+                            _authoringMeta,
+                            _bytecode,
                             {
                                 thisBinding: _ns.child.Element,
                                 namespaces: _ns.parent
@@ -318,9 +333,9 @@ export async function dotrainc(
                             const _name = _node.opcode.name.slice(
                                 _node.opcode.name.lastIndexOf(".") + 1
                             );
-                            const _op = _opmeta.find(
-                                v => v.name === _name || v.aliases?.includes(_name)
-                            )?.name;
+                            const _op = _authoringMeta.find(
+                                v => v.word === _name
+                            )?.word;
                             if (_op) sourcemapGenerator.update(
                                 _node.opcode.position[0],
                                 _node.opcode.position[1] + 1,
@@ -345,20 +360,20 @@ export async function dotrainc(
         };
         
         // Finds the original position from a generated text with sourcemap
-        const _findOrgPosition = (
-            sourcemap: DecodedSourceMap, 
-            line: number, 
-            column: number
-        ): Position => {
-            let character = 0;
-            const _map = sourcemap.mappings[line];
-            for (let i = 0; i < _map.length; i++) {
-                if (_map[i][0] === column) return { line, character: _map[i][3]! };
-                else if (_map[i][0] < column) character = _map[i][3]!;
-                else return { line, character };
-            }
-            return { line, character };
-        };
+        // const _findOrgPosition = (
+        //     sourcemap: DecodedSourceMap, 
+        //     line: number, 
+        //     column: number
+        // ): Position => {
+        //     let character = 0;
+        //     const _map = sourcemap.mappings[line];
+        //     for (let i = 0; i < _map.length; i++) {
+        //         if (_map[i][0] === column) return { line, character: _map[i][3]! };
+        //         else if (_map[i][0] < column) character = _map[i][3]!;
+        //         else return { line, character };
+        //     }
+        //     return { line, character };
+        // };
 
         const _sourcemaps: {
             exp: Binding;
@@ -388,60 +403,65 @@ export async function dotrainc(
 
         const _generatedRainlang = new Rainlang(
             _sourcemaps.map(v => v.generatedText).join("\n"),
-            _opmeta
+            _authoringMeta,
+            _bytecode
         );
-        const _genRainlangProblems = _generatedRainlang.problems;
+        // const _genRainlangProblems = _generatedRainlang.problems;
 
-        if (_genRainlangProblems.length) {
-            const _problems = [];
-            for (let i = 0; i < _genRainlangProblems.length; i++) {
-                const _smIndex = _sourcemaps.findIndex(v => 
-                    v.offset <= _genRainlangProblems[i].position[0] && 
-                    v.offset + v.generatedText.length - 1 >= _genRainlangProblems[i].position[1]
-                )!;
+        // if (_genRainlangProblems.length) {
+        //     const _problems = [];
+        //     for (let i = 0; i < _genRainlangProblems.length; i++) {
+        //         const _smIndex = _sourcemaps.findIndex(v => 
+        //             v.offset <= _genRainlangProblems[i].position[0] && 
+        //             v.offset + v.generatedText.length - 1 >= _genRainlangProblems[i].position[1]
+        //         )!;
 
-                if (_nodes[_smIndex].child.ImportIndex === -1) {
-                    const _genTD = TextDocument.create("v", "rainlang", 0, _sourcemaps[_smIndex].generatedText);
-                    const _orgTD = TextDocument.create("v", "rainlang", 0, _sourcemaps[_smIndex].originalText);
+        //         if (_nodes[_smIndex].child.ImportIndex === -1) {
+        //             const _genTD = TextDocument.create("v", "rainlang", 0, _sourcemaps[_smIndex].generatedText);
+        //             const _orgTD = TextDocument.create("v", "rainlang", 0, _sourcemaps[_smIndex].originalText);
 
-                    const _offsets: PositionOffset = [
-                        _genRainlangProblems[i].position[0] - _sourcemaps[_smIndex].offset,
-                        _genRainlangProblems[i].position[1] - _sourcemaps[_smIndex].offset
-                    ];
-                    const _sGenPos = _genTD.positionAt(_offsets[0]);
-                    // const _eGenPos = _gentd.positionAt(_offsets[1] + 1);
-                    const _sOrgPos = _findOrgPosition(
-                        _sourcemaps[_smIndex].sourcemap, _sGenPos.line, _sGenPos.character
-                    );
-                    // const _eOrgPos = findOriginalPosition(
-                    //     _sp.sourcemap, _eGenPos.line, _eGenPos.character
-                    // );
-                    _problems.push({
-                        msg: _genRainlangProblems[i].msg,
-                        position: 
-                        // [
-                            _rainDoc.textDocument.positionAt(
-                                _sourcemaps[_smIndex].exp.contentPosition[0] + 
-                                _orgTD.offsetAt(_sOrgPos)
-                            ),
-                        //     _sp.exp.contentPosition[0] + _orgtd.offsetAt(_eOrgPos) - 1
-                        // ],
-                        code: _genRainlangProblems[i].code,
-                    });
-                }
-                else {
-                    _problems.push({
-                        msg: _genRainlangProblems[i].msg,
-                        position: _rainDoc.imports[
-                            _nodes[_smIndex].child.ImportIndex as number
-                        ].hashPosition,
-                        code: _genRainlangProblems[i].code,
-                    });
-                }
-            }
-            return Promise.reject(_problems);
-        }
-        else return await rainlangc(_generatedRainlang);
+        //             const _offsets: PositionOffset = [
+        //                 _genRainlangProblems[i].position[0] - _sourcemaps[_smIndex].offset,
+        //                 _genRainlangProblems[i].position[1] - _sourcemaps[_smIndex].offset
+        //             ];
+        //             const _sGenPos = _genTD.positionAt(_offsets[0]);
+        //             // const _eGenPos = _gentd.positionAt(_offsets[1] + 1);
+        //             const _sOrgPos = _findOrgPosition(
+        //                 _sourcemaps[_smIndex].sourcemap, _sGenPos.line, _sGenPos.character
+        //             );
+        //             // const _eOrgPos = findOriginalPosition(
+        //             //     _sp.sourcemap, _eGenPos.line, _eGenPos.character
+        //             // );
+        //             _problems.push({
+        //                 msg: _genRainlangProblems[i].msg,
+        //                 position: 
+        //                 // [
+        //                     _rainDoc.textDocument.positionAt(
+        //                         _sourcemaps[_smIndex].exp.contentPosition[0] + 
+        //                         _orgTD.offsetAt(_sOrgPos)
+        //                     ),
+        //                 //     _sp.exp.contentPosition[0] + _orgtd.offsetAt(_eOrgPos) - 1
+        //                 // ],
+        //                 code: _genRainlangProblems[i].code,
+        //             });
+        //         }
+        //         else {
+        //             _problems.push({
+        //                 msg: _genRainlangProblems[i].msg,
+        //                 position: _rainDoc.imports[
+        //                     _nodes[_smIndex].child.ImportIndex as number
+        //                 ].hashPosition,
+        //                 code: _genRainlangProblems[i].code,
+        //             });
+        //         }
+        //     }
+        //     return Promise.reject(_problems);
+        // }
+        // else return await rainlangc(_generatedRainlang);
+        return rainlangc(
+            _generatedRainlang,
+            options
+        );
     }
     catch (err) {
         return Promise.reject(err);

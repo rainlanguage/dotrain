@@ -9,9 +9,8 @@ const { readFileSync, writeFileSync } = require("fs");
 
 
 const getOptions = async args => new Command("dotrain")
-    .description("CLI command to compile/decompile a source file.")
+    .description("CLI command to compile a dotrain source file.")
     .option("-c, --compile <entrypoints...>", "Use compiling mode with specified entrypoints, to compile a .rain file to ExpressionConfig output in a .json")
-    .option("-d, --decompile <op meta hash>", "Use decompiling mode with a specific opmeta hash, to decompile an ExpressionConfig in a .json to a .rain")
     .option("-i, --input <path>", "Path to input file, either a .rain file for compiling or .json for decompiling")
     .option("-o, --output <path>", "Path to output file, will output .json for compile mode and .rain for decompile mode")
     .option("-b, --batch-compile <path>", "Path to a json file of mappings of dotrain files paths, entrypoints and output json files paths to batch compile")
@@ -23,9 +22,10 @@ const getOptions = async args => new Command("dotrain")
 const main = async args => {
     const options = await getOptions(args);
     const parentDir = execSync("pwd").toString().trim();
+    if (!options.batchCompile && !options.compile) throw "either of -c or -b is required";
 
     if (options.batchCompile) {
-        if (options.compile || options.decompile) throw "cannot use -c or -d in batch compile mode";
+        if (options.compile) throw "cannot use -c in batch compile mode";
         if (options.input || options.output) throw "cannot use -i or -o in batch compile mode";
         const ENTRYPOINT_PATTERN = /^[a-z][0-9a-z-]*$/;
         const JSON_PATH_PATTERN = /^(\.?\/)(\.\/|\.\.\/|[^]*\/)*[^]+\.json$/;
@@ -71,49 +71,27 @@ const main = async args => {
         else throw "invalid mapping file content";
     }
     else {
-        if (options.compile && options.decompile) throw "cannot use -c and -d simultanously!";
-        else {
-            if (options.compile) {
-                if (Array.isArray(options.compile) && options.compile.length > 0) {
-                    if (!options.input.endsWith(".rain")) throw "invalid input file!";
-                    else {
-                        const content = readFileSync(
-                            path.resolve(parentDir, options.input)
-                        ).toString();
-                        const result = await dotrainc(content, options.compile);
-                        const text = JSON.stringify(result, null, 2);
-                        writeFileSync(
-                            options.output.endsWith(".json") 
-                                ? path.resolve(parentDir, options.output) 
-                                : path.resolve(parentDir, options.output) + ".json", 
-                            text
-                        );
-                        if (options.stdout) console.log("\x1b[90m%s\x1b[0m", text);
-                        console.log("\n");
-                        console.log("\x1b[32m%s\x1b[0m", "Compiled successfully!");
-                    }
-                }
-                else throw "invalid entrypoints!";
-            }
-            if (options.decompile) {
-                if (!options.input.endsWith(".json")) throw "invalid input file!";
+        if (options.compile) {
+            if (Array.isArray(options.compile) && options.compile.length > 0) {
+                if (!options.input.endsWith(".rain")) throw "invalid input file!";
                 else {
                     const content = readFileSync(
                         path.resolve(parentDir, options.input)
                     ).toString();
-                    const result = await dotraind(JSON.parse(content), options.decompile);
-                    const text = result.getText();
+                    const result = await dotrainc(content, options.compile);
+                    const text = JSON.stringify(result, null, 2);
                     writeFileSync(
                         options.output.endsWith(".json") 
                             ? path.resolve(parentDir, options.output) 
-                            : path.resolve(parentDir, options.output) + ".rain", 
+                            : path.resolve(parentDir, options.output) + ".json", 
                         text
                     );
                     if (options.stdout) console.log("\x1b[90m%s\x1b[0m", text);
                     console.log("\n");
-                    console.log("\x1b[32m%s\x1b[0m", "Decompiled successfully!");
+                    console.log("\x1b[32m%s\x1b[0m", "Compiled successfully!");
                 }
             }
+            else throw "invalid entrypoints!";
         }
     }
 };

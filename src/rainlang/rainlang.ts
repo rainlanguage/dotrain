@@ -1,13 +1,16 @@
 import { MetaStore } from "../dotrain/metaStore";
-import { Problem, Comment, ASTNode, OpASTNode, RainlangAST, Namespace, ContextAlias, Binding } from "../rainLanguageTypes";
+import { Problem, Comment, ASTNode, OpASTNode, RainlangAST, Namespace, ContextAlias, Binding, NATIVE_PARSER_ABI, HASH_PATTERN } from "../rainLanguageTypes";
 import { 
-    OpMeta, 
-    InputArgs, 
+    // OpMeta, 
+    // InputArgs, 
     OperandArgs, 
     // OpMetaSchema, 
-    metaFromBytes, 
-    ComputedOutput, 
-    toOpMeta
+    // metaFromBytes, 
+    // ComputedOutput, 
+    // toOpMeta,
+    AuthoringMeta,
+    RainMeta,
+    MAGIC_NUMBERS
 } from "@rainprotocol/meta";
 import { 
     ErrorCode, 
@@ -19,14 +22,17 @@ import {
 } from "../rainLanguageTypes";
 import {
     trim,
-    deepCopy,
+    // deepCopy,
     CONSTANTS,
-    extractByBits, 
+    // extractByBits, 
     inclusiveParse,
     exclusiveParse,
-    constructByBits, 
+    // constructByBits, 
     fillIn,
-    toConvNumber
+    toConvNumber,
+    execBytecode,
+    hexlify,
+    isBytesLike
 } from "../utils";
 
 
@@ -34,7 +40,7 @@ import {
 /**
  * @public
  * Rainlang class is a the main workhorse that does all the heavy work of parsing a document, 
- * written in TypeScript in order to parse a text document using an op meta into known types 
+ * written in TypeScript in order to parse a text document using an authoring meta into known types 
  * which later will be used in RainDocument object and Rain Language Services and Compiler
  */
 export class Rainlang {
@@ -50,8 +56,8 @@ export class Rainlang {
     public ast: RainlangAST = [];
     public problems: Problem[] = [];
     public comments: Comment[] = [];
-    public opmeta: OpMeta[] = [];
-    // public expNames: string[] = [];
+    public authoringMeta: AuthoringMeta[] = [];
+    public bytecode = "";
     public namespaces: Namespace = {};
     public binding?: Binding;
     private state: {
@@ -77,17 +83,15 @@ export class Rainlang {
     /**
      * Constructor of Rainlang class
      * @param text - the text
-     * @param opmeta - Array of ops metas
+     * @param authoringMeta - Array of ops metas
+     * @param authoringMeta - ExpressionDeployerNP deployed bytecode
      * @param dotrainOptions - RainDocument (dotrain) only options
      */
     constructor(
         text: string,
-        opmeta: OpMeta[],
+        authoringMeta: AuthoringMeta[],
+        bytecode: string,
         dotrainOptions?: { 
-            // /**
-            //  * Reserved constant values from RainDocument
-            //  */
-            // constants?: Record<string, string>;
             /**
              * Comments parsed from RainDocument
              */
@@ -104,7 +108,8 @@ export class Rainlang {
         }
     ) {
         this.text = text;
-        this.opmeta = opmeta;
+        this.authoringMeta = authoringMeta;
+        this.bytecode = bytecode;
         // this.dotrainMode = false;
         if (dotrainOptions?.comments) {
             this.comments = dotrainOptions.comments;
@@ -126,27 +131,82 @@ export class Rainlang {
         this.parse();
     }
 
+
     /**
-     * Creates a new Rainlang instance with a opmeta hash
+     * Creates a new Rainlang instance with a contract bytecode
      * @param text - The text
-     * @param opmetaHash - The op meta hash
+     * @param bytecode - The ExpressionDeployerNP deployed bytecode
      * @param metaStore - (optional) The MetaStore instance
      */
     public static async create(
         text: string, 
-        opmetaHash: string, 
+        bytecode: string, 
+        metaStore?: MetaStore
+    ): Promise<Rainlang>
+
+    /**
+     * Creates a new Rainlang instance with a bytecode meta hash
+     * @param text - The text
+     * @param bytecodeHash - The bytecode meta hash
+     * @param metaStore - (optional) The MetaStore instance
+     */
+    public static async create(
+        text: string, 
+        bytecodeHash: string, 
+        metaStore?: MetaStore
+    ): Promise<Rainlang>
+
+    public static async create(
+        text: string, 
+        bytecodeSource: string, 
         metaStore?: MetaStore
     ): Promise<Rainlang> {
-        if (!/^0x[a-fA-F0-9]{64}$/.test(opmetaHash)) throw "invalid opmeta hash";
+        let _bytecode;
         const _metaStore = metaStore ?? new MetaStore();
-        let _record = _metaStore.getRecord(opmetaHash);
-        if (!_record) {
-            await _metaStore.updateStore(opmetaHash);
-            _record = _metaStore.getRecord(opmetaHash);
-            if (!_record) throw "cannot find settlement for provided opmeta hash";
+        if (!isBytesLike(bytecodeSource)) throw new Error("invalid bytecode");
+        if (HASH_PATTERN.test(bytecodeSource)) {
+            let _record = _metaStore.getRecord(bytecodeSource);
+            if (!_record) {
+                await _metaStore.updateStore(bytecodeSource);
+                _record = _metaStore.getRecord(bytecodeSource);
+                if (!_record) throw new Error("cannot find settlement for provided bytecode hash");
+            }
+            const _map = RainMeta.decode(_record).find(
+                v => v.get(1) === MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
+            );
+            if (!_map) throw new Error("cannot find settlement for provided bytecode hash");
+            _bytecode = RainMeta.decodeMap(_map);
+            if (typeof _bytecode === "string") throw new Error("corrupt bytecode meta");
         }
-        const _opmeta = toOpMeta(metaFromBytes(_record.sequence[0].content));
-        return new Rainlang(text, _opmeta);
+        else _bytecode = bytecodeSource;
+        
+        const _authoringMetaHash = (await execBytecode(
+            _bytecode,
+            NATIVE_PARSER_ABI,
+            "authoringMetaHash",
+            []
+        ))[0]?.toLowerCase();
+        await _metaStore.updateStore(_authoringMetaHash as string);
+        const _authoringMetaBytes = _metaStore.getRecord(_authoringMetaHash);
+
+        if (!_authoringMetaBytes) throw new Error("cannot find settlement for authoring meta");
+        else {
+            const _amm = RainMeta.decode(_authoringMetaBytes).find(v => 
+                v.get(1).magicNumber === MAGIC_NUMBERS.AUTHORING_META_V1
+            );
+            if (!_amm) throw new Error("cannot find settlement for authoring meta");
+            try {
+                const _authoringMeta = AuthoringMeta.get(_amm);
+                return new Rainlang(
+                    text,
+                    _authoringMeta,
+                    hexlify(_bytecode, { allowMissingPrefix: true })
+                );
+            }
+            catch (error) {
+                throw new Error("corrupt authoring meta");
+            }
+        }
     }
 
     /**
@@ -350,8 +410,8 @@ export class Rainlang {
         });
 
         const _mainResKeys = [
-            ...this.opmeta.map(v => v.name),
-            ...this.opmeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
+            ...this.authoringMeta.map(v => v.word),
+            // ...this.authoringMeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
             ...Object.keys(this.constants),
         ];
         for (let i = 0; i < _sourceExp.length; i++) {
@@ -554,7 +614,7 @@ export class Rainlang {
             else if (exp.startsWith(")")) {
                 if (this.state.parens.open.length > 0) {
                     this.state.parens.close.push(_currentPosition);
-                    this.resolveOpcode();
+                    this.processOpcode();
                     this.state.depth--;
                 }
                 else this.problems.push({
@@ -569,14 +629,14 @@ export class Rainlang {
                     code: ErrorCode.ExpectedSpace
                 });
             }
-            else exp = this.resolveWord(exp, _currentPosition);
+            else exp = this.processChunk(exp, _currentPosition);
         }
     }
 
     /**
      * @internal Method to handle operand arguments
      */
-    private resolveOperand(exp: string, pos: number, op: OpASTNode): [string, OpASTNode] {
+    private processOperand(exp: string, pos: number, op: OpASTNode): [string, OpASTNode] {
         if (!exp.includes(">")) {
             this.problems.push({
                 msg: "expected \">\"",
@@ -590,41 +650,41 @@ export class Rainlang {
             exp = "";
         }
         else {
-            let _operandMeta: OperandArgs = [];
+            const _operandMeta: OperandArgs = [];
             const _operandArgs = exp.slice(1, exp.indexOf(">"));
             const _parsedVals = inclusiveParse(_operandArgs, /\S+/gd, pos + 1);
             // const _opmeta = this.opmeta.find(v => v.name === op.opcode.name);
-            const _opmeta = this.searchOpmeta(op);
+            // const _word = this.searchWord(op);
             exp = exp.slice(exp.indexOf(">") + 1);
             op.operandArgs = {
                 position: [pos, pos + _operandArgs.length + 1],
                 args: []
             };
-            if (_opmeta) {
-                if (typeof _opmeta.operand !== "number") {
-                    _operandMeta = deepCopy(_opmeta.operand as OperandArgs);
-                    const _i = _operandMeta.findIndex(v => v.name === "inputs");
-                    if (_i > -1) _operandMeta.splice(_i, 1);
-                }
-                if (_operandMeta.length === 0) this.problems.push({
-                    msg: `opcode ${op.opcode.name} doesn't have argumented operand`,
-                    position: [pos, pos + _operandArgs.length + 1],
-                    code: ErrorCode.MismatchOperandArgs
-                });
-                if (_operandMeta.length > _parsedVals.length) this.problems.push({
-                    msg: `expected ${
-                        _operandMeta.length - _parsedVals.length
-                    }${
-                        _parsedVals.length ? " more" : ""
-                    } operand argument${
-                        (_operandMeta.length - _parsedVals.length) > 1 ? "s" : ""
-                    } for ${
-                        op.opcode.name
-                    }`,
-                    position: [pos, pos + _operandArgs.length + 1],
-                    code: ErrorCode.MismatchOperandArgs
-                });
-            }
+            // if (_opmeta) {
+            //     if (typeof _opmeta.operand !== "number") {
+            //         _operandMeta = deepCopy(_opmeta.operand as OperandArgs);
+            //         const _i = _operandMeta.findIndex(v => v.name === "inputs");
+            //         if (_i > -1) _operandMeta.splice(_i, 1);
+            //     }
+            //     if (_operandMeta.length === 0) this.problems.push({
+            //         msg: `opcode ${op.opcode.name} doesn't have argumented operand`,
+            //         position: [pos, pos + _operandArgs.length + 1],
+            //         code: ErrorCode.MismatchOperandArgs
+            //     });
+            //     if (_operandMeta.length > _parsedVals.length) this.problems.push({
+            //         msg: `expected ${
+            //             _operandMeta.length - _parsedVals.length
+            //         }${
+            //             _parsedVals.length ? " more" : ""
+            //         } operand argument${
+            //             (_operandMeta.length - _parsedVals.length) > 1 ? "s" : ""
+            //         } for ${
+            //             op.opcode.name
+            //         }`,
+            //         position: [pos, pos + _operandArgs.length + 1],
+            //         code: ErrorCode.MismatchOperandArgs
+            //     });
+            // }
             _parsedVals.forEach((v, i) => {
                 const _validArgPattern = this.binding 
                     ? /^[0-9]+$|^0x[a-fA-F0-9]+$|^'\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/
@@ -706,7 +766,7 @@ export class Rainlang {
                         value: !_isQuote 
                             ? v[0]
                             : v[0].slice(1) ,
-                        name: _operandMeta[i]?.name ?? "unknown",
+                        name: _operandMeta[i]?.name ?? "unknown operand arg",
                         position: v[1],
                         description: _operandMeta[i]?.desc ?? ""
                     });
@@ -716,11 +776,11 @@ export class Rainlang {
                     position: v[1],
                     code: ErrorCode.InvalidOperandArg
                 });
-                if (_opmeta && i >= _operandMeta.length) this.problems.push({
-                    msg: `unexpected operand argument for ${op.opcode.name}`,
-                    position: v[1],
-                    code: ErrorCode.MismatchOperandArgs
-                });
+                // if (_word && i >= _operandMeta.length) this.problems.push({
+                //     msg: `unexpected operand argument for ${op.opcode.name}`,
+                //     position: v[1],
+                //     code: ErrorCode.MismatchOperandArgs
+                // });
             });
         }
         return [exp, op];
@@ -729,7 +789,7 @@ export class Rainlang {
     /**
      * @internal Method that resolves the RDOpNode once its respective closing paren has been consumed
      */
-    private resolveOpcode = () => {
+    private processOpcode = () => {
         this.state.parens.open.pop();
         const _endPosition = this.state.parens.close.pop()!;
         let _nodes: ASTNode[] = this.state.nodes;
@@ -747,247 +807,249 @@ export class Rainlang {
         );
         if (_i > -1) this.problems.splice(_i, 1);
 
-        const _opmeta = this.searchOpmeta(_node);
-        if (_opmeta) {
-            if (typeof _opmeta.outputs === "number") {
-                _node.output = _opmeta.outputs as number;
-            }
-            if (typeof _opmeta.operand === "number") {
-                _node.operand = _opmeta.operand;
-                if (_node.operandArgs) {
-                    _node.operand = NaN;
-                    this.problems.push({
-                        msg: `opcode ${_node.opcode.name} doesn't have argumented operand`,
-                        position: [..._node.operandArgs.position],
-                        code: ErrorCode.MismatchOperandArgs
-                    });
-                }
-                if (_opmeta.inputs === 0) {
-                    if (_node.parameters.length) this.problems.push({
-                        msg: "out-of-range inputs",
-                        position: [..._node.parens],
-                        code: ErrorCode.OutOfRangeInputs
-                    });
-                }
-                else {
-                    if (
-                        _node.parameters.length !== 
-                      (_opmeta.inputs as InputArgs).parameters.length
-                    ) this.problems.push({
-                        msg: "out-of-range inputs",
-                        position: [..._node.parens],
-                        code: ErrorCode.OutOfRangeInputs
-                    });
-                }
-            }
-            else {
-                let _argIndex = 0;
-                let _inputsIndex = -1;
-                const _argsLength = (_opmeta.operand as OperandArgs)
-                    .find(v => v.name === "inputs")
-                    ? (_opmeta.operand as OperandArgs).length - 1
-                    : (_opmeta.operand as OperandArgs).length;
+        const _word = this.searchWord(_node);
+        if (_word) {
+            _node.output = 1;
+            _node.operand = 0;
+            // if (typeof _opmeta.outputs === "number") {
+            //     _node.output = _opmeta.outputs as number;
+            // }
+            // if (typeof _opmeta.operand === "number") {
+            //     _node.operand = _opmeta.operand;
+            //     if (_node.operandArgs) {
+            //         _node.operand = NaN;
+            //         this.problems.push({
+            //             msg: `opcode ${_node.opcode.name} doesn't have argumented operand`,
+            //             position: [..._node.operandArgs.position],
+            //             code: ErrorCode.MismatchOperandArgs
+            //         });
+            //     }
+            //     if (_opmeta.inputs === 0) {
+            //         if (_node.parameters.length) this.problems.push({
+            //             msg: "out-of-range inputs",
+            //             position: [..._node.parens],
+            //             code: ErrorCode.OutOfRangeInputs
+            //         });
+            //     }
+            //     else {
+            //         if (
+            //             _node.parameters.length !== 
+            //           (_opmeta.inputs as InputArgs).parameters.length
+            //         ) this.problems.push({
+            //             msg: "out-of-range inputs",
+            //             position: [..._node.parens],
+            //             code: ErrorCode.OutOfRangeInputs
+            //         });
+            //     }
+            // }
+            // else {
+            //     let _argIndex = 0;
+            //     let _inputsIndex = -1;
+            //     const _argsLength = (_opmeta.operand as OperandArgs)
+            //         .find(v => v.name === "inputs")
+            //         ? (_opmeta.operand as OperandArgs).length - 1
+            //         : (_opmeta.operand as OperandArgs).length;
 
-                if (_argsLength === (_node.operandArgs?.args.length ?? 0)) {
-                    if ((_argsLength === 0 && !_node.operandArgs) || _argsLength > 0) {
-                        let _hasQuote = false;
-                        if (_node.operandArgs?.args) {
-                            for (let i = 0; i < _node.operandArgs.args.length; i++) {
-                                if (!/^[0-9]+$|^0x[a-fA-F0-9]+$/.test(
-                                    _node.operandArgs!.args[i].value
-                                )) _hasQuote = true;
-                            }
-                        }
-                        if (_hasQuote) {
-                            _node.operand = NaN;
-                            if (typeof _opmeta.outputs !== "number") _node.output = NaN;
-                        }
-                        else {
-                            const _operand = constructByBits(
-                                (_opmeta.operand as OperandArgs).map((v, i) => {
-                                    if (v.name === "inputs") {
-                                        _inputsIndex = i;
-                                        return {
-                                            value: _node.parameters.length,
-                                            bits: v.bits,
-                                            computation: v.computation,
-                                            validRange: v.validRange
-                                        };
-                                    }
-                                    else return {
-                                        value: Number(
-                                          _node.operandArgs!.args[_argIndex++]?.value
-                                        ),
-                                        bits: v.bits,
-                                        computation: v.computation,
-                                        validRange: v.validRange
-                                    };
-                                })
-                            );
-                            if (typeof _operand === "number") {
-                                _node.operand = _operand;
-                                if (_node.isCtx) {
-                                    _node.operand = ((_opmeta as any).column << 8) + _operand;
-                                }
-                                if (typeof _opmeta.outputs !== "number") {
-                                    _node.output = extractByBits(
-                                        _operand, 
-                                        (_opmeta.outputs as ComputedOutput).bits, 
-                                        (_opmeta.outputs as ComputedOutput).computation
-                                    );
-                                }
-                                if (_opmeta.inputs === 0) {
-                                    if (_node.parameters.length) this.problems.push({
-                                        msg: "out-of-range inputs",
-                                        position: [..._node.parens],
-                                        code: ErrorCode.OutOfRangeInputs
-                                    });
-                                }
-                                else {
-                                    if (_inputsIndex === -1) {
-                                        if (
-                                            _node.parameters.length !== 
-                                            (_opmeta.inputs as InputArgs)
-                                                .parameters.length
-                                        ) this.problems.push({
-                                            msg: "out-of-range inputs",
-                                            position: [..._node.parens],
-                                            code: ErrorCode.OutOfRangeInputs
-                                        });
-                                    }
-                                }
-                            }
-                            else {
-                                _node.operand = NaN;
-                                if (typeof _opmeta.outputs !== "number") {
-                                    _node.output = NaN;
-                                }
-                                for (const _oprnd of _operand) {
-                                    if (_inputsIndex > -1) {
-                                        if (_oprnd === _inputsIndex) this.problems.push({
-                                            msg: "out-of-range inputs",
-                                            position: [..._node.parens],
-                                            code: ErrorCode.OutOfRangeInputs
-                                        });
-                                        else if (_oprnd < _inputsIndex) this.problems.push({
-                                            msg: "out-of-range operand argument",
-                                            position: [
-                                                ..._node.operandArgs!.args[_oprnd].position
-                                            ],
-                                            code: ErrorCode.OutOfRangeOperandArgs
-                                        });
-                                        else this.problems.push({
-                                            msg: "out-of-range operand argument",
-                                            position: [
-                                                ..._node.operandArgs!.args[_oprnd - 1].position
-                                            ],
-                                            code: ErrorCode.OutOfRangeOperandArgs
-                                        });
-                                    }
-                                    else this.problems.push({
-                                        msg: "out-of-range operand argument",
-                                        position: [..._node.operandArgs!.args[_oprnd].position],
-                                        code: ErrorCode.OutOfRangeOperandArgs
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    else _node.operand = NaN;
-                }
-                else {
-                    _node.operand = NaN;
-                    if (_argsLength > 0 && !_node.operandArgs) this.problems.push({
-                        msg: `expected operand arguments for opcode ${_node.opcode.name}`,
-                        position: [..._node.opcode.position],
-                        code: ErrorCode.ExpectedOperandArgs
-                    });
-                }
-            }
-            if (_node.output === 0 && this.state.depth > 1) this.problems.push({
-                msg: "zero output opcodes cannot be nested",
-                position: [..._node.position],
-                code: ErrorCode.InvalidNestedNode
-            });
-            if (_node.output > 1 && this.state.depth > 1) this.problems.push({
-                msg: "multi output opcodes cannot be nested",
-                position: [..._node.position],
-                code: ErrorCode.InvalidNestedNode
-            });
+            //     if (_argsLength === (_node.operandArgs?.args.length ?? 0)) {
+            //         if ((_argsLength === 0 && !_node.operandArgs) || _argsLength > 0) {
+            //             let _hasQuote = false;
+            //             if (_node.operandArgs?.args) {
+            //                 for (let i = 0; i < _node.operandArgs.args.length; i++) {
+            //                     if (!/^[0-9]+$|^0x[a-fA-F0-9]+$/.test(
+            //                         _node.operandArgs!.args[i].value
+            //                     )) _hasQuote = true;
+            //                 }
+            //             }
+            //             if (_hasQuote) {
+            //                 _node.operand = NaN;
+            //                 if (typeof _opmeta.outputs !== "number") _node.output = NaN;
+            //             }
+            //             else {
+            //                 const _operand = constructByBits(
+            //                     (_opmeta.operand as OperandArgs).map((v, i) => {
+            //                         if (v.name === "inputs") {
+            //                             _inputsIndex = i;
+            //                             return {
+            //                                 value: _node.parameters.length,
+            //                                 bits: v.bits,
+            //                                 computation: v.computation,
+            //                                 validRange: v.validRange
+            //                             };
+            //                         }
+            //                         else return {
+            //                             value: Number(
+            //                               _node.operandArgs!.args[_argIndex++]?.value
+            //                             ),
+            //                             bits: v.bits,
+            //                             computation: v.computation,
+            //                             validRange: v.validRange
+            //                         };
+            //                     })
+            //                 );
+            //                 if (typeof _operand === "number") {
+            //                     _node.operand = _operand;
+            //                     if (_node.isCtx) {
+            //                         _node.operand = ((_opmeta as any).column << 8) + _operand;
+            //                     }
+            //                     if (typeof _opmeta.outputs !== "number") {
+            //                         _node.output = extractByBits(
+            //                             _operand, 
+            //                             (_opmeta.outputs as ComputedOutput).bits, 
+            //                             (_opmeta.outputs as ComputedOutput).computation
+            //                         );
+            //                     }
+            //                     if (_opmeta.inputs === 0) {
+            //                         if (_node.parameters.length) this.problems.push({
+            //                             msg: "out-of-range inputs",
+            //                             position: [..._node.parens],
+            //                             code: ErrorCode.OutOfRangeInputs
+            //                         });
+            //                     }
+            //                     else {
+            //                         if (_inputsIndex === -1) {
+            //                             if (
+            //                                 _node.parameters.length !== 
+            //                                 (_opmeta.inputs as InputArgs)
+            //                                     .parameters.length
+            //                             ) this.problems.push({
+            //                                 msg: "out-of-range inputs",
+            //                                 position: [..._node.parens],
+            //                                 code: ErrorCode.OutOfRangeInputs
+            //                             });
+            //                         }
+            //                     }
+            //                 }
+            //                 else {
+            //                     _node.operand = NaN;
+            //                     if (typeof _opmeta.outputs !== "number") {
+            //                         _node.output = NaN;
+            //                     }
+            //                     for (const _oprnd of _operand) {
+            //                         if (_inputsIndex > -1) {
+            //                             if (_oprnd === _inputsIndex) this.problems.push({
+            //                                 msg: "out-of-range inputs",
+            //                                 position: [..._node.parens],
+            //                                 code: ErrorCode.OutOfRangeInputs
+            //                             });
+            //                             else if (_oprnd < _inputsIndex) this.problems.push({
+            //                                 msg: "out-of-range operand argument",
+            //                                 position: [
+            //                                     ..._node.operandArgs!.args[_oprnd].position
+            //                                 ],
+            //                                 code: ErrorCode.OutOfRangeOperandArgs
+            //                             });
+            //                             else this.problems.push({
+            //                                 msg: "out-of-range operand argument",
+            //                                 position: [
+            //                                     ..._node.operandArgs!.args[_oprnd - 1].position
+            //                                 ],
+            //                                 code: ErrorCode.OutOfRangeOperandArgs
+            //                             });
+            //                         }
+            //                         else this.problems.push({
+            //                             msg: "out-of-range operand argument",
+            //                             position: [..._node.operandArgs!.args[_oprnd].position],
+            //                             code: ErrorCode.OutOfRangeOperandArgs
+            //                         });
+            //                     }
+            //                 }
+            //             }
+            //         }
+            //         else _node.operand = NaN;
+            //     }
+            //     else {
+            //         _node.operand = NaN;
+            //         if (_argsLength > 0 && !_node.operandArgs) this.problems.push({
+            //             msg: `expected operand arguments for opcode ${_node.opcode.name}`,
+            //             position: [..._node.opcode.position],
+            //             code: ErrorCode.ExpectedOperandArgs
+            //         });
+            //     }
+            // }
+            // if (_node.output === 0 && this.state.depth > 1) this.problems.push({
+            //     msg: "zero output opcodes cannot be nested",
+            //     position: [..._node.position],
+            //     code: ErrorCode.InvalidNestedNode
+            // });
+            // if (_node.output > 1 && this.state.depth > 1) this.problems.push({
+            //     msg: "multi output opcodes cannot be nested",
+            //     position: [..._node.position],
+            //     code: ErrorCode.InvalidNestedNode
+            // });
         }
     };
 
     /**
      * @internal Method that parses an upcoming word to a rainlang AST node
      */
-    private resolveWord(exp: string, entry: number): string {
+    private processChunk(exp: string, entry: number): string {
         const _offset = this.findNextBoundry(exp);
         const _index = _offset < 0 
             ? exp.length 
             : _offset;
-        const _word = exp.slice(0, _index);
-        const _wordPos: [number, number] = [entry, entry + _word.length - 1];
-        exp = exp.replace(_word, "");
+        const _str = exp.slice(0, _index);
+        const _strPos: [number, number] = [entry, entry + _str.length - 1];
+        exp = exp.replace(_str, "");
 
         if (exp.startsWith("(") || exp.startsWith("<")) {
             let _opcode;
-            if (!_word) this.problems.push({
+            if (!_str) this.problems.push({
                 msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
-                position: [..._wordPos],
+                position: [..._strPos],
                 code: ErrorCode.ExpectedOpcode
             });
-            if (_word.includes(".")) {
-                const _tempOpcode = this.searchName(_word, entry, true);
-                if (_tempOpcode && ("operand" in _tempOpcode || "column" in _tempOpcode)) {
+            if (_str.includes(".")) {
+                const _tempOpcode = this.searchName(_str, entry, true);
+                if (_tempOpcode && ("word" in _tempOpcode || "column" in _tempOpcode)) {
                     _opcode = _tempOpcode;
                 }
             }
             else {
-                if (!_word.match(WORD_PATTERN)) this.problems.push({
-                    msg: `invalid word pattern: "${_word}"`,
-                    position: [..._wordPos],
+                if (!_str.match(WORD_PATTERN)) this.problems.push({
+                    msg: `invalid word pattern: "${_str}"`,
+                    position: [..._strPos],
                     code: ErrorCode.InvalidWordPattern
                 });
-                _opcode = this.opmeta.find(
-                    v => v.name === _word || v.aliases?.includes(_word)
+                _opcode = this.authoringMeta.find(
+                    v => v.word === _str
                 );
                 if (!_opcode) {
                     if (
-                        this.namespaces[_word] && (
-                            Namespace.isWord(this.namespaces[_word]) || 
-                            Namespace.isContextAlias(this.namespaces[_word])
+                        this.namespaces[_str] && (
+                            Namespace.isWord(this.namespaces[_str]) || 
+                            Namespace.isContextAlias(this.namespaces[_str])
                         )
                         
-                    ) _opcode = this.namespaces[_word].Element as OpMeta | ContextAlias;
+                    ) _opcode = this.namespaces[_str].Element as AuthoringMeta | ContextAlias;
                 }
             }
             if (!_opcode) this.problems.push({
-                msg: `unknown opcode: "${_word}"`,
-                position: [..._wordPos],
+                msg: `unknown opcode: "${_str}"`,
+                position: [..._strPos],
                 code: ErrorCode.UndefinedOpcode
             });
             let _op: OpASTNode = {
                 opcode: {
-                    name: _opcode ? _word : "unknown opcode",
-                    description: _opcode ? _opcode.desc : "",
-                    position: [..._wordPos],
+                    name: _opcode ? _str : "unknown opcode",
+                    description: _opcode ? _opcode.description : "",
+                    position: [..._strPos],
                 },
                 operand: NaN,
                 output: NaN,
-                position: [[..._wordPos][0], NaN],
+                position: [[..._strPos][0], NaN],
                 parens: [NaN, NaN],
                 parameters: []
             };
             if (_opcode && "column" in _opcode) _op.isCtx = true;
-            if (exp.startsWith("<")) [exp, _op] = this.resolveOperand(
+            if (exp.startsWith("<")) [exp, _op] = this.processOperand(
                 exp, 
-                entry + _word.length, 
+                entry + _str.length, 
                 _op
             );
             if (exp.startsWith("(")) {
                 const _pos = _op.operandArgs 
                     ? [..._op.operandArgs!.position][1] + 1 
-                    : [..._wordPos][1] + 1;
+                    : [..._strPos][1] + 1;
                 exp = exp.replace("(", "");
                 this.state.parens.open.push(_pos);
                 _op.parens[0] = _pos;
@@ -995,222 +1057,222 @@ export class Rainlang {
                 this.state.depth++;
                 this.problems.push({
                     msg: "expected \")\"",
-                    position: [[..._wordPos][0], _pos],
+                    position: [[..._strPos][0], _pos],
                     code: ErrorCode.ExpectedClosingParen
                 });
             }
             else {
                 this.problems.push({
                     msg: "expected \"(\"",
-                    position: [..._wordPos],
+                    position: [..._strPos],
                     code: ErrorCode.ExpectedOpeningParen
                 });
             }
         }
         else {
-            if (_word.includes(".")) {
+            if (_str.includes(".")) {
                 if (
-                    _word.startsWith(".") && 
-                    WORD_PATTERN.test(_word.slice(1)) &&
-                    _word.slice(1) === this.binding?.name
+                    _str.startsWith(".") && 
+                    WORD_PATTERN.test(_str.slice(1)) &&
+                    _str.slice(1) === this.binding?.name
                 ) {
                     this.problems.push({
                         msg: "cannot reference self",
-                        position: [..._wordPos],
+                        position: [..._strPos],
                         code: ErrorCode.InvalidSelfReference
                     });
                     this.updateState({
-                        name: _word,
-                        position: [..._wordPos]
+                        name: _str,
+                        position: [..._strPos]
                     });
                 }
                 else {
-                    const _tempItem = this.searchName(_word, entry, true);
+                    const _tempItem = this.searchName(_str, entry, true);
                     if (_tempItem) {
                         if ("content" in _tempItem) {
                             if (_tempItem.constant) this.updateState({
-                                id: _word,
+                                id: _str,
                                 value: _tempItem.constant,
-                                position: [..._wordPos],
+                                position: [..._strPos],
                             });
                             else {
                                 const _msg = _tempItem.elided
                                     ? _tempItem.elided
                                     : `invalid reference to binding: ${
-                                        _word
+                                        _str
                                     }, only contant bindings can be referenced`;
                                 this.problems.push({
                                     msg: _msg,
-                                    position: [..._wordPos],
+                                    position: [..._strPos],
                                     code: _tempItem.elided
                                         ? ErrorCode.ElidedBinding
                                         : ErrorCode.InvalidReference
                                 });
                                 this.updateState({
-                                    name: _word,
-                                    position: [..._wordPos]
+                                    name: _str,
+                                    position: [..._strPos]
                                 });
                             }
                         }
                         else {
                             this.problems.push({
                                 msg: `invalid reference to ${
-                                    "operand" in _tempItem
+                                    "word" in _tempItem
                                         ? "opcode"
                                         : "context alias"
-                                }: ${_word}`,
-                                position: [..._wordPos],
+                                }: ${_str}`,
+                                position: [..._strPos],
                                 code: ErrorCode.InvalidReference
                             });
                             this.updateState({
-                                name: _word,
-                                position: [..._wordPos]
+                                name: _str,
+                                position: [..._strPos]
                             });
                         }
                     }
                     else this.updateState({
-                        name: _word,
-                        position: [..._wordPos]
+                        name: _str,
+                        position: [..._strPos]
                     });
                 }
             }
             else {
-                if (_word.match(NUMERIC_PATTERN)) {
+                if (_str.match(NUMERIC_PATTERN)) {
                     // let _val = _word;
                     // if (_word.startsWith("0b")) _val = Number(_word).toString();
                     // else if (!isBigNumberish(_word)) {
                     //     const _nums = _word.match(/\d+/g)!;
                     //     _val = _nums[0] + "0".repeat(Number(_nums[1]));
                     // }
-                    if (CONSTANTS.MaxUint256.lt(toConvNumber(_word))) {
+                    if (CONSTANTS.MaxUint256.lt(toConvNumber(_str))) {
                         this.problems.push({
                             msg: "value greater than 32 bytes in size",
-                            position: [..._wordPos],
+                            position: [..._strPos],
                             code: ErrorCode.OutOfRangeValue
                         });
                     }
                     this.updateState({
-                        value: _word,
-                        position: [..._wordPos],
+                        value: _str,
+                        position: [..._strPos],
                     });
                 }
-                else if (WORD_PATTERN.test(_word)) {
-                    if (Object.keys(this.constants).includes(_word)) {
+                else if (WORD_PATTERN.test(_str)) {
+                    if (Object.keys(this.constants).includes(_str)) {
                         this.updateState({
-                            id: _word,
-                            value: this.constants[_word],
-                            position: [..._wordPos],
+                            id: _str,
+                            value: this.constants[_str],
+                            position: [..._strPos],
                         });
                     }
                     else {
-                        if (this.state.aliases.find(v => v.name === _word)) {
+                        if (this.state.aliases.find(v => v.name === _str)) {
                             this.problems.push({
                                 msg: "cannot reference self",
-                                position: [..._wordPos],
+                                position: [..._strPos],
                                 code: ErrorCode.InvalidSelfReference
                             });
                             this.updateState({
-                                name: _word,
-                                position: [..._wordPos]
+                                name: _str,
+                                position: [..._strPos]
                             });
                         }
                         else if (this.ast[this.ast.length - 1].lines.find(
-                            v => !!v.aliases.find(e => e.name === _word)
+                            v => !!v.aliases.find(e => e.name === _str)
                         )) this.updateState({
-                            name: _word,
-                            position: [..._wordPos]
+                            name: _str,
+                            position: [..._strPos]
                         });
-                        else if (_word === this.binding?.name) {
+                        else if (_str === this.binding?.name) {
                             this.problems.push({
                                 msg: "cannot reference self",
-                                position: [..._wordPos],
+                                position: [..._strPos],
                                 code: ErrorCode.InvalidSelfReference
                             });
                             this.updateState({
-                                name: _word,
-                                position: [..._wordPos]
+                                name: _str,
+                                position: [..._strPos]
                             });
                         }
-                        else if (this.namespaces[_word]) {
-                            if ("Element" in this.namespaces[_word]) {
+                        else if (this.namespaces[_str]) {
+                            if ("Element" in this.namespaces[_str]) {
                                 const _item = this.namespaces[
-                                    _word
-                                ].Element as Binding | OpMeta | ContextAlias;
+                                    _str
+                                ].Element as Binding | AuthoringMeta | ContextAlias;
                                 if ("content" in _item) {
                                     if (_item.constant) this.updateState({
-                                        id: _word,
+                                        id: _str,
                                         value: _item.constant,
-                                        position: [..._wordPos],
+                                        position: [..._strPos],
                                     });
                                     else {
                                         const _msg = _item.elided
                                             ? _item.elided
                                             : `invalid reference to binding: ${
-                                                _word
+                                                _str
                                             }, only contant bindings can be referenced`;
                                         this.problems.push({
                                             msg: _msg,
-                                            position: [..._wordPos],
+                                            position: [..._strPos],
                                             code: _item.elided
                                                 ? ErrorCode.ElidedBinding
                                                 : ErrorCode.InvalidReference
                                         });
                                         this.updateState({
-                                            name: _word,
-                                            position: [..._wordPos]
+                                            name: _str,
+                                            position: [..._strPos]
                                         });
                                     }
                                 }
                                 else {
                                     this.problems.push({
                                         msg: `invalid reference to ${
-                                            "operand" in _item
+                                            "word" in _item
                                                 ? "opcode"
                                                 : "context alias"
-                                        }: ${_word}`,
-                                        position: [..._wordPos],
+                                        }: ${_str}`,
+                                        position: [..._strPos],
                                         code: ErrorCode.InvalidReference
                                     });
                                     this.updateState({
-                                        name: _word,
-                                        position: [..._wordPos]
+                                        name: _str,
+                                        position: [..._strPos]
                                     });
                                 }
                             }
                             else {
                                 this.problems.push({
-                                    msg: `invalid reference to namespace: ${_word}`,
-                                    position: [..._wordPos],
+                                    msg: `invalid reference to namespace: ${_str}`,
+                                    position: [..._strPos],
                                     code: ErrorCode.InvalidReference
                                 });
                                 this.updateState({
-                                    name: _word,
-                                    position: [..._wordPos]
+                                    name: _str,
+                                    position: [..._strPos]
                                 });
                             }
                         }
                         else {
                             this.problems.push({
-                                msg: `undefined word: ${_word}`,
-                                position: [..._wordPos],
+                                msg: `undefined word: ${_str}`,
+                                position: [..._strPos],
                                 code: ErrorCode.UndefinedWord
                             });
                             this.updateState({
-                                name: _word,
-                                position: [..._wordPos]
+                                name: _str,
+                                position: [..._strPos]
                             });
                         }
                     }
                 }
                 else {
                     this.problems.push({
-                        msg: `"${_word}" is not a valid rainlang word`,
-                        position: [..._wordPos],
+                        msg: `"${_str}" is not a valid rainlang word`,
+                        position: [..._strPos],
                         code: ErrorCode.InvalidWordPattern
                     });
                     this.updateState({
-                        name: _word,
-                        position: [..._wordPos]
+                        name: _str,
+                        position: [..._strPos]
                     });
                 }
             }
@@ -1225,7 +1287,7 @@ export class Rainlang {
         name: string, 
         offset: number, 
         publishDiagnostics: boolean
-    ): OpMeta | ContextAlias | Binding | undefined {
+    ): AuthoringMeta | ContextAlias | Binding | undefined {
         const _names = exclusiveParse(name, /\./gd, offset, true);
         if (name.startsWith(".")) _names.shift();
         if (_names.length > 32) {
@@ -1279,46 +1341,46 @@ export class Rainlang {
     }
 
     /**
-     * @internal search for OpMeta in namespaces
+     * @internal search for Word in namespaces
      */
-    private searchOpmeta(node: OpASTNode | string): OpMeta | undefined {
-        let _opmeta;
+    private searchWord(node: OpASTNode | string): AuthoringMeta | undefined {
+        let _word;
         const _name = typeof node === "string" ? node : node.opcode.name;
         if (_name.includes(".")) {
             const _tempOpcode = this.searchName(_name, 0, false);
-            if (_tempOpcode && ("operand" in _tempOpcode || "column" in _tempOpcode)) {
-                _opmeta = _tempOpcode;
+            if (_tempOpcode && ("word" in _tempOpcode || "column" in _tempOpcode)) {
+                _word = _tempOpcode;
             }
         }
         else {
-            _opmeta = this.opmeta.find(
-                v => v.name === _name || v.aliases?.includes(_name)
+            _word = this.authoringMeta.find(
+                v => v.word === _name
             );
-            if (!_opmeta) {
+            if (!_word) {
                 if (
                     this.namespaces[_name] && (
                         Namespace.isWord(this.namespaces[_name]) || 
                         Namespace.isContextAlias(this.namespaces[_name])
                     )
-                ) _opmeta = this.namespaces[_name].Element as OpMeta | ContextAlias;
+                ) _word = this.namespaces[_name].Element as AuthoringMeta | ContextAlias;
             }
         }
-        if (_opmeta && "column" in _opmeta) {
+        if (_word && "column" in _word) {
             const _temp = {
-                name: _opmeta.name,
-                desc: _opmeta.desc,
-                operand: isNaN(_opmeta.row)
+                name: _word.name,
+                desc: _word.description,
+                operand: isNaN(_word.row)
                     ? [{
                         name: "Row Index",
                         bits: [0, 7]
                     }]
-                    : (_opmeta.column << 8) + _opmeta.row,
+                    : (_word.column << 8) + _word.row,
                 inputs: 0,
                 outputs: 1
             } as any;
-            if (isNaN(_opmeta.row)) _temp.column = _opmeta.column;
-            _opmeta = _temp;
+            if (isNaN(_word.row)) _temp.column = _word.column;
+            _word = _temp;
         }
-        return _opmeta;
+        return _word;
     }
 }

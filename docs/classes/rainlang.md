@@ -2,7 +2,10 @@
 
 # Class Rainlang
 
-Rainlang class is a the main workhorse that does all the heavy work of parsing a document, written in TypeScript in order to parse a text document using an op meta into known types which later will be used in RainDocument object and Rain Language Services and Compiler
+> Warning: This API is now obsolete.
+> 
+> Rainlang class is a the main workhorse that does all the heavy work of parsing a document, written in TypeScript in order to parse a text document using an op meta into known types which later will be used in RainDocument object and Rain Language Services and Compiler
+> 
 
 <b>Signature:</b>
 
