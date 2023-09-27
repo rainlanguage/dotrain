@@ -21,7 +21,7 @@
     },
     "types": "./dist/types/index.d.ts",
     "imports": {
-        "#@ethereumjs/*": "@ethereumjs/*/dist/esm/index.js"
+        "#ethereumjs/*": "ethereumjs/*/dist/esm/index.js"
     },
     "files": [
         "/cli",
