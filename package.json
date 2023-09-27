@@ -20,9 +20,6 @@
         "./dist/esm/index.js": "./dist/esm/index.js"
     },
     "types": "./dist/types/index.d.ts",
-    "imports": {
-        "#ethereumjs/*": "ethereumjs/*/dist/esm/index.js"
-    },
     "files": [
         "/cli",
         "/dist",
