@@ -13,6 +13,7 @@ import {
     Namespace,
     NamespaceNode
 } from "./rainLanguageTypes";
+import { EVM } from "@ethereumjs/evm";
 
 
 /**
@@ -884,4 +885,9 @@ export function namespaceSearch(
         else throw "undefined identifier";
     }
     return _result;
+}
+
+export function X(): EVM {
+    const z = new EVM();
+    return z;
 }
