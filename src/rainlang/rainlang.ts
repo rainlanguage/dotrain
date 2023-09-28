@@ -3,7 +3,7 @@ import { Problem, Comment, ASTNode, OpASTNode, RainlangAST, Namespace, ContextAl
 import { 
     // OpMeta, 
     // InputArgs, 
-    OperandArgs, 
+    // OperandArgs, 
     // OpMetaSchema, 
     // metaFromBytes, 
     // ComputedOutput, 
@@ -650,7 +650,7 @@ export class Rainlang {
             exp = "";
         }
         else {
-            const _operandMeta: OperandArgs = [];
+            const _operandMeta: any[] = [];
             const _operandArgs = exp.slice(1, exp.indexOf(">"));
             const _parsedVals = inclusiveParse(_operandArgs, /\S+/gd, pos + 1);
             // const _opmeta = this.opmeta.find(v => v.name === op.opcode.name);
