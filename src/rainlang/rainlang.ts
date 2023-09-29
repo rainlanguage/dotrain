@@ -10,7 +10,8 @@ import {
     // toOpMeta,
     AuthoringMeta,
     RainMeta,
-    MAGIC_NUMBERS
+    MAGIC_NUMBERS,
+    getMetaHash
 } from "@rainprotocol/meta";
 import { 
     ErrorCode, 
@@ -32,7 +33,7 @@ import {
     toConvNumber,
     execBytecode,
     hexlify,
-    isBytesLike
+    isBytesLike 
 } from "../utils";
 
 
@@ -162,6 +163,7 @@ export class Rainlang {
         metaStore?: MetaStore
     ): Promise<Rainlang> {
         let _bytecode;
+        let _dispair;
         const _metaStore = metaStore ?? new MetaStore();
         if (!isBytesLike(bytecodeSource)) throw new Error("invalid bytecode");
         if (HASH_PATTERN.test(bytecodeSource)) {
@@ -177,8 +179,16 @@ export class Rainlang {
             if (!_map) throw new Error("cannot find settlement for provided bytecode hash");
             _bytecode = RainMeta.decodeMap(_map);
             if (typeof _bytecode === "string") throw new Error("corrupt bytecode meta");
+            _dispair = bytecodeSource;
         }
-        else _bytecode = bytecodeSource;
+        else {
+            _bytecode = bytecodeSource;
+            _dispair = await getMetaHash([{
+                payload: bytecodeSource,
+                magicNumber: MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1,
+                contentType: "application/octet-stream"
+            }], false);
+        }
         
         const _authoringMetaHash = (await execBytecode(
             _bytecode,
@@ -186,17 +196,20 @@ export class Rainlang {
             "authoringMetaHash",
             []
         ))[0]?.toLowerCase();
-        await _metaStore.updateStore(_authoringMetaHash as string);
-        const _authoringMetaBytes = _metaStore.getRecord(_authoringMetaHash);
-
-        if (!_authoringMetaBytes) throw new Error("cannot find settlement for authoring meta");
+        let _authoringMetaBytes = await _metaStore.getAuthoringMeta(
+            _authoringMetaHash
+        );
+        if (!_authoringMetaBytes) {
+            _authoringMetaBytes = await _metaStore.getAuthoringMeta(_dispair, true);
+        }
+        if (!_authoringMetaBytes) throw new Error(
+            "cannot find any settlement for authoring meta of specified dispair source"
+        );
         else {
-            const _amm = RainMeta.decode(_authoringMetaBytes).find(v => 
-                v.get(1).magicNumber === MAGIC_NUMBERS.AUTHORING_META_V1
-            );
-            if (!_amm) throw new Error("cannot find settlement for authoring meta");
             try {
-                const _authoringMeta = AuthoringMeta.get(_amm);
+                const _authoringMeta = AuthoringMeta.fromAbiEncoded(
+                    _authoringMetaBytes
+                );
                 return new Rainlang(
                     text,
                     _authoringMeta,

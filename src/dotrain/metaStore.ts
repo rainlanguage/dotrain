@@ -1,5 +1,5 @@
-import { isBytesLike } from "../utils";
-import { RAIN_SUBGRAPHS, MAGIC_NUMBERS, keccak256, RainMeta, cborMapEncode } from "@rainprotocol/meta";
+import { hexlify, isBytesLike } from "../utils";
+import { RAIN_SUBGRAPHS, MAGIC_NUMBERS, keccak256, RainMeta, cborMapEncode, decodeCborMap } from "@rainprotocol/meta";
 
 
 // /**
@@ -86,6 +86,10 @@ export class MetaStore {
      * @internal k/v cache for hashs and their contents
      */
     private cache: { [hash: string]: string | undefined | null } = {};
+    /**
+     * @internal k/v cache for authoring meta hashs and abi encoded bytes
+     */
+    private amCache: { [hash: string]: string | undefined } = {};
 
     /**
      * @public Constructor of the class
@@ -134,7 +138,7 @@ export class MetaStore {
     }
 
     /**
-     * @public Get op meta for a given meta hash
+     * @public Get meta for a given meta hash
      * @param metaHash - The meta hash
      * @returns A MetaRecord or undefined if no matching record exists or null if the record has no sttlement
      */
@@ -147,6 +151,13 @@ export class MetaStore {
      */
     public getCache(): { [hash: string]: string | undefined | null } {
         return this.cache;
+    }
+
+    /**
+     * @public Get the whole authoring meta cache
+     */
+    public getAuthoringMetaCache(): { [hash: string]: string | undefined | null } {
+        return this.amCache;
     }
 
     /**
@@ -199,7 +210,7 @@ export class MetaStore {
                             //     sequence: this.decodeContent(_content, _type)
                             // };
                             this.cache[hashOrStore.toLowerCase()] = metaBytes.toLowerCase();
-                            this.storeContent(metaBytes);
+                            await this.storeContent(metaBytes);
                         }
                         catch {
                             this.cache[hashOrStore.toLowerCase()] = null;
@@ -225,7 +236,7 @@ export class MetaStore {
                             //     };
                             const _metaBytes = await RainMeta.get(hashOrStore, this.subgraphs);
                             this.cache[hashOrStore.toLowerCase()] = _metaBytes;
-                            this.storeContent(_metaBytes);
+                            await this.storeContent(_metaBytes);
                         }
                         catch {
                             this.cache[hashOrStore.toLowerCase()] = null;
@@ -270,7 +281,7 @@ export class MetaStore {
                     //     };
                     const _metaBytes = await RainMeta.get(hash, subgraphUrls);
                     this.cache[hash.toLowerCase()] = _metaBytes;
-                    this.storeContent(_metaBytes);
+                    await this.storeContent(_metaBytes);
                 }
                 catch {
                     this.cache[hash] = null;
@@ -283,7 +294,7 @@ export class MetaStore {
      * @internal Stores the meta content items into the store if a Meta is RainDocument
      * @param rawBytes - The bytes to check and store
      */
-    private storeContent(rawBytes: string) {
+    private async storeContent(rawBytes: string) {
         if (!rawBytes.startsWith("0x")) rawBytes = "0x" + rawBytes;
         if (rawBytes.toLowerCase().startsWith(
             "0x" + MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase()
@@ -291,12 +302,80 @@ export class MetaStore {
             try {
                 const maps = RainMeta.decode(rawBytes);
                 for (let i = 0; i < maps.length; i++) {
-                    const bytes = "0x" + cborMapEncode(maps[i]).toLowerCase();
+                    const bytes = "0x" + (await cborMapEncode(maps[i])).toLowerCase();
                     const hash = keccak256(bytes).toLowerCase();
                     if (!this.cache[hash]) this.cache[hash] = bytes;
+                    if (maps[i].get(1) === MAGIC_NUMBERS.AUTHORING_META_V1) {
+                        const abiEncodedBytes = decodeCborMap(maps[i]);
+                        if (typeof abiEncodedBytes !== "string") {
+                            const hex = hexlify(
+                                abiEncodedBytes, 
+                                { allowMissingPrefix: true }
+                            ).toLowerCase();
+                            const h = keccak256(hex).toLowerCase();
+                            if (!this.amCache[h]) this.amCache[h] = hex;
+                        }
+                    }
                 }
             }
-            catch { /* */ }
+            catch { /**/ }
+        }
+        else {
+            try {
+                const amMap = RainMeta.decode(rawBytes).find(
+                    v => v.get(1) === MAGIC_NUMBERS.AUTHORING_META_V1
+                );
+                if (amMap) {
+                    const abiEncodedBytes = decodeCborMap(amMap);
+                    if (typeof abiEncodedBytes !== "string") {
+                        const hex = hexlify(
+                            abiEncodedBytes, 
+                            { allowMissingPrefix: true }
+                        ).toLowerCase();
+                        const hash = keccak256(hex).toLowerCase();
+                        if (!this.amCache[hash]) this.amCache[hash] = hex;
+                
+                    }
+                }
+            }
+            catch { /**/ }
+        }
+    }
+
+    /**
+     * @public Get authoring meta for a given meta hash
+     * @param hash - The hash
+     * @param fromDeployerHash - Determines if the hash is an authoringMeta or deployer bytecode meta hash
+     * @returns A MetaRecord or undefined if no matching record exists or null if the record has no sttlement
+     */
+    public async getAuthoringMeta(
+        hash: string,
+        fromDeployerHash = false
+    ): Promise<string | undefined> {
+        if (!fromDeployerHash) return this.amCache[hash.toLowerCase()];
+        else {
+            try {
+                const _deployerMeta = await RainMeta.getDeployerMeta(hash, this.subgraphs);
+                await this.updateStore(_deployerMeta.id, _deployerMeta.rawBytes);
+                const amMap = RainMeta.decode(_deployerMeta.rawBytes).find(
+                    v => v.get(1) === MAGIC_NUMBERS.AUTHORING_META_V1
+                );
+                if (amMap) {
+                    const abiEncodedBytes = decodeCborMap(amMap);
+                    if (typeof abiEncodedBytes !== "string") {
+                        const hex = hexlify(
+                            abiEncodedBytes, 
+                            { allowMissingPrefix: true }
+                        ).toLowerCase();
+                        const _hash = keccak256(hex).toLowerCase();
+                        if (!this.amCache[_hash]) this.amCache[_hash] = hex;
+                        return hex;
+                    }
+                    else return undefined;
+                }
+                else return undefined;
+            }
+            catch { return undefined; }
         }
     }
 

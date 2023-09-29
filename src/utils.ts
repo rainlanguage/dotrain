@@ -61,7 +61,11 @@ export const {
     /**
      * @public ethers isAddress
      */
-    isAddress
+    isAddress,
+    /**
+     * @public ethers keccak256
+     */
+    keccak256
 } = utils;
 
 /**
@@ -861,15 +865,15 @@ export function isConsumableMeta(maps: Map<any, any>[]): boolean {
     if (
         !maps.length ||
         (
-            maps.filter(v => v.get(1).magicNumber === MAGIC_NUMBERS.DOTRAIN_V1).length > 1
-            || maps.filter(v => v.get(1).magicNumber === MAGIC_NUMBERS.CONTRACT_META_V1).length > 1
+            maps.filter(v => v.get(1) === MAGIC_NUMBERS.DOTRAIN_V1).length > 1
+            || maps.filter(v => v.get(1) === MAGIC_NUMBERS.CONTRACT_META_V1).length > 1
             || maps.filter(v => 
-                v.get(1).magicNumber === MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
+                v.get(1) === MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
             ).length > 1
             || maps.filter(v => 
-                v.get(1).magicNumber === MAGIC_NUMBERS.DOTRAIN_V1 ||
-                v.get(1).magicNumber === MAGIC_NUMBERS.CONTRACT_META_V1 ||
-                v.get(1).magicNumber === MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
+                v.get(1) === MAGIC_NUMBERS.DOTRAIN_V1 ||
+                v.get(1) === MAGIC_NUMBERS.CONTRACT_META_V1 ||
+                v.get(1) === MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
             ).length === 0
         )
     ) return false;
