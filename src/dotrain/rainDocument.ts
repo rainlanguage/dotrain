@@ -433,7 +433,7 @@ export class RainDocument {
                             );
                             if (!_authoringMetaBytes) _authoringMetaBytes = 
                                 await this.metaStore.getAuthoringMeta(
-                                    keccak256("0x" + cborMapEncode(_dispair)),
+                                    keccak256("0x" + (await cborMapEncode(_dispair))),
                                     true
                                 );
                             if (!_authoringMetaBytes) this.problems.push({
@@ -1361,11 +1361,9 @@ export class RainDocument {
 // ).then(v => {
 //     console.log(Object.keys((v as any).cache));
 //     console.log(Object.keys((v as any).amCache));
-// });
-// RainDocument.create(`/**
-//  * This is test
-// */
+//     RainDocument.create(`
 // @ opmeta 0x78fd1edb0bdb928db6015990fecafbb964b44692e2d435693062dd4efc6254dd
 
 // #xx 1
-// `).then(v => console.log(v));
+// `, v).then(v => console.log(v));
+// });
