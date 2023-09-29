@@ -1047,7 +1047,14 @@ export async function npParse(
         const result = await execBytecode(bytecode, abi, fn, [ stringToUint8Array(text) ]);
         const constants = result.find(v => Array.isArray(v));
         const _bytecode = result.find(v => !Array.isArray(v));
-        return Promise.resolve({ constants, bytecode: _bytecode });
+        return Promise.resolve({ 
+            constants: constants.map((v: BigNumber) => 
+                isAddress(v.toHexString()) || v.eq(CONSTANTS.MaxUint256) 
+                    ? v.toHexString() 
+                    : v.toString()
+            ), 
+            bytecode: _bytecode 
+        });
     }
     catch (error) {
         const { errorArgs, errorName: name } = error as any;

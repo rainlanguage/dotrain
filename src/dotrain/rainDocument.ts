@@ -1364,6 +1364,6 @@ export class RainDocument {
 //     RainDocument.create(`
 // @ opmeta 0x78fd1edb0bdb928db6015990fecafbb964b44692e2d435693062dd4efc6254dd
 
-// #xx 1
-// `, v).then(v => console.log(v));
+// #xx _: add(1 2);
+// `, v).then(v => console.log(v.bindings[0].problems));
 // });
