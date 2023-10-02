@@ -7,7 +7,7 @@ import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageser
 
 
 export * from "vscode-languageserver-types";
-export { TextDocument, TextDocumentContentChangeEvent };
+export { TextDocument, TextDocumentContentChangeEvent, Meta };
 
 /**
  * @public Illegal character pattern 

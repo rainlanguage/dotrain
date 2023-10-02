@@ -14,7 +14,8 @@ import {
     isConsumableMeta 
 } from "../utils";
 import { 
-    AST,
+    AST, 
+    Range, 
     ErrorCode, 
     HEX_PATTERN,
     HASH_PATTERN, 
@@ -22,7 +23,7 @@ import {
     WORD_PATTERN,
     NUMERIC_PATTERN, 
     DEFAULT_ELISION,
-    NATIVE_PARSER_ABI, 
+    NATIVE_PARSER_ABI 
 } from "../languageTypes";
 
 
@@ -900,12 +901,7 @@ export class RainDocument {
         }
 
         // parse bindings
-        exclusiveParse(
-            this.textDocument.getText(), 
-            /#/gd, 
-            undefined, 
-            true
-        ).slice(1).forEach((v) => {
+        exclusiveParse(document, /#/gd, undefined, true).slice(1).forEach((v) => {
             // if (i > 0) {
             const _index = v[0].search(/\s/);
             const position = v[1];
@@ -923,10 +919,16 @@ export class RainDocument {
                 content = "";
             }
             else {
-                const _trimmed =  trim(v[0].slice(_index + 1));
+                const _contentText = this.textDocument.getText(
+                    Range.create(
+                        this.textDocument.positionAt(v[1][0]),
+                        this.textDocument.positionAt(v[1][1] + 1)
+                    )
+                );
+                const _trimmed =  trim(_contentText.slice(_index + 1));
                 name = v[0].slice(0, _index);
                 namePosition = [v[1][0], v[1][0] + _index - 1];
-                content = !_trimmed.text ? v[0].slice(_index + 1) : _trimmed.text;
+                content = !_trimmed.text ? _contentText.slice(_index + 1) : _trimmed.text;
                 contentPosition = !_trimmed.text
                     ? [v[1][0] + _index + 1, v[1][1]]
                     : [
@@ -1396,11 +1398,10 @@ export class RainDocument {
 
 // #xx 
 // /**ignore-next-line */
-// _: x,
-
+// /**ignore-next-line */
 // _: int-add(
 //     1 
-//     z
+//     2
 // );
 // `, v).then(v => {
 //         // console.log(v.comments);

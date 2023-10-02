@@ -4,13 +4,13 @@ import { Rainlang as RL } from "./rainlang";
 import { RainDocument as RD } from "./rainDocument";
 import MagicString, { DecodedSourceMap } from "magic-string";
 import { 
+    isAddress, 
     BigNumber, 
     BytesLike, 
     CONSTANTS, 
-    exclusiveParse, 
     execBytecode, 
     getRandomInt, 
-    isAddress, 
+    exclusiveParse, 
     stringToUint8Array 
 } from "../utils";
 import { 
