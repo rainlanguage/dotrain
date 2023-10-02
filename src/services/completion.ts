@@ -1,23 +1,22 @@
 import { exclusiveParse } from "../utils";
-import { RainDocument } from "../dotrain/rainDocument";
+import { RainDocument } from "../parser/rainDocument";
 import { 
+    AST, 
     Range, 
     Position,
-    Namespace,
     MarkupKind,  
     TextDocument, 
     WORD_PATTERN, 
-    NamespaceNode,
     CompletionItem, 
     CompletionItemKind, 
     LanguageServiceParams, 
-} from "../rainLanguageTypes";
+} from "../languageTypes";
 
 
 function findNamespaceMach(
     name: string, 
-    namespace: Namespace
-): [string, (Namespace | NamespaceNode)][] | undefined {
+    namespace: AST.Namespace
+): [string, (AST.Namespace | AST.NamespaceNode)][] | undefined {
     let _ns: any = namespace;
     const _names = exclusiveParse(name, /\./gd, undefined, true);
     if (name.startsWith(".")) _names.shift();
@@ -32,7 +31,7 @@ function findNamespaceMach(
     }
     let _result = Object.entries(_ns).filter(v => !/^[EIHW]/.test(v[0]) );
     if (_last?.[0]) _result = _result.filter(v => v[0].includes(_last[0]));
-    return _result as [string, (Namespace | NamespaceNode)][];
+    return _result as [string, (AST.Namespace | AST.NamespaceNode)][];
 }
 
 /**
@@ -78,7 +77,7 @@ export async function getCompletion(
         _rd = document;
         _td = _rd.textDocument;
         if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
-            _rd.metaStore.updateStore(setting.metaStore);
+            _rd.metaStore.update(setting.metaStore);
             await _rd.parse();
         }
     }
@@ -258,7 +257,7 @@ export async function getCompletion(
                             _result.unshift({
                                 label: v,
                                 labelDetails: {
-                                    description: "constant alias"
+                                    description: "reserved constant alias"
                                 },
                                 kind: CompletionItemKind.Constant,
                                 detail: "reserved constant alias: " + v,
@@ -365,57 +364,88 @@ export async function getCompletion(
                         }
                     });
                     if (!_isQuote) {
-                        const _currentExp = _rd.bindings.find(
+                        const _binding = _rd.bindings.find(
                             v => v.contentPosition[0] <= _offset && 
                             v.contentPosition[1] + 1 >= _offset
                         );
-                        if (_currentExp) {
-                            const _currentSource = _currentExp.exp?.ast.find(v => 
-                                v.position[0] + _currentExp.contentPosition[0] <= _offset &&
-                                v.position[1] + _currentExp.contentPosition[0]+ 1 >= _offset
+                        if (_binding) {
+                            const _src = _binding.exp?.ast.find(v => 
+                                v.position[0] + _binding.contentPosition[0] <= _offset &&
+                                v.position[1] + _binding.contentPosition[0] + 1 >= _offset
                             );
-                            if (_currentSource) _currentSource.lines
-                                .flatMap(v => v.aliases)
-                                .filter(v => v.name.includes(_prefix))
-                                .forEach(v => {
-                                    let _text = "";
-                                    const _pos = _currentSource.lines
-                                        .flatMap(e => e.nodes)
-                                        .find(e => {
-                                            if (e.lhsAlias?.find(
-                                                i => i.name === v.name)
-                                            ) return true;
-                                            else return false;
-                                        })?.position;
-                                    if (_pos) _text = `${
-                                        _rd!.textDocument.getText(
-                                            Range.create(
-                                                _td.positionAt(_pos[0]),
-                                                _td.positionAt(_pos[1] + 1)
-                                            )
+                            let _isAtRHS = true;
+                            const _offsetPos = _td.positionAt(_offset);
+                            if (_src) _result.unshift(
+                                ..._src.lines.filter(v => 
+                                    v.position[1] + _binding.contentPosition[0] + 1 <= _offset
+                                ).flatMap((v, i, a) => {
+                                    if (i === a.length - 1) _isAtRHS = _td.getText(
+                                        Range.create(
+                                            _td.positionAt(v.position[0]),
+                                            _offsetPos
                                         )
-                                    }`;
-                                    _result.unshift({
-                                        label: v.name,
-                                        labelDetails: {
-                                            description: "stack alias"
-                                        },
-                                        kind: CompletionItemKind.Variable,
-                                        detail: "stack alias: " + v.name,
-                                        documentation: {
-                                            kind: _documentionType,
-                                            value: _documentionType === "markdown" 
-                                                ? [
-                                                    "stack alias for:",
-                                                    "```rainlang",
-                                                    _text,
-                                                    "```"
-                                                ].join("\n")
-                                                : `stack alias for: ${_text}`
-                                        },
-                                        insertText: v.name
-                                    });
-                                });
+                                    ).includes(":");
+                                    return v.aliases;
+                                }).filter(
+                                    v => _isAtRHS && 
+                                        v.name !== "_" && 
+                                        v.name.includes(_prefix)
+                                ).map(v => ({
+                                    label: v.name,
+                                    labelDetails: {
+                                        description: "stack alias"
+                                    },
+                                    kind: CompletionItemKind.Variable,
+                                    detail: "stack alias: " + v.name,
+                                    documentation: {
+                                        kind: _documentionType,
+                                        value: "stack alias"
+                                    },
+                                    insertText: v.name
+                                }))
+                            );
+                        //     if (_src) _src.lines
+                        //         .flatMap(v => v.aliases)
+                        //         .filter(v => v.name.includes(_prefix))
+                        //         .forEach(v => {
+                        //             let _text = "";
+                        //             const _pos = _src.lines
+                        //                 .flatMap(e => e.nodes)
+                        //                 .find(e => {
+                        //                     if (e.lhsAlias?.find(
+                        //                         i => i.name === v.name)
+                        //                     ) return true;
+                        //                     else return false;
+                        //                 })?.position;
+                        //             if (_pos) _text = `${
+                        //                 _rd!.textDocument.getText(
+                        //                     Range.create(
+                        //                         _td.positionAt(_pos[0]),
+                        //                         _td.positionAt(_pos[1] + 1)
+                        //                     )
+                        //                 )
+                        //             }`;
+                        //             _result.unshift({
+                        //                 label: v.name,
+                        //                 labelDetails: {
+                        //                     description: "stack alias"
+                        //                 },
+                        //                 kind: CompletionItemKind.Variable,
+                        //                 detail: "stack alias: " + v.name,
+                        //                 documentation: {
+                        //                     kind: _documentionType,
+                        //                     value: _documentionType === "markdown" 
+                        //                         ? [
+                        //                             "stack alias for:",
+                        //                             "```rainlang",
+                        //                             _text,
+                        //                             "```"
+                        //                         ].join("\n")
+                        //                         : `stack alias for: ${_text}`
+                        //                 },
+                        //                 insertText: v.name
+                        //             });
+                        //         });
                         }
                     }
                     return _result;

@@ -1,6 +1,6 @@
-import { ASTNode } from "../rainLanguageTypes";
-import { RainDocument } from "../dotrain/rainDocument";
-import { LanguageServiceParams, MarkupKind, TextDocument, Position, Hover, Range } from "../rainLanguageTypes";
+import { AST } from "../languageTypes";
+import { RainDocument } from "../parser/rainDocument";
+import { LanguageServiceParams, MarkupKind, TextDocument, Position, Hover, Range } from "../languageTypes";
 
 
 /**
@@ -43,7 +43,7 @@ export async function getHover(
         _rd = document;
         _td = _rd.textDocument;
         if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
-            _rd.metaStore.updateStore(setting.metaStore);
+            _rd.metaStore.update(setting.metaStore);
             await _rd.parse();
         }
     }
@@ -60,7 +60,7 @@ export async function getHover(
     if (format && format[0]) _contentType = format[0];
     
     let _targetOffset = _td.offsetAt(position);
-    const search = async(nodes: ASTNode[], offset: number): Promise<Hover | null> => {
+    const search = async(nodes: AST.Node[], offset: number): Promise<Hover | null> => {
         for (let i = 0; i < nodes.length; i++) {
             const _n = nodes[i];
             if (
@@ -131,70 +131,70 @@ export async function getHover(
                     ),
                     contents: {
                         kind: _contentType,
-                        value: "Stack Alias"
+                        value: "Stack Alias" + (_n.name === "_" ? " Placeholder" : "")
                     }
                 } as Hover;
             }
-            else if (_n.lhsAlias) {
-                const _lhs = _n.lhsAlias;
-                for (let j = 0; j < _lhs.length; j++) {
-                    if (
-                        _lhs[j].position[0] <= _targetOffset && 
-                        _lhs[j].position[1] >= _targetOffset
-                    ) {
-                        const _opener = _lhs[j].name === "_" ? "placeholder" : "alias";
-                        return {
-                            range: Range.create(
-                                _td.positionAt(_lhs[j].position[0] + offset),
-                                _td.positionAt(_lhs[j].position[1] + offset + 1),
-                            ),
-                            contents: {
-                                kind: _contentType,
-                                value: "opcode" in _n 
-                                    ? _contentType === "markdown"
-                                        ? [
-                                            `${_opener} for:`, 
-                                            "```rainlang",
-                                            _td.getText(
-                                                Range.create(
-                                                    _td.positionAt(_n.position[0] + offset),
-                                                    _td.positionAt(_n.position[1] + offset + 1)
-                                                )
-                                            ),
-                                            "```"
-                                        ].join("\n")
-                                        : `${_opener} for: ${
-                                            _td.getText(Range.create(
-                                                _td.positionAt(_n.position[0] + offset),
-                                                _td.positionAt(_n.position[1] + offset + 1)
-                                            ))
-                                        }`
-                                    : "value" in _n
-                                        ? _contentType === "markdown"
-                                            ? [
-                                                `${_opener} for:`,
-                                                "```rainlang",
-                                                _n.value,
-                                                "```"
-                                            ].join("\n")
-                                            : `${_opener} for: ${
-                                                _n.value
-                                            }`
-                                        : _contentType === "markdown"
-                                            ? [
-                                                `${_opener} for:`,
-                                                "```rainlang",
-                                                _n.name,
-                                                "```"
-                                            ].join("\n")
-                                            : `${_opener} for alias: ${
-                                                _n.name
-                                            }`
-                            }
-                        } as Hover;
-                    }
-                }
-            }
+            // else if (_n.lhsAlias) {
+            //     const _lhs = _n.lhsAlias;
+            //     for (let j = 0; j < _lhs.length; j++) {
+            //         if (
+            //             _lhs[j].position[0] <= _targetOffset && 
+            //             _lhs[j].position[1] >= _targetOffset
+            //         ) {
+            //             const _opener = _lhs[j].name === "_" ? "placeholder" : "alias";
+            //             return {
+            //                 range: Range.create(
+            //                     _td.positionAt(_lhs[j].position[0] + offset),
+            //                     _td.positionAt(_lhs[j].position[1] + offset + 1),
+            //                 ),
+            //                 contents: {
+            //                     kind: _contentType,
+            //                     value: "opcode" in _n 
+            //                         ? _contentType === "markdown"
+            //                             ? [
+            //                                 `${_opener} for:`, 
+            //                                 "```rainlang",
+            //                                 _td.getText(
+            //                                     Range.create(
+            //                                         _td.positionAt(_n.position[0] + offset),
+            //                                         _td.positionAt(_n.position[1] + offset + 1)
+            //                                     )
+            //                                 ),
+            //                                 "```"
+            //                             ].join("\n")
+            //                             : `${_opener} for: ${
+            //                                 _td.getText(Range.create(
+            //                                     _td.positionAt(_n.position[0] + offset),
+            //                                     _td.positionAt(_n.position[1] + offset + 1)
+            //                                 ))
+            //                             }`
+            //                         : "value" in _n
+            //                             ? _contentType === "markdown"
+            //                                 ? [
+            //                                     `${_opener} for:`,
+            //                                     "```rainlang",
+            //                                     _n.value,
+            //                                     "```"
+            //                                 ].join("\n")
+            //                                 : `${_opener} for: ${
+            //                                     _n.value
+            //                                 }`
+            //                             : _contentType === "markdown"
+            //                                 ? [
+            //                                     `${_opener} for:`,
+            //                                     "```rainlang",
+            //                                     _n.name,
+            //                                     "```"
+            //                                 ].join("\n")
+            //                                 : `${_opener} for alias: ${
+            //                                     _n.name
+            //                                 }`
+            //                 }
+            //             } as Hover;
+            //         }
+            //     }
+            // }
         }
         return null;
     };
@@ -213,11 +213,11 @@ export async function getHover(
             contents: {
                 kind: _contentType,
                 value: `this import contains:${
-                    _hash.sequence.dispair ? " -DISPair" : ""
+                    _hash.sequence.dispair ? "\n - DISPair" : ""
                 }${
-                    _hash.sequence.ctxmeta ? " -ContractMeta" : ""
+                    _hash.sequence.ctxmeta ? "\n - ContractMeta" : ""
                 }${
-                    _hash.sequence.dotrain ? " -DotRain" : ""
+                    _hash.sequence.dotrain ? "\n - DotRain" : ""
                 }`
                 // (await buildMetaInfo(_hash.hash, _rd.metaStore)) 
                 // + (
@@ -228,18 +228,47 @@ export async function getHover(
             }
         };
         else {
-            const _currentExp = _rd.bindings.find(v =>
-                v.position[0] <= _targetOffset && v.position[1] >= _targetOffset
-            );
-            if (_currentExp) {
-                _targetOffset -= _currentExp.contentPosition[0];
-                return search(
-                    _currentExp?.exp?.ast.find(v => 
-                        v.position[0] <= _targetOffset &&
-                        v.position[1] >= _targetOffset
-                    )?.lines.map(v => v.nodes).flat() ?? [],
-                    _currentExp.contentPosition[0]
-                );
+            let _at = "";
+            const _binding = _rd.bindings.find(v => {
+                if (v.namePosition[0] <= _targetOffset && v.namePosition[1] >= _targetOffset) {
+                    _at = "name";
+                    return true;
+                }
+                if (
+                    v.contentPosition[0] <= _targetOffset && 
+                    v.contentPosition[1] >= _targetOffset
+                ) {
+                    _at = "content";
+                    return true;
+                }
+                return false;
+            });
+            if (_at) {
+                if (_at === "content") {
+                    _targetOffset -= _binding!.contentPosition[0];
+                    return search(
+                        _binding!.exp?.ast.find(v => 
+                            v.position[0] <= _targetOffset &&
+                            v.position[1] >= _targetOffset
+                        )?.lines.flatMap(v => [...v.nodes, ...v.aliases]) ?? [],
+                        _binding!.contentPosition[0]
+                    );
+                }
+                else if (_at === "name") {
+                    const _type = _binding!.elided !== undefined ? "Elided " :
+                        _binding!.constant !== undefined ? "Constant " : "";
+                    return {
+                        range: Range.create(
+                            _td.positionAt(_binding!.namePosition[0]), 
+                            _td.positionAt(_binding!.namePosition[1] + 1)
+                        ),
+                        contents: {
+                            kind: _contentType,
+                            value: _type + "Binding" + (_type ? " (cannot be referenced as entrypoint)" : "")
+                        }
+                    } as Hover;
+                }
+                else return null;
             }
             else return null;
         }

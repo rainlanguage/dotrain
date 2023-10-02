@@ -38,36 +38,30 @@ const diagnostics = await langServices.doValidate(myTextDocument);
 ```
 <br>
 
-### **Compiler and Decompiler**
-- `dotrainc()` and `dotraind()` for compiling/decompiling `RainDocument` aka dotrain instances:
+### **Compiler**
+- Compiling a `RainDocument` aka dotrain instances:
 ```typescript
 // importing
-import { dotrainc, dotraind } from "@rainprotocol/rainlang";
+import { Compile } from "@rainprotocol/rainlang";
 
-// compiling a RainDocument to get ExpressionConfig aka deployable bytes
-const expressionConfig = await dotrainc(myDocument, ["entrypoint-1" , "entrypoint-2"], [...metaStore]);
-
-// decompiling an ExpressionConfig to a valid RainDocument
-const rainDocument = await dotraind(expressionConfig, [...metaStore]);
+// compiling a RainDocument to get ExpressionConfig
+const expressionConfig = await Compile.RainDocument(myDocument, ["entrypoint-1" , "entrypoint-2"], options);
 ```
 <br>
 
-- `rainlangc()` and `rainlangd()` for compiling/decompiling `Rainlang` instances:
+- Compiling `Rainlang` instances:
 ```typescript
 // importing
-import { rainlangc, rainlangd } from "@rainprotocol/rainlang";
+import { Compile } from "@rainprotocol/rainlang";
 
-// compiling a rainlang text to get ExpressionConfig aka deployable bytes
-const expressionConfig = await rainlangc(rainlangText, opMetaOrOpMetaHash);
-
-// decompiling an ExpressionConfig to a valid Rainlang instance
-const rainlangInstance = await rainlangd(expressionConfig, opMetaOrOpMetaHash);
+// compiling a rainlang text to get ExpressionConfig
+const expressionConfig = await Compile.Rainlang(rainlangText, bytecodeSource, entrypoints, options);
 ```
 
 <br>
 
 ## CLI
-`npx` command to compile a dotrain file to `ExpressionConfig` in json format or to decompiler an `ExpressionConfig` in json format to a dotrain file.
+`npx` command to compile a dotrain file to `ExpressionConfig` in json format.
  - if on current repo:
 ```bash
 node cli/dotrain [options]
@@ -93,10 +87,10 @@ npx --p @rainprotocol/rainlang dotrain [options] --yes
     CLI command to compile a dotrain source file.
 
     Options:
-      -c, --compile <entrypoints...>  Use compiling mode with specified entrypoints, to compile a .rain file to ExpressionConfig output in a .json
-      -i, --input <path>              Path to input file, either a .rain file for compiling or .json for decompiling (always required)
-      -o, --output <path>             Path to output file, will output .json for compile mode and .rain for decompile mode (always required)
-      -b, --batch-compile <path>      Path to a json file of mappings of dotrain files paths, entrypoints (bindings names) and output json files paths to batch compile
+      -c, --compile <entrypoints...>  Compiles specified entrypoints of --input .rain file to --output .json file
+      -i, --input <path>              Path to .rain file
+      -o, --output <path>             Path to output file, will output .json
+      -b, --batch-compile <path>      Path to a json file of mappings of .rain files paths, entrypoints and output .json files paths to batch compile
       -s, --stdout                    Log the result in terminal
       -V, --version                   output the version number
       -h, --help                      display help for command
@@ -107,16 +101,16 @@ example of a mapping file content (see `./example.mapping.json`):
 ```json
 [
   {
-    "dotrain": "./path/to/dotrain1.rain",
-    "json": "./path/to/compiled1.json",
+    "input": "./path/to/dotrain1.rain",
+    "output": "./path/to/compiled1.json",
     "entrypoints": [
       "exp-1", 
       "exp-2"
     ]
   },
   {
-    "dotrain": "./path/to/dotrain12.rain",
-    "json": "./path/to/compiled2.json",
+    "input": "./path/to/dotrain12.rain",
+    "output": "./path/to/compiled2.json",
     "entrypoints": [
       "main"
     ]

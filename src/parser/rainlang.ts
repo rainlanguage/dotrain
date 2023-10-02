@@ -1,42 +1,43 @@
-import { MetaStore } from "../dotrain/metaStore";
-import { Problem, Comment, ASTNode, OpASTNode, RainlangAST, Namespace, ContextAlias, Binding, NATIVE_PARSER_ABI, HASH_PATTERN } from "../rainLanguageTypes";
+import { Meta } from "@rainprotocol/meta";
 import { 
-    // OpMeta, 
-    // InputArgs, 
-    // OperandArgs, 
-    // OpMetaSchema, 
-    // metaFromBytes, 
-    // ComputedOutput, 
-    // toOpMeta,
-    AuthoringMeta,
-    RainMeta,
-    MAGIC_NUMBERS,
-    getMetaHash
-} from "@rainprotocol/meta";
-import { 
+    AST, 
     ErrorCode, 
+    TextDocument, 
+    HASH_PATTERN,  
     WORD_PATTERN, 
     ILLEGAL_CHAR, 
-    AliasASTNode, 
-    PositionOffset, 
-    NUMERIC_PATTERN 
-} from "../rainLanguageTypes";
+    NUMERIC_PATTERN, 
+    NATIVE_PARSER_ABI 
+} from "../languageTypes";
 import {
-    trim,
-    // deepCopy,
-    CONSTANTS,
-    // extractByBits, 
-    inclusiveParse,
-    exclusiveParse,
-    // constructByBits, 
+    trim, 
     fillIn,
-    toConvNumber,
-    execBytecode,
-    hexlify,
-    isBytesLike 
+    hexlify, 
+    toInteger, 
+    CONSTANTS, 
+    isBytesLike, 
+    execBytecode, 
+    inclusiveParse, 
+    exclusiveParse 
 } from "../utils";
 
 
+/**
+ * @public 
+ * Method to be used as Tagged Templates to activate embedded rainlang in 
+ * javascript/typescript in vscode that highlights the rainlang syntax. 
+ * Requires rainlang vscode extension to be installed.
+ */
+export function rainlang(
+    stringChunks: TemplateStringsArray,
+    ...vars: any[]
+): string {
+    let result = "";
+    for (let i = 0; i < stringChunks.length; i++) {
+        result = result + stringChunks[i] + (vars[i] ?? "");
+    }
+    return result;
+}
 
 /**
  * @public
@@ -54,16 +55,16 @@ export class Rainlang {
     };
 
     public text: string;
-    public ast: RainlangAST = [];
-    public problems: Problem[] = [];
-    public comments: Comment[] = [];
-    public authoringMeta: AuthoringMeta[] = [];
+    public ast: AST.RainlangAST = [];
+    public problems: AST.Problem[] = [];
+    public comments: AST.Comment[] = [];
+    public authoringMeta: Meta.Authoring[] = [];
     public bytecode = "";
-    public namespaces: Namespace = {};
-    public binding?: Binding;
+    public namespaces: AST.Namespace = {};
+    public binding?: AST.Binding;
     private state: {
-        nodes: ASTNode[];
-        aliases: AliasASTNode[];
+        nodes: AST.Node[];
+        aliases: AST.Alias[];
         parens: {
             open: number[];
             close: number[];
@@ -90,43 +91,32 @@ export class Rainlang {
      */
     constructor(
         text: string,
-        authoringMeta: AuthoringMeta[],
+        authoringMeta: Meta.Authoring[],
         bytecode: string,
         dotrainOptions?: { 
-            /**
-             * Comments parsed from RainDocument
-             */
-            comments?: Comment[];
+            // /**
+            //  * Comments parsed from RainDocument
+            //  */
+            // comments?: AST.Comment[];
             /**
              * Array of expression names from corresponding RainDocument
              */
             // expressionNames?: string[],
-            namespaces?: Namespace;
+            namespaces?: AST.Namespace;
             /**
              * 
              */
-            thisBinding?: Binding;
+            thisBinding?: AST.Binding;
         }
     ) {
         this.text = text;
-        this.authoringMeta = authoringMeta;
         this.bytecode = bytecode;
-        // this.dotrainMode = false;
-        if (dotrainOptions?.comments) {
-            this.comments = dotrainOptions.comments;
-            // this.dotrainMode = true;
-        }
-        // if (dotrainOptions?.constants) {
-        //     this.constants = dotrainOptions.constants;
-        //     this.isDotrain = true;
-        // }
-        // if (dotrainOptions?.expressionNames) {
-        //     this.expNames = dotrainOptions.expressionNames;
-        //     this.isDotrain = true;
+        this.authoringMeta = authoringMeta;
+        // if (dotrainOptions?.comments) {
+        //     this.comments = dotrainOptions.comments;
         // }
         if (dotrainOptions?.namespaces) {
             this.namespaces = dotrainOptions.namespaces;
-            // this.dotrainMode = true;
         }
         if (dotrainOptions?.thisBinding) this.binding = dotrainOptions.thisBinding;
         this.parse();
@@ -137,55 +127,55 @@ export class Rainlang {
      * Creates a new Rainlang instance with a contract bytecode
      * @param text - The text
      * @param bytecode - The ExpressionDeployerNP deployed bytecode
-     * @param metaStore - (optional) The MetaStore instance
+     * @param metaStore - (optional) The Meta.Store instance
      */
     public static async create(
         text: string, 
         bytecode: string, 
-        metaStore?: MetaStore
+        metaStore?: Meta.Store
     ): Promise<Rainlang>
 
     /**
      * Creates a new Rainlang instance with a bytecode meta hash
      * @param text - The text
      * @param bytecodeHash - The bytecode meta hash
-     * @param metaStore - (optional) The MetaStore instance
+     * @param metaStore - (optional) The Meta.Store instance
      */
     public static async create(
         text: string, 
         bytecodeHash: string, 
-        metaStore?: MetaStore
+        metaStore?: Meta.Store
     ): Promise<Rainlang>
 
     public static async create(
         text: string, 
         bytecodeSource: string, 
-        metaStore?: MetaStore
+        metaStore?: Meta.Store
     ): Promise<Rainlang> {
         let _bytecode;
         let _dispair;
-        const _metaStore = metaStore ?? new MetaStore();
+        const _metaStore = metaStore ?? new Meta.Store();
         if (!isBytesLike(bytecodeSource)) throw new Error("invalid bytecode");
         if (HASH_PATTERN.test(bytecodeSource)) {
-            let _record = _metaStore.getRecord(bytecodeSource);
+            let _record = _metaStore.getMeta(bytecodeSource);
             if (!_record) {
-                await _metaStore.updateStore(bytecodeSource);
-                _record = _metaStore.getRecord(bytecodeSource);
+                await _metaStore.update(bytecodeSource);
+                _record = _metaStore.getMeta(bytecodeSource);
                 if (!_record) throw new Error("cannot find settlement for provided bytecode hash");
             }
-            const _map = RainMeta.decode(_record).find(
-                v => v.get(1) === MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
+            const _map = Meta.decode(_record).find(
+                v => v.get(1) === Meta.MagicNumbers.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
             );
             if (!_map) throw new Error("cannot find settlement for provided bytecode hash");
-            _bytecode = RainMeta.decodeMap(_map);
+            _bytecode = Meta.decodeMap(_map);
             if (typeof _bytecode === "string") throw new Error("corrupt bytecode meta");
             _dispair = bytecodeSource;
         }
         else {
             _bytecode = bytecodeSource;
-            _dispair = await getMetaHash([{
+            _dispair = await Meta.hash([{
                 payload: bytecodeSource,
-                magicNumber: MAGIC_NUMBERS.EXPRESSION_DEPLOYER_V2_BYTECODE_V1,
+                magicNumber: Meta.MagicNumbers.EXPRESSION_DEPLOYER_V2_BYTECODE_V1,
                 contentType: "application/octet-stream"
             }], false);
         }
@@ -207,7 +197,7 @@ export class Rainlang {
         );
         else {
             try {
-                const _authoringMeta = AuthoringMeta.fromAbiEncoded(
+                const _authoringMeta = Meta.Authoring.abiDecode(
                     _authoringMetaBytes
                 );
                 return new Rainlang(
@@ -253,47 +243,12 @@ export class Rainlang {
         this.parse();
     }
 
-    // /**
-    //  * @public Get the current text of this Rainlang instance
-    //  */
-    // public getText(): string {
-    //     return this.text;
-    // }
-
-    // /**
-    //  * @public Get the current text of this Rainlang instance
-    //  */
-    // public getOpMeta(): OpMeta[] {
-    //     return deepCopy(this.opmeta);
-    // }
-
-    // /**
-    //  * @public Get the current problems of this Rainlang instance
-    //  */
-    // public getProblems(): Problem[] {
-    //     return this.problems;
-    // }
-
-    // /**
-    //  * @public Get the current comments inside of the text of this Rainlang instance
-    //  */
-    // public getComments(): Comment[] {
-    //     return deepCopy(this.comments);
-    // }
-
     /**
      * @public Get the current runtime error of this Rainlang instance
      */
     public getRuntimeError(): Error | undefined {
         return this.state.runtimeError;
     }
-
-    // /**
-    //  * @public Get AST of this Rainlang instance
-    //  */
-    // public getAst(): RainlangAST {
-    //     return deepCopy(this.ast);
-    // }
 
     /**
      * @internal Method to reset the parser state
@@ -313,20 +268,20 @@ export class Rainlang {
         return str.search(/[()<>\s]/g);
     };
 
-    /**
-     * @internal Method to count outputs of nodes in a parse tree
-     */
-    private countOutputs(nodes: ASTNode[]): number {
-        let _count = 0;
-        for (const _node of nodes) {
-            if (OpASTNode.is(_node)) {
-                if (!isNaN(_node.output)) _count += _node.output;
-                else return NaN;
-            }
-            else _count++;
-        }
-        return _count;
-    }
+    // /**
+    //  * @internal Method to count outputs of nodes in a parse tree
+    //  */
+    // private countOutputs(nodes: AST.Node[]): number {
+    //     let _count = 0;
+    //     for (const _node of nodes) {
+    //         if (AST.Opcode.is(_node)) {
+    //             if (!isNaN(_node.output)) _count += _node.output;
+    //             else return NaN;
+    //         }
+    //         else _count++;
+    //     }
+    //     return _count;
+    // }
 
     /**
      * @internal 
@@ -335,11 +290,11 @@ export class Rainlang {
      */
     private _parse() {
         this.resetState();
-        this.ast = [];
-        this.problems = [];
-        // this.comments = [];
+        this.ast                = [];
+        this.problems           = [];
+        this.comments           = [];
         this.state.runtimeError = undefined;
-        let document = this.text;
+        let document            = this.text;
 
         // check for illegal characters
         inclusiveParse(document, ILLEGAL_CHAR).forEach(v => {
@@ -352,21 +307,21 @@ export class Rainlang {
         });
 
         // parse comments
-        if (!this.binding) {
-            this.comments = [];
-            inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
-                if (!v[0].endsWith("*/")) this.problems.push({
-                    msg: "unexpected end of comment",
-                    position: v[1],
-                    code: ErrorCode.UnexpectedEndOfComment
-                });
-                this.comments.push({
-                    comment: v[0],
-                    position: v[1]
-                });
-                document = fillIn(document, v[1]);
+        // if (!this.binding) {
+        this.comments = [];
+        inclusiveParse(document, /\/\*[^]*?(?:\*\/|$)/gd).forEach(v => {
+            if (!v[0].endsWith("*/")) this.problems.push({
+                msg: "unexpected end of comment",
+                position: v[1],
+                code: ErrorCode.UnexpectedEndOfComment
             });
-        }
+            this.comments.push({
+                comment: v[0],
+                position: v[1]
+            });
+            document = fillIn(document, v[1]);
+        });
+        // }
         
         const _sourceExp: string[] = [];
         const _sourceExpPos: [number, number][] = []; 
@@ -435,7 +390,7 @@ export class Rainlang {
             ];
             const _endDels: number[] = [];
             const _subExp: string[] = [];
-            const _subExpPos: PositionOffset[] = [];
+            const _subExpPos: AST.Offsets[] = [];
             this.ast.push({ lines: [], position: [..._sourceExpPos[i]] });
 
             // parse and cache the sub-expressions
@@ -515,61 +470,61 @@ export class Rainlang {
                         // resolveQuotes
                     );
 
-                    // validating RHS against LHS
-                    const _outputCount = this.countOutputs(this.state.nodes);
-                    if (!isNaN(_outputCount)) {
-                        const _tags = [...this.state.aliases];
-                        if (!(
-                            this.ast[i].lines.map(v => v.nodes).flat().length === 0 && 
-                            this.state.nodes.length === 0
-                        )) {
-                            for (let k = 0; k < this.state.nodes.length; k++) {
-                                const _node = this.state.nodes[k];
-                                _node.lhsAlias = [];
-                                if (OpASTNode.is(_node)) {
-                                    if (_node.output > 0) {
-                                        if (_tags.length >= _node.output) {
-                                            for (let k = 0; k < _node.output; k++) {
-                                                _node.lhsAlias.push(_tags.shift()!);
-                                            }
-                                        }
-                                        else {
-                                            for (let l = 0; l < _tags.length; l++) {
-                                                _node.lhsAlias.push(_tags.shift()!);
-                                            }
-                                            this.problems.push({
-                                                msg: "no LHS item exists to match this RHS item",
-                                                position: [..._node.position],
-                                                code: ErrorCode.MismatchLHS
-                                            });
-                                        }
-                                    }
-                                }
-                                else {
-                                    if (_tags.length >= 1) _node.lhsAlias.push(_tags.shift()!);
-                                    else this.problems.push({
-                                        msg: "no LHS item exists to match this RHS item",
-                                        position: [..._node.position],
-                                        code: ErrorCode.MismatchLHS
-                                    });
-                                }
-                            }
-                            if (_tags.length > 0) {
-                                for (let k = 0; k < _tags.length; k++) {
-                                    this.problems.push({
-                                        msg: `no RHS item exists to match this LHS item: ${
-                                            _tags[k].name
-                                        }`,
-                                        position: [..._tags[k].position],
-                                        code: ErrorCode.MismatchRHS
-                                    });
-                                }
-                            }
-                        }
-                    }
-                    else for (let k = 0; k < this.state.nodes.length; k++) {
-                        this.state.nodes[k].lhsAlias = [];
-                    }
+                    // // validating RHS against LHS
+                    // const _outputCount = this.countOutputs(this.state.nodes);
+                    // if (!isNaN(_outputCount)) {
+                    //     const _tags = [...this.state.aliases];
+                    //     if (!(
+                    //         this.ast[i].lines.map(v => v.nodes).flat().length === 0 && 
+                    //         this.state.nodes.length === 0
+                    //     )) {
+                    //         for (let k = 0; k < this.state.nodes.length; k++) {
+                    //             const _node = this.state.nodes[k];
+                    //             _node.lhsAlias = [];
+                    //             if (AST.Opcode.is(_node)) {
+                    //                 if (_node.output > 0) {
+                    //                     if (_tags.length >= _node.output) {
+                    //                         for (let k = 0; k < _node.output; k++) {
+                    //                             _node.lhsAlias.push(_tags.shift()!);
+                    //                         }
+                    //                     }
+                    //                     else {
+                    //                         for (let l = 0; l < _tags.length; l++) {
+                    //                             _node.lhsAlias.push(_tags.shift()!);
+                    //                         }
+                    //                         // this.problems.push({
+                    //                         //     msg: "no LHS item exists to match this RHS item",
+                    //                         //     position: [..._node.position],
+                    //                         //     code: ErrorCode.MismatchLHS
+                    //                         // });
+                    //                     }
+                    //                 }
+                    //             }
+                    //             else {
+                    //                 if (_tags.length >= 1) _node.lhsAlias.push(_tags.shift()!);
+                    //                 // else this.problems.push({
+                    //                 //     msg: "no LHS item exists to match this RHS item",
+                    //                 //     position: [..._node.position],
+                    //                 //     code: ErrorCode.MismatchLHS
+                    //                 // });
+                    //             }
+                    //         }
+                    //         if (_tags.length > 0) {
+                    //             // for (let k = 0; k < _tags.length; k++) {
+                    //             //     this.problems.push({
+                    //             //         msg: `no RHS item exists to match this LHS item: ${
+                    //             //             _tags[k].name
+                    //             //         }`,
+                    //             //         position: [..._tags[k].position],
+                    //             //         code: ErrorCode.MismatchRHS
+                    //             //     });
+                    //             // }
+                    //         }
+                    //     }
+                    // }
+                    // else for (let k = 0; k < this.state.nodes.length; k++) {
+                    //     this.state.nodes[k].lhsAlias = [];
+                    // }
                 }
                 else {
                     // error if sub expressions is empty
@@ -597,15 +552,39 @@ export class Rainlang {
                 });
             }
         }
+
+        // ignore next line problems
+        this.comments.forEach(v => {
+            if (/\bignore-next-line\b/.test(v.comment)) {
+                const _td = TextDocument.create("utitled", "rainlang", 0, this.text);
+                const _astLine = this.ast.flatMap(
+                    e => e.lines
+                ).find(e => 
+                    _td.positionAt(e.position[0]).line === 
+                    _td.positionAt(v.position[1] + 1).line + 1
+                );
+                if (_astLine) {
+                    let _index;
+                    while (
+                        (_index = this.problems.findIndex(
+                            e => e.position[0] >= _astLine.position[0] && 
+                            e.position[1] <= _astLine.position[1]
+                        )) > -1
+                    ) {
+                        this.problems.splice(_index, 1);
+                    }
+                }
+            }
+        });
     }
 
     /**
      * @internal Method to update the parse state
      */
-    private updateState(node: ASTNode) {
-        let _nodes: ASTNode[] = this.state.nodes;
+    private updateState(node: AST.Node) {
+        let _nodes: AST.Node[] = this.state.nodes;
         for (let i = 0; i < this.state.depth; i++) {
-            _nodes = (_nodes[_nodes.length - 1] as OpASTNode).parameters;
+            _nodes = (_nodes[_nodes.length - 1] as AST.Opcode).parameters;
         }
         _nodes.push(node);
     }
@@ -649,7 +628,7 @@ export class Rainlang {
     /**
      * @internal Method to handle operand arguments
      */
-    private processOperand(exp: string, pos: number, op: OpASTNode): [string, OpASTNode] {
+    private processOperand(exp: string, pos: number, op: AST.Opcode): [string, AST.Opcode] {
         if (!exp.includes(">")) {
             this.problems.push({
                 msg: "expected \">\"",
@@ -737,12 +716,12 @@ export class Rainlang {
                         }
                         else {
                             if (this.namespaces[_quote]) {
-                                if (Namespace.isBinding(this.namespaces[_quote])) {
+                                if (AST.Namespace.isBinding(this.namespaces[_quote])) {
                                     if ("elided" in this.namespaces[_quote].Element) {
                                         this.problems.push({
                                             msg: (this.namespaces[
                                                 _quote
-                                            ].Element as Binding).elided!,
+                                            ].Element as AST.Binding).elided!,
                                             position: v[1],
                                             code: ErrorCode.ElidedBinding
                                         });
@@ -754,7 +733,9 @@ export class Rainlang {
                                             code: ErrorCode.InvalidQuote
                                         });
                                     }
-                                    if ((this.namespaces[_quote].Element as Binding).problems.find(
+                                    if ((this.namespaces[
+                                        _quote
+                                    ].Element as AST.Binding).problems.find(
                                         v => v.code === ErrorCode.CircularDependency
                                     )) this.problems.push({
                                         msg: "quoted binding has circular dependency",
@@ -805,11 +786,11 @@ export class Rainlang {
     private processOpcode = () => {
         this.state.parens.open.pop();
         const _endPosition = this.state.parens.close.pop()!;
-        let _nodes: ASTNode[] = this.state.nodes;
+        let _nodes: AST.Node[] = this.state.nodes;
         for (let i = 0; i < this.state.depth - 1; i++) {
-            _nodes = (_nodes[_nodes.length - 1] as OpASTNode).parameters;
+            _nodes = (_nodes[_nodes.length - 1] as AST.Opcode).parameters;
         }
-        const _node = _nodes[_nodes.length - 1] as OpASTNode;
+        const _node = _nodes[_nodes.length - 1] as AST.Opcode;
         _node.position[1] = _endPosition;
         _node.parens[1] = _endPosition;
 
@@ -1000,69 +981,71 @@ export class Rainlang {
         const _index = _offset < 0 
             ? exp.length 
             : _offset;
-        const _str = exp.slice(0, _index);
-        const _strPos: [number, number] = [entry, entry + _str.length - 1];
-        exp = exp.replace(_str, "");
+        const _chunk = exp.slice(0, _index);
+        const _chunkPos: [number, number] = [entry, entry + _chunk.length - 1];
+        exp = exp.replace(_chunk, "");
 
         if (exp.startsWith("(") || exp.startsWith("<")) {
             let _opcode;
-            if (!_str) this.problems.push({
+            if (!_chunk) this.problems.push({
                 msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
-                position: [..._strPos],
+                position: [..._chunkPos],
                 code: ErrorCode.ExpectedOpcode
             });
-            if (_str.includes(".")) {
-                const _tempOpcode = this.searchName(_str, entry, true);
+            if (_chunk.includes(".")) {
+                const _tempOpcode = this.searchName(_chunk, entry, true, true);
                 if (_tempOpcode && ("word" in _tempOpcode || "column" in _tempOpcode)) {
                     _opcode = _tempOpcode;
                 }
             }
             else {
-                if (!_str.match(WORD_PATTERN)) this.problems.push({
-                    msg: `invalid word pattern: "${_str}"`,
-                    position: [..._strPos],
+                if (!_chunk.match(WORD_PATTERN)) this.problems.push({
+                    msg: `invalid word pattern: "${_chunk}"`,
+                    position: [..._chunkPos],
                     code: ErrorCode.InvalidWordPattern
                 });
                 _opcode = this.authoringMeta.find(
-                    v => v.word === _str
+                    v => v.word === _chunk
                 );
                 if (!_opcode) {
                     if (
-                        this.namespaces[_str] && (
-                            Namespace.isWord(this.namespaces[_str]) || 
-                            Namespace.isContextAlias(this.namespaces[_str])
+                        this.namespaces[_chunk] && (
+                            AST.Namespace.isWord(this.namespaces[_chunk]) || 
+                            AST.Namespace.isContextAlias(this.namespaces[_chunk])
                         )
                         
-                    ) _opcode = this.namespaces[_str].Element as AuthoringMeta | ContextAlias;
+                    ) _opcode = this.namespaces[
+                        _chunk
+                    ].Element as Meta.Authoring | AST.ContextAlias;
                 }
             }
             if (!_opcode) this.problems.push({
-                msg: `unknown opcode: "${_str}"`,
-                position: [..._strPos],
+                msg: `unknown opcode: "${_chunk}"`,
+                position: [..._chunkPos],
                 code: ErrorCode.UndefinedOpcode
             });
-            let _op: OpASTNode = {
+            let _op: AST.Opcode = {
                 opcode: {
-                    name: _opcode ? _str : "unknown opcode",
+                    name: _chunk,
                     description: _opcode ? _opcode.description : "",
-                    position: [..._strPos],
+                    position: [..._chunkPos],
                 },
                 operand: NaN,
                 output: NaN,
-                position: [[..._strPos][0], NaN],
+                position: [[..._chunkPos][0], NaN],
                 parens: [NaN, NaN],
                 parameters: []
             };
             if (_opcode && "column" in _opcode) _op.isCtx = true;
             if (exp.startsWith("<")) [exp, _op] = this.processOperand(
                 exp, 
-                entry + _str.length, 
+                entry + _chunk.length, 
                 _op
             );
             if (exp.startsWith("(")) {
                 const _pos = _op.operandArgs 
                     ? [..._op.operandArgs!.position][1] + 1 
-                    : [..._strPos][1] + 1;
+                    : [..._chunkPos][1] + 1;
                 exp = exp.replace("(", "");
                 this.state.parens.open.push(_pos);
                 _op.parens[0] = _pos;
@@ -1070,60 +1053,60 @@ export class Rainlang {
                 this.state.depth++;
                 this.problems.push({
                     msg: "expected \")\"",
-                    position: [[..._strPos][0], _pos],
+                    position: [[..._chunkPos][0], _pos],
                     code: ErrorCode.ExpectedClosingParen
                 });
             }
             else {
                 this.problems.push({
                     msg: "expected \"(\"",
-                    position: [..._strPos],
+                    position: [..._chunkPos],
                     code: ErrorCode.ExpectedOpeningParen
                 });
             }
         }
         else {
-            if (_str.includes(".")) {
+            if (_chunk.includes(".")) {
                 if (
-                    _str.startsWith(".") && 
-                    WORD_PATTERN.test(_str.slice(1)) &&
-                    _str.slice(1) === this.binding?.name
+                    _chunk.startsWith(".") && 
+                    WORD_PATTERN.test(_chunk.slice(1)) &&
+                    _chunk.slice(1) === this.binding?.name
                 ) {
                     this.problems.push({
                         msg: "cannot reference self",
-                        position: [..._strPos],
+                        position: [..._chunkPos],
                         code: ErrorCode.InvalidSelfReference
                     });
                     this.updateState({
-                        name: _str,
-                        position: [..._strPos]
+                        name: _chunk,
+                        position: [..._chunkPos]
                     });
                 }
                 else {
-                    const _tempItem = this.searchName(_str, entry, true);
+                    const _tempItem = this.searchName(_chunk, entry, true);
                     if (_tempItem) {
                         if ("content" in _tempItem) {
                             if (_tempItem.constant) this.updateState({
-                                id: _str,
+                                id: _chunk,
                                 value: _tempItem.constant,
-                                position: [..._strPos],
+                                position: [..._chunkPos],
                             });
                             else {
                                 const _msg = _tempItem.elided
                                     ? _tempItem.elided
                                     : `invalid reference to binding: ${
-                                        _str
+                                        _chunk
                                     }, only contant bindings can be referenced`;
                                 this.problems.push({
                                     msg: _msg,
-                                    position: [..._strPos],
+                                    position: [..._chunkPos],
                                     code: _tempItem.elided
                                         ? ErrorCode.ElidedBinding
                                         : ErrorCode.InvalidReference
                                 });
                                 this.updateState({
-                                    name: _str,
-                                    position: [..._strPos]
+                                    name: _chunk,
+                                    position: [..._chunkPos]
                                 });
                             }
                         }
@@ -1133,106 +1116,106 @@ export class Rainlang {
                                     "word" in _tempItem
                                         ? "opcode"
                                         : "context alias"
-                                }: ${_str}`,
-                                position: [..._strPos],
+                                }: ${_chunk}`,
+                                position: [..._chunkPos],
                                 code: ErrorCode.InvalidReference
                             });
                             this.updateState({
-                                name: _str,
-                                position: [..._strPos]
+                                name: _chunk,
+                                position: [..._chunkPos]
                             });
                         }
                     }
                     else this.updateState({
-                        name: _str,
-                        position: [..._strPos]
+                        name: _chunk,
+                        position: [..._chunkPos]
                     });
                 }
             }
             else {
-                if (_str.match(NUMERIC_PATTERN)) {
+                if (_chunk.match(NUMERIC_PATTERN)) {
                     // let _val = _word;
                     // if (_word.startsWith("0b")) _val = Number(_word).toString();
                     // else if (!isBigNumberish(_word)) {
                     //     const _nums = _word.match(/\d+/g)!;
                     //     _val = _nums[0] + "0".repeat(Number(_nums[1]));
                     // }
-                    if (CONSTANTS.MaxUint256.lt(toConvNumber(_str))) {
+                    if (CONSTANTS.MaxUint256.lt(toInteger(_chunk))) {
                         this.problems.push({
                             msg: "value greater than 32 bytes in size",
-                            position: [..._strPos],
+                            position: [..._chunkPos],
                             code: ErrorCode.OutOfRangeValue
                         });
                     }
                     this.updateState({
-                        value: _str,
-                        position: [..._strPos],
+                        value: _chunk,
+                        position: [..._chunkPos],
                     });
                 }
-                else if (WORD_PATTERN.test(_str)) {
-                    if (Object.keys(this.constants).includes(_str)) {
+                else if (WORD_PATTERN.test(_chunk)) {
+                    if (Object.keys(this.constants).includes(_chunk)) {
                         this.updateState({
-                            id: _str,
-                            value: this.constants[_str],
-                            position: [..._strPos],
+                            id: _chunk,
+                            value: this.constants[_chunk],
+                            position: [..._chunkPos],
                         });
                     }
                     else {
-                        if (this.state.aliases.find(v => v.name === _str)) {
+                        if (this.state.aliases.find(v => v.name === _chunk)) {
                             this.problems.push({
                                 msg: "cannot reference self",
-                                position: [..._strPos],
+                                position: [..._chunkPos],
                                 code: ErrorCode.InvalidSelfReference
                             });
                             this.updateState({
-                                name: _str,
-                                position: [..._strPos]
+                                name: _chunk,
+                                position: [..._chunkPos]
                             });
                         }
                         else if (this.ast[this.ast.length - 1].lines.find(
-                            v => !!v.aliases.find(e => e.name === _str)
+                            v => !!v.aliases.find(e => e.name === _chunk)
                         )) this.updateState({
-                            name: _str,
-                            position: [..._strPos]
+                            name: _chunk,
+                            position: [..._chunkPos]
                         });
-                        else if (_str === this.binding?.name) {
+                        else if (_chunk === this.binding?.name) {
                             this.problems.push({
                                 msg: "cannot reference self",
-                                position: [..._strPos],
+                                position: [..._chunkPos],
                                 code: ErrorCode.InvalidSelfReference
                             });
                             this.updateState({
-                                name: _str,
-                                position: [..._strPos]
+                                name: _chunk,
+                                position: [..._chunkPos]
                             });
                         }
-                        else if (this.namespaces[_str]) {
-                            if ("Element" in this.namespaces[_str]) {
+                        else if (this.namespaces[_chunk]) {
+                            if ("Element" in this.namespaces[_chunk]) {
                                 const _item = this.namespaces[
-                                    _str
-                                ].Element as Binding | AuthoringMeta | ContextAlias;
+                                    _chunk
+                                ].Element as AST.Binding | Meta.Authoring | AST.ContextAlias;
                                 if ("content" in _item) {
                                     if (_item.constant) this.updateState({
-                                        id: _str,
+                                        id: _chunk,
                                         value: _item.constant,
-                                        position: [..._strPos],
+                                        position: [..._chunkPos],
                                     });
                                     else {
                                         const _msg = _item.elided
                                             ? _item.elided
                                             : `invalid reference to binding: ${
-                                                _str
+                                                _chunk
                                             }, only contant bindings can be referenced`;
                                         this.problems.push({
                                             msg: _msg,
-                                            position: [..._strPos],
+                                            position: [..._chunkPos],
                                             code: _item.elided
                                                 ? ErrorCode.ElidedBinding
                                                 : ErrorCode.InvalidReference
                                         });
                                         this.updateState({
-                                            name: _str,
-                                            position: [..._strPos]
+                                            name: _chunk,
+                                            position: [..._chunkPos]
                                         });
                                     }
                                 }
@@ -1242,50 +1225,50 @@ export class Rainlang {
                                             "word" in _item
                                                 ? "opcode"
                                                 : "context alias"
-                                        }: ${_str}`,
-                                        position: [..._strPos],
+                                        }: ${_chunk}`,
+                                        position: [..._chunkPos],
                                         code: ErrorCode.InvalidReference
                                     });
                                     this.updateState({
-                                        name: _str,
-                                        position: [..._strPos]
+                                        name: _chunk,
+                                        position: [..._chunkPos]
                                     });
                                 }
                             }
                             else {
                                 this.problems.push({
-                                    msg: `invalid reference to namespace: ${_str}`,
-                                    position: [..._strPos],
+                                    msg: `invalid reference to namespace: ${_chunk}`,
+                                    position: [..._chunkPos],
                                     code: ErrorCode.InvalidReference
                                 });
                                 this.updateState({
-                                    name: _str,
-                                    position: [..._strPos]
+                                    name: _chunk,
+                                    position: [..._chunkPos]
                                 });
                             }
                         }
                         else {
                             this.problems.push({
-                                msg: `undefined word: ${_str}`,
-                                position: [..._strPos],
+                                msg: `undefined word: ${_chunk}`,
+                                position: [..._chunkPos],
                                 code: ErrorCode.UndefinedWord
                             });
                             this.updateState({
-                                name: _str,
-                                position: [..._strPos]
+                                name: _chunk,
+                                position: [..._chunkPos]
                             });
                         }
                     }
                 }
                 else {
                     this.problems.push({
-                        msg: `"${_str}" is not a valid rainlang word`,
-                        position: [..._strPos],
+                        msg: `"${_chunk}" is not a valid rainlang word`,
+                        position: [..._chunkPos],
                         code: ErrorCode.InvalidWordPattern
                     });
                     this.updateState({
-                        name: _str,
-                        position: [..._strPos]
+                        name: _chunk,
+                        position: [..._chunkPos]
                     });
                 }
             }
@@ -1299,8 +1282,9 @@ export class Rainlang {
     private searchName(
         name: string, 
         offset: number, 
-        publishDiagnostics: boolean
-    ): AuthoringMeta | ContextAlias | Binding | undefined {
+        publishDiagnostics: boolean,
+        isOpcode = false
+    ): Meta.Authoring | AST.ContextAlias | AST.Binding | undefined {
         const _names = exclusiveParse(name, /\./gd, offset, true);
         if (name.startsWith(".")) _names.shift();
         if (_names.length > 32) {
@@ -1334,11 +1318,13 @@ export class Rainlang {
         for (let i = 0; i < _names.length; i++) {
             if (_result[_names[i][0]]) _result = _result[_names[i][0]];
             else {
-                if (publishDiagnostics) this.problems.push({
-                    msg: "undefined identifier",
-                    position: _names[i][1],
-                    code: ErrorCode.UndefinedIdentifier
-                });
+                if (publishDiagnostics) {
+                    if (!(isOpcode && this.authoringMeta.length === 0)) this.problems.push({
+                        msg: "undefined identifier",
+                        position: _names[i][1],
+                        code: ErrorCode.UndefinedIdentifier
+                    });
+                }
                 return undefined;
             }
         }
@@ -1356,7 +1342,7 @@ export class Rainlang {
     /**
      * @internal search for Word in namespaces
      */
-    private searchWord(node: OpASTNode | string): AuthoringMeta | undefined {
+    private searchWord(node: AST.Opcode | string): Meta.Authoring | undefined {
         let _word;
         const _name = typeof node === "string" ? node : node.opcode.name;
         if (_name.includes(".")) {
@@ -1372,10 +1358,10 @@ export class Rainlang {
             if (!_word) {
                 if (
                     this.namespaces[_name] && (
-                        Namespace.isWord(this.namespaces[_name]) || 
-                        Namespace.isContextAlias(this.namespaces[_name])
+                        AST.Namespace.isWord(this.namespaces[_name]) || 
+                        AST.Namespace.isContextAlias(this.namespaces[_name])
                     )
-                ) _word = this.namespaces[_name].Element as AuthoringMeta | ContextAlias;
+                ) _word = this.namespaces[_name].Element as Meta.Authoring | AST.ContextAlias;
             }
         }
         if (_word && "column" in _word) {

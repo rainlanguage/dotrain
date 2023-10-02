@@ -1,15 +1,12 @@
-export * from "./dotrain/metaStore";
-export * from "./dotrain/rainDocument";
-export * from "./dotrain/rainDocumentCompiler";
-
-export * from "./rainlang/rainlang";
-export * from "./rainlang/rainlangCompiler";
+export * from "./parser/rainlang";
+export * from "./parser/rainDocument";
+export * from "./parser/compiler";
 
 export * from "./services/hover";
 export * from "./services/completion";
 export * from "./services/diagnostics";
 
-export * from "./rainLanguageTypes";
-export * from "./rainLanguageService";
+export * from "./languageTypes";
+export * from "./languageService";
 
 export * from "./utils";

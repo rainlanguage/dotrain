@@ -1,19 +1,15 @@
-import stringMath from "string-math";
 import { EVM } from "@ethereumjs/evm";
 import { MAGIC_NUMBERS } from "@rainprotocol/meta";
+import { Address, Account } from "@ethereumjs/util";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
 import { 
+    AST, 
     Range, 
     Position, 
-    Namespace, 
     TextDocument, 
-    WORD_PATTERN, 
-    NamespaceNode, 
-    PositionOffset, 
     ExpressionConfig, 
-    NATIVE_PARSER_ABI, 
     TextDocumentContentChangeEvent 
-} from "./rainLanguageTypes";
+} from "./languageTypes";
 
 
 /**
@@ -72,66 +68,6 @@ export const {
  * @public vitalik address used for evm simulations
  */
 export const VITALIK = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" as const;
-
-/**
- * @public 
- * Method to be used as Tagged Templates to activate embedded rainlang in 
- * javascript/typescript in vscode that highlights the rainlang syntax. 
- * Requires rainlang vscode extension to be installed.
- */
-export function rainlang(
-    stringChunks: TemplateStringsArray,
-    ...vars: any[]
-): string {
-    let result = "";
-    for (let i = 0; i < stringChunks.length; i++) {
-        result = result + stringChunks[i] + (vars[i] ?? "");
-    }
-    return result;
-}
-
-/**
- * @public
- * Converts a value to raw bytes representation. Assumes `value` is less than or equal to 1 byte,
- * unless a desired `bytesLength` is specified.
- *
- * @param value - value to convert to raw bytes format
- * @param bytesLength - (defaults to 1) number of bytes to left pad if `value` doesn't completely
- * fill the desired amount of memory. Will throw `InvalidArgument` error if value already exceeds
- * bytes length.
- * @returns raw bytes representation as Uint8Array
- */
-export const bytify = (
-    value: number | BytesLike | utils.Hexable,
-    bytesLength = 1
-): BytesLike => {
-    return zeroPad(hexlify(value), bytesLength);
-};
-
-/**
- * @public
- * Converts an opcode and operand to bytes, and returns their concatenation.
- *
- * @param code - the opcode
- * @param erand - the operand, currently limited to 1 byte (defaults to 0)
- */
-export const op = (
-    code: number,
-    erand: number | BytesLike | utils.Hexable = 0
-): Uint8Array => {
-    return concat([bytify(code, 2), bytify(erand, 2)]);
-};
-
-/**
- * @public
- * Constructs operand for standard STATE opecode
- * 
- * @param type - Type of the opcode, either 'stack' or 'constant'
- * @param offset - the position of the item in respect to its type
- */
-export function memoryOperand(offset: number, type: number): number {
-    return (offset << 1) + type;
-}
 
 /**
  * @public
@@ -422,115 +358,6 @@ export function deepCopy<T>(variable: T): T {
 }
 
 /**
- * @public
- * Method to extract value from operand by specified bits indexes
- * 
- * @param value - Operand value
- * @param bits - Bits indexes to extract
- * @param computation - Any arethmetical operation to apply to extracted value
- * @param computationVar - The variable in computation to solve for, default is "bits"
- * @returns Extracted value
- */
-export function extractByBits(
-    value: number, 
-    bits: [number, number], 
-    computation?: string,
-    computationVar?: string
-): number {
-    const _var = computationVar ? computationVar : "bits";
-    const _binary = value.toString(2).padStart(16, "0");
-    const _extractedVal = Number("0b" + _binary.slice(
-        _binary.length - bits[1] - 1,
-        _binary.length - bits[0]
-    ));
-    if (computation) {
-        computation = computation.replace(new RegExp(_var, "g"), _extractedVal.toString());
-        const _result = stringMath(computation, (_err, _res) => _res);
-        return _result !== null ? _result : NaN;
-    }
-    else return _extractedVal;
-}
-
-/**
- * @public
- * Method to construct the operand from operand args
- * 
- * @param args - Operand arguments
- * @returns operand value
- */
-export function constructByBits(args: {
-    /**
-     * The value of argument
-     */
-    value: number,
-    /**
-     * The start/end bits indexes
-     */
-    bits: [number, number],
-    /**
-     * The arithmetical equation
-     */
-    computation?: string,
-    /**
-     * The valid range the value can have after computation applied if computation is specified
-     */
-    validRange?: number[][],
-    /**
-     * The variavle in compuation to solve for, default is "arg"
-     */
-    computationVar?: string
-}[]): number | number[] {
-    let result = 0;
-    const error = [];
-    for (let i = 0; i < args.length; i++) {
-        let _val = args[i].value;
-        const _defaultRange = 2 ** ((args[i].bits[1] - args[i].bits[0]) + 1);
-        const _offset = args[i].bits[0] - 0;
-        let _eq = args[i].computation;
-        if (_eq) {
-            let _var = "arg";
-            if (args[i].computationVar) _var = args[i].computationVar as string;
-            _eq = _eq.replace(new RegExp(_var, "g"), _val.toString());
-            const _res = stringMath(_eq, (_err, _res) => _res);
-            if (_res !== null) _val = _res;
-            else error.push(i);
-        }
-        if (_val < _defaultRange) {
-            const _validRanges = args[i].validRange;
-            if (_validRanges) {
-                let check1 = true;
-                let check2 = true;
-                for (let j = 0; j < _validRanges.length; j++) {
-                    if (_validRanges[j].length === 1) {
-                        if (check2 && _val === _validRanges[j][0]) {
-                            check1 = false;
-                            check2 = false;
-                            result = 
-                                result + 
-                                Number("0b" + _val.toString(2) + "0".repeat(_offset));
-                        }
-                    }
-                    else {
-                        if (check2 && _validRanges[j][0] <= _val && _val <= _validRanges[j][1]) {
-                            check1 = false;
-                            check2 = false;
-                            result = 
-                                result + 
-                                Number("0b" + _val.toString(2) + "0".repeat(_offset));
-                        }
-                    }
-                }
-                if (check1) error.push(i);
-            }
-            else result = result + Number("0b" + _val.toString(2) + "0".repeat(_offset));
-        }
-        else error.push(i);
-    }
-    if (error.length) return error;
-    else return result;
-}
-
-/**
  * @public Checks if a position is within a range
  * @param range - The range to check
  * @param position - The position to check
@@ -697,7 +524,7 @@ export function getLineText(textDocument: TextDocument, line: number): string {
  */
 export function fillIn(
     text: string, 
-    position: PositionOffset
+    position: AST.Offsets
 ): string {
     const _textDocument = TextDocument.create("virtual", "rainlang", 0, text);
     const _changes: TextDocumentContentChangeEvent[] = [];
@@ -753,7 +580,7 @@ export function fillIn(
  */
 export function fillOut(
     text: string, 
-    position: PositionOffset
+    position: AST.Offsets
 ): string {
     const _start = fillIn(text.slice(0, position[0]), [0, position[0] - 1]);
     const _endText = text.slice(position[1] + 1);
@@ -776,86 +603,6 @@ export function trim(str: string): {text: string, startDelCount: number, endDelC
         endDelCount: str.length - str.trimEnd().length
     };
 }
-
-// /**
-//  * @public Checks if metaBytes are a sequence or content or none
-//  * @param metaBytes - The meta bytes to check the type for
-//  */
-// export function getEncodedMetaType(metaBytes: string): EncodedMetaType {
-//     const _rainMetaHeader = MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
-//     const _metaBytes = metaBytes.startsWith("0x") 
-//         ? metaBytes.slice(2).toLowerCase() 
-//         : metaBytes.toLowerCase();
-//     if (!isBytesLike("0x" + _metaBytes)) throw "expected BytesLike parameter";
-//     if (_metaBytes.startsWith(_rainMetaHeader)) {
-//         try {
-//             const _encoded = cborDecode(_metaBytes.replace(_rainMetaHeader, ""));
-//             if (
-//                 Array.isArray(_encoded)
-//                 && _encoded.length > 0
-//                 && _encoded.every(v => v.toString() === "[object Map]"
-//                     && isBytesLike(v.get(0))
-//                     && isMagicNumber(v.get(1))
-//                     && v.get(2) === "application/json"
-//                 )
-//             ) return "sequence";
-//             else throw "invalid rain meta";
-//         }
-//         catch { throw "invalid rain meta"; }
-//     }
-//     else {
-//         try {
-//             const _encoded = cborDecode(_metaBytes);
-//             if (
-//                 Array.isArray(_encoded)
-//                 && _encoded.length === 1
-//                 && _encoded.every(v => v.toString() === "[object Map]"
-//                     && isBytesLike(v.get(0))
-//                     && isMagicNumber(v.get(1))
-//                     && v.get(2) === "application/json"
-//                 )
-//             ) return "single";
-//             else throw "invalid rain meta";
-//         }
-//         catch { throw "invalid rain meta"; }
-//     }
-// }
-
-// /**
-//  * @public Decodes a meta raw bytes to CBOR maps
-//  * @param metaBytes - The meta bytes to decode
-//  */
-// export function decodeMeta(metaBytes: string): Map<number, any>[] | Map<number, any> {
-//     const _rainMetaHeader = MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
-//     const _metaBytes = metaBytes.startsWith("0x") 
-//         ? metaBytes.slice(2).toLowerCase() 
-//         : metaBytes.toLowerCase();
-//     if (!isBytesLike("0x" + _metaBytes)) throw "expected BytesLike parameter";
-//     if (_metaBytes.startsWith(_rainMetaHeader)) {
-//         const _decoded = cborDecode(_metaBytes.replace(_rainMetaHeader, ""));
-//         if (
-//             Array.isArray(_decoded)
-//             && _decoded.length > 0
-//             && _decoded.every(v => v.toString() === "[object Map]"
-//                 && isBytesLike(v.get(0))
-//                 && isMagicNumber(v.get(1))
-//             )
-//         ) return _decoded;
-//         else throw "invalid rain meta";
-//     }
-//     else {
-//         const _decoded = cborDecode(_metaBytes);
-//         if (
-//             Array.isArray(_decoded)
-//             && _decoded.length === 1
-//             && _decoded.every(v => v.toString() === "[object Map]"
-//                 && isBytesLike(v.get(0))
-//                 && isMagicNumber(v.get(1))
-//             )
-//         ) return _decoded[0];
-//         else throw "invalid rain meta";
-//     }
-// }
 
 /**
  * @public Method to check if a meta sequence is consumable for a dotrain
@@ -893,10 +640,10 @@ export function hasDuplicate(arr1: string[], arr2: string[]): boolean {
 }
 
 /**
- * @public Convert Rainlang numeric values to covenient numeric value
+ * @public Convert Rainlang numeric values to interger as string
  * @param value - The value to convert
  */
-export function toConvNumber(value: string): string {
+export function toInteger(value: string): string {
     let _val;
     if (isBigNumberish(value)) _val = value;
     else if (value.startsWith("0b")) _val = Number(value).toString();
@@ -905,38 +652,6 @@ export function toConvNumber(value: string): string {
         _val = _nums[0] + "0".repeat(Number(_nums[1]));
     }
     return _val;
-}
-
-/**
- * @public Search in a Namespace for a given name
- * @param name - The name
- * @param namespace - The Namespace
- * @returns An object that contains the found item and the parent namespace
- */
-export function namespaceSearch(
-    name: string, 
-    namespace: Namespace
-): {
-    child: Namespace | NamespaceNode;
-    parent: Namespace;
-} {
-    const _names = exclusiveParse(name, /\./gd, undefined, true);
-    if (name.startsWith(".")) _names.shift();
-    if (_names.length > 32) throw "namespace too deep";
-    if (!_names[_names.length - 1][0]) throw "expected to end with a node";
-    if (_names.filter(v => !WORD_PATTERN.test(v[0])).length) throw "invalid word pattern";
-    const _result: any = {
-        child: namespace,
-        parent: null
-    };
-    for (let i = 0; i < _names.length; i++) {
-        _result.parent = _result.child;
-        if (_result.child[_names[i][0]]) {
-            _result.child = _result.child[_names[i][0]];
-        }
-        else throw "undefined identifier";
-    }
-    return _result;
 }
 
 /**
@@ -989,78 +704,63 @@ export async function execBytecode(
     // const vitalik = Address.fromString(VITALIK);
     let _evm;
     if (typeof fnOrEvm === "string" && args !== undefined) {
-        _evm = evm ? evm : new EVM();
+        const _evm = evm ? evm : new EVM();
         const iface = new utils.Interface(dataOrAbi);
         const data = iface.encodeFunctionData(fnOrEvm, args);
-        const result = await _evm.runCode({
-            // to: vitalik,
-            // caller: vitalik,
-            // origin: vitalik,
-            code: arrayify(bytecode, { allowMissingPrefix: true }),
-            data: arrayify(data, { allowMissingPrefix: true }),
-        });
-        if (result.exceptionError !== undefined) {
-            try {
-                return iface.decodeFunctionResult(fnOrEvm, result.returnValue);
+
+        try {
+            const result = await _evm.runCode({
+                // to: vitalik,
+                // caller: vitalik,
+                // origin: vitalik,
+                code: arrayify(bytecode, { allowMissingPrefix: true }),
+                data: arrayify(data, { allowMissingPrefix: true }),
+            });
+
+            if (result.exceptionError !== undefined) {
+                try { return iface.decodeFunctionResult(fnOrEvm, result.returnValue); }
+                catch (e) { return Promise.reject(e); }
             }
-            catch (e) {
-                return Promise.reject(e);
-            }
+            else return Promise.resolve(
+                iface.decodeFunctionResult(fnOrEvm, result.returnValue)
+            );
         }
-        else return Promise.resolve(iface.decodeFunctionResult(fnOrEvm, result.returnValue));
+        catch (error) {
+            return Promise.reject(error);
+        }
     }
     else {
         _evm = fnOrEvm instanceof EVM ? fnOrEvm : new EVM();
-        const result = await _evm.runCode({
-            // to: vitalik,
-            // caller: vitalik,
-            // origin: vitalik,
-            code: arrayify(bytecode, { allowMissingPrefix: true }),
-            data: arrayify(dataOrAbi, { allowMissingPrefix: true }),
-        });
-        if (result.exceptionError !== undefined) return Promise.reject(
-            result.returnValue
-        );
-        else return Promise.resolve(result.returnValue);
+        try {
+            const result = await _evm.runCode({
+                // to: vitalik,
+                // caller: vitalik,
+                // origin: vitalik,
+                code: arrayify(bytecode, { allowMissingPrefix: true }),
+                data: arrayify(dataOrAbi, { allowMissingPrefix: true }),
+            });
+            if (result.exceptionError !== undefined) return Promise.reject(
+                result.returnValue
+            );
+            else return Promise.resolve(result.returnValue);
+        }
+        catch (error) {
+            return Promise.reject(error);
+        }
     }
 }
 
 /**
- * @public Parse a text using NP bytecode
- * @param text - the text to parse
- * @param bytecode - The NP contract bytecode
- * @param options - options
- * @returns A Promise that resolves with ExpressionConfig or rejects with NPError
+ * @public Inster an account with balance to evm
+ * @param evm - The EVM instance
+ * @param address - The address to inster
  */
-export async function npParse(
-    text: string,
-    bytecode: BytesLike,
-    options: {
-        abi?: any,
-        fn?: string,
-        evm?: EVM,
-    } = {}
-): Promise<ExpressionConfig> {
-    const fn = options.fn ? options.fn : "parse";
-    const abi = options.abi ? options.abi : NATIVE_PARSER_ABI;
-    try {
-        const result = await execBytecode(bytecode, abi, fn, [ stringToUint8Array(text) ]);
-        const constants = result.find(v => Array.isArray(v));
-        const _bytecode = result.find(v => !Array.isArray(v));
-        return Promise.resolve({ 
-            constants: constants.map((v: BigNumber) => 
-                isAddress(v.toHexString()) || v.eq(CONSTANTS.MaxUint256) 
-                    ? v.toHexString() 
-                    : v.toString()
-            ), 
-            bytecode: _bytecode 
-        });
-    }
-    catch (error) {
-        const { errorArgs, errorName: name } = error as any;
-        const args: any = {};
-        const keys = Object.keys(errorArgs).filter(v => !/^\d+$/.test(v));
-        keys.forEach(v => args[v] = errorArgs[v]);
-        return Promise.reject({ name, args });
-    }
-}
+export const insertAccount = async(evm: EVM, address: Address) => {
+    const acctData = {
+        nonce: 0,
+        balance: BigInt(100) ** BigInt(18), // 1 eth
+    };
+    const account = Account.fromAccountData(acctData);
+  
+    await evm.stateManager.putAccount(address, account);
+};

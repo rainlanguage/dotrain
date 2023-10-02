@@ -1,16 +1,16 @@
 [
   {
-    "dotrain": "./path/to/dotrain1.rain",
-    "json": "./path/to/compiled1.json",
-    "expressions": [
-      "exp-1", 
-      "exp-2"
+    "input": "./path/to/dotrain1.rain",
+    "output": "./path/to/compiled1.json",
+    "entrypoints": [
+      "exp1", 
+      "exp2"
     ]
   },
   {
-    "dotrain": "./path/to/dotrain12.rain",
-    "json": "./path/to/compiled2.json",
-    "expressions": [
+    "input": "./path/to/dotrain2.rain",
+    "output": "./path/to/compiled2.json",
+    "entrypoints": [
       "main"
     ]
   }

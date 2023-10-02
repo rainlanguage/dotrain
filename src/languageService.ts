@@ -1,6 +1,6 @@
-import { MetaStore } from "./dotrain/metaStore";
+import { Meta } from "@rainprotocol/meta";
 import { getHover } from "./services/hover";
-import { RainDocument } from "./dotrain/rainDocument";
+import { RainDocument } from "./parser/rainDocument";
 import { getCompletion } from "./services/completion";
 import { getDiagnostics } from "./services/diagnostics";
 import {
@@ -10,7 +10,7 @@ import {
     TextDocument, 
     CompletionItem, 
     LanguageServiceParams 
-} from "./rainLanguageTypes";
+} from "./languageTypes";
 
 
 /**
@@ -18,7 +18,7 @@ import {
  * Interface for Rain language services
  */
 export interface RainLanguageServices {
-    metaStore: MetaStore;
+    metaStore: Meta.Store;
     rainDocuments: Map<string, RainDocument>;
 	newRainDocument(textDocument: TextDocument): Promise<RainDocument>;
     doValidate(textDocument: TextDocument): Promise<Diagnostic[]>;
@@ -46,7 +46,7 @@ export interface RainLanguageServices {
  */
 export function getRainLanguageServices(params: LanguageServiceParams = {}): RainLanguageServices {
 
-    if (!params.metaStore) params.metaStore = new MetaStore();
+    if (!params.metaStore) params.metaStore = new Meta.Store();
     const metaStore = params.metaStore;
     const rainDocuments: Map<string, RainDocument> = new Map();
 

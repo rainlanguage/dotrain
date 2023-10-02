@@ -2,18 +2,18 @@
 
 const path = require("path");
 const { Command } = require("commander");
+const { Compile } = require("../cjs.js");
 const { execSync } = require("child_process");
 const { version } = require("../package.json");
-const { dotrainc, dotraind } = require("../cjs.js");
 const { readFileSync, writeFileSync } = require("fs");
 
 
 const getOptions = async args => new Command("dotrain")
     .description("CLI command to compile a dotrain source file.")
-    .option("-c, --compile <entrypoints...>", "Use compiling mode with specified entrypoints, to compile a .rain file to ExpressionConfig output in a .json")
-    .option("-i, --input <path>", "Path to input file, either a .rain file for compiling or .json for decompiling")
-    .option("-o, --output <path>", "Path to output file, will output .json for compile mode and .rain for decompile mode")
-    .option("-b, --batch-compile <path>", "Path to a json file of mappings of dotrain files paths, entrypoints and output json files paths to batch compile")
+    .option("-c, --compile <entrypoints...>", "Compiles specified entrypoints of --input .rain file to --output .json file")
+    .option("-i, --input <path>", "Path to .rain file")
+    .option("-o, --output <path>", "Path to output file, will output .json")
+    .option("-b, --batch-compile <path>", "Path to a json file of mappings of .rain files paths, entrypoints and output .json files paths to batch compile")
     .option("-s, --stdout", "Log the result in terminal")
     .version(version)
     .parse(args)
@@ -38,29 +38,26 @@ const main = async args => {
         if (
             Array.isArray(mappingContent) 
             && mappingContent.length 
-            && mappingContent.every(v => typeof v.dotrain === "string"
-                && v.dotrain
-                && DOTRAIN_PATH_PATTERN.test(v.dotrain)
-                && typeof v.json === "string"
-                && v.json
-                && JSON_PATH_PATTERN.test(v.json)
+            && mappingContent.every(v => typeof v.input === "string"
+                && v.input
+                && DOTRAIN_PATH_PATTERN.test(v.input)
+                && typeof v.output === "string"
+                && v.output
+                && JSON_PATH_PATTERN.test(v.output)
                 && Array.isArray(v.entrypoints)
-                && v.entrypoints.length
-                && v.entrypoints.every(name => 
-                    typeof name === "string"
-                    && name
-                    && ENTRYPOINT_PATTERN.test(name)
-                )
             )
         ) {
             for (let i = 0; i < mappingContent.length; i++) {
                 const dotrainContent = readFileSync(
-                    path.resolve(parentDir, mappingContent[i].dotrain)
+                    path.resolve(parentDir, mappingContent[i].input)
                 ).toString();
-                const result = await dotrainc(dotrainContent, mappingContent[i].entrypoints);
+                const result = await Compile.RainDocument(
+                    dotrainContent, 
+                    mappingContent[i].entrypoints
+                );
                 const text = JSON.stringify(result, null, 2);
                 writeFileSync(
-                    path.resolve(parentDir, mappingContent[i].json) ,
+                    path.resolve(parentDir, mappingContent[i].output) ,
                     text
                 );
                 if (options.stdout) console.log("\x1b[90m%s\x1b[0m", text);
@@ -78,7 +75,7 @@ const main = async args => {
                     const content = readFileSync(
                         path.resolve(parentDir, options.input)
                     ).toString();
-                    const result = await dotrainc(content, options.compile);
+                    const result = await Compile.RainDocument(content, options.compile);
                     const text = JSON.stringify(result, null, 2);
                     writeFileSync(
                         options.output.endsWith(".json") 
