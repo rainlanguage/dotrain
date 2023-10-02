@@ -912,20 +912,25 @@ export class RainDocument {
             let elided: string;
             let _invalidId = false;
             let _dupId = false;
+            let _noCmContent: string;
             if (_index === -1) {
                 name = v[0];
                 namePosition = v[1];
                 contentPosition = [v[1][1] + 1, v[1][1]];
                 content = "";
+                _noCmContent = "";
             }
             else {
+                const _noCmTrimmed = trim(v[0].slice(_index + 1));
+                _noCmContent = !_noCmTrimmed.text ? v[0].slice(_index + 1) : _noCmTrimmed.text;
+
                 const _contentText = this.textDocument.getText(
                     Range.create(
                         this.textDocument.positionAt(v[1][0]),
                         this.textDocument.positionAt(v[1][1] + 1)
                     )
                 );
-                const _trimmed =  trim(_contentText.slice(_index + 1));
+                const _trimmed = trim(_contentText.slice(_index + 1));
                 name = v[0].slice(0, _index);
                 namePosition = [v[1][0], v[1][0] + _index - 1];
                 content = !_trimmed.text ? _contentText.slice(_index + 1) : _trimmed.text;
@@ -937,7 +942,7 @@ export class RainDocument {
                     ];
             }
             if (_invalidId = !name.match(/^[a-z][a-z0-9-]*$/)) this.problems.push({
-                msg: "invalid expression name",
+                msg: "invalid binding name",
                 position: namePosition,
                 code: ErrorCode.InvalidBindingId
             });
@@ -946,15 +951,15 @@ export class RainDocument {
                 position: namePosition,
                 code: ErrorCode.DuplicateIdentifier
             });
-            if (!content || content.match(/^\s+$/)) this.problems.push({
-                msg: "invalid empty binding",
+            if (!_noCmContent || _noCmContent.match(/^\s+$/)) this.problems.push({
+                msg: "empty binding are not allowed",
                 position: namePosition,
                 code: ErrorCode.InvalidEmptyBinding
             });
 
             if (!_invalidId && !_dupId) {
-                if (this.isElided(content)) {
-                    const _msg = content.trim().slice(1).trim();
+                if (this.isElided(_noCmContent)) {
+                    const _msg = _noCmContent.trim().slice(1).trim();
                     if (_msg) elided = _msg;
                     else elided = DEFAULT_ELISION;
                     this.namespace[name] = {
@@ -978,7 +983,7 @@ export class RainDocument {
                     };
                 }
                 else {
-                    const _val = this.isConstant(content);
+                    const _val = this.isConstant(_noCmContent);
                     if (_val) {
                         this.namespace[name] = {
                             Hash: "",
