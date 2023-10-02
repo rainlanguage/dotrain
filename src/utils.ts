@@ -1,4 +1,5 @@
 import { EVM } from "@ethereumjs/evm";
+import { Meta } from "@rainprotocol/meta";
 import { MAGIC_NUMBERS } from "@rainprotocol/meta";
 import { Address, Account } from "@ethereumjs/util";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
@@ -16,7 +17,7 @@ import {
  * @public ethers constants
  */
 export const CONSTANTS = ethers.constants;
-export { BytesLike, BigNumber, BigNumberish };
+export { BytesLike, BigNumber, BigNumberish, Meta };
 export const {
     /**
      * @public ethers concat
