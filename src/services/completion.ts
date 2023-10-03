@@ -117,13 +117,13 @@ export async function getCompletion(
                 ].map(v => (
                     typeof v === "string" 
                         ? {
-                            label: v[0],
+                            label: v,
                             labelDetails: {
                                 description: "meta"
                             },
                             kind: CompletionItemKind.Module,
-                            detail: `meta hash: ${v[0]}`,
-                            insertText: v[1]
+                            detail: `meta hash: ${v}`,
+                            insertText: v
                         }
                         : {
                             label: v[0],
@@ -131,7 +131,7 @@ export async function getCompletion(
                                 description: "rain document"
                             },
                             kind: CompletionItemKind.File,
-                            detail: `rain document: ${v[0]}`,
+                            detail: `rain document at ${v[0]}`,
                             insertText: v[1]
                         }
                 ));
