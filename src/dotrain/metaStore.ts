@@ -176,10 +176,7 @@ export class MetaStore {
         }
         else {
             if (hashOrStore.match(/^0x[a-fA-F0-9]{64}$/)) {
-                if (
-                    this.cache[hashOrStore.toLowerCase()] === null || 
-                    this.cache[hashOrStore.toLowerCase()] === undefined
-                ) {
+                if (this.cache[hashOrStore.toLowerCase()] === undefined) {
                     if (metaBytes && !metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
                     if (
                         metaBytes && 
