@@ -556,7 +556,7 @@ export class Rainlang {
         // ignore next line problems
         this.comments.forEach(v => {
             if (/\bignore-next-line\b/.test(v.comment)) {
-                const _td = TextDocument.create("utitled", "rainlang", 0, this.text);
+                const _td = TextDocument.create("untitled", "rainlang", 0, this.text);
                 const _astLine = this.ast.flatMap(
                     e => e.lines
                 ).find(e => 

@@ -93,8 +93,114 @@ export async function getCompletion(
         ?.documentationFormat;
     if (format && format[0]) _documentionType = format[0];
 
+    const _targetOffset = _td.offsetAt(position);
     try {
-        if (
+        const _import = _rd.imports.find(
+            v => v.position[0] <= _targetOffset && v.position[1] + 1 >= _targetOffset
+        );
+        if (_import) {
+            let _result: CompletionItem[] = [];
+            const _preText = _td.getText(
+                Range.create(_td.positionAt(_import.position[0]), position)
+            );
+            let _prefix = "";
+            for (let i = 0; i < _preText.length; i++) {
+                if (_triggers.test(_preText[_preText.length - i - 1])) {
+                    _prefix = _preText[_preText.length - i - 1] + _prefix;
+                }
+                else break;
+            }
+            if (/^@\s*([^\s@#]*\s+)?(0x[a-fA-F0-9]+)?$/.test(_preText)) {
+                _result = [
+                    ...Object.entries(_rd.metaStore.dotrainCache),
+                    ...Object.keys(_rd.metaStore.getCache())
+                ].map(v => (
+                    typeof v === "string" 
+                        ? {
+                            label: v[0],
+                            labelDetails: {
+                                description: "meta"
+                            },
+                            kind: CompletionItemKind.Module,
+                            detail: `meta hash: ${v[0]}`,
+                            insertText: v[1]
+                        }
+                        : {
+                            label: v[0],
+                            labelDetails: {
+                                description: "rain document"
+                            },
+                            kind: CompletionItemKind.File,
+                            detail: `rain document: ${v[0]}`,
+                            insertText: v[1]
+                        }
+                ));
+                if (/0x[a-fA-F0-9]+/.test(_prefix)) _result = _result.filter(
+                    v => v.insertText!.toLowerCase().includes(_prefix.toLowerCase())
+                );
+            }
+            else {
+                const _reconf = _import.reconfigs?.find(v => v[0][1][1] + 1 === _targetOffset);
+                if (_reconf) {
+                    if (_import.sequence?.ctxmeta) _result.push(
+                        ..._import.sequence.ctxmeta.map(v => {
+                            const _following = isNaN(v.row) ? "<>()" : "()";
+                            return {
+                                label: v.name,
+                                labelDetails: {
+                                    detail: _following,
+                                    description: "context alias opcode"
+                                },
+                                kind: CompletionItemKind.Function,
+                                detail: "context alias opcode: " + v.name + (
+                                    _following === "<>()"
+                                        ? `<>() with column index ${v.column}` 
+                                        : `() with column index ${
+                                            v.column
+                                        } and row index ${v.row}`
+                                ),
+                                documentation: {
+                                    kind: _documentionType,
+                                    value: v.description as string,
+                                },
+                                insertText: v.name + _following
+                            };
+                        })
+                    );
+                    if (_import.sequence?.dotrain) _result.push(
+                        ..._import.sequence.dotrain.bindings.map(v => {
+                            const _t = v.elided !== undefined ? ["elided", v.elided]
+                                : v.constant !== undefined ? ["constant", v.constant]
+                                : [
+                                    "expression", 
+                                    _documentionType === "markdown" ? [
+                                        "```rainlang",
+                                        (v.content as string).trim(),
+                                        "```"
+                                    ].join("\n") 
+                                    : v.content
+                                ];
+                            return {
+                                label: v.name,
+                                labelDetails: {
+                                    description: "binding"
+                                },
+                                kind: CompletionItemKind.Class,
+                                detail: _t[0] + " binding: " + v.name,
+                                documentation: {
+                                    kind: _documentionType,
+                                    value: (_t[1] as string).trim()
+                                },
+                                insertText: v.name
+                            };
+                        })
+                    );
+                    _result = _result.filter(v => v.label.includes(_prefix));
+                }
+            }
+            return _result;
+        }
+        else if (
             !_triggers.test(_td.getText(
                 Range.create(
                     position, 
@@ -103,12 +209,12 @@ export async function getCompletion(
             ))
         ) {
             let _prefix = "";
-            const _prefixText = _td.getText(
+            const _preText = _td.getText(
                 Range.create(Position.create(position.line, 0), position)
             );
-            for (let i = 0; i < _prefixText.length; i++) {
-                if (_triggers.test(_prefixText[_prefixText.length - i - 1])) {
-                    _prefix = _prefixText[_prefixText.length - i - 1] + _prefix;
+            for (let i = 0; i < _preText.length; i++) {
+                if (_triggers.test(_preText[_preText.length - i - 1])) {
+                    _prefix = _preText[_preText.length - i - 1] + _prefix;
                 }
                 else break;
             }

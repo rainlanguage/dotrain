@@ -553,6 +553,7 @@ export class RainDocument {
                     }
                     if (!_isCorrupt) {
                         const _reconfigs: [ParsedChunk, ParsedChunk][] = [];
+                        const _reconfigProblems: AST.Problem[] = [];
                         for (let i = 0; i < _configChunks.length; i++) {
                             if (_configChunks[i][0] === ".") {
                                 const _key = _configChunks[i];
@@ -562,24 +563,24 @@ export class RainDocument {
                                         if (_reconfigs.find(v =>  
                                             v[0][0] === _key[0] && 
                                             v[1][0] === _configChunks[i][0]
-                                        )) _result.problems.push({
+                                        )) _reconfigProblems.push({
                                             msg: "duplicate statement",
                                             position: [_key[1][0], _configChunks[i][1][1]],
                                             code: ErrorCode.DuplicateImportStatement
                                         });
-                                        else _reconfigs.push([_key, _configChunks[i]]);
                                     }
-                                    else _result.problems.push({
+                                    else _reconfigProblems.push({
                                         msg: "unexpected token",
                                         position: _configChunks[i][1],
                                         code: ErrorCode.UnexpectedToken
                                     });
                                 }
-                                else _result.problems.push({
+                                else _reconfigProblems.push({
                                     msg: "expected elision syntax",
                                     position: _atPos,
                                     code: ErrorCode.ExpectedElisionOrRebinding
                                 });
+                                _reconfigs.push([_key, _configChunks[i]]);
                             }
                             else if (WORD_PATTERN.test(_configChunks[i][0])) {
                                 const _key = _configChunks[i];
@@ -589,74 +590,75 @@ export class RainDocument {
                                         if (_reconfigs.find(v => 
                                             v[0][0] === _key[0] && 
                                             v[1][0] === _configChunks[i][0]
-                                        )) _result.problems.push({
+                                        )) _reconfigProblems.push({
                                             msg: "duplicate statement",
                                             position: [_key[1][0], _configChunks[i][1][1]],
                                             code: ErrorCode.DuplicateImportStatement
                                         });
-                                        else _reconfigs.push([_key, _configChunks[i]]);
                                     }
-                                    else _result.problems.push({
+                                    else _reconfigProblems.push({
                                         msg: "unexpected token",
                                         position: _configChunks[i][1],
                                         code: ErrorCode.UnexpectedToken
                                     });
                                 }
-                                else _result.problems.push({
+                                else _reconfigProblems.push({
                                     msg: "expected rebinding or elision",
                                     position: _atPos,
                                     code: ErrorCode.ExpectedElisionOrRebinding
                                 });
+                                _reconfigs.push([_key, _configChunks[i]]);
                             }
                             else if (_configChunks[i][0].startsWith("'")) {
-                                if (WORD_PATTERN.test(_configChunks[i][0].slice(1))) {
-                                    const _key = _configChunks[i];
+                                const _key = _configChunks[i];
+                                if (WORD_PATTERN.test(_key[0].slice(1))) {
                                     i++;
                                     if (_configChunks[i]) {
                                         if (WORD_PATTERN.test(_configChunks[i][0])) {
                                             if (_reconfigs.find(v => 
                                                 v[0][0] === _key[0] && 
                                                 v[1][0] === _configChunks[i][0]
-                                            )) _result.problems.push({
+                                            )) _reconfigProblems.push({
                                                 msg: "duplicate statement",
                                                 position: [_key[1][0], _configChunks[i][1][1]],
                                                 code: ErrorCode.DuplicateImportStatement
                                             });
-                                            else _reconfigs.push([_key, _configChunks[i]]);
                                         }
-                                        else _result.problems.push({
+                                        else _reconfigProblems.push({
                                             msg: "invalid word pattern",
                                             position: _configChunks[i][1],
                                             code: ErrorCode.InvalidWordPattern
                                         });
                                     }
-                                    else _result.problems.push({
+                                    else _reconfigProblems.push({
                                         msg: "expected name",
                                         position: _atPos,
                                         code: ErrorCode.ExpectedName
                                     });
                                 }
                                 else {
-                                    _result.problems.push({
+                                    _reconfigProblems.push({
                                         msg: "invalid word pattern",
                                         position: _configChunks[i][1],
                                         code: ErrorCode.InvalidWordPattern
                                     });
                                     i++;
                                 }
+                                _reconfigs.push([_key, _configChunks[i]]);
                             }
-                            else _result.problems.push({
+                            else _reconfigProblems.push({
                                 msg: "unexpected token",
                                 position: _configChunks[i][1],
                                 code: ErrorCode.UnexpectedToken
                             });
                         }
                         _result.reconfigs = _reconfigs;
+                        _result.reconfigProblems = _reconfigProblems;
                     }
                 }
             }
         }
-        this.problems.push(..._result.problems);
+        this.problems.push(..._result.problems, ...(_result.reconfigProblems ?? []));
         return _result as AST.Import;
     }
 
@@ -805,92 +807,96 @@ export class RainDocument {
                         else {
                             if (_imp.reconfigs) for (let j = 0; j < _imp.reconfigs.length; j++) {
                                 const _s: [ParsedChunk, ParsedChunk] = _imp.reconfigs[j];
-                                if (_s[1][0] === "!") {
-                                    if (_s[0][0] === ".") {
-                                        if (_ns["Words"]) {
-                                            (_ns["Words"].Element as Meta.Authoring[]).forEach(v => {
-                                                delete _ns[v.word];
+                                if (_s[0] !== undefined && _s[1] !== undefined) {
+                                    if (_s[1][0] === "!") {
+                                        if (_s[0][0] === ".") {
+                                            if (_ns["Words"]) {
+                                                (_ns["Words"].Element as Meta.Authoring[]).forEach(v => {
+                                                    delete _ns[v.word];
+                                                });
+                                                delete _ns["Words"];
+                                            }
+                                            else this.problems.push({
+                                                msg: "cannot elide undefined words",
+                                                position: [_s[0][1][0], _s[1][1][1]],
+                                                code: ErrorCode.UndefinedDISpair
                                             });
-                                            delete _ns["Words"];
                                         }
-                                        else this.problems.push({
-                                            msg: "cannot elide undefined words",
-                                            position: [_s[0][1][0], _s[1][1][1]],
-                                            code: ErrorCode.UndefinedDISpair
-                                        });
+                                        else {
+                                            if (_ns[_s[0][0]]) {
+                                                if (AST.Namespace.isWord(_ns[_s[0][0]])) {
+                                                    this.problems.push({
+                                                        msg: `cannot elide single word: "${_s[0][0]}"`,
+                                                        position: [_s[0][1][0], _s[1][1][1]],
+                                                        code: ErrorCode.SingleWordModify
+                                                    });
+                                                }
+                                                else delete _ns[_s[0][0]];
+                                            }
+                                            else this.problems.push({
+                                                msg: `undefined identifier "${_s[0][0]}"`,
+                                                position: _s[0][1],
+                                                code: ErrorCode.UndefinedIdentifier
+                                            });
+                                        }
                                     }
                                     else {
-                                        if (_ns[_s[0][0]]) {
-                                            if (AST.Namespace.isWord(_ns[_s[0][0]])) {
+                                        const _key = _s[0][0].startsWith("'") 
+                                            ? _s[0][0].slice(1) 
+                                            : _s[0][0];
+                                        if (_ns[_key]) {
+                                            if (AST.Namespace.isWord(_ns[_key])) {
                                                 this.problems.push({
-                                                    msg: `cannot elide single word: "${_s[0][0]}"`,
+                                                    msg: `cannot rename or rebind single word: "${_s[0][0]}"`,
                                                     position: [_s[0][1][0], _s[1][1][1]],
                                                     code: ErrorCode.SingleWordModify
                                                 });
                                             }
-                                            else delete _ns[_s[0][0]];
+                                            else {
+                                                if (_s[0][0].startsWith("'")) {
+                                                    if (_ns[_s[1][0]]) this.problems.push({
+                                                        msg: `cannot rename, name "${_s[1][0]}" already exists`,
+                                                        position: _s[1][1],
+                                                        code: ErrorCode.DuplicateIdentifier
+                                                    });
+                                                    else {
+                                                        _ns[_s[1][0]] = _ns[_key];
+                                                        delete _ns[_key];
+                                                    }
+                                                }
+                                                else {
+                                                    if (!AST.Namespace.isBinding(_ns[_key])) {
+                                                        this.problems.push({
+                                                            msg: "unexpected rebinding",
+                                                            position: [_s[0][1][0], _s[1][1][1]],
+                                                            code: ErrorCode.UnexpectedRebinding
+                                                        });
+                                                    }
+                                                    else {
+                                                        (_ns[_key].Element as AST.Binding)
+                                                            .constant = _s[1][0];
+                                                            
+                                                        // eslint-disable-next-line max-len
+                                                        if ((_ns[_key].Element as AST.Binding).elided) {
+                                                            delete (
+                                                                _ns[_key].Element as AST.Binding
+                                                            ).elided;
+                                                        }
+                                                        if((_ns[_key].Element as AST.Binding).exp) {
+                                                            delete (
+                                                                _ns[_key].Element as AST.Binding
+                                                            ).exp;
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                         else this.problems.push({
-                                            msg: `undefined identifier "${_s[0][0]}"`,
+                                            msg: `undefined identifier "${_key}"`,
                                             position: _s[0][1],
                                             code: ErrorCode.UndefinedIdentifier
                                         });
                                     }
-                                }
-                                else {
-                                    const _key = _s[0][0].startsWith("'") 
-                                        ? _s[0][0].slice(1) 
-                                        : _s[0][0];
-                                    if (_ns[_key]) {
-                                        if (AST.Namespace.isWord(_ns[_key])) {
-                                            this.problems.push({
-                                                msg: `cannot rename or rebind single word: "${_s[0][0]}"`,
-                                                position: [_s[0][1][0], _s[1][1][1]],
-                                                code: ErrorCode.SingleWordModify
-                                            });
-                                        }
-                                        else {
-                                            if (_s[0][0].startsWith("'")) {
-                                                if (_ns[_s[1][0]]) this.problems.push({
-                                                    msg: `cannot rename, name "${_s[1][0]}" already exists`,
-                                                    position: _s[1][1],
-                                                    code: ErrorCode.DuplicateIdentifier
-                                                });
-                                                else {
-                                                    _ns[_s[1][0]] = _ns[_key];
-                                                    delete _ns[_key];
-                                                }
-                                            }
-                                            else {
-                                                if (!AST.Namespace.isBinding(_ns[_key])) {
-                                                    this.problems.push({
-                                                        msg: "unexpected rebinding",
-                                                        position: [_s[0][1][0], _s[1][1][1]],
-                                                        code: ErrorCode.UnexpectedRebinding
-                                                    });
-                                                }
-                                                else {
-                                                    (_ns[_key].Element as AST.Binding)
-                                                        .constant = _s[1][0];
-                                                    if ((_ns[_key].Element as AST.Binding).elided) {
-                                                        delete (
-                                                            _ns[_key].Element as AST.Binding
-                                                        ).elided;
-                                                    }
-                                                    if ((_ns[_key].Element as AST.Binding).exp) {
-                                                        delete (
-                                                            _ns[_key].Element as AST.Binding
-                                                        ).exp;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    else this.problems.push({
-                                        msg: `undefined identifier "${_key}"`,
-                                        position: _s[0][1],
-                                        code: ErrorCode.UndefinedIdentifier
-                                    });
                                 }
                             }
                         }

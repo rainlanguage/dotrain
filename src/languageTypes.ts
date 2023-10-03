@@ -612,6 +612,7 @@ export namespace AST {
         position: Offsets;
         problems: Problem[];
         reconfigs?: [ParsedChunk, ParsedChunk][];
+        reconfigProblems?: Problem[];
         sequence?: {
             dispair?: {
                 bytecode: string;
