@@ -19,7 +19,6 @@ import {
  */
 export interface RainLanguageServices {
     metaStore: Meta.Store;
-    rainDocuments: Map<string, RainDocument>;
 	newRainDocument(textDocument: TextDocument): Promise<RainDocument>;
     doValidate(textDocument: TextDocument): Promise<Diagnostic[]>;
     doHover(textDocument: TextDocument, position: Position): Promise<Hover | null>;
@@ -48,39 +47,21 @@ export function getRainLanguageServices(params: LanguageServiceParams = {}): Rai
 
     if (!params.metaStore) params.metaStore = new Meta.Store();
     const metaStore = params.metaStore;
-    const rainDocuments: Map<string, RainDocument> = new Map();
+    // const rainDocuments: Map<string, RainDocument> = new Map();
 
     return {
         metaStore,
-        rainDocuments,
         newRainDocument: async(textDocument) => {
-            const _rd = await RainDocument.create(textDocument, metaStore);
-            rainDocuments.set(textDocument.uri, _rd);
-            return _rd;
+            return await RainDocument.create(textDocument, metaStore);
         },
         doValidate: async(textDocument) => {
-            let _rd = rainDocuments.get(textDocument.uri);
-            if (!_rd) {
-                _rd = await RainDocument.create(textDocument, metaStore);
-                rainDocuments.set(textDocument.uri, _rd);   
-            }
-            return getDiagnostics(_rd, params);
+            return getDiagnostics(textDocument, params);
         },
         doComplete: async(textDocument, position) => {
-            let _rd = rainDocuments.get(textDocument.uri);
-            if (!_rd) {
-                _rd = await RainDocument.create(textDocument, metaStore);
-                rainDocuments.set(textDocument.uri, _rd);
-            }
-            return getCompletion(_rd, position, params);
+            return getCompletion(textDocument, position, params);
         },
         doHover: async(textDocument, position) => {
-            let _rd = rainDocuments.get(textDocument.uri);
-            if (!_rd) {
-                _rd = await RainDocument.create(textDocument, metaStore);
-                rainDocuments.set(textDocument.uri, _rd);
-            }
-            return getHover(_rd, position, params);
+            return getHover(textDocument, position, params);
         }
     };
 }
