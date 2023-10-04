@@ -70,6 +70,7 @@ export async function getCompletion(
     setting?: LanguageServiceParams 
 ): Promise<CompletionItem[] | null> {
     const _triggers = /[a-zA-Z0-9-.']/;
+    const _triggersPath = /[a-zA-Z0-9-.'\\/]/;
     let _documentionType: MarkupKind = "plaintext";
     let _rd: RainDocument;
     let _td: TextDocument;
@@ -110,38 +111,108 @@ export async function getCompletion(
                 }
                 else break;
             }
-            if (/^@\s*([^\s@#]*\s+)?(0x[a-fA-F0-9]+)?$/.test(_preText)) {
-                _result = [
-                    ...Object.entries(_rd.metaStore.dotrainCache),
-                    ...Object.keys(_rd.metaStore.getCache())
-                ].map(v => (
-                    typeof v === "string" 
-                        ? {
-                            label: v,
-                            labelDetails: {
-                                description: "meta"
-                            },
-                            kind: CompletionItemKind.Module,
-                            detail: `meta hash: ${v}`,
-                            insertText: v
-                        }
-                        : {
-                            label: v[0],
-                            labelDetails: {
-                                description: "rain document"
-                            },
-                            kind: CompletionItemKind.File,
-                            detail: `rain document at ${v[0]}`,
-                            insertText: v[1]
-                        }
-                ));
+            if (/^@\s*([^\s@#]*\s+)?(0x[a-fA-F0-9]*)$/.test(_preText)) {
+                _result = Object.keys(_rd.metaStore.getCache()).map(v => ({
+                    label: v.slice(1),
+                    labelDetails: {
+                        description: "meta"
+                    },
+                    kind: CompletionItemKind.Module,
+                    detail: `meta hash: ${v}`,
+                    insertText: v
+                }));
                 if (/0x[a-fA-F0-9]+/.test(_prefix)) _result = _result.filter(
                     v => v.insertText!.toLowerCase().includes(_prefix.toLowerCase())
                 );
             }
+            else if (/^@\s*([^\s@#]*\s+)?\//.test(_preText)) {
+                _prefix = "";
+                for (let i = 0; i < _preText.length; i++) {
+                    if (_triggersPath.test(_preText[_preText.length - i - 1])) {
+                        _prefix = _preText[_preText.length - i - 1] + _prefix;
+                    }
+                    else break;
+                }
+                _result = Object.entries(_rd.metaStore.dotrainCache).map(v => ({
+                    label: v[0],
+                    labelDetails: {
+                        description: "rain document"
+                    },
+                    kind: CompletionItemKind.File,
+                    detail: `rain document at ${v[0]}`,
+                    insertText: v[1]
+                })).filter(
+                    v => v.label!.includes(_prefix.toLowerCase())
+                );
+            }
             else {
                 const _reconf = _import.reconfigs?.find(v => v[0][1][1] + 1 === _targetOffset);
-                if (_reconf) {
+                if (_reconf && !_prefix.includes(".")) {
+                    if (_import.sequence?.dotrain) Object.entries(
+                        _import.sequence.dotrain.namespace
+                    ).forEach(v => {
+                        if (!("Element" in v[1])) _result.unshift({
+                            label: v[0],
+                            labelDetails: {
+                                description: "namespace"
+                            },
+                            kind: CompletionItemKind.Field,
+                            detail: `namespace: ${v[0]}`,
+                            insertText: v[0]
+                        });
+                        else {
+                            if ("column" in v[1].Element) {
+                                const _following = isNaN(v[1].Element.row as number)
+                                    ? "<>()" : "()";
+                                _result.unshift({
+                                    label: v[0],
+                                    labelDetails: {
+                                        detail: _following,
+                                        description: "context alias opcode"
+                                    },
+                                    kind: CompletionItemKind.Function,
+                                    detail: "context alias opcode: " + v[0] + (
+                                        _following === "<>()"
+                                            ? `<>() with column index ${v[1].Element.column}` 
+                                            : `() with column index ${
+                                                v[1].Element.column
+                                            } and row index ${v[1].Element.row}`
+                                    ),
+                                    documentation: {
+                                        kind: _documentionType,
+                                        value: v[1].Element.description as string,
+                                    },
+                                    insertText: v[0] + _following
+                                });
+                            }
+                            else if ("content" in v[1].Element) {
+                                const _t = v[1].Element.elided !== undefined ? ["elided", v[1].Element.elided]
+                                    : v[1].Element.constant !== undefined ? ["constant", v[1].Element.constant]
+                                    : [
+                                        "expression", 
+                                        _documentionType === "markdown" ? [
+                                            "```rainlang",
+                                            (v[1].Element.content as string).trim(),
+                                            "```"
+                                        ].join("\n") 
+                                        : v[1].Element.content
+                                    ];
+                                if (_t[0] === "expression") _result.unshift({
+                                    label: v[0],
+                                    labelDetails: {
+                                        description: "binding"
+                                    },
+                                    kind: CompletionItemKind.Class,
+                                    detail: _t[0] + " binding: " + v[0],
+                                    documentation: {
+                                        kind: _documentionType,
+                                        value: (_t[1] as string).trim()
+                                    },
+                                    insertText: v[0]
+                                });
+                            }
+                        }
+                    });
                     if (_import.sequence?.ctxmeta) _result.push(
                         ..._import.sequence.ctxmeta.map(v => {
                             const _following = isNaN(v.row) ? "<>()" : "()";
@@ -167,35 +238,7 @@ export async function getCompletion(
                             };
                         })
                     );
-                    if (_import.sequence?.dotrain) _result.push(
-                        ..._import.sequence.dotrain.bindings.map(v => {
-                            const _t = v.elided !== undefined ? ["elided", v.elided]
-                                : v.constant !== undefined ? ["constant", v.constant]
-                                : [
-                                    "expression", 
-                                    _documentionType === "markdown" ? [
-                                        "```rainlang",
-                                        (v.content as string).trim(),
-                                        "```"
-                                    ].join("\n") 
-                                    : v.content
-                                ];
-                            return {
-                                label: v.name,
-                                labelDetails: {
-                                    description: "binding"
-                                },
-                                kind: CompletionItemKind.Class,
-                                detail: _t[0] + " binding: " + v.name,
-                                documentation: {
-                                    kind: _documentionType,
-                                    value: (_t[1] as string).trim()
-                                },
-                                insertText: v.name
-                            };
-                        })
-                    );
-                    _result = _result.filter(v => v.label.includes(_prefix));
+                    // _result = _result.filter(v => v.label.includes(_prefix));
                 }
             }
             return _result;
