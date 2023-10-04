@@ -310,7 +310,10 @@ export class RainDocument {
         };
 
         const _chuncks = exclusiveParse(imp[0], /\s+/gd, imp[1][0]);
-        if (WORD_PATTERN.test(_chuncks[0][0]) || HASH_PATTERN.test(_chuncks[0][0])) {
+        if (
+            _chuncks.length && 
+            (WORD_PATTERN.test(_chuncks[0][0]) || HASH_PATTERN.test(_chuncks[0][0]))
+        ) {
             if (WORD_PATTERN.test(_chuncks[0][0])) {
                 _result.name = _chuncks[0][0];
                 _result.namePosition = _chuncks[0][1];
@@ -1260,17 +1263,18 @@ export class RainDocument {
             let _c = 0;
             // let _h: string;
             if (ns["Words"]) {
-                if (!hash) {
+                if (hash === "") {
                     _c++;
                     hash = ns["Words"].Hash as string;
                 }
-                else if (ns["Words"].Hash !== hash) {
+                else if ((ns["Words"].Hash as string).toLowerCase() !== hash.toLowerCase()) {
                     return [++_c, hash];
                 }
             }
             const _nns = Object.values(ns).filter(v => !v.Element) as Namespace[];
             for (let i = 0; i < _nns.length; i++) {
                 const _temp = _validate(_nns[i], hash);
+                hash = _temp[1];
                 _c += _temp[0];
                 if (_c > 1) break;
             }
