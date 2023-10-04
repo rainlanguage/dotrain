@@ -111,7 +111,7 @@ export async function getCompletion(
                 }
                 else break;
             }
-            if (/^@\s*([^\s@#]*\s+)?(0x[a-fA-F0-9]*)$/.test(_preText)) {
+            if (/^@\s*([^\s@#]*\s+)?(0?x[a-fA-F0-9]*)$/.test(_preText)) {
                 _result = Object.keys(_rd.metaStore.getCache()).map(v => ({
                     label: v.slice(1),
                     labelDetails: {
@@ -121,11 +121,11 @@ export async function getCompletion(
                     detail: `meta hash: ${v}`,
                     insertText: v
                 }));
-                if (/0x[a-fA-F0-9]+/.test(_prefix)) _result = _result.filter(
-                    v => v.insertText!.toLowerCase().includes(_prefix.toLowerCase())
-                );
+                // if (/0?x[a-fA-F0-9]+/.test(_prefix)) _result = _result.filter(
+                //     v => v.insertText!.toLowerCase().includes(_prefix.toLowerCase())
+                // );
             }
-            else if (/^@\s*([^\s@#]*\s+)?\//.test(_preText)) {
+            else if (/^@\s*([^\s@#/]*\s+)?\//.test(_preText)) {
                 _prefix = "";
                 for (let i = 0; i < _preText.length; i++) {
                     if (_triggersPath.test(_preText[_preText.length - i - 1])) {
@@ -139,11 +139,26 @@ export async function getCompletion(
                         description: "rain document"
                     },
                     kind: CompletionItemKind.File,
-                    detail: `rain document at ${v[0]}`,
-                    insertText: v[1]
-                })).filter(
-                    v => v.label!.includes(_prefix.toLowerCase())
-                );
+                    detail: `rain document at: ${v[0]}`,
+                    documentation: {
+                        kind: _documentionType,
+                        value: v[1]
+                    },
+                    insertText: v[1],
+                    textEdit: {
+                        newText: v[1],
+                        range: Range.create(
+                            {
+                                line: position.line, 
+                                character: position.character - _prefix.length
+                            }, 
+                            position
+                        )
+                    }
+                }));
+                // .filter(
+                //     v => v.label!.includes(_prefix.toLowerCase())
+                // );
             }
             else {
                 const _reconf = _import.reconfigs?.find(v => v[0][1][1] + 1 === _targetOffset);
