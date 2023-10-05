@@ -176,26 +176,30 @@ export class MetaStore {
         }
         else {
             if (hashOrStore.match(/^0x[a-fA-F0-9]{64}$/)) {
-                if (
-                    this.cache[hashOrStore.toLowerCase()] === null ||
-                    this.cache[hashOrStore.toLowerCase()] === undefined
-                ) {
-                    if (metaBytes && !metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
-                    if (
-                        metaBytes && 
-                        isBytesLike(metaBytes) && 
-                        keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
-                    ) {
+                if (!this.cache[hashOrStore.toLowerCase()]) {
+                    if (metaBytes) {
+                        if (!metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
                         try {
-                            const _type = getEncodedMetaType(metaBytes);
-                            const _content = metaBytes.toLowerCase();
-                            this.cache[hashOrStore.toLowerCase()] = {
-                                type: _type,
-                                sequence: this.decodeContent(_content, _type)
-                            };
+                            if (
+                                keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
+                            ) {
+                                const _type = getEncodedMetaType(metaBytes);
+                                const _content = metaBytes.toLowerCase();
+                                this.cache[hashOrStore.toLowerCase()] = {
+                                    type: _type,
+                                    sequence: this.decodeContent(_content, _type)
+                                };
+                            }
+                            else {
+                                if (!this.cache[hashOrStore.toLowerCase()]) {
+                                    this.cache[hashOrStore.toLowerCase()] = null;
+                                }
+                            }
                         }
                         catch {
-                            this.cache[hashOrStore.toLowerCase()] = null;
+                            if (!this.cache[hashOrStore.toLowerCase()]) {
+                                this.cache[hashOrStore.toLowerCase()] = null;
+                            }
                         }
                     }
                     else if (this.cache[hashOrStore.toLowerCase()] === undefined) {
@@ -218,7 +222,9 @@ export class MetaStore {
                                 };
                         }
                         catch {
-                            this.cache[hashOrStore.toLowerCase()] = null;
+                            if (!this.cache[hashOrStore.toLowerCase()]) {
+                                this.cache[hashOrStore.toLowerCase()] = null;
+                            }
                             console.log(`cannot find any settlement for hash: ${hashOrStore}`);
                         }
                     }
@@ -260,7 +266,9 @@ export class MetaStore {
                         };
                 }
                 catch {
-                    this.cache[hash] = null;
+                    if (!this.cache[hash.toLowerCase()]) {
+                        this.cache[hash.toLowerCase()] = null;
+                    }
                 }
             }
         }
