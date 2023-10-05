@@ -202,7 +202,7 @@ export class MetaStore {
                             }
                         }
                     }
-                    else if (this.cache[hashOrStore.toLowerCase()] === undefined) {
+                    else {
                         try {
                             const _settlement = await searchMeta(hashOrStore, this.subgraphs);
                             this.cache[hashOrStore.toLowerCase()] = _settlement.rainMetaV1
@@ -230,7 +230,7 @@ export class MetaStore {
                     }
                 }
             }
-            else console.log(`invalid hash: ${hashOrStore}`);
+            // else console.log(`invalid hash: ${hashOrStore}`);
         }
     }
 
