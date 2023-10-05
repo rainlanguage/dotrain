@@ -1,4 +1,4 @@
-import { isBytesLike, getEncodedMetaType } from "../utils";
+import { getEncodedMetaType } from "../utils";
 import { RAIN_SUBGRAPHS, searchMeta, MAGIC_NUMBERS, decodeRainMetaDocument, keccak256, cborDecode } from "@rainprotocol/meta";
 
 
