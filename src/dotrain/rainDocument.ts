@@ -309,9 +309,9 @@ export class RainDocument {
             position: [imp[1][0] - 1, imp[1][1]]
         };
 
-        const _chuncks = exclusiveParse(imp[0], /\s+/gd, imp[1][0]);
-        if (_chuncks.length) {
-            const _nameOrHash = _chuncks.splice(0, 1)[0];
+        const _chunks = exclusiveParse(imp[0], /\s+/gd, imp[1][0]);
+        if (_chunks.length) {
+            const _nameOrHash = _chunks.splice(0, 1)[0];
             if (!HEX_PATTERN.test(_nameOrHash[0])) {
                 _result.name = _nameOrHash[0];
                 _result.namePosition = _nameOrHash[1];
@@ -336,8 +336,8 @@ export class RainDocument {
                 });
             }
             if (_result.name !== ".") {
-                if (_chuncks.length) {
-                    const _hash = _chuncks.splice(0, 1)[0];
+                if (_chunks.length) {
+                    const _hash = _chunks.splice(0, 1)[0];
                     if (HEX_PATTERN.test(_hash[0])) {
                         if (!HASH_PATTERN.test(_hash[0])) _result.problems.push({
                             msg: "invalid hash, must be 32 bytes",
@@ -364,166 +364,12 @@ export class RainDocument {
                     });
                 }
             }
-            if (_chuncks.length) {
-                const _reconfigs: [ParsedChunk, ParsedChunk][] = [];
-                for (let i = 0; i < _chuncks.length; i++) {
-                    if (_chuncks[i][0] === ".") {
-                        const _key = _chuncks[i];
-                        i++;
-                        if (_chuncks[i]) {
-                            if (_chuncks[i][0] === "!") {
-                                if (_reconfigs.find(v =>  
-                                    v[0][0] === _key[0] && 
-                                    v[1][0] === _chuncks[i][0]
-                                )) _result.problems.push({
-                                    msg: "duplicate statement",
-                                    position: [_key[1][0], _chuncks[i][1][1]],
-                                    code: ErrorCode.DuplicateImportStatement
-                                });
-                            }
-                            else _result.problems.push({
-                                msg: "unexpected token",
-                                position: _chuncks[i][1],
-                                code: ErrorCode.UnexpectedToken
-                            });
-                        }
-                        else _result.problems.push({
-                            msg: "expected elision syntax",
-                            position: _key[1],
-                            code: ErrorCode.ExpectedElisionOrRebinding
-                        });
-                        _reconfigs.push([_key, _chuncks[i]]);
-                    }
-                    else if (WORD_PATTERN.test(_chuncks[i][0])) {
-                        const _key = _chuncks[i];
-                        i++;
-                        if (_chuncks[i]) {
-                            if (NUMERIC_PATTERN.test(_chuncks[i][0]) || _chuncks[i][0] === "!") {
-                                if (_reconfigs.find(v => 
-                                    v[0][0] === _key[0] && 
-                                    v[1][0] === _chuncks[i][0]
-                                )) _result.problems.push({
-                                    msg: "duplicate statement",
-                                    position: [_key[1][0], _chuncks[i][1][1]],
-                                    code: ErrorCode.DuplicateImportStatement
-                                });
-                            }
-                            else _result.problems.push({
-                                msg: "unexpected token",
-                                position: _chuncks[i][1],
-                                code: ErrorCode.UnexpectedToken
-                            });
-                        }
-                        else _result.problems.push({
-                            msg: "expected rebinding or elision",
-                            position: _key[1],
-                            code: ErrorCode.ExpectedElisionOrRebinding
-                        });
-                        _reconfigs.push([_key, _chuncks[i]]);
-                    }
-                    else if (_chuncks[i][0].startsWith("'")) {
-                        const _key = _chuncks[i];
-                        if (WORD_PATTERN.test(_key[0].slice(1))) {
-                            i++;
-                            if (_chuncks[i]) {
-                                if (WORD_PATTERN.test(_chuncks[i][0])) {
-                                    if (_reconfigs.find(v => 
-                                        v[0][0] === _key[0] && 
-                                        v[1][0] === _chuncks[i][0]
-                                    )) _result.problems.push({
-                                        msg: "duplicate statement",
-                                        position: [_key[1][0], _chuncks[i][1][1]],
-                                        code: ErrorCode.DuplicateImportStatement
-                                    });
-                                }
-                                else _result.problems.push({
-                                    msg: "invalid word pattern",
-                                    position: _chuncks[i][1],
-                                    code: ErrorCode.InvalidWordPattern
-                                });
-                            }
-                            else _result.problems.push({
-                                msg: "expected name",
-                                position: _key[1],
-                                code: ErrorCode.ExpectedName
-                            });
-                        }
-                        else {
-                            _result.problems.push({
-                                msg: "invalid word pattern",
-                                position: _key[1],
-                                code: ErrorCode.InvalidWordPattern
-                            });
-                            i++;
-                        }
-                        _reconfigs.push([_key, _chuncks[i]]);
-                    }
-                    else {
-                        _result.problems.push({
-                            msg: "unexpected token",
-                            position: _chuncks[i][1],
-                            code: ErrorCode.UnexpectedToken
-                        });
-                        _reconfigs.push([_chuncks[i], _chuncks[++i]]);
-                    }
-                }
-                _result.reconfigs = _reconfigs;
-            }
         }
         else _result.problems.push({
             msg: "expected a valid name or hash",
             position: _atPos,
             code: ErrorCode.InvalidImport
         });
-        // if (
-        //     _chuncks.length && 
-        //     (WORD_PATTERN.test(_chuncks[0][0]) || HASH_PATTERN.test(_chuncks[0][0]))
-        // ) {
-        //     if (WORD_PATTERN.test(_chuncks[0][0])) {
-        //         _result.name = _chuncks[0][0];
-        //         _result.namePosition = _chuncks[0][1];
-        //     }
-        //     else {
-        //         _result.name = ".";
-        //         _result.namePosition = _chuncks[0][1];
-        //         _result.hash = _chuncks[0][0].toLowerCase();
-        //         _result.hashPosition = _chuncks[0][1];
-        //         _isValid = true;
-        //     }
-        //     if (_result.name !== ".") {
-        //         if (!_chuncks[1]) _result.problems.push({
-        //             msg: "expected import hash",
-        //             position: _atPos,
-        //             code: ErrorCode.ExpectedHash
-        //         });
-        //         else {
-        //             if (!HASH_PATTERN.test(_chuncks[1][0])) {
-        //                 if (HEX_PATTERN.test(_chuncks[1][0])) _result.problems.push({
-        //                     msg: "invalid hash, must be 32 bytes",
-        //                     position: _chuncks[1][1],
-        //                     code: ErrorCode.InvalidHash
-        //                 });
-        //                 else _result.problems.push({
-        //                     msg: "expected hash",
-        //                     position: _chuncks[1][1],
-        //                     code: ErrorCode.ExpectedHash
-        //                 });
-        //             }
-        //             else {
-        //                 _result.hash = _chuncks[1][0].toLowerCase();
-        //                 _result.hashPosition = _chuncks[1][1];
-        //                 _isValid = true;
-        //             }
-        //         }
-        //         _configChunks = _chuncks.splice(2);
-        //     }
-        //     else _configChunks = _chuncks.splice(1);
-        // }
-        // else _result.problems.push({
-        //     msg: "expected a valid name or hash",
-        //     position: _atPos,
-        //     code: ErrorCode.InvalidImport
-        // });
 
         if (_result.hash && this.imports.find(v => v.hash === _result.hash)) _result.problems.push({
             msg: "duplicate import",
@@ -533,7 +379,7 @@ export class RainDocument {
         else if (_isValid) {
             await this.metaStore.updateStore(_result.hash as string);
             const _record = this.metaStore.getRecord(_result.hash as string);
-            if (!_record) this.problems.push({
+            if (!_record) _result.problems.push({
                 msg: `cannot find any settlement for hash: ${_result.hash}`,
                 position: _result.hashPosition,
                 code: ErrorCode.UndefinedImport
@@ -677,108 +523,111 @@ export class RainDocument {
                             _isCorrupt = true;
                         }
                     }
-                    // if (!_isCorrupt) {
-                    //     const _reconfigs: [ParsedChunk, ParsedChunk][] = [];
-                    //     for (let i = 0; i < _configChunks.length; i++) {
-                    //         if (_configChunks[i][0] === ".") {
-                    //             const _key = _configChunks[i];
-                    //             i++;
-                    //             if (_configChunks[i]) {
-                    //                 if (_configChunks[i][0] === "!") {
-                    //                     if (_reconfigs.find(v =>  
-                    //                         v[0][0] === _key[0] && 
-                    //                         v[1][0] === _configChunks[i][0]
-                    //                     )) _result.problems.push({
-                    //                         msg: "duplicate statement",
-                    //                         position: [_key[1][0], _configChunks[i][1][1]],
-                    //                         code: ErrorCode.DuplicateImportStatement
-                    //                     });
-                    //                     else _reconfigs.push([_key, _configChunks[i]]);
-                    //                 }
-                    //                 else _result.problems.push({
-                    //                     msg: "unexpected token",
-                    //                     position: _configChunks[i][1],
-                    //                     code: ErrorCode.UnexpectedToken
-                    //                 });
-                    //             }
-                    //             else _result.problems.push({
-                    //                 msg: "expected elision syntax",
-                    //                 position: _atPos,
-                    //                 code: ErrorCode.ExpectedElisionOrRebinding
-                    //             });
-                    //         }
-                    //         else if (WORD_PATTERN.test(_configChunks[i][0])) {
-                    //             const _key = _configChunks[i];
-                    //             i++;
-                    //             if (_configChunks[i]) {
-                    //                 if (NUMERIC_PATTERN.test(_configChunks[i][0]) || _configChunks[i][0] === "!") {
-                    //                     if (_reconfigs.find(v => 
-                    //                         v[0][0] === _key[0] && 
-                    //                         v[1][0] === _configChunks[i][0]
-                    //                     )) _result.problems.push({
-                    //                         msg: "duplicate statement",
-                    //                         position: [_key[1][0], _configChunks[i][1][1]],
-                    //                         code: ErrorCode.DuplicateImportStatement
-                    //                     });
-                    //                     else _reconfigs.push([_key, _configChunks[i]]);
-                    //                 }
-                    //                 else _result.problems.push({
-                    //                     msg: "unexpected token",
-                    //                     position: _configChunks[i][1],
-                    //                     code: ErrorCode.UnexpectedToken
-                    //                 });
-                    //             }
-                    //             else _result.problems.push({
-                    //                 msg: "expected rebinding or elision",
-                    //                 position: _atPos,
-                    //                 code: ErrorCode.ExpectedElisionOrRebinding
-                    //             });
-                    //         }
-                    //         else if (_configChunks[i][0].startsWith("'")) {
-                    //             if (WORD_PATTERN.test(_configChunks[i][0].slice(1))) {
-                    //                 const _key = _configChunks[i];
-                    //                 i++;
-                    //                 if (_configChunks[i]) {
-                    //                     if (WORD_PATTERN.test(_configChunks[i][0])) {
-                    //                         if (_reconfigs.find(v => 
-                    //                             v[0][0] === _key[0] && 
-                    //                             v[1][0] === _configChunks[i][0]
-                    //                         )) _result.problems.push({
-                    //                             msg: "duplicate statement",
-                    //                             position: [_key[1][0], _configChunks[i][1][1]],
-                    //                             code: ErrorCode.DuplicateImportStatement
-                    //                         });
-                    //                         else _reconfigs.push([_key, _configChunks[i]]);
-                    //                     }
-                    //                     else _result.problems.push({
-                    //                         msg: "invalid word pattern",
-                    //                         position: _configChunks[i][1],
-                    //                         code: ErrorCode.InvalidWordPattern
-                    //                     });
-                    //                 }
-                    //                 else _result.problems.push({
-                    //                     msg: "expected name",
-                    //                     position: _atPos,
-                    //                     code: ErrorCode.ExpectedName
-                    //                 });
-                    //             }
-                    //             else {
-                    //                 _result.problems.push({
-                    //                     msg: "invalid word pattern",
-                    //                     position: _configChunks[i][1],
-                    //                     code: ErrorCode.InvalidWordPattern
-                    //                 });
-                    //                 i++;
-                    //             }
-                    //         }
-                    //         else _result.problems.push({
-                    //             msg: "unexpected token",
-                    //             position: _configChunks[i][1],
-                    //             code: ErrorCode.UnexpectedToken
-                    //         });
-                    //     }
-                    //     _result.reconfigs = _reconfigs;
-                    // }
+                    if (!_isCorrupt && _chunks.length) {
+                        const _reconfigs: [ParsedChunk, ParsedChunk][] = [];
+                        for (let i = 0; i < _chunks.length; i++) {
+                            if (_chunks[i][0] === ".") {
+                                const _key = _chunks[i];
+                                i++;
+                                if (_chunks[i]) {
+                                    if (_chunks[i][0] === "!") {
+                                        if (_reconfigs.find(v =>  
+                                            v[0][0] === _key[0] && 
+                                            v[1][0] === _chunks[i][0]
+                                        )) _result.problems.push({
+                                            msg: "duplicate statement",
+                                            position: [_key[1][0], _chunks[i][1][1]],
+                                            code: ErrorCode.DuplicateImportStatement
+                                        });
+                                    }
+                                    else _result.problems.push({
+                                        msg: "unexpected token",
+                                        position: _chunks[i][1],
+                                        code: ErrorCode.UnexpectedToken
+                                    });
+                                }
+                                else _result.problems.push({
+                                    msg: "expected elision syntax",
+                                    position: _key[1],
+                                    code: ErrorCode.ExpectedElisionOrRebinding
+                                });
+                                _reconfigs.push([_key, _chunks[i]]);
+                            }
+                            else if (WORD_PATTERN.test(_chunks[i][0])) {
+                                const _key = _chunks[i];
+                                i++;
+                                if (_chunks[i]) {
+                                    if (NUMERIC_PATTERN.test(_chunks[i][0]) || _chunks[i][0] === "!") {
+                                        if (_reconfigs.find(v => 
+                                            v[0][0] === _key[0] && 
+                                            v[1][0] === _chunks[i][0]
+                                        )) _result.problems.push({
+                                            msg: "duplicate statement",
+                                            position: [_key[1][0], _chunks[i][1][1]],
+                                            code: ErrorCode.DuplicateImportStatement
+                                        });
+                                    }
+                                    else _result.problems.push({
+                                        msg: "unexpected token",
+                                        position: _chunks[i][1],
+                                        code: ErrorCode.UnexpectedToken
+                                    });
+                                }
+                                else _result.problems.push({
+                                    msg: "expected rebinding or elision",
+                                    position: _key[1],
+                                    code: ErrorCode.ExpectedElisionOrRebinding
+                                });
+                                _reconfigs.push([_key, _chunks[i]]);
+                            }
+                            else if (_chunks[i][0].startsWith("'")) {
+                                const _key = _chunks[i];
+                                if (WORD_PATTERN.test(_key[0].slice(1))) {
+                                    i++;
+                                    if (_chunks[i]) {
+                                        if (WORD_PATTERN.test(_chunks[i][0])) {
+                                            if (_reconfigs.find(v => 
+                                                v[0][0] === _key[0] && 
+                                                v[1][0] === _chunks[i][0]
+                                            )) _result.problems.push({
+                                                msg: "duplicate statement",
+                                                position: [_key[1][0], _chunks[i][1][1]],
+                                                code: ErrorCode.DuplicateImportStatement
+                                            });
+                                        }
+                                        else _result.problems.push({
+                                            msg: "invalid word pattern",
+                                            position: _chunks[i][1],
+                                            code: ErrorCode.InvalidWordPattern
+                                        });
+                                    }
+                                    else _result.problems.push({
+                                        msg: "expected name",
+                                        position: _key[1],
+                                        code: ErrorCode.ExpectedName
+                                    });
+                                }
+                                else {
+                                    _result.problems.push({
+                                        msg: "invalid word pattern",
+                                        position: _key[1],
+                                        code: ErrorCode.InvalidWordPattern
+                                    });
+                                    i++;
+                                }
+                                _reconfigs.push([_key, _chunks[i]]);
+                            }
+                            else {
+                                _result.problems.push({
+                                    msg: "unexpected token",
+                                    position: _chunks[i][1],
+                                    code: ErrorCode.UnexpectedToken
+                                });
+                                _reconfigs.push([_chunks[i], _chunks[++i]]);
+                            }
+                        }
+                        _result.reconfigs = _reconfigs;
+                    }
                 }
             }
         }
