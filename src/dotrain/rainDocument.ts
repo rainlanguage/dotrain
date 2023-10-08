@@ -673,19 +673,25 @@ export class RainDocument {
                 _importStatements[i][0] = _importStatements[i][0].slice(0, _index);
                 _importStatements[i][1][1] = _importStatements[i][1][0] + _index - 1;
             }
-            if (this.importDepth < 32) this.imports.push(
-                await this.handleImport(_importStatements[i])
-            );
-            else this.problems.push({
-                msg: "import too deep",
-                position: [_importStatements[i][1][0] - 1,_importStatements[i][1][1]],
-                code: ErrorCode.DeepImport
-            });
+            // if (this.importDepth < 32) importPromises.push(this.handleImport(_importStatements[i]));
+            // else this.problems.push({
+            //     msg: "import too deep",
+            //     position: [_importStatements[i][1][0] - 1,_importStatements[i][1][1]],
+            //     code: ErrorCode.DeepImport
+            // });
             document = fillIn(
                 document, 
                 [_importStatements[i][1][0] - 1, _importStatements[i][1][1]]
             );
         }
+        if (this.importDepth < 32) (await Promise.all(
+            _importStatements.map(importStatement => this.handleImport(importStatement))
+        )).forEach(imp => this.imports.push(imp));
+        else _importStatements.forEach(imp => this.problems.push({
+            msg: "import too deep",
+            position: [imp[1][0] - 1, imp[1][1]],
+            code: ErrorCode.DeepImport
+        }));
 
         for (let i = 0; i < this.imports.length; i++) {
             if (this.imports[i].problems.length === 0) {
