@@ -371,12 +371,12 @@ export class RainDocument {
             code: ErrorCode.InvalidImport
         });
 
-        if (_result.hash && this.imports.find(v => v.hash === _result.hash)) _result.problems.push({
-            msg: "duplicate import",
-            position: _result.hashPosition,
-            code: ErrorCode.DuplicateImport
-        });
-        else if (_isValid) {
+        // if (_result.hash && this.imports.find(v => v.hash === _result.hash)) _result.problems.push({
+        //     msg: "duplicate import",
+        //     position: _result.hashPosition,
+        //     code: ErrorCode.DuplicateImport
+        // });
+        if (_isValid) {
             await this.metaStore.updateStore(_result.hash as string);
             const _record = this.metaStore.getRecord(_result.hash as string);
             if (!_record) _result.problems.push({
@@ -686,7 +686,21 @@ export class RainDocument {
         }
         if (this.importDepth < 32) (await Promise.all(
             _importStatements.map(importStatement => this.handleImport(importStatement))
-        )).forEach(imp => this.imports.push(imp));
+        )).forEach(imp => {
+            if (imp.hash && this.imports.find(v => v.hash === imp.hash)) {
+                imp.problems.push({
+                    msg: "duplicate import",
+                    position: imp.hashPosition,
+                    code: ErrorCode.DuplicateImport
+                });
+                this.problems.push({
+                    msg: "duplicate import",
+                    position: imp.hashPosition,
+                    code: ErrorCode.DuplicateImport
+                });
+            }
+            this.imports.push(imp);
+        });
         else _importStatements.forEach(imp => this.problems.push({
             msg: "import too deep",
             position: [imp[1][0] - 1, imp[1][1]],
