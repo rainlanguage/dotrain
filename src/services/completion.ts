@@ -237,7 +237,7 @@ export async function getCompletion(
                                     position
                                 )
                             }
-                        }))
+                        })).filter(v => v.label !== _rd.textDocument.uri)
                     );
                     if (/^0?x/.test(_lastChunk[0])) _result.push(
                         ...Object.keys(_rd.metaStore.getCache()).map(v => ({
