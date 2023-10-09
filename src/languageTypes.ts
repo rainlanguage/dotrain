@@ -96,6 +96,7 @@ export enum ErrorCode {
     UnexpectedEndOfComment = 0x306,
     UnexpectedComment = 0x307,
     UndefinedDISpair = 0x308,
+    UndefinedNamespaceMember = 0x309,
     // UnexpectedSpace = 0x309,
     // UnexpectedBindingIdUsage = 0x303,
     // UnexpectedFragment = 0x304,

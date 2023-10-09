@@ -16,7 +16,6 @@ import {
 import { 
     AST, 
     Position, 
-    ErrorCode, 
     TextDocument, 
     HASH_PATTERN, 
     WORD_PATTERN, 
@@ -288,7 +287,8 @@ export namespace Compile {
                                 "0",
                                 {
                                     thisBinding: _ns.child.Element,
-                                    namespaces: _ns.parent
+                                    namespaces: _ns.parent,
+                                    ignoreAuthoringMeta: (_rainDoc as any)._ignoreUAM
                                 }
                             );
                             if (_ns.child.Element.problems.length) return Promise.reject(
@@ -395,7 +395,8 @@ export namespace Compile {
                                 "0",
                                 {
                                     thisBinding: _ns.child.Element,
-                                    namespaces: _ns.parent
+                                    namespaces: _ns.parent,
+                                    ignoreAuthoringMeta: (_rainDoc as any)._ignoreUAM
                                 }
                             );
                             if (_ns.child.Element.problems.length) return Promise.reject(
@@ -556,13 +557,15 @@ export namespace Compile {
             const _generatedRainlang = new RL(
                 _sourcemaps.map(v => v.generatedText).join("\n"),
                 _authoringMeta,
-                _bytecode
+                _bytecode, {
+                    ignoreAuthoringMeta: (_rainDoc as any)._ignoreUAM
+                }
             );
-            let _genRainlangProblems = _generatedRainlang.problems;
+            const _genRainlangProblems = _generatedRainlang.problems;
 
-            if ((_rainDoc as any)._ignoreUAM) _genRainlangProblems = _genRainlangProblems.filter(
-                v => v.code !== ErrorCode.UndefinedOpcode
-            );
+            // if ((_rainDoc as any)._ignoreUAM) _genRainlangProblems = _genRainlangProblems.filter(
+            //     v => v.code !== ErrorCode.UndefinedOpcode
+            // );
 
             if (_genRainlangProblems.length) {
                 const _problems = [];

@@ -62,6 +62,7 @@ export class Rainlang {
     public bytecode = "";
     public namespaces: AST.Namespace = {};
     public binding?: AST.Binding;
+    private _ignoreUAM = false;
     private state: {
         nodes: AST.Node[];
         aliases: AST.Alias[];
@@ -107,6 +108,10 @@ export class Rainlang {
              * 
              */
             thisBinding?: AST.Binding;
+            /**
+             * option to ignore unknown opcode
+             */
+            ignoreAuthoringMeta?: boolean
         }
     ) {
         this.text = text;
@@ -119,6 +124,9 @@ export class Rainlang {
             this.namespaces = dotrainOptions.namespaces;
         }
         if (dotrainOptions?.thisBinding) this.binding = dotrainOptions.thisBinding;
+        if (dotrainOptions?.ignoreAuthoringMeta) {
+            this._ignoreUAM = dotrainOptions.ignoreAuthoringMeta;
+        }
         this.parse();
     }
 
@@ -1019,7 +1027,7 @@ export class Rainlang {
                     ].Element as Meta.Authoring | AST.ContextAlias;
                 }
             }
-            if (!_opcode) this.problems.push({
+            if (!_opcode && !this._ignoreUAM) this.problems.push({
                 msg: `unknown opcode: "${_chunk}"`,
                 position: [..._chunkPos],
                 code: ErrorCode.UndefinedOpcode
@@ -1319,10 +1327,10 @@ export class Rainlang {
             if (_result[_names[i][0]]) _result = _result[_names[i][0]];
             else {
                 if (publishDiagnostics) {
-                    if (!(isOpcode && this.authoringMeta.length === 0)) this.problems.push({
-                        msg: "undefined identifier",
+                    if (!(isOpcode && this._ignoreUAM)) this.problems.push({
+                        msg: `namespace has no member "${_names[i][0]}"`,
                         position: _names[i][1],
-                        code: ErrorCode.UndefinedIdentifier
+                        code: ErrorCode.UndefinedNamespaceMember
                     });
                 }
                 return undefined;
