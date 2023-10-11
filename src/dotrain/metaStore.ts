@@ -85,6 +85,7 @@ export class MetaStore {
      * @internal k/v cache for hashs and their contents
      */
     private cache: { [hash: string]: MetaRecord | undefined | null } = {};
+    private queue: { [hash: string]: any } = {};
 
     /**
      * @public Constructor of the class
@@ -203,30 +204,113 @@ export class MetaStore {
                         }
                     }
                     else {
-                        try {
-                            const _settlement = await searchMeta(hashOrStore, this.subgraphs);
-                            this.cache[hashOrStore.toLowerCase()] = _settlement.rainMetaV1
-                                ? {
-                                    type: "sequence",
-                                    sequence: this.decodeContent(
-                                        _settlement.rainMetaV1.metaBytes,
-                                        "sequence"
-                                    )
-                                }
-                                : {
-                                    type: "single",
-                                    sequence: this.decodeContent(
-                                        _settlement.metaContentV1.encodedData,
-                                        "single"
-                                    )
-                                };
-                        }
-                        catch {
-                            if (!this.cache[hashOrStore.toLowerCase()]) {
-                                this.cache[hashOrStore.toLowerCase()] = null;
+                        // try {
+                        let isQueued = false;
+                        await new Promise((resolve) => {
+                            if (this.queue[hashOrStore.toLowerCase()] !== undefined) {
+                                isQueued = true;
+                                clearTimeout(this.queue[hashOrStore.toLowerCase()]);
                             }
-                            console.log(`cannot find any settlement for hash: ${hashOrStore}`);
-                        }
+                            this.queue[hashOrStore.toLowerCase()] = setTimeout(
+                                async() => {
+                                    try {
+                                        const _settlement = await searchMeta(
+                                            hashOrStore,
+                                            this.subgraphs
+                                        );
+                                        this.cache[hashOrStore.toLowerCase()] = 
+                                            _settlement.rainMetaV1
+                                                ? {
+                                                    type: "sequence",
+                                                    sequence: this.decodeContent(
+                                                        _settlement.rainMetaV1.metaBytes,
+                                                        "sequence"
+                                                    )
+                                                }
+                                                : {
+                                                    type: "single",
+                                                    sequence: this.decodeContent(
+                                                        _settlement.metaContentV1.encodedData,
+                                                        "single"
+                                                    )
+                                                };
+                                    }
+                                    catch {
+                                        if (!this.cache[hashOrStore.toLowerCase()]) {
+                                            this.cache[hashOrStore.toLowerCase()] = null;
+                                        }
+                                        console.log(`cannot find any settlement for hash: ${hashOrStore}`);
+                                    }
+                                    resolve;
+                                },
+                                500
+                            );
+                            if (isQueued) resolve;
+                        }).finally(
+                            () => {
+                                if (!isQueued) {
+                                    clearTimeout(this.queue[hashOrStore.toLowerCase()]);
+                                    delete this.queue[hashOrStore.toLowerCase()];
+                                }
+                            }
+                        );
+
+                        // this.queue[hashOrStore.toLowerCase()] = setTimeout(
+                        //     async() => {
+                        //         try {
+                        //             const _settlement = await searchMeta(
+                        //                 hashOrStore,
+                        //                 this.subgraphs
+                        //             );
+                        //             this.cache[hashOrStore.toLowerCase()] = 
+                        //                 _settlement.rainMetaV1
+                        //                     ? {
+                        //                         type: "sequence",
+                        //                         sequence: this.decodeContent(
+                        //                             _settlement.rainMetaV1.metaBytes,
+                        //                             "sequence"
+                        //                         )
+                        //                     }
+                        //                     : {
+                        //                         type: "single",
+                        //                         sequence: this.decodeContent(
+                        //                             _settlement.metaContentV1.encodedData,
+                        //                             "single"
+                        //                         )
+                        //                     };
+                        //         }
+                        //         catch {
+                        //             if (!this.cache[hashOrStore.toLowerCase()]) {
+                        //                 this.cache[hashOrStore.toLowerCase()] = null;
+                        //             }
+                        //             console.log(`cannot find any settlement for hash: ${hashOrStore}`);
+                        //         }
+                        //     },
+                        //     500
+                        // );
+                        // const _settlement = await searchMeta(hashOrStore, this.subgraphs);
+                        // this.cache[hashOrStore.toLowerCase()] = _settlement.rainMetaV1
+                        //     ? {
+                        //         type: "sequence",
+                        //         sequence: this.decodeContent(
+                        //             _settlement.rainMetaV1.metaBytes,
+                        //             "sequence"
+                        //         )
+                        //     }
+                        //     : {
+                        //         type: "single",
+                        //         sequence: this.decodeContent(
+                        //             _settlement.metaContentV1.encodedData,
+                        //             "single"
+                        //         )
+                        //     };
+                        // }
+                        // catch {
+                        //     if (!this.cache[hashOrStore.toLowerCase()]) {
+                        //         this.cache[hashOrStore.toLowerCase()] = null;
+                        //     }
+                        //     console.log(`cannot find any settlement for hash: ${hashOrStore}`);
+                        // }
                     }
                 }
             }
