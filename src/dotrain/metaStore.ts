@@ -206,7 +206,7 @@ export class MetaStore {
                     else {
                         // try {
                         let isQueued = false;
-                        await new Promise((resolve) => {
+                        await new Promise<void>((resolve) => {
                             if (this.queue[hashOrStore.toLowerCase()] !== undefined) {
                                 isQueued = true;
                                 clearTimeout(this.queue[hashOrStore.toLowerCase()]);
@@ -241,11 +241,11 @@ export class MetaStore {
                                         }
                                         console.log(`cannot find any settlement for hash: ${hashOrStore}`);
                                     }
-                                    resolve;
+                                    resolve();
                                 },
                                 500
                             );
-                            if (isQueued) resolve;
+                            if (isQueued) resolve();
                         }).finally(
                             () => {
                                 if (!isQueued) {
