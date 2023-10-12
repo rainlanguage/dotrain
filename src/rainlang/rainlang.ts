@@ -2,12 +2,11 @@ import { MetaStore } from "../dotrain/metaStore";
 import { Problem, Comment, ASTNode, OpASTNode, RainlangAST, Namespace, ContextAlias, Binding } from "../rainLanguageTypes";
 import { 
     OpMeta, 
+    toOpMeta, 
     InputArgs, 
     OperandArgs, 
-    // OpMetaSchema, 
     metaFromBytes, 
-    ComputedOutput, 
-    toOpMeta
+    ComputedOutput 
 } from "@rainprotocol/meta";
 import { 
     ErrorCode, 
@@ -18,15 +17,15 @@ import {
     NUMERIC_PATTERN 
 } from "../rainLanguageTypes";
 import {
-    trim,
+    trim, 
+    fillIn, 
     deepCopy,
     CONSTANTS,
+    toConvNumber, 
     extractByBits, 
     inclusiveParse,
     exclusiveParse,
-    constructByBits, 
-    fillIn,
-    toConvNumber
+    constructByBits 
 } from "../utils";
 
 
@@ -51,7 +50,6 @@ export class Rainlang {
     public problems: Problem[] = [];
     public comments: Comment[] = [];
     public opmeta: OpMeta[] = [];
-    // public expNames: string[] = [];
     public namespaces: Namespace = {};
     public binding?: Binding;
     private state: {
@@ -84,10 +82,6 @@ export class Rainlang {
         text: string,
         opmeta: OpMeta[],
         dotrainOptions?: { 
-            // /**
-            //  * Reserved constant values from RainDocument
-            //  */
-            // constants?: Record<string, string>;
             /**
              * Comments parsed from RainDocument
              */
@@ -95,7 +89,6 @@ export class Rainlang {
             /**
              * Array of expression names from corresponding RainDocument
              */
-            // expressionNames?: string[],
             namespaces?: Namespace;
             /**
              * 
@@ -105,23 +98,8 @@ export class Rainlang {
     ) {
         this.text = text;
         this.opmeta = opmeta;
-        // this.dotrainMode = false;
-        if (dotrainOptions?.comments) {
-            this.comments = dotrainOptions.comments;
-            // this.dotrainMode = true;
-        }
-        // if (dotrainOptions?.constants) {
-        //     this.constants = dotrainOptions.constants;
-        //     this.isDotrain = true;
-        // }
-        // if (dotrainOptions?.expressionNames) {
-        //     this.expNames = dotrainOptions.expressionNames;
-        //     this.isDotrain = true;
-        // }
-        if (dotrainOptions?.namespaces) {
-            this.namespaces = dotrainOptions.namespaces;
-            // this.dotrainMode = true;
-        }
+        if (dotrainOptions?.comments) this.comments = dotrainOptions.comments;
+        if (dotrainOptions?.namespaces) this.namespaces = dotrainOptions.namespaces;
         if (dotrainOptions?.thisBinding) this.binding = dotrainOptions.thisBinding;
         this.parse();
     }
@@ -180,47 +158,12 @@ export class Rainlang {
         this.parse();
     }
 
-    // /**
-    //  * @public Get the current text of this Rainlang instance
-    //  */
-    // public getText(): string {
-    //     return this.text;
-    // }
-
-    // /**
-    //  * @public Get the current text of this Rainlang instance
-    //  */
-    // public getOpMeta(): OpMeta[] {
-    //     return deepCopy(this.opmeta);
-    // }
-
-    // /**
-    //  * @public Get the current problems of this Rainlang instance
-    //  */
-    // public getProblems(): Problem[] {
-    //     return this.problems;
-    // }
-
-    // /**
-    //  * @public Get the current comments inside of the text of this Rainlang instance
-    //  */
-    // public getComments(): Comment[] {
-    //     return deepCopy(this.comments);
-    // }
-
     /**
      * @public Get the current runtime error of this Rainlang instance
      */
     public getRuntimeError(): Error | undefined {
         return this.state.runtimeError;
     }
-
-    // /**
-    //  * @public Get AST of this Rainlang instance
-    //  */
-    // public getAst(): RainlangAST {
-    //     return deepCopy(this.ast);
-    // }
 
     /**
      * @internal Method to reset the parser state
@@ -264,7 +207,6 @@ export class Rainlang {
         this.resetState();
         this.ast = [];
         this.problems = [];
-        // this.comments = [];
         this.state.runtimeError = undefined;
         let document = this.text;
 
@@ -593,7 +535,6 @@ export class Rainlang {
             let _operandMeta: OperandArgs = [];
             const _operandArgs = exp.slice(1, exp.indexOf(">"));
             const _parsedVals = inclusiveParse(_operandArgs, /\S+/gd, pos + 1);
-            // const _opmeta = this.opmeta.find(v => v.name === op.opcode.name);
             const _opmeta = this.searchOpmeta(op);
             exp = exp.slice(exp.indexOf(">") + 1);
             op.operandArgs = {
@@ -1076,12 +1017,6 @@ export class Rainlang {
             }
             else {
                 if (_word.match(NUMERIC_PATTERN)) {
-                    // let _val = _word;
-                    // if (_word.startsWith("0b")) _val = Number(_word).toString();
-                    // else if (!isBigNumberish(_word)) {
-                    //     const _nums = _word.match(/\d+/g)!;
-                    //     _val = _nums[0] + "0".repeat(Number(_nums[1]));
-                    // }
                     if (CONSTANTS.MaxUint256.lt(toConvNumber(_word))) {
                         this.problems.push({
                             msg: "value greater than 32 bytes in size",

@@ -204,7 +204,6 @@ export class MetaStore {
                         }
                     }
                     else {
-                        // try {
                         if (this.queue[hash] !== undefined) {
                             clearTimeout(this.queue[hash].timeout);
                             this.queue[hash].resolve();
@@ -249,33 +248,9 @@ export class MetaStore {
                                 300
                             );
                         });
-                        // const _settlement = await searchMeta(hashOrStore, this.subgraphs);
-                        // this.cache[hashOrStore.toLowerCase()] = _settlement.rainMetaV1
-                        //     ? {
-                        //         type: "sequence",
-                        //         sequence: this.decodeContent(
-                        //             _settlement.rainMetaV1.metaBytes,
-                        //             "sequence"
-                        //         )
-                        //     }
-                        //     : {
-                        //         type: "single",
-                        //         sequence: this.decodeContent(
-                        //             _settlement.metaContentV1.encodedData,
-                        //             "single"
-                        //         )
-                        //     };
-                        // }
-                        // catch {
-                        //     if (!this.cache[hashOrStore.toLowerCase()]) {
-                        //         this.cache[hashOrStore.toLowerCase()] = null;
-                        //     }
-                        //     console.log(`cannot find any settlement for hash: ${hashOrStore}`);
-                        // }
                     }
                 }
             }
-            // else console.log(`invalid hash: ${hashOrStore}`);
         }
     }
 
@@ -364,8 +339,7 @@ export class MetaStore {
                     ) as MetaSequence
                 );
             }
-            // eslint-disable-next-line no-empty
-            catch {}
+            catch { /**/ }
         }
         return _metaSequence;
     }

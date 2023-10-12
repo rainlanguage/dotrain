@@ -221,13 +221,6 @@ export class RainDocument {
         }
     }
 
-    // /**
-    //  * @internal Method to find index of next element within the text
-    //  */
-    // private findNextBoundry(str: string): number {
-    //     return str.search(/[\s]/g);
-    // }
-
     /**
      * @internal Get context aliases from a contract meta
      */
@@ -299,7 +292,6 @@ export class RainDocument {
     public async handleImport(imp: ParsedChunk): Promise<Import> {
         const _atPos: PositionOffset = [imp[1][0] - 1, imp[1][0] - 1];
         let _isValid = false;
-        // let _configChunks: ParsedChunk[] = [];
         const _result: Import = {
             name: ".",
             hash: "",
@@ -371,11 +363,6 @@ export class RainDocument {
             code: ErrorCode.InvalidImport
         });
 
-        // if (_result.hash && this.imports.find(v => v.hash === _result.hash)) _result.problems.push({
-        //     msg: "duplicate import",
-        //     position: _result.hashPosition,
-        //     code: ErrorCode.DuplicateImport
-        // });
         if (_isValid) {
             if (this._shouldSearch) await this.metaStore.updateStore(_result.hash as string);
             const _record = this.metaStore.getRecord(_result.hash as string);
@@ -673,12 +660,6 @@ export class RainDocument {
                 _importStatements[i][0] = _importStatements[i][0].slice(0, _index);
                 _importStatements[i][1][1] = _importStatements[i][1][0] + _index - 1;
             }
-            // if (this.importDepth < 32) importPromises.push(this.handleImport(_importStatements[i]));
-            // else this.problems.push({
-            //     msg: "import too deep",
-            //     position: [_importStatements[i][1][0] - 1,_importStatements[i][1][1]],
-            //     code: ErrorCode.DeepImport
-            // });
             document = fillIn(
                 document, 
                 [_importStatements[i][1][0] - 1, _importStatements[i][1][1]]
