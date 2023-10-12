@@ -85,6 +85,9 @@ export class MetaStore {
      * @internal k/v cache for hashs and their contents
      */
     private cache: { [hash: string]: MetaRecord | undefined | null } = {};
+    /**
+     * Search meta in external sources queue
+     */
     private queue: { [hash: string]: any } = {};
 
     /**
@@ -177,48 +180,50 @@ export class MetaStore {
         }
         else {
             if (hashOrStore.match(/^0x[a-fA-F0-9]{64}$/)) {
-                if (!this.cache[hashOrStore.toLowerCase()]) {
+                const hash = hashOrStore.toLowerCase();
+                if (!this.cache[hash]) {
                     if (metaBytes) {
                         if (!metaBytes.startsWith("0x")) metaBytes = "0x" + metaBytes;
                         try {
                             if (
-                                keccak256(metaBytes).toLowerCase() === hashOrStore.toLowerCase()
+                                keccak256(metaBytes).toLowerCase() === hash
                             ) {
                                 const _type = getEncodedMetaType(metaBytes);
                                 const _content = metaBytes.toLowerCase();
-                                this.cache[hashOrStore.toLowerCase()] = {
+                                this.cache[hash] = {
                                     type: _type,
                                     sequence: this.decodeContent(_content, _type)
                                 };
                             }
                             else {
-                                if (!this.cache[hashOrStore.toLowerCase()]) {
-                                    this.cache[hashOrStore.toLowerCase()] = null;
-                                }
+                                if (!this.cache[hash]) this.cache[hash] = null;
                             }
                         }
                         catch {
-                            if (!this.cache[hashOrStore.toLowerCase()]) {
-                                this.cache[hashOrStore.toLowerCase()] = null;
-                            }
+                            if (!this.cache[hash]) this.cache[hash] = null;
                         }
                     }
                     else {
                         // try {
-                        let isQueued = false;
-                        await new Promise<void>((resolve) => {
-                            if (this.queue[hashOrStore.toLowerCase()] !== undefined) {
-                                isQueued = true;
-                                clearTimeout(this.queue[hashOrStore.toLowerCase()]);
-                            }
-                            this.queue[hashOrStore.toLowerCase()] = setTimeout(
+                        if (this.queue[hash] !== undefined) {
+                            clearTimeout(this.queue[hash].timeout);
+                            this.queue[hash].resolve();
+                        }
+                        else this.queue[hash] = {};
+                        await new Promise<void>(resolve => {
+                            this.queue[hash].resolve = resolve;
+                            this.queue[hash].timeout = setTimeout(
                                 async() => {
+                                    if (this.queue[hash]?.timeout) {
+                                        clearTimeout(this.queue[hash].timeout);
+                                    }
+                                    delete this.queue[hash];
                                     try {
                                         const _settlement = await searchMeta(
                                             hashOrStore,
                                             this.subgraphs
                                         );
-                                        this.cache[hashOrStore.toLowerCase()] = 
+                                        this.cache[hash] = 
                                             _settlement.rainMetaV1
                                                 ? {
                                                     type: "sequence",
@@ -236,58 +241,14 @@ export class MetaStore {
                                                 };
                                     }
                                     catch {
-                                        if (!this.cache[hashOrStore.toLowerCase()]) {
-                                            this.cache[hashOrStore.toLowerCase()] = null;
-                                        }
+                                        if (!this.cache[hash]) this.cache[hash] = null;
                                         console.log(`cannot find any settlement for hash: ${hashOrStore}`);
                                     }
                                     resolve();
                                 },
-                                500
+                                300
                             );
-                            if (isQueued) resolve();
-                        }).finally(
-                            () => {
-                                if (!isQueued) {
-                                    clearTimeout(this.queue[hashOrStore.toLowerCase()]);
-                                    delete this.queue[hashOrStore.toLowerCase()];
-                                }
-                            }
-                        );
-
-                        // this.queue[hashOrStore.toLowerCase()] = setTimeout(
-                        //     async() => {
-                        //         try {
-                        //             const _settlement = await searchMeta(
-                        //                 hashOrStore,
-                        //                 this.subgraphs
-                        //             );
-                        //             this.cache[hashOrStore.toLowerCase()] = 
-                        //                 _settlement.rainMetaV1
-                        //                     ? {
-                        //                         type: "sequence",
-                        //                         sequence: this.decodeContent(
-                        //                             _settlement.rainMetaV1.metaBytes,
-                        //                             "sequence"
-                        //                         )
-                        //                     }
-                        //                     : {
-                        //                         type: "single",
-                        //                         sequence: this.decodeContent(
-                        //                             _settlement.metaContentV1.encodedData,
-                        //                             "single"
-                        //                         )
-                        //                     };
-                        //         }
-                        //         catch {
-                        //             if (!this.cache[hashOrStore.toLowerCase()]) {
-                        //                 this.cache[hashOrStore.toLowerCase()] = null;
-                        //             }
-                        //             console.log(`cannot find any settlement for hash: ${hashOrStore}`);
-                        //         }
-                        //     },
-                        //     500
-                        // );
+                        });
                         // const _settlement = await searchMeta(hashOrStore, this.subgraphs);
                         // this.cache[hashOrStore.toLowerCase()] = _settlement.rainMetaV1
                         //     ? {
