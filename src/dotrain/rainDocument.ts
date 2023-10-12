@@ -79,7 +79,7 @@ export class RainDocument {
     public problems: Problem[] = [];
 
     private importDepth = 0;
-
+    private _shouldSearch = true;
     /**
      * @public Constructs a new RainDocument instance, should not be used for instantiating, use "creat()" instead
      * @param textDocument - TextDocument
@@ -377,7 +377,7 @@ export class RainDocument {
         //     code: ErrorCode.DuplicateImport
         // });
         if (_isValid) {
-            await this.metaStore.updateStore(_result.hash as string);
+            if (this._shouldSearch) await this.metaStore.updateStore(_result.hash as string);
             const _record = this.metaStore.getRecord(_result.hash as string);
             if (!_record) _result.problems.push({
                 msg: `cannot find any settlement for hash: ${_result.hash}`,
