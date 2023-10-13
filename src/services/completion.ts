@@ -79,14 +79,14 @@ export async function getCompletion(
         _td = _rd.textDocument;
         if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
             _rd.metaStore.updateStore(setting.metaStore);
-            (_rd as any)._shouldSearch = false;
+            if (setting?.noMetaSearch) (_rd as any)._shouldSearch = false;
             await _rd.parse();
         }
     }
     else {
         _td = document;
         _rd = new RainDocument(document, setting?.metaStore);
-        (_rd as any)._shouldSearch = false;
+        if (setting?.noMetaSearch) (_rd as any)._shouldSearch = false;
         await _rd.parse();
     }
     const format = setting

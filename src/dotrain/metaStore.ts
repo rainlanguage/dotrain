@@ -85,10 +85,10 @@ export class MetaStore {
      * @internal k/v cache for hashs and their contents
      */
     private cache: { [hash: string]: MetaRecord | undefined | null } = {};
-    /**
-     * Search meta in external sources queue
-     */
-    private queue: { [hash: string]: any } = {};
+    // /**
+    //  * Search meta in external sources queue
+    //  */
+    // private queue: { [hash: string]: any } = {};
 
     /**
      * @public Constructor of the class
@@ -204,50 +204,72 @@ export class MetaStore {
                         }
                     }
                     else {
-                        if (this.queue[hash] !== undefined) {
-                            clearTimeout(this.queue[hash].timeout);
-                            this.queue[hash].resolve();
+                        try {
+                            const _settlement = await searchMeta(hashOrStore, this.subgraphs);
+                            this.cache[hash] = _settlement.rainMetaV1
+                                ? {
+                                    type: "sequence",
+                                    sequence: this.decodeContent(
+                                        _settlement.rainMetaV1.metaBytes,
+                                        "sequence"
+                                    )
+                                }
+                                : {
+                                    type: "single",
+                                    sequence: this.decodeContent(
+                                        _settlement.metaContentV1.encodedData,
+                                        "single"
+                                    )
+                                };
                         }
-                        else this.queue[hash] = {};
-                        await new Promise<void>(resolve => {
-                            this.queue[hash].resolve = resolve;
-                            this.queue[hash].timeout = setTimeout(
-                                async() => {
-                                    if (this.queue[hash]?.timeout) {
-                                        clearTimeout(this.queue[hash].timeout);
-                                    }
-                                    delete this.queue[hash];
-                                    try {
-                                        const _settlement = await searchMeta(
-                                            hashOrStore,
-                                            this.subgraphs
-                                        );
-                                        this.cache[hash] = 
-                                            _settlement.rainMetaV1
-                                                ? {
-                                                    type: "sequence",
-                                                    sequence: this.decodeContent(
-                                                        _settlement.rainMetaV1.metaBytes,
-                                                        "sequence"
-                                                    )
-                                                }
-                                                : {
-                                                    type: "single",
-                                                    sequence: this.decodeContent(
-                                                        _settlement.metaContentV1.encodedData,
-                                                        "single"
-                                                    )
-                                                };
-                                    }
-                                    catch {
-                                        if (!this.cache[hash]) this.cache[hash] = null;
-                                        console.log(`cannot find any settlement for hash: ${hashOrStore}`);
-                                    }
-                                    resolve();
-                                },
-                                300
-                            );
-                        });
+                        catch {
+                            if (!this.cache[hash]) this.cache[hash] = null;
+                            console.log(`cannot find any settlement for hash: ${hashOrStore}`);
+                        }
+                    //     if (this.queue[hash] !== undefined) {
+                    //         clearTimeout(this.queue[hash].timeout);
+                    //         this.queue[hash].resolve();
+                    //     }
+                    //     else this.queue[hash] = {};
+                    //     await new Promise<void>(resolve => {
+                    //         this.queue[hash].resolve = resolve;
+                    //         this.queue[hash].timeout = setTimeout(
+                    //             async() => {
+                    //                 if (this.queue[hash]?.timeout) {
+                    //                     clearTimeout(this.queue[hash].timeout);
+                    //                 }
+                    //                 delete this.queue[hash];
+                    //                 try {
+                    //                     const _settlement = await searchMeta(
+                    //                         hashOrStore,
+                    //                         this.subgraphs
+                    //                     );
+                    //                     this.cache[hash] = 
+                    //                         _settlement.rainMetaV1
+                    //                             ? {
+                    //                                 type: "sequence",
+                    //                                 sequence: this.decodeContent(
+                    //                                     _settlement.rainMetaV1.metaBytes,
+                    //                                     "sequence"
+                    //                                 )
+                    //                             }
+                    //                             : {
+                    //                                 type: "single",
+                    //                                 sequence: this.decodeContent(
+                    //                                     _settlement.metaContentV1.encodedData,
+                    //                                     "single"
+                    //                                 )
+                    //                             };
+                    //                 }
+                    //                 catch {
+                    //                     if (!this.cache[hash]) this.cache[hash] = null;
+                    //                     console.log(`cannot find any settlement for hash: ${hashOrStore}`);
+                    //                 }
+                    //                 resolve();
+                    //             },
+                    //             300
+                    //         );
+                    //     });
                     }
                 }
             }

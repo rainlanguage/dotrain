@@ -1,6 +1,6 @@
-[Home](../index.md) &gt; [Comment](./comment.md)
+[Home](../index.md) &gt; [Comment\_2](./comment_2.md)
 
-# Interface Comment
+# Interface Comment\_2
 
 Type for Rainlang/RainDocument comments
 
@@ -14,8 +14,8 @@ interface Comment
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [comment](./comment.md#comment-property) | `string` |  |
-|  [position](./comment.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
+|  [comment](./comment_2.md#comment-property) | `string` |  |
+|  [position](./comment_2.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
 
 ## Property Details
 

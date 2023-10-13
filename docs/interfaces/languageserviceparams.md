@@ -16,6 +16,7 @@ interface LanguageServiceParams
 |  --- | --- | --- |
 |  [clientCapabilities](./languageserviceparams.md#clientCapabilities-property) | [ClientCapabilities](./clientcapabilities.md) | Describes the LSP capabilities the client supports. |
 |  [metaStore](./languageserviceparams.md#metaStore-property) | [MetaStore](../classes/metastore.md) | Object that keeps cache of metas |
+|  [noMetaSearch](./languageserviceparams.md#noMetaSearch-property) | `boolean` | If should not search for metas (for lang services except diagnostics) |
 
 ## Property Details
 
@@ -41,4 +42,16 @@ Object that keeps cache of metas
 
 ```typescript
 metaStore?: MetaStore;
+```
+
+<a id="noMetaSearch-property"></a>
+
+### noMetaSearch
+
+If should not search for metas (for lang services except diagnostics)
+
+<b>Signature:</b>
+
+```typescript
+noMetaSearch?: boolean;
 ```
