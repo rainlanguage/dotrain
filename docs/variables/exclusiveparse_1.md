@@ -7,7 +7,7 @@ Parses an string by extracting the strings outside of matches
 <b>Signature:</b>
 
 ```typescript
-function exclusiveParse(str: string, pattern: RegExp, offset?: number, includeEmptyEnds?: boolean): [string, [number, number]][];
+function exclusiveParse(str: string, pattern: RegExp, offset?: number, includeEmptyEnds?: boolean): ParsedChunk[];
 ```
 
 ## Parameters
@@ -21,7 +21,7 @@ function exclusiveParse(str: string, pattern: RegExp, offset?: number, includeEm
 
 <b>Returns:</b>
 
-`[string, [number, number]][]`
+`ParsedChunk[]`
 
 An array of strings outside of matchings and their position inclusive at both ends
 

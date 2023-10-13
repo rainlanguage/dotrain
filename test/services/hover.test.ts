@@ -1,13 +1,14 @@
 import assert from "assert";
+import { METAS } from "../fixtures/opmeta";
 import { contractMetaHash, opMetaHash, toRange } from "../utils";
 import {
     Hover, 
+    getHover, 
     Position,
     rainlang,
     MetaStore, 
     TextDocument,
-    LanguageServiceParams, 
-    getRainLanguageServices 
+    LanguageServiceParams 
 } from "../../src";
 
 
@@ -16,20 +17,20 @@ async function testHover(
     position: Position, 
     serviceParams?: LanguageServiceParams
 ): Promise<Hover | null> {
-    const langServices = getRainLanguageServices(serviceParams);
-    return await (langServices.doHover(
-        TextDocument.create("file", "rainlang", 1, text), 
-        position
+    return await (getHover(
+        TextDocument.create("hover.test.rain", "rainlang", 1, text), 
+        position,
+        serviceParams
     ));
 }
 
-describe("Rainlang Hover Service Tests", async function () {
+describe("LSP Hover Language Service Tests", async function () {
     let expression: string;
     const store = new MetaStore();
 
     before(async () => {
-        await store.updateStore(opMetaHash);
-        await store.updateStore(contractMetaHash);
+        await store.updateStore(opMetaHash, METAS.validOpMeta.metaBytes);
+        await store.updateStore(contractMetaHash, METAS.validContractMeta.metaBytes);
         expression = rainlang`@${opMetaHash} @${contractMetaHash}
 #exp1
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
@@ -161,7 +162,7 @@ new-total-amount-sent);
                 range: toRange(14, 0, 14, 18),
                 contents: {
                     kind: "plaintext",
-                    value: "Alias"
+                    value: "Stack Alias"
                 }
             }
         );
@@ -203,14 +204,10 @@ new-total-amount-sent);
                 { metaStore: store },
             ),
             {
-                range: toRange(0, 0, 0, 67),
+                range: toRange(0, 0, 0, 68),
                 contents: {
                     kind: "plaintext",
-                    value: [
-                        "This Rain metadata consists of:",
-                        "- Op metadata with 78 opcodes",
-                        " Active Op Meta"
-                    ].join("\n")
+                    value: "this import contains: -OpMeta"
                 }
             }
         );
@@ -224,13 +221,10 @@ new-total-amount-sent);
                 { metaStore: store },
             ),
             {
-                range: toRange(0, 68, 0, 135),
+                range: toRange(0, 68, 1, 0),
                 contents: {
                     kind: "plaintext",
-                    value: [
-                        "This Rain metadata consists of:",
-                        "- Order Book contract metadata"
-                    ].join("\n")
+                    value: "this import contains: -ContractMeta"
                 }
             }
         );

@@ -2,11 +2,11 @@
 
 # Class MetaStore
 
-Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities to easliy utilize them. Hashes must 32 bytes (in hex string format) and will be stored as lower case. Meta bytes must be valid cbor encoded that emitted by the contract.
+Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities to easliy utilize them. Hashes must 32 bytes (in hex string format) and will be stored as lower case. Meta bytes must be valid cbor encoded.
 
-Subgraph endpoint URLs specified in "sgBook" from \[rainlang-meta\](https://github.com/rainprotocol/meta/blob/master/src/subgraphBook.ts) are included by default as subgraph endpoint URLs to search for metas.
+Subgraph endpoint URLs specified in "RAIN\_SUBGRAPHS" from \[rainlang-meta\](https://github.com/rainprotocol/meta/blob/master/src/rainSubgraphs.ts) are included by default as subgraph endpoint URLs to search for metas.
 
-Subgraphs URLs can also be provided, either at instantiation or when using `addSubgraph()`<!-- -->, which must be valid starting with `https"//api.thegraph.com/subgraphs/name/`<!-- -->, else they will be ignored.
+Subgraphs URLs can also be provided, either at instantiation or when using `addSubgraphs()`<!-- -->.
 
 Given a k/v pair of meta hash and meta bytes either at instantiation or when using `updateStore()`<!-- -->, it regenrates the hash from the meta to check the validity of the k/v pair and if the check fails it tries to read the meta from subgraphs and store the result if it finds any.
 
@@ -20,14 +20,14 @@ class MetaStore
 
 
 ```typescript
-// to instantiate
+// to instantiate with including default subgraphs
 const metaStore = new MetaStore();
 
 // or to instantiate with initial arguments
 const metaStore = await MetaStore.create(sgEndpoints, initCache);
 
 // add a new subgraph endpoint url to the subgraph list
-metaStore.addSubgraph("https://api.thegraph.com...")
+metaStore.addSubgraphs(["sg-url-1", "sg-url-2", ...])
 
 // update the store with a new MetaStore object (merges the stores)
 await metaStore.updateStore(newMetaStore)
@@ -38,11 +38,8 @@ await metaStore.updateStore(metaHash, metaBytes)
 // updates the meta store with a new meta by searching through subgraphs
 await metaStore.updateStore(metaHash)
 
-// to get an op meta from store
-const opMeta = metaStore.getOpMeta(metaHash);
-
-// to get a contract meta from store
-const contractMeta = metaStore.getContractMeta(metaHash);
+// to get a record from store
+const opMeta = metaStore.getRecord(metaHash);
 
 ```
 
@@ -62,11 +59,9 @@ const contractMeta = metaStore.getContractMeta(metaHash);
 
 |  Method | Description |
 |  --- | --- |
-|  [addSubgraph(subgraphUrl)](./metastore.md#addSubgraph-method-1) | Adds a new subgraph endpoint URL to the subgraph list |
-|  [getContractMeta(metaHash)](./metastore.md#getContractMeta-method-1) | Get contract meta for a given meta hash |
-|  [getContractMetaStore()](./metastore.md#getContractMetaStore-method-1) | Get the whole contract meta k/v store |
-|  [getOpMeta(metaHash)](./metastore.md#getOpMeta-method-1) | Get op meta for a given meta hash |
-|  [getOpMetaStore()](./metastore.md#getOpMetaStore-method-1) | Get the whole op meta k/v store |
+|  [addSubgraphs(subgraphUrls, sync)](./metastore.md#addSubgraphs-method-1) | Adds a new subgraphs endpoint URL to the subgraph list |
+|  [getCache()](./metastore.md#getCache-method-1) | Get the whole meta cache |
+|  [getRecord(metaHash)](./metastore.md#getRecord-method-1) | Get op meta for a given meta hash |
 |  [updateStore(metaStore)](./metastore.md#updateStore-method-1) | Updates the whole store with the given MetaStore instance |
 |  [updateStore(metaHash, metaBytes)](./metastore.md#updateStore-method-2) | Updates the meta store for the given meta hash and meta bytes |
 |  [updateStore(metaHash)](./metastore.md#updateStore-method-3) | Updates the meta store for the given meta hash by reading from subgraphs |
@@ -97,8 +92,9 @@ Creates a fresh instance of MetaStore object
 
 ```typescript
 static create(options?: {
+        includeDefaultSubgraphs?: boolean;
         subgraphs?: string[];
-        initMetas?: {
+        records?: {
             [hash: string]: string;
         };
     }): Promise<MetaStore>;
@@ -108,7 +104,7 @@ static create(options?: {
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  options | <pre>{&#010;    subgraphs?: string[];&#010;    initMetas?: {&#010;        [hash: string]: string;&#010;    };&#010;}</pre> | (optional) Options for instantiation |
+|  options | <pre>{&#010;    includeDefaultSubgraphs?: boolean;&#010;    subgraphs?: string[];&#010;    records?: {&#010;        [hash: string]: string;&#010;    };&#010;}</pre> | (optional) Options for instantiation |
 
 <b>Returns:</b>
 
@@ -116,83 +112,58 @@ static create(options?: {
 
 ## Method Details
 
-<a id="addSubgraph-method-1"></a>
+<a id="addSubgraphs-method-1"></a>
 
-### addSubgraph(subgraphUrl)
+### addSubgraphs(subgraphUrls, sync)
 
-Adds a new subgraph endpoint URL to the subgraph list
+Adds a new subgraphs endpoint URL to the subgraph list
 
 <b>Signature:</b>
 
 ```typescript
-addSubgraph(subgraphUrl: string): void;
+addSubgraphs(subgraphUrls: string[], sync?: boolean): Promise<void>;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  subgraphUrl | `string` | The subgraph endpoint URL |
+|  subgraphUrls | `string[]` | Array of subgraph endpoint URLs |
+|  sync | `boolean` | Option to search for settlement for unsetteled hashs in the cache with new added subgraphs, default is true |
 
 <b>Returns:</b>
 
-`void`
+`Promise<void>`
 
-<a id="getContractMeta-method-1"></a>
+<a id="getCache-method-1"></a>
 
-### getContractMeta(metaHash)
+### getCache()
 
-Get contract meta for a given meta hash
+Get the whole meta cache
 
 <b>Signature:</b>
 
 ```typescript
-getContractMeta(metaHash: string): string | undefined;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  metaHash | `string` | The meta hash |
-
-<b>Returns:</b>
-
-`string | undefined`
-
-The contract meta bytes as hex string if it exists in the store and `undefined` if it doesn't
-
-<a id="getContractMetaStore-method-1"></a>
-
-### getContractMetaStore()
-
-Get the whole contract meta k/v store
-
-<b>Signature:</b>
-
-```typescript
-getContractMetaStore(): {
-        [hash: string]: string | undefined;
+getCache(): {
+        [hash: string]: MetaRecord | undefined | null;
     };
 ```
 <b>Returns:</b>
 
 `{
-        [hash: string]: string | undefined;
+        [hash: string]: MetaRecord | undefined | null;
     }`
 
-The contract meta store
+<a id="getRecord-method-1"></a>
 
-<a id="getOpMeta-method-1"></a>
-
-### getOpMeta(metaHash)
+### getRecord(metaHash)
 
 Get op meta for a given meta hash
 
 <b>Signature:</b>
 
 ```typescript
-getOpMeta(metaHash: string): string | undefined;
+getRecord(metaHash: string): MetaRecord | undefined | null;
 ```
 
 #### Parameters
@@ -203,30 +174,9 @@ getOpMeta(metaHash: string): string | undefined;
 
 <b>Returns:</b>
 
-`string | undefined`
+`MetaRecord | undefined | null`
 
-The op meta bytes as hex string if it exists in the store and `undefined` if it doesn't
-
-<a id="getOpMetaStore-method-1"></a>
-
-### getOpMetaStore()
-
-Get the whole op meta k/v store
-
-<b>Signature:</b>
-
-```typescript
-getOpMetaStore(): {
-        [hash: string]: string | undefined;
-    };
-```
-<b>Returns:</b>
-
-`{
-        [hash: string]: string | undefined;
-    }`
-
-The op meta store
+A MetaRecord or undefined if no matching record exists or null if the record has no sttlement
 
 <a id="updateStore-method-1"></a>
 

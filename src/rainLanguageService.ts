@@ -1,8 +1,8 @@
-import { MetaStore } from "./parser/metaStore";
-import { getRainlangHover } from "./services/hover";
-import { RainDocument } from "./parser/rainDocument";
-import { getRainlangCompletion } from "./services/completion";
-import { getRainlangDiagnostics } from "./services/diagnostics";
+import { MetaStore } from "./dotrain/metaStore";
+import { getHover } from "./services/hover";
+import { RainDocument } from "./dotrain/rainDocument";
+import { getCompletion } from "./services/completion";
+import { getDiagnostics } from "./services/diagnostics";
 import {
     Hover, 
     Position, 
@@ -18,10 +18,15 @@ import {
  * Interface for Rain language services
  */
 export interface RainLanguageServices {
+    metaStore: MetaStore;
 	newRainDocument(textDocument: TextDocument): Promise<RainDocument>;
-    doValidation(textDocument: TextDocument): Promise<Diagnostic[]>;
-	doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
+    doValidate(textDocument: TextDocument): Promise<Diagnostic[]>;
+    doValidate(rainDocument: RainDocument): Promise<Diagnostic[]>;
     doHover(textDocument: TextDocument, position: Position): Promise<Hover | null>;
+    doHover(rainDocument: RainDocument, position: Position): Promise<Hover | null>;
+	doComplete(textDocument: TextDocument, position: Position): Promise<CompletionItem[] | null>;
+    doComplete(rainDocument: RainDocument, position: Position): Promise<CompletionItem[] | null>;
+
 }
 
 /**
@@ -41,27 +46,24 @@ export interface RainLanguageServices {
  * const errors = await langServices.doValidate(myTextDocument);
  * ```
  */
-export function getRainLanguageServices(params?: LanguageServiceParams): RainLanguageServices {
+export function getRainLanguageServices(params: LanguageServiceParams = {}): RainLanguageServices {
 
-    if (!params) params = {
-        metaStore: new MetaStore()
-    };
-    else {
-        if (!params.metaStore) params.metaStore = new MetaStore();
-    }
+    if (!params.metaStore) params.metaStore = new MetaStore();
+    const metaStore = params.metaStore;
 
     return {
+        metaStore,
         newRainDocument: async(textDocument) => {
-            return await RainDocument.create(textDocument, params?.metaStore);
+            return await RainDocument.create(textDocument, metaStore);
         },
-        doValidation: async(textDocument) => {
-            return getRainlangDiagnostics(textDocument, params);
+        doValidate: async(document) => {
+            return getDiagnostics(document as any, params);
         },
-        doComplete: async(textDocument, position) => {
-            return getRainlangCompletion(textDocument, position, params);
+        doComplete: async(document, position) => {
+            return getCompletion(document as any, position, params);
         },
-        doHover: async(textDocument, position) => {
-            return getRainlangHover(textDocument, position, params);
+        doHover: async(document, position) => {
+            return getHover(document as any, position, params);
         }
     };
 }

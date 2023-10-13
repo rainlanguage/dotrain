@@ -14,7 +14,7 @@ function deepFreeze(object: any): any;
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  object | `any` | object to freez |
+|  object | `any` | object to freeze |
 
 <b>Returns:</b>
 

@@ -10,12 +10,12 @@ export const deployerAddress = "0x092Fce581457894FDa5cdAF6208fe3E823543fb7";
 /**
  * Op Meta hash to get the meta bytes from
  */
-export const opMetaHash = "0x999dbdc57ac1b4b920864b6f2adc9d856689c422b889ebe19eeac1c30e7f962c";
+export const opMetaHash = "0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a89524929571d8f";
 
 /**
  * Contract Meta hash to get the contract meta bytes from
  */
-export const contractMetaHash = "0x10f97a047a9d287eb96c885188fbdcd3bf1a525a1b31270fc4f9f6a0bc9554a6";
+export const contractMetaHash = "0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c";
 
 /** 
  * Assert errors thrown by functions

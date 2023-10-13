@@ -17,7 +17,7 @@ function extractByBits(value: number, bits: [number, number], computation?: stri
 |  value | `number` | Operand value |
 |  bits | `[number, number]` | Bits indexes to extract |
 |  computation | `string` | Any arethmetical operation to apply to extracted value |
-|  computationVar | `string` | The variavle in compuation to solve for, default is "bits" |
+|  computationVar | `string` | The variable in computation to solve for, default is "bits" |
 
 <b>Returns:</b>
 

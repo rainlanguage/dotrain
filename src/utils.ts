@@ -1,6 +1,18 @@
 import stringMath from "string-math";
-import { ExpressionConfig, Position, Range } from "./rainLanguageTypes";
+import { EncodedMetaType, MetaSequence } from "./dotrain/metaStore";
 import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
+import { MAGIC_NUMBERS, cborDecode, isMagicNumber } from "@rainprotocol/meta";
+import { 
+    Range, 
+    Position, 
+    TextDocument, 
+    PositionOffset, 
+    ExpressionConfig, 
+    TextDocumentContentChangeEvent, 
+    WORD_PATTERN,
+    Namespace,
+    NamespaceNode
+} from "./rainLanguageTypes";
 
 
 /**
@@ -49,9 +61,10 @@ export const {
 
 
 /**
- * @public Method to be used as Tagged Templates to activate embedded rainlang in 
- * javascript to typescript that highlights the rainlang syntax. Requires rainlang 
- * vscode extension to be installed.
+ * @public 
+ * Method to be used as Tagged Templates to activate embedded rainlang in 
+ * javascript/typescript in vscode that highlights the rainlang syntax. 
+ * Requires rainlang vscode extension to be installed.
  */
 export function rainlang(
     stringChunks: TemplateStringsArray,
@@ -564,17 +577,35 @@ export function matchRange(range1: Range, range2: Range): boolean {
 }
 
 /**
+ * @public Type for result of matches found in a string
+ */
+export type ParsedChunk = [string, [number, number]];
+
+/**
+ * @public The namespace provides function to type checking
+ */
+export namespace ParsedChunk {
+    export function is(value: any): value is ParsedChunk {
+        return Array.isArray(value)
+            && value.length === 2
+            && typeof value[0] === "string"
+            && Array.isArray(value[1])
+            && value[1].length === 2
+            && value[1].every(v => typeof v === "number" && Number.isInteger(v));
+    }
+}
+
+/**
  * @public Parses an string by extracting matching strings
  * @param str - The string to parse
  * @param pattern - The pattern to search and extract
  * @param offset - (optional) The offset to factor in for returning matched positions
- * @returns An array of matching strings and their position inclusive at both ends
  */
 export function inclusiveParse(
     str: string, 
     pattern: RegExp,
     offset = 0
-): [string, [number, number]][] {
+): ParsedChunk[] {
     let flags = pattern.flags;
     if (!flags.includes("g")) flags += "g";
     if (!flags.includes("d")) flags += "d";
@@ -582,7 +613,7 @@ export function inclusiveParse(
         str.matchAll(new RegExp(pattern.source, flags))
     ).map((v: any) => 
         [v[0], [offset + v.indices[0][0], offset + v.indices[0][1] - 1]]
-    ) as [string, [number, number]][];
+    ) as ParsedChunk[];
 }
 
 /**
@@ -598,10 +629,10 @@ export function exclusiveParse(
     pattern: RegExp,
     offset = 0,
     includeEmptyEnds = false
-): [string, [number, number]][] {
+): ParsedChunk[] {
     const matches = inclusiveParse(str, pattern);
     const strings = str.split(pattern);
-    const result: [string, [number, number]][] = [];
+    const result: ParsedChunk[] = [];
     if (strings[0] || includeEmptyEnds) result.push([
         strings[0],
         [ 0 + offset, (matches.length ? matches[0][1][0] : str.length) + offset - 1 ]
@@ -619,4 +650,238 @@ export function exclusiveParse(
         ]);
     });
     return result;
+}
+
+/**
+ * @public Generates random integer between 0(inclusive) and max(exclusive)
+ * 
+ * @param max - The maximum range to generate random number
+ * @returns The random number
+ */
+export function getRandomInt(max: number) {
+    if (max <= 1) throw "max value must be greater than 1";
+    return Math.floor(Math.random() * max);
+}
+
+/**
+ * @public Method to get a line from a TextDocument
+ * 
+ * @param textDocument - The TextDocument instance
+ * @param line - The line to get its content
+ * @returns The text string of the line
+ */
+export function getLineText(textDocument: TextDocument, line: number): string {
+    if (line < 0) line = 0;
+    if (line >= textDocument.lineCount) return textDocument.getText(
+        Range.create(textDocument.lineCount - 1, 0, textDocument.lineCount, 0)
+    );
+    else return textDocument.getText(Range.create(line, 0, line + 1, 0));
+}
+
+/**
+ * @public Fills a poistion in a text with whitespaces by keeping line structure intact
+ * 
+ * @param text - The text
+ * @param position - The position offsets to include
+ * @returns The edited text string
+ */
+export function fillIn(
+    text: string, 
+    position: PositionOffset
+): string {
+    const _textDocument = TextDocument.create("virtual", "rainlang", 0, text);
+    const _changes: TextDocumentContentChangeEvent[] = [];
+    const _sPos = _textDocument.positionAt(position[0]);
+    const _ePos = _textDocument.positionAt(position[1] + 1);
+    if (_sPos.line === _ePos.line) _changes.push({
+        range: Range.create(_sPos, _ePos),
+        text: " ".repeat(_ePos.character - _sPos.character)
+    });
+    else {
+        for (let i = 0; i <= _ePos.line - _sPos.line; i++) {
+            if (i === 0) {
+                const _text = _textDocument.getText(
+                    Range.create(_sPos, {line: _sPos.line + 1, character: 0})
+                );
+                _changes.push({
+                    range: Range.create(_sPos, {line: _sPos.line + 1, character: 0}),
+                    text: _text.endsWith("\r\n") 
+                        ? " ".repeat(_text.length - 2) + _text.slice(-2)
+                        : " ".repeat(_text.length - 1) + _text.slice(-1)
+                });
+            }
+            else if (i === _ePos.line - _sPos.line) {
+                const _text = _textDocument.getText(
+                    Range.create({line: _ePos.line, character: 0}, _ePos)
+                );
+                _changes.push({
+                    range: Range.create({line: _ePos.line, character: 0}, _ePos),
+                    text: " ".repeat(_text.length)
+                });
+            }
+            else {
+                const _text = getLineText(_textDocument, _sPos.line + i);
+                _changes.push({
+                    range: Range.create(_sPos.line + i, 0, _sPos.line + i + 1, 0),
+                    text: _text.endsWith("\r\n") 
+                        ? " ".repeat(_text.length - 2) + _text.slice(-2) 
+                        : " ".repeat(_text.length - 1) + _text.slice(-1)
+                });
+            }
+        }
+    }
+    TextDocument.update(_textDocument, _changes, _textDocument.version);
+    return _textDocument.getText();
+}
+
+/**
+ * @public Fills a text with whitespaces excluding a position by keeping line structure intact
+ * 
+ * @param text - The text
+ * @param position - the position to exclude
+ * @returns The edited text string
+ */
+export function fillOut(
+    text: string, 
+    position: PositionOffset
+): string {
+    const _start = fillIn(text.slice(0, position[0]), [0, position[0] - 1]);
+    const _endText = text.slice(position[1] + 1);
+    const _end = fillIn(
+        _endText, 
+        [0, _endText.length - 1]
+    );
+    return _start + text.slice(position[0], position[1] + 1) + _end;
+}
+
+/**
+ * @public 
+ * Trims a text (removing start/end whitespaces) with reporting the number of deletions
+ * @param str - The text to trim
+ */
+export function trim(str: string): {text: string, startDelCount: number, endDelCount: number} {
+    return {
+        text: str.trim(),
+        startDelCount: str.length - str.trimStart().length,
+        endDelCount: str.length - str.trimEnd().length
+    };
+}
+
+/**
+ * @public Checks if metaBytes are a sequence or content or none
+ * @param metaBytes - The meta bytes to check the type for
+ */
+export function getEncodedMetaType(metaBytes: string): EncodedMetaType {
+    const _rainMetaHeader = MAGIC_NUMBERS.RAIN_META_DOCUMENT.toString(16).toLowerCase();
+    const _metaBytes = metaBytes.startsWith("0x") 
+        ? metaBytes.slice(2).toLowerCase() 
+        : metaBytes.toLowerCase();
+    if (!isBytesLike("0x" + _metaBytes)) throw "expected BytesLike parameter";
+    if (_metaBytes.startsWith(_rainMetaHeader)) {
+        try {
+            const _encoded = cborDecode(_metaBytes.replace(_rainMetaHeader, ""));
+            if (
+                Array.isArray(_encoded)
+                && _encoded.length > 0
+                && _encoded.every(v => v.toString() === "[object Map]"
+                    && isBytesLike(v.get(0))
+                    && isMagicNumber(v.get(1))
+                    && v.get(2) === "application/json"
+                )
+            ) return "sequence";
+            else throw "invalid rain meta";
+        }
+        catch { throw "invalid rain meta"; }
+    }
+    else {
+        try {
+            const _encoded = cborDecode(_metaBytes);
+            if (
+                Array.isArray(_encoded)
+                && _encoded.length === 1
+                && _encoded.every(v => v.toString() === "[object Map]"
+                    && isBytesLike(v.get(0))
+                    && isMagicNumber(v.get(1))
+                    && v.get(2) === "application/json"
+                )
+            ) return "single";
+            else throw "invalid rain meta";
+        }
+        catch { throw "invalid rain meta"; }
+    }
+}
+
+/**
+ * @public Method to check if a meta sequence is consumable for a dotrain
+ * @param sequence - The sequence to check
+ */
+export function isConsumableMetaSequence(sequence: MetaSequence): boolean {
+    if (
+        !sequence.length ||
+        (
+            sequence.filter(v => v.magicNumber === MAGIC_NUMBERS.CONTRACT_META_V1).length > 1
+            || sequence.filter(v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1).length > 1
+            || sequence.filter(v => v.magicNumber === MAGIC_NUMBERS.DOTRAIN).length > 1
+        )
+    ) return false;
+    else return true;
+}
+
+/**
+ * @public Method to check there is a duplicate id in 2 arrays of string
+ * @param arr1 - Firts string array
+ * @param arr2 - Second string array
+ */
+export function hasDuplicate(arr1: string[], arr2: string[]): boolean {
+    for (let i = 0; i < arr1.length; i++) {
+        if (arr2.includes(arr1[i])) return true;
+    }
+    return false;
+}
+
+/**
+ * @public Convert Rainlang numeric values to covenient numeric value
+ * @param value - The value to convert
+ */
+export function toConvNumber(value: string): string {
+    let _val;
+    if (isBigNumberish(value)) _val = value;
+    else if (value.startsWith("0b")) _val = Number(value).toString();
+    else {
+        const _nums = value.match(/\d+/g)!;
+        _val = _nums[0] + "0".repeat(Number(_nums[1]));
+    }
+    return _val;
+}
+
+/**
+ * @public Search in a Namespace for a given name
+ * @param name - The name
+ * @param namespace - The Namespace
+ * @returns An object that contains the found item and the parent namespace
+ */
+export function namespaceSearch(
+    name: string, 
+    namespace: Namespace
+): {
+    child: Namespace | NamespaceNode;
+    parent: Namespace;
+} {
+    const _names = exclusiveParse(name, /\./gd, undefined, true);
+    if (name.startsWith(".")) _names.shift();
+    if (_names.length > 32) throw "namespace too deep";
+    if (!_names[_names.length - 1][0]) throw "expected to end with a node";
+    if (_names.filter(v => !WORD_PATTERN.test(v[0])).length) throw "invalid word pattern";
+    const _result: any = {
+        child: namespace,
+        parent: null
+    };
+    for (let i = 0; i < _names.length; i++) {
+        _result.parent = _result.child;
+        if (_result.child[_names[i][0]]) {
+            _result.child = _result.child[_names[i][0]];
+        }
+        else throw "undefined identifier";
+    }
+    return _result;
 }

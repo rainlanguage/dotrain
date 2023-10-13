@@ -2,7 +2,7 @@
 
 # Variable ILLEGAL\_CHAR
 
-Illigal character pattern
+Illegal character pattern
 
 <b>Signature:</b>
 

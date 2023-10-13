@@ -1,12 +1,5 @@
-import { RainDocument } from "../parser/rainDocument";
-import { 
-    Range, 
-    ErrorCode, 
-    Diagnostic, 
-    TextDocument,     
-    DiagnosticSeverity,
-    LanguageServiceParams 
-} from "../rainLanguageTypes";
+import { RainDocument } from "../dotrain/rainDocument";
+import { Range, ErrorCode, Diagnostic, TextDocument, DiagnosticSeverity, LanguageServiceParams } from "../rainLanguageTypes";
 
 
 /**
@@ -16,7 +9,7 @@ import {
  * @param setting - (optional) Language service params
  * @returns A promise that resolves with diagnostics
  */
-export async function getRainlangDiagnostics(
+export async function getDiagnostics(
     document: TextDocument, 
     setting?: LanguageServiceParams
 ): Promise<Diagnostic[]>
@@ -28,12 +21,12 @@ export async function getRainlangDiagnostics(
  * @param setting - (optional) Language service params
  * @returns A promise that resolves with diagnostics
  */
-export async function getRainlangDiagnostics(
+export async function getDiagnostics(
     document: RainDocument,
     setting?: LanguageServiceParams
 ): Promise<Diagnostic[]>
 
-export async function getRainlangDiagnostics(
+export async function getDiagnostics(
     document: RainDocument | TextDocument, 
     setting?: LanguageServiceParams 
 ): Promise<Diagnostic[]> {
@@ -42,8 +35,11 @@ export async function getRainlangDiagnostics(
     let _td: TextDocument;
     if (document instanceof RainDocument) {
         _rd = document;
-        _td = _rd.getTextDocument();
-        if (setting?.metaStore) _rd.metaStore.updateStore(setting.metaStore);
+        _td = _rd.textDocument;
+        if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
+            _rd.metaStore.updateStore(setting.metaStore);
+            await _rd.parse();
+        }
     }
     else {
         _td = document;

@@ -2,12 +2,12 @@
 
 # Function rainlangd()
 
-Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rain document
+Rain Language Decompiler (rld), decompiles ExpressionConfig (bytes) to a valid Rainlang instance
 
 <b>Signature:</b>
 
 ```typescript
-function rainlangd(expressionConfig: ExpressionConfig, metaHash: string, metaStore?: MetaStore): Promise<RainDocument>;
+function rainlangd(expressionConfig: ExpressionConfig, opmetaHash: string, metaStore?: MetaStore): Promise<Rainlang>;
 ```
 
 ## Parameters
@@ -15,12 +15,12 @@ function rainlangd(expressionConfig: ExpressionConfig, metaHash: string, metaSto
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  expressionConfig | [ExpressionConfig](../types/expressionconfig.md) | ExpressionConfig to decompile |
-|  metaHash | `string` | The meta hash |
+|  opmetaHash | `string` | The op meta hash |
 |  metaStore | [MetaStore](../classes/metastore.md) | (optional) MetaStore object instance |
 
 <b>Returns:</b>
 
-`Promise<RainDocument>`
+`Promise<Rainlang>`
 
-A promise that resolves with a RainDocument
+A promise that resolves with a Rainlang instance
 

@@ -14,11 +14,22 @@ interface ValueASTNode
 
 |  Property | Type | Description |
 |  --- | --- | --- |
+|  [id](./valueastnode.md#id-property) | `string` |  |
 |  [lhsAlias](./valueastnode.md#lhsAlias-property) | `AliasASTNode[]` |  |
 |  [position](./valueastnode.md#position-property) | [PositionOffset](../types/positionoffset.md) |  |
 |  [value](./valueastnode.md#value-property) | `string` |  |
 
 ## Property Details
+
+<a id="id-property"></a>
+
+### id
+
+<b>Signature:</b>
+
+```typescript
+id?: string;
+```
 
 <a id="lhsAlias-property"></a>
 

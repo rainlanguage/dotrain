@@ -1,12 +1,14 @@
-import { MetaStore } from "./parser/metaStore";
-import { BigNumberish, BytesLike } from "./utils";
+import { Rainlang } from "./rainlang/rainlang";
+import { MetaStore } from "./dotrain/metaStore";
+import { BigNumberish, BytesLike, ParsedChunk } from "./utils";
+import { RainDocument } from "./dotrain/rainDocument";
 import { MarkupKind } from "vscode-languageserver-types";
-import { RainlangParser } from "./parser/rainlangParser";
+import { OpMeta } from "@rainprotocol/meta";
 import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
+
 
 export * from "vscode-languageserver-types";
 export { TextDocument, TextDocumentContentChangeEvent };
-
 
 /**
  * @public Illegal character pattern 
@@ -29,60 +31,101 @@ export const HASH_PATTERN = /^0x[a-zA-F0-9]{64}$/;
 export const NUMERIC_PATTERN = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
 
 /**
+ * @public Hex pattern
+ */
+export const HEX_PATTERN = /^0x[a-fA-F0-9]+$/;
+
+/**
+ * @public RainDocument Namespace pattern
+ */
+export const NAMESPACE_PATTERN = /^(\.?[a-z][0-9a-z-]*)*\.?$/;
+
+/**
+ * @public the default elided binding msg
+ */
+export const DEFAULT_ELISION = "elided binding, requires rebinding";
+
+/**
  * @public
  * Error codes of Rainlang/RainDocument problem and LSP Diagnostics
  */
 export enum ErrorCode {
-    UndefinedOpMeta = 0,
-    UndefinedWord = 1,
-    IlligalChar = 2,
-    UndefinedMeta = 3,
-    UndefinedExpression = 4,
+    IllegalChar = 0,
+    RuntimeError = 1,
+    CircularDependency = 2,
+    UnresolvableDependencies = 3,
+    DeepImport = 4,
+    DeepNamespace = 5,
+    CorruptImport = 6,
+    ForbiddenId = 7,
+    ElidedBinding = 8,
+    SingletonWords = 9,
+    MultipleWords = 10,
+    SingleWordModify = 11,
 
-    InvalidWordPattern = 0x101,
-    InvalidExpression = 0x102,
-    InvalidNestedNode = 0x103,
-    InvalidSelfReferenceLHS = 0x104,
-    InvalidHash = 0x105,
-    InvalidOpMeta = 0x106,
-    InvalidContractMeta = 0x107,
-    InvalidImport = 0x108,
-    InvalidEmptyExpression = 0x109,
-    InvalidExpressionKey = 0x110,
+    UndefinedWord = 0x101,
+    UndefinedOpMeta = 0x102,
+    UndefinedImport = 0x103,
+    UndefinedQuote = 0x104,
+    UndefinedOpcode = 0x105,
+    UndefinedIdentifier = 0x106,
 
-    UnexpectedEndOfComment = 0x201,
-    UnexpectedClosingParen = 0x202,
-    UnexpectedExpressionKeyUsage = 0x203,
-    UnexpectedFragment = 0x204,
-    UnexpectedExpression = 0x205,
-    UnexpectedString = 0x206,
-    // UnexpectedRHSComment = 0x207,
+    InvalidWordPattern = 0x201,
+    InvalidExpression = 0x202,
+    InvalidNestedNode = 0x203,
+    InvalidSelfReference = 0x204,
+    InvalidHash = 0x205,
+    InvalidOpMeta = 0x206,
+    InvalidContractMeta = 0x207,
+    InvalidImport = 0x208,
+    InvalidEmptyBinding = 0x209,
+    InvalidBindingId = 0x210,
+    InvalidQuote = 0x211,
+    InvalidOperandArg = 0x212,
+    InvalidMetaSequence = 0x213,
+    InvalidReference = 0x214,
+    InvalidRainDocument = 0x215,
+    // InvalidElision = 0x214,
 
-    ExpectedOpcode = 0x301,
-    ExpectedSpace = 0x302,
-    ExpectedOperandArgs = 0x303,
-    ExpectedClosingParen = 0x304,
-    ExpectedOpeningParen = 0x305,
-    ExpectedClosingAngleBracket = 0x306,
-    ExpectedConstant = 0x307,
+    UnexpectedToken = 0x301,
+    UnexpectedClosingParen = 0x302,
+    UnexpectedNamespacePath = 0x303,
+    UnexpectedRebinding = 0x304,
+    UnexpectedClosingAngleParen = 0x305,
+    UnexpectedEndOfComment = 0x306,
+    UnexpectedComment = 0x307,
+    // UnexpectedSpace = 0x309,
+    // UnexpectedBindingIdUsage = 0x303,
+    // UnexpectedFragment = 0x304,
+    // UnexpectedExpression = 0x305,
 
-    MismatchRHS = 0x401,
-    MismatchLHS = 0x402,
-    MismatchOperandArgs = 0x403,
+    ExpectedOpcode = 0x401,
+    ExpectedSpace = 0x402,
+    ExpectedOperandArgs = 0x403,
+    ExpectedClosingParen = 0x404,
+    ExpectedOpeningParen = 0x405,
+    ExpectedClosingAngleBracket = 0x406,
+    ExpectedName = 0x407,
+    ExpectedSemi = 0x408,
+    ExpectedHash = 0x409,
+    ExpectedElisionOrRebinding = 0x410,
+    // ExpectedImportIdentifier = 0x409,
+    // ExpectedConstant = 0x407,
 
-    OutOfRangeInputs = 0x501,
-    OutOfRangeOperandArgs = 0x502,
-    OutOfRangeValue = 0x503,
+    MismatchRHS = 0x501,
+    MismatchLHS = 0x502,
+    MismatchOperandArgs = 0x503,
 
-    DuplicateAlias = 0x801,
-    DuplicateContextAlias = 0x802,
-    DuplicateExpressionKey = 0x803,
+    OutOfRangeInputs = 0x601,
+    OutOfRangeOperandArgs = 0x602,
+    OutOfRangeValue = 0x603,
 
-    UnknownOp = 0x700,
-
-    RuntimeError = 0x800,
-
-    CircularDependency = 0x900
+    DuplicateAlias = 0x701,
+    DuplicateIdentifier = 0x702,
+    DuplicateImportStatement = 0x703,
+    DuplicateImport = 0x704
+    // DuplicateContextAlias = 0x702,
+    // DuplicateBindingId = 0x703,
 }
 
 /**
@@ -221,7 +264,6 @@ export type PositionOffset = [number, number];
  * @public The namespace provides functionality to type check
  */
 export namespace PositionOffset {
-
     /**
      * @public Checks if a value is a valid PositionOffset
      * @param value - The value to check
@@ -247,7 +289,6 @@ export interface Problem {
  * @public The namespace provides functionality to type check
  */
 export namespace Problem {
-
     /**
      * @public Checks if a value is a valid ProblemASTNode
      * @param value - The value to check
@@ -268,13 +309,13 @@ export interface ValueASTNode {
     value: string;
     position: PositionOffset;
     lhsAlias?: AliasASTNode[];
+    id?: string;
 }
 
 /**
  * @public The namespace provides functionality to type check
  */
 export namespace ValueASTNode {
-
     /**
      * @public Checks if a value is a valid ValueASTNode
      * @param value - The value to check
@@ -308,6 +349,8 @@ export interface OpASTNode {
     position: PositionOffset;
     parens: PositionOffset;
     parameters: ASTNode[];
+    isCtx?: boolean;
+    lhsAlias?: AliasASTNode[];
     operandArgs?: {
         position: PositionOffset;
         args: {
@@ -317,14 +360,12 @@ export interface OpASTNode {
             description: string;
         }[];
     };
-    lhsAlias?: AliasASTNode[];
 }
 
 /**
  * @public The namespace provides functionality to type check
  */
 export namespace OpASTNode {
-
     /**
      * @public Checks if a value is a valid OpASTNode
      * @param value - The value to check
@@ -381,7 +422,6 @@ export interface AliasASTNode {
  * @public The namespace provides functionality to type check
  */
 export namespace AliasASTNode {
-
     /**
      * @public Checks if a value is a valid AliasASTNode
      * @param value - The value to check
@@ -413,7 +453,6 @@ export interface Comment {
  * @public The namespace provides functionality to type check
  */
 export namespace Comment {
-
     /**
      * @public Checks if a value is a valid CommentASTNode
      * @param value - The value to check
@@ -431,15 +470,23 @@ export namespace Comment {
  */
 export interface Import {
     name: string;
+    namePosition: PositionOffset;
     hash: string;
+    hashPosition: PositionOffset;
     position: PositionOffset;
+    problems: Problem[];
+    reconfigs?: [ParsedChunk, ParsedChunk][];
+    sequence?: {
+        opmeta?: OpMeta[];
+        ctxmeta?: ContextAlias[];
+        dotrain?: RainDocument;
+    };
 }
 
 /**
  * @public The namespace provides functionality to type check
  */
 export namespace Import {
-
     /**
      * @public Checks if a value is a valid ImportASTNode
      * @param value - The value to check
@@ -449,6 +496,8 @@ export namespace Import {
             && typeof value === "object"
             && typeof value.name === "string"
             && typeof value.hash === "string"
+            && PositionOffset.is(value.namePosition)
+            && PositionOffset.is(value.hashPosition)
             && PositionOffset.is(value.position);
     }
 }
@@ -462,7 +511,6 @@ export type ASTNode = ValueASTNode | OpASTNode | AliasASTNode;
  * @public The namespace provides functionality to type check
  */
 export namespace ASTNode {
-
     /**
      * @public Checks if a value is a valid ASTNode
      * @param value - The value to check
@@ -482,46 +530,29 @@ export type RainlangAST = {
         nodes: ASTNode[]; 
         position: PositionOffset; 
         aliases: AliasASTNode[];
-    }[]
-}
+    }[];
+    position: PositionOffset;
+}[];
 
 /**
  * @public The namespace provides functionality to type check
  */
 export namespace RainlangAST {
-
     /**
      * @public Checks if a value is a valid RainlangAST
      * @param value - The value to check
      */
     export function is(value: any): value is RainlangAST {
-        return value !== null
-            && typeof value === "object"
-            && Array.isArray(value.lines)
-            && value.lines.every((v: any) => PositionOffset.is(v.position)
-                    && Array.isArray(v.nodes)
-                    && v.nodes.every((e: any) => ASTNode.is(e))
-                    && Array.isArray(v.aliases)
-                    && v.aliases.every((e: any) => AliasASTNode.is(e))
-            );
-    }
-
-    /**
-     * @public Checks if a value is a valid RainlangAST Constant
-     * @param value - The value to check
-     */
-    export function isConstant(value: any): boolean {
-        return value !== null
-            && typeof value === "object"
-            && Array.isArray(value.lines)
-            && value.lines.length === 1
-            && value.lines.every((v: any) => PositionOffset.is(v.position)
-                    && Array.isArray(v.nodes)
-                    && v.nodes.length === 1
-                    && ValueASTNode.is(v.nodes[0])
-                    && typeof v.nodes[0].lhsAlias === "undefined"
-                    && Array.isArray(v.aliases)
-                    && v.aliases.length === 0
+        return Array.isArray(value)
+            && value.every(v => v !== null
+                && typeof v === "object"
+                && Array.isArray(v.lines)
+                && v.lines.every((l: any) => PositionOffset.is(l.position)
+                        && Array.isArray(l.nodes)
+                        && l.nodes.every((n: any) => ASTNode.is(n))
+                        && Array.isArray(l.aliases)
+                        && l.aliases.every((n: any) => AliasASTNode.is(n))
+                )
             );
     }
 
@@ -530,17 +561,19 @@ export namespace RainlangAST {
      * @param value - The value to check
      */
     export function isExpression(value: any): boolean {
-        return value !== null
-            && typeof value === "object"
-            && Array.isArray(value.lines)
-            && value.lines.length > 0
-            && value.lines.every((v: any) => PositionOffset.is(v.position)
-                && Array.isArray(v.nodes)
-                && Array.isArray(v.aliases)
-                && (
-                    v.aliases.length > 0 ||
-                    v.nodes.every(
-                        (e: any) => ASTNode.is(e) && e.lhsAlias !== undefined
+        return Array.isArray(value)
+            && value.every(v => v !== null
+                && typeof v === "object"
+                && Array.isArray(v.lines)
+                && v.lines.length > 0
+                && v.lines.every((l: any) => PositionOffset.is(l.position)
+                    && Array.isArray(l.nodes)
+                    && Array.isArray(l.aliases)
+                    && (
+                        l.aliases.length > 0 ||
+                        l.nodes.every(
+                            (n: any) => ASTNode.is(n) && n.lhsAlias !== undefined
+                        )
                     )
                 )
             );
@@ -548,51 +581,52 @@ export namespace RainlangAST {
 }
 
 /**
- * @public Type for a named expression
+ * @public Type for a binding (named expressions)
  */
-export type NamedExpression = {
+export type Binding = {
     name: string;
     namePosition: PositionOffset;
-    text: string;
+    content: string;
+    contentPosition: PositionOffset;
     position: PositionOffset;
-    parseObj?: RainlangParser;
+    problems: Problem[];
+    dependencies: string[];
+    elided?: string;
+    constant?: string;
+    exp?: Rainlang;
 }
 
 /**
  * @public The namespace provides functionality to type check
  */
-export namespace NamedExpression {
-
+export namespace Binding {
     /**
      * @public Checks if a value is a valid NamedExpression
      * @param value - The value to check
      */
-    export function is(value: any): value is NamedExpression {
+    export function is(value: any): value is Binding {
         return value !== null
             && typeof value === "object"
             && typeof value.name === "string"
             && PositionOffset.is(value.namePosition)
-            && typeof value.text === "string"
+            && typeof value.content === "string"
+            && PositionOffset.is(value.contentPosition)
             && PositionOffset.is(value.position)
             && (
-                typeof value.parseObj === "undefined" ||
-                value.parseObj instanceof RainlangParser
+                (
+                    value.exp instanceof Rainlang && 
+                    typeof value.elided === "undefined" && 
+                    typeof value.constant === "undefined"
+                ) || (
+                    typeof value.elided === "string" && 
+                    typeof value.exp === "undefined" && 
+                    typeof value.constant === "undefined"
+                ) || (
+                    typeof value.constant === "string" && 
+                    typeof value.exp === "undefined" && 
+                    typeof value.elided === "undefined"
+                )
             );
-    }
-
-    /**
-     * @public Checks if a value is a valid NamedExpression Constant
-     * @param value - The value to check
-     */
-    export function isConstant(value: any): boolean {
-        return value !== null
-            && typeof value === "object"
-            && typeof value.name === "string"
-            && PositionOffset.is(value.namePosition)
-            && typeof value.text === "string"
-            && PositionOffset.is(value.position)
-            && value.parseObj instanceof RainlangParser
-            && RainlangAST.isConstant(value.parseObj.ast);
     }
 
     /**
@@ -604,10 +638,119 @@ export namespace NamedExpression {
             && typeof value === "object"
             && typeof value.name === "string"
             && PositionOffset.is(value.namePosition)
-            && typeof value.text === "string"
+            && typeof value.content === "string"
+            && PositionOffset.is(value.contentPosition)
             && PositionOffset.is(value.position)
-            && value.parseObj instanceof RainlangParser
-            && RainlangAST.isExpression(value.parseObj.ast);
+            && value.exp instanceof Rainlang
+            && RainlangAST.isExpression(value.exp.ast);
+    }
+}
+
+/**
+ * @public Type for a namespace node
+ */
+export type NamespaceNode = { 
+    Hash: string;
+    ImportIndex: number;
+    Element: OpMeta | OpMeta[] | Binding | ContextAlias 
+}
+
+/**
+ * @public Type for a namespace in dotrain
+ */
+export type Namespace = { [key: string]: Namespace | NamespaceNode }
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace Namespace {
+    /**
+     * @public Checks if a value is a valid Namespace
+     * @param value - The value to check
+     */
+    export function is(value: any): value is Namespace {
+        return value !== null
+            && typeof value === "object"
+            && (
+                (
+                    Object.keys(value).every(v => WORD_PATTERN.test(v)) && 
+                    Object.values(value).every(v => Namespace.is(v))
+                ) || (
+                    Object.entries(value).every(v => 
+                        (
+                            v[0] === "Element" && (
+                                ContextAlias.is(v[1]) || 
+                                Binding.is(v[1]) || 
+                                OpMeta.is(v[1]) || 
+                                (Array.isArray(v[1]) && v[1].every(e => OpMeta.is(e)))
+                            )
+                        ) ||
+                        (
+                            v[0] === "Hash" && typeof v[1] === "string" && HASH_PATTERN.test(v[1])
+                        ) ||
+                        (
+                            v[0] === "ImportIndex" && typeof v[1] === "number" && !isNaN(v[1])
+                        )
+                    )
+                )
+            );
+    }
+
+    export function isNamespace(value: any): value is Namespace {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.ImportIndex === "undefined"
+            && typeof value.Element === "undefined";
+    }
+
+    export function isNode(value: any): value is NamespaceNode {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.ImportIndex === "number"
+            && typeof value.Element !== "undefined";
+    }
+
+    export function isWords(value: any): value is { 
+        ImportIndex: number; 
+        Element: OpMeta[]
+    } {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.ImportIndex === "number"
+            && Array.isArray(value.Element);
+    }
+
+    export function isWord(value: any): value is { 
+        ImportIndex: number; 
+        Element: OpMeta
+    } {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.ImportIndex === "number"
+            && "Element" in value
+            && "operand" in value.Element;
+    }
+
+    export function isContextAlias(value: any): value is { 
+        ImportIndex: number; 
+        Element: ContextAlias
+    } {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.ImportIndex === "number"
+            && "Element" in value
+            && "column" in value.Element;
+    }
+
+    export function isBinding(value: any): value is { 
+        ImportIndex: number; 
+        Element: Binding
+    } {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.ImportIndex === "number"
+            && "Element" in value
+            && "content" in value.Element;
     }
 }
 
@@ -619,4 +762,25 @@ export type ContextAlias = {
     desc: string;
     column: number;
     row: number;
+}
+
+/**
+ * @public The namespace provides functionality to type check
+ */
+export namespace ContextAlias {
+    /**
+     * @public Checks if a value is a valid ContextAlias
+     * @param value - The value to check
+     */
+    export function is(value: any): value is Namespace {
+        return value !== null
+            && typeof value === "object"
+            && typeof value.name === "string"
+            && WORD_PATTERN.test(value.name)
+            && typeof value.desc === "string"
+            && typeof value.column === "number"
+            && Number.isInteger(value.column)
+            && typeof value.row === "number"
+            && (isNaN(value.row) || Number.isInteger(value.row));
+    }
 }

@@ -1,16 +1,17 @@
 import assert from "assert";
+import { METAS } from "../fixtures/opmeta";
 import { contractMetaHash, opMetaHash } from "../utils";
-import { OpMeta, OpMetaSchema, metaFromBytes } from "@rainprotocol/meta";
+import { metaFromBytes, MAGIC_NUMBERS, toOpMeta } from "@rainprotocol/meta";
 import {
     Position,
     rainlang,
     MetaStore, 
-    RainDocument, 
     TextDocument,
+    RainDocument, 
+    getCompletion,
     CompletionItem,
     CompletionItemKind, 
     LanguageServiceParams, 
-    getRainLanguageServices, 
 } from "../../src";
 
 
@@ -20,13 +21,12 @@ async function testCompletion(
     expectedCompletions: CompletionItem[] | null,
     serviceParams?: LanguageServiceParams
 ) {
-    const actualCompletions = await getRainLanguageServices(serviceParams).doComplete(
-        TextDocument.create("file", "rainlang", 1, text), 
-        position
+    const actualCompletions = await getCompletion(
+        TextDocument.create("completion.test.rain", "rainlang", 1, text), 
+        position,
+        serviceParams
     );
-    if (expectedCompletions === null) {
-        assert.ok(actualCompletions === null);
-    }
+    if (expectedCompletions === null) assert.ok(actualCompletions === null);
     else {
         assert.ok(actualCompletions?.length == expectedCompletions?.length);
         expectedCompletions.forEach((item, i) => {
@@ -36,46 +36,50 @@ async function testCompletion(
     }
 }
 
-describe("Rainlang Code Completion Service Tests", async function () {
+describe("LSP Code Completion Language Service Tests", async function () {
     const store = new MetaStore();
     let AllOpcodeCompletions: CompletionItem[];
 
     before(async () => {
-        await store.updateStore(opMetaHash);
-        await store.updateStore(contractMetaHash);
-        const OpcodeMetas = metaFromBytes(
-            store.getOpMeta(opMetaHash)!, 
-            OpMetaSchema
-        ) as OpMeta[];
-        AllOpcodeCompletions = OpcodeMetas.map(v => {
-            return {
-                label: v.name,
-                kind: CompletionItemKind.Function,
-            };
+        await store.updateStore(opMetaHash, METAS.validOpMeta.metaBytes);
+        await store.updateStore(contractMetaHash, METAS.validContractMeta.metaBytes);
+        const OpcodeMetas = toOpMeta(metaFromBytes(
+            store.getRecord(opMetaHash)!.sequence.find(
+                v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1
+            )!.content
+        ));
+        AllOpcodeCompletions = OpcodeMetas.flatMap(v => {
+            return [
+                {
+                    label: v.name,
+                    kind: CompletionItemKind.Function,
+                },
+                ...(
+                    v.aliases ? v.aliases.map(e => {
+                        return {
+                            label: e,
+                            kind: CompletionItemKind.Function
+                        };
+                    })
+                    : []
+                )
+            ];
         });
-        OpcodeMetas.forEach(v => v.aliases?.forEach(e => {
-            AllOpcodeCompletions.push({
-                label: e,
-                kind: CompletionItemKind.Function,
-            });
+        ["infinity", "max-uint256" ,"max-uint-256"].forEach(v => AllOpcodeCompletions.unshift({
+            label: v,
+            kind: CompletionItemKind.Constant
         }));
     });
 
     it("should provide all opcode suggestions for rhs when there is no lhs aliases", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
-        const _rd = await RainDocument.create(
-            TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} #exp _: `), 
-            store
-        );
-        Object.keys(_rd.getConstants()).forEach(v => {
-            _allCompletions.unshift({
-                label: v,
-                kind: CompletionItemKind.Constant,
-            });
+        _allCompletions.unshift({
+            label: "expression",
+            kind: CompletionItemKind.Class
         });
         await testCompletion(
-            rainlang`@${opMetaHash} _: `, 
-            Position.create(0, 76),
+            rainlang`@${opMetaHash} #expression _: `, 
+            Position.create(0, 89),
             _allCompletions,
             { metaStore: store }
         );
@@ -110,19 +114,9 @@ describe("Rainlang Code Completion Service Tests", async function () {
 
     it("should include lhs alias in suggestions", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
-        const _rd = await RainDocument.create(
-            TextDocument.create("file", "rainlang", 0, rainlang`@${opMetaHash} name: n`), 
-            store
-        );
-        Object.keys(_rd.getConstants()).forEach(v => {
-            _allCompletions.unshift({
-                label: v,
-                kind: CompletionItemKind.Constant,
-            });
-        });
         await testCompletion(
-            rainlang`@${opMetaHash} #exp name: n`,  
-            Position.create(0, 80),
+            rainlang`@${opMetaHash} #expr name: n`,  
+            Position.create(0, 81),
             [
                 {
                     label: "name",
@@ -141,9 +135,60 @@ describe("Rainlang Code Completion Service Tests", async function () {
             _: counterpa`,  
             Position.create(2, 24),
             [{
-                label: "counterparty",
+                label: "counterparty-address",
                 kind: CompletionItemKind.Function
             }],
+            { metaStore: store }
+        );
+    });
+    it("should include root namespaces items in suggestions", async () => {
+        const _expression = rainlang`@${opMetaHash}
+#row
+1
+
+#main
+_: .`;
+        const _dotrain = await RainDocument.create(_expression, store);
+        const _ns = _dotrain.namespace;
+        await testCompletion(
+            _expression,  
+            Position.create(5, 4),
+            Object.entries(_ns).map(v => {
+                return {
+                    label: v[0],
+                    kind: !("Element" in v[1]) 
+                        ? CompletionItemKind.Field 
+                        : "content" in v[1].Element 
+                            ? CompletionItemKind.Class 
+                            : CompletionItemKind.Function
+                };
+            }).filter(v => v.label !== "Words"),
+            { metaStore: store }
+        );
+    });
+
+    it("should include correct namespaces items in suggestions", async () => {
+        const _expression = rainlang`@${opMetaHash}
+#row
+1
+
+#main
+_: .r`;
+        const _dotrain = await RainDocument.create(_expression, store);
+        const _ns = _dotrain.namespace;
+        await testCompletion(
+            _expression,  
+            Position.create(5, 5),
+            Object.entries(_ns).map(v => {
+                return {
+                    label: v[0],
+                    kind: !("Element" in v[1]) 
+                        ? CompletionItemKind.Field 
+                        : "content" in v[1].Element 
+                            ? CompletionItemKind.Class 
+                            : CompletionItemKind.Function
+                };
+            }).filter(v => v.label !== "Words").filter(v => v.label.includes("r")),
             { metaStore: store }
         );
     });
