@@ -6,6 +6,7 @@ import {
     AST, 
     Range, 
     Position, 
+    Namespace,
     TextDocument, 
     ExpressionConfig, 
     TextDocumentContentChangeEvent 

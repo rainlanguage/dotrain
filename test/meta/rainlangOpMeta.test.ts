@@ -23,7 +23,7 @@ describe("Op Meta Tests", async function () {
         await assertError(
             async () =>
                 await dotrainc(rainlang`@${opMetaHash + "ab"} #expression _: add(1 2);`, ["expression"], store),
-            "expected a valid name or hash",
+            "invalid hash, must be 32 bytes",
             "Invalid Error"
         );
     });

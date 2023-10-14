@@ -56,13 +56,16 @@ export async function getCompletion(
         _rd = document;
         _td = _rd.textDocument;
         if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
-            _rd.metaStore.update(setting.metaStore);
+            _rd.metaStore.updateStore(setting.metaStore);
+            if (setting?.noMetaSearch) (_rd as any)._shouldSearch = false;
             await _rd.parse();
         }
     }
     else {
         _td = document;
-        _rd = await RainDocument.create(document, setting?.metaStore);
+        _rd = new RainDocument(document, setting?.metaStore);
+        if (setting?.noMetaSearch) (_rd as any)._shouldSearch = false;
+        await _rd.parse();
     }
     const format = setting
         ?.clientCapabilities
