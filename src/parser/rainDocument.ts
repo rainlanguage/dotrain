@@ -74,6 +74,7 @@ export class RainDocument {
     private importDepth = 0;
     private _ignoreAM = false;
     private _ignoreUAM = false;
+    private _shouldSearch = true;
 
     /**
      * @public Constructs a new RainDocument instance, should not be used for instantiating, use "creat()" instead
@@ -428,12 +429,13 @@ export class RainDocument {
                         []
                     ))[0]?.toLowerCase();
                     let _authoringMetaBytes = await this.metaStore.getAuthoringMeta(
-                        _authoringMetaHash
+                        _authoringMetaHash,
+                        "authoring-meta-hash"
                     );
                     if (!_authoringMetaBytes) _authoringMetaBytes = 
                         await this.metaStore.getAuthoringMeta(
                             await Meta.hash([meta], false),
-                            true
+                            "deployer-bytecode-hash"
                         );
                     if (!_authoringMetaBytes) {
                         if (!this._ignoreUAM) this.problems.push({
@@ -522,8 +524,11 @@ export class RainDocument {
                 if (HASH_PATTERN.test(_nameOrHash[0])) {
                     _result.hash = _nameOrHash[0].toLowerCase();
                     _result.hashPosition = _nameOrHash[1];
-                    _metaPromise = this.metaStore.update(_result.hash);
-                    _metaPromise.then(() => _record = this.metaStore.getMeta(_result.hash));
+                    if (this._shouldSearch) {
+                        _metaPromise = this.metaStore.update(_result.hash);
+                        _metaPromise.then(() => _record = this.metaStore.getMeta(_result.hash));
+                    }
+                    else _record = this.metaStore.getMeta(_result.hash);
                 }
                 else _result.problems.push({
                     msg: "invalid hash, must be 32 bytes",
@@ -543,8 +548,13 @@ export class RainDocument {
                         else {
                             _result.hash = _hash[0].toLowerCase();
                             _result.hashPosition = _hash[1];
-                            _metaPromise = this.metaStore.update(_result.hash);
-                            _metaPromise.then(() => _record = this.metaStore.getMeta(_result.hash));
+                            if (this._shouldSearch) {
+                                _metaPromise = this.metaStore.update(_result.hash);
+                                _metaPromise.then(
+                                    () => _record = this.metaStore.getMeta(_result.hash)
+                                );
+                            }
+                            else _record = this.metaStore.getMeta(_result.hash);
                         }
                     }
                     else _result.problems.push({
@@ -572,11 +582,11 @@ export class RainDocument {
         if (_metaPromise !== undefined) {
             // await this.metaStore.update(_result.hash as string);
             // const _record = this.metaStore.getMeta(_result.hash as string);
-            await _metaPromise;
+            if (this._shouldSearch) await _metaPromise;
             if (!_record) _result.problems.push({
                 msg: `cannot find any settlement for hash: ${_result.hash}`,
                 position: _result.hashPosition,
-                code: ErrorCode.UndefinedImport
+                code: ErrorCode.UndefinedMeta
             });
             else {
                 let _metaMaps;
@@ -671,7 +681,6 @@ export class RainDocument {
             this._ignoreUAM = true;
         if (this._ignoreAM) this._ignoreUAM = true;
 
-        // const importPromises = [];
         const _importStatements = exclusiveParse(document, /@/gd, undefined, true).slice(1);
         for (let i = 0; i < _importStatements.length; i++) {
             // filter out irrevelant parts
@@ -680,12 +689,6 @@ export class RainDocument {
                 _importStatements[i][0] = _importStatements[i][0].slice(0, _index);
                 _importStatements[i][1][1] = _importStatements[i][1][0] + _index - 1;
             }
-            // if (this.importDepth < 32) importPromises.push(this.handleImport(_importStatements[i]));
-            // else this.problems.push({
-            //     msg: "import too deep",
-            //     position: [_importStatements[i][1][0] - 1,_importStatements[i][1][1]],
-            //     code: ErrorCode.DeepImport
-            // });
             document = fillIn(
                 document, 
                 [_importStatements[i][1][0] - 1, _importStatements[i][1][1]]
@@ -943,7 +946,7 @@ export class RainDocument {
             if (_invalidId = !name.match(/^[a-z][a-z0-9-]*$/)) this.problems.push({
                 msg: "invalid binding name",
                 position: namePosition,
-                code: ErrorCode.InvalidBindingId
+                code: ErrorCode.InvalidBindingIdentifier
             });
             if (_dupId = Object.keys(this.namespace).includes(name)) this.problems.push({
                 msg: "duplicate identifier",
@@ -1053,7 +1056,7 @@ export class RainDocument {
                         // this.bytecode,
                         "0",
                         {
-                            thisBinding: v,
+                            // thisBinding: v,
                             namespaces: this.namespace,
                             ignoreAuthoringMeta: this._ignoreUAM
                             // comments: this.comments.filter(e => 

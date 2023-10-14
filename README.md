@@ -89,33 +89,40 @@ npx --p @rainprotocol/rainlang dotrain [options] --yes
     Options:
       -c, --compile <entrypoints...>  Compiles specified entrypoints of --input .rain file to --output .json file
       -i, --input <path>              Path to .rain file
-      -o, --output <path>             Path to output file, will output .json
-      -b, --batch-compile <path>      Path to a json file of mappings of .rain files paths, entrypoints and output .json files paths to batch compile
+      -o, --output <path>             Path to output file, output format is .json
+      -b, --batch-compile <path>      Path to a json file that contains mappings details for compiling in batch, the path to the mapping array in the Json file can be specified as well with dot spearated keys (example 'compile.batch'), a mapping is an array of objects each having 3 keys 'input (path to .rain file)', 'output (path to output .json file)' and 'entrypoints (array of binding keys to compile)'
       -s, --stdout                    Log the result in terminal
       -V, --version                   output the version number
       -h, --help                      display help for command
 
 <br>
 
-example of a mapping file content (see `./example.mapping.json`):
+example of a mapping file content and its executing command (see `./example.mapping.json`):
+```bash
+dotrain --batch ./path/to/file.json compile.batch
+```
 ```json
-[
-  {
-    "input": "./path/to/dotrain1.rain",
-    "output": "./path/to/compiled1.json",
-    "entrypoints": [
-      "exp-1", 
-      "exp-2"
-    ]
-  },
-  {
-    "input": "./path/to/dotrain12.rain",
-    "output": "./path/to/compiled2.json",
-    "entrypoints": [
-      "main"
+{
+  "compile": {
+    "batch": [
+      {
+        "input": "./path/to/dotrain1.rain",
+        "output": "./path/to/compiled1.json",
+        "entrypoints": [
+          "exp-1", 
+          "exp-2"
+        ]
+      },
+      {
+        "input": "./path/to/dotrain12.rain",
+        "output": "./path/to/compiled2.json",
+        "entrypoints": [
+          "main"
+        ]
+      }
     ]
   }
-]
+}
 ```
 
 ## **Developers**

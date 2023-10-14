@@ -14,7 +14,7 @@ interface RainLanguageServices
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [metaStore](./rainlanguageservices.md#metaStore-property) | [MetaStore](../classes/metastore.md) |  |
+|  [metaStore](./rainlanguageservices.md#metaStore-property) | `Meta.Store` |  |
 
 ## Methods
 
@@ -37,7 +37,7 @@ interface RainLanguageServices
 <b>Signature:</b>
 
 ```typescript
-metaStore: MetaStore;
+metaStore: Meta.Store;
 ```
 
 ## Method Details

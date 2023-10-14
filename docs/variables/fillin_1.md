@@ -7,7 +7,7 @@ Fills a poistion in a text with whitespaces by keeping line structure intact
 <b>Signature:</b>
 
 ```typescript
-function fillIn(text: string, position: PositionOffset): string;
+function fillIn(text: string, position: AST.Offsets): string;
 ```
 
 ## Parameters
@@ -15,7 +15,7 @@ function fillIn(text: string, position: PositionOffset): string;
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  text | `string` | The text |
-|  position | [PositionOffset](../types/positionoffset.md) | The position offsets to include |
+|  position | [AST.Offsets](../namespaces/ast/types/offsets.md) | The position offsets to include |
 
 <b>Returns:</b>
 

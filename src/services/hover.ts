@@ -43,7 +43,7 @@ export async function getHover(
         _rd = document;
         _td = _rd.textDocument;
         if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
-            _rd.metaStore.updateStore(setting.metaStore);
+            _rd.metaStore.update(setting.metaStore);
             if (setting?.noMetaSearch) (_rd as any)._shouldSearch = false;
             await _rd.parse();
         }
@@ -220,14 +220,8 @@ export async function getHover(
                 }${
                     _hash.sequence.ctxmeta ? "\n - ContractMeta" : ""
                 }${
-                    _hash.sequence.dotrain ? "\n - DotRain" : ""
+                    _hash.sequence.dotrain ? "\n - RainDocument" : ""
                 }`
-                // (await buildMetaInfo(_hash.hash, _rd.metaStore)) 
-                // + (
-                //     _index > -1 && _rd.getOpMetaImportIndex() === _index
-                //         ? "\n\nActive Op Meta"
-                //         : ""
-                // )
             }
         };
         else {

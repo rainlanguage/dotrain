@@ -62,6 +62,7 @@ export class Rainlang {
     public bytecode = "";
     public namespaces: AST.Namespace = {};
     public binding?: AST.Binding;
+    
     private _ignoreUAM = false;
     private state: {
         nodes: AST.Node[];
@@ -95,21 +96,16 @@ export class Rainlang {
         authoringMeta: Meta.Authoring[],
         bytecode: string,
         dotrainOptions?: { 
-            // /**
-            //  * Comments parsed from RainDocument
-            //  */
-            // comments?: AST.Comment[];
             /**
-             * Array of expression names from corresponding RainDocument
+             * RainDocument namespace
              */
-            // expressionNames?: string[],
             namespaces?: AST.Namespace;
+            // /**
+            //  * 
+            //  */
+            // thisBinding?: AST.Binding;
             /**
-             * 
-             */
-            thisBinding?: AST.Binding;
-            /**
-             * option to ignore unknown opcode
+             * option to ignore unknown opcodes
              */
             ignoreAuthoringMeta?: boolean
         }
@@ -117,13 +113,8 @@ export class Rainlang {
         this.text = text;
         this.bytecode = bytecode;
         this.authoringMeta = authoringMeta;
-        // if (dotrainOptions?.comments) {
-        //     this.comments = dotrainOptions.comments;
-        // }
-        if (dotrainOptions?.namespaces) {
-            this.namespaces = dotrainOptions.namespaces;
-        }
-        if (dotrainOptions?.thisBinding) this.binding = dotrainOptions.thisBinding;
+        if (dotrainOptions?.namespaces) this.namespaces = dotrainOptions.namespaces;
+        // if (dotrainOptions?.thisBinding) this.binding = dotrainOptions.thisBinding;
         if (dotrainOptions?.ignoreAuthoringMeta) {
             this._ignoreUAM = dotrainOptions.ignoreAuthoringMeta;
         }
@@ -195,10 +186,11 @@ export class Rainlang {
             []
         ))[0]?.toLowerCase();
         let _authoringMetaBytes = await _metaStore.getAuthoringMeta(
-            _authoringMetaHash
+            _authoringMetaHash,
+            "authoring-meta-hash"
         );
         if (!_authoringMetaBytes) {
-            _authoringMetaBytes = await _metaStore.getAuthoringMeta(_dispair, true);
+            _authoringMetaBytes = await _metaStore.getAuthoringMeta(_dispair, "deployer-bytecode-hash");
         }
         if (!_authoringMetaBytes) throw new Error(
             "cannot find any settlement for authoring meta of specified dispair source"
@@ -1360,9 +1352,7 @@ export class Rainlang {
             }
         }
         else {
-            _word = this.authoringMeta.find(
-                v => v.word === _name
-            );
+            _word = this.authoringMeta.find(v => v.word === _name);
             if (!_word) {
                 if (
                     this.namespaces[_name] && (

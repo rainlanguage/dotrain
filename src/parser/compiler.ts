@@ -286,7 +286,7 @@ export namespace Compile {
                                 _authoringMeta,
                                 "0",
                                 {
-                                    thisBinding: _ns.child.Element,
+                                    // thisBinding: _ns.child.Element,
                                     namespaces: _ns.parent,
                                     ignoreAuthoringMeta: (_rainDoc as any)._ignoreUAM
                                 }
@@ -394,7 +394,7 @@ export namespace Compile {
                                 _authoringMeta,
                                 "0",
                                 {
-                                    thisBinding: _ns.child.Element,
+                                    // thisBinding: _ns.child.Element,
                                     namespaces: _ns.parent,
                                     ignoreAuthoringMeta: (_rainDoc as any)._ignoreUAM
                                 }
@@ -557,7 +557,8 @@ export namespace Compile {
             const _generatedRainlang = new RL(
                 _sourcemaps.map(v => v.generatedText).join("\n"),
                 _authoringMeta,
-                _bytecode, {
+                _bytecode, 
+                {
                     ignoreAuthoringMeta: (_rainDoc as any)._ignoreUAM
                 }
             );

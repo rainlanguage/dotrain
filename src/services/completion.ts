@@ -56,7 +56,7 @@ export async function getCompletion(
         _rd = document;
         _td = _rd.textDocument;
         if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
-            _rd.metaStore.updateStore(setting.metaStore);
+            _rd.metaStore.update(setting.metaStore);
             if (setting?.noMetaSearch) (_rd as any)._shouldSearch = false;
             await _rd.parse();
         }
@@ -218,7 +218,11 @@ export async function getCompletion(
                     //     else break;
                     // }
                     _result.push(
-                        ...Object.entries(_rd.metaStore.dotrainCache).map(v => ({
+                        ...Object.entries(
+                            _rd.metaStore.dotrainCache
+                        ).filter(
+                            v => v[0] !== _td.uri
+                        ).map(v => ({
                             label: v[0],
                             labelDetails: {
                                 description: "rain document"
