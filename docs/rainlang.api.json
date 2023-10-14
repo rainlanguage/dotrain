@@ -870,7 +870,7 @@
         },
         {
           "kind": "Interface",
-          "canonicalReference": "@rainprotocol/rainlang!Comment:interface",
+          "canonicalReference": "@rainprotocol/rainlang!Comment_2:interface",
           "docComment": "/**\n * Type for Rainlang/RainDocument comments\n *\n * @public\n */\n",
           "excerptTokens": [
             {
@@ -880,12 +880,12 @@
           ],
           "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
-          "name": "Comment",
+          "name": "Comment_2",
           "preserveMemberOrder": false,
           "members": [
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!Comment#comment:member",
+              "canonicalReference": "@rainprotocol/rainlang!Comment_2#comment:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -912,7 +912,7 @@
             },
             {
               "kind": "PropertySignature",
-              "canonicalReference": "@rainprotocol/rainlang!Comment#position:member",
+              "canonicalReference": "@rainprotocol/rainlang!Comment_2#position:member",
               "docComment": "",
               "excerptTokens": [
                 {
@@ -943,7 +943,7 @@
         },
         {
           "kind": "Namespace",
-          "canonicalReference": "@rainprotocol/rainlang!Comment:namespace",
+          "canonicalReference": "@rainprotocol/rainlang!Comment_2:namespace",
           "docComment": "/**\n * The namespace provides functionality to type check\n *\n * @public\n */\n",
           "excerptTokens": [
             {
@@ -953,12 +953,12 @@
           ],
           "fileUrlPath": "dist/types/rainLanguageTypes.d.ts",
           "releaseTag": "Public",
-          "name": "Comment",
+          "name": "Comment_2",
           "preserveMemberOrder": false,
           "members": [
             {
               "kind": "Function",
-              "canonicalReference": "@rainprotocol/rainlang!Comment.is:function(1)",
+              "canonicalReference": "@rainprotocol/rainlang!Comment_2.is:function(1)",
               "docComment": "/**\n * Checks if a value is a valid CommentASTNode\n *\n * @param value - The value to check\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
@@ -985,7 +985,7 @@
                 {
                   "kind": "Reference",
                   "text": "Comment",
-                  "canonicalReference": "@rainprotocol/rainlang!Comment:interface"
+                  "canonicalReference": "@rainprotocol/rainlang!Comment_2:interface"
                 },
                 {
                   "kind": "Content",
@@ -5327,6 +5327,33 @@
               "isOptional": true,
               "releaseTag": "Public",
               "name": "metaStore",
+              "propertyTypeTokenRange": {
+                "startIndex": 1,
+                "endIndex": 2
+              }
+            },
+            {
+              "kind": "PropertySignature",
+              "canonicalReference": "@rainprotocol/rainlang!LanguageServiceParams#noMetaSearch:member",
+              "docComment": "/**\n * If should not search for metas (for lang services except diagnostics)\n */\n",
+              "excerptTokens": [
+                {
+                  "kind": "Content",
+                  "text": "noMetaSearch?: "
+                },
+                {
+                  "kind": "Content",
+                  "text": "boolean"
+                },
+                {
+                  "kind": "Content",
+                  "text": ";"
+                }
+              ],
+              "isReadonly": false,
+              "isOptional": true,
+              "releaseTag": "Public",
+              "name": "noMetaSearch",
               "propertyTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 2

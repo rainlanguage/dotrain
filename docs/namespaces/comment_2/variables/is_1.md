@@ -1,6 +1,6 @@
-[Home](../../../index.md) &gt; [Comment](../../comment.md) &gt; [is](./is_1.md)
+[Home](../../../index.md) &gt; [Comment\_2](../../comment_2.md) &gt; [is](./is_1.md)
 
-# Function Comment.is()
+# Function Comment\_2.is()
 
 Checks if a value is a valid CommentASTNode
 

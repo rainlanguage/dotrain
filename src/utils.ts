@@ -5,13 +5,13 @@ import { MAGIC_NUMBERS, cborDecode, isMagicNumber } from "@rainprotocol/meta";
 import { 
     Range, 
     Position, 
+    Namespace,
     TextDocument, 
+    WORD_PATTERN, 
+    NamespaceNode, 
     PositionOffset, 
     ExpressionConfig, 
-    TextDocumentContentChangeEvent, 
-    WORD_PATTERN,
-    Namespace,
-    NamespaceNode
+    TextDocumentContentChangeEvent 
 } from "./rainLanguageTypes";
 
 

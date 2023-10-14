@@ -141,6 +141,10 @@ export interface LanguageServiceParams {
      * Object that keeps cache of metas
      */
     metaStore?: MetaStore;
+    /**
+     * If should not search for metas (for lang services except diagnostics)
+     */
+    noMetaSearch?: boolean
 }
 
 /**

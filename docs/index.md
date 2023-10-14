@@ -71,7 +71,7 @@
 |  --- | --- |
 |  [AliasASTNode](./interfaces/aliasastnode.md) | Type for Rainlang/RainDocument alias |
 |  [ClientCapabilities](./interfaces/clientcapabilities.md) | Describes what LSP capabilities the client supports |
-|  [Comment](./interfaces/comment.md) | Type for Rainlang/RainDocument comments |
+|  [Comment\_2](./interfaces/comment_2.md) | Type for Rainlang/RainDocument comments |
 |  [Import](./interfaces/import.md) | Type of import statements specified in a RainDocument |
 |  [LanguageServiceParams](./interfaces/languageserviceparams.md) | Parameters for initiating Language Services |
 |  [OpASTNode](./interfaces/opastnode.md) | Type for Rainlang AST Opcode node |
@@ -87,7 +87,7 @@
 |  [ASTNode](./namespaces/astnode.md) | The namespace provides functionality to type check |
 |  [Binding](./namespaces/binding.md) | The namespace provides functionality to type check |
 |  [ClientCapabilities](./namespaces/clientcapabilities.md) | Predefined latest client capabilities |
-|  [Comment](./namespaces/comment.md) | The namespace provides functionality to type check |
+|  [Comment\_2](./namespaces/comment_2.md) | The namespace provides functionality to type check |
 |  [ContextAlias](./namespaces/contextalias.md) | The namespace provides functionality to type check |
 |  [Import](./namespaces/import.md) | The namespace provides functionality to type check |
 |  [Namespace](./namespaces/namespace.md) | The namespace provides functionality to type check |
