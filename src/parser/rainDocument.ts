@@ -528,11 +528,10 @@ export class RainDocument {
                 if (HASH_PATTERN.test(_nameOrHash[0])) {
                     _result.hash = _nameOrHash[0].toLowerCase();
                     _result.hashPosition = _nameOrHash[1];
+                    _metaPromise = this.metaStore.update(_result.hash);
                     if (this._shouldSearch) {
-                        _metaPromise = this.metaStore.update(_result.hash);
                         _metaPromise.then(() => _record = this.metaStore.getMeta(_result.hash));
                     }
-                    else _record = this.metaStore.getMeta(_result.hash);
                 }
                 else _result.problems.push({
                     msg: "invalid hash, must be 32 bytes",
@@ -552,13 +551,12 @@ export class RainDocument {
                         else {
                             _result.hash = _hash[0].toLowerCase();
                             _result.hashPosition = _hash[1];
+                            _metaPromise = this.metaStore.update(_result.hash);
                             if (this._shouldSearch) {
-                                _metaPromise = this.metaStore.update(_result.hash);
                                 _metaPromise.then(
                                     () => _record = this.metaStore.getMeta(_result.hash)
                                 );
                             }
-                            else _record = this.metaStore.getMeta(_result.hash);
                         }
                     }
                     else _result.problems.push({
@@ -584,55 +582,59 @@ export class RainDocument {
         });
 
         if (this._shouldSearch) await _metaPromise;
-        if (!_record) _result.problems.push({
-            msg: `cannot find any settlement for hash: ${_result.hash}`,
-            position: _result.hashPosition,
-            code: ErrorCode.UndefinedMeta
-        });
-        else {
-            let _metaMaps;
-            try {
-                _metaMaps = Meta.decode(_record);
-            }
-            catch {
-                _metaMaps = undefined;
-            }
-            if (_metaMaps === undefined) _result.problems.push({
-                msg: "corrupt meta",
+        else _record = this.metaStore.getMeta(_result.hash);
+
+        if (_metaPromise !== undefined) {
+            if (!_record) _result.problems.push({
+                msg: `cannot find any settlement for hash: ${_result.hash}`,
                 position: _result.hashPosition,
-                code: ErrorCode.CorruptMeta
+                code: ErrorCode.UndefinedMeta
             });
-            else if (!isConsumableMeta(_metaMaps)) {
-                _result.problems.push({
-                    msg: "inconsumable import",
-                    position: _result.hashPosition,
-                    code: ErrorCode.InconsumableMeta
-                });
-            }
             else {
-                _result.sequence = {};
-                const _mm: Map<any, any>[] = [];
-                _mm.push(..._metaMaps.filter(v => 
-                    v.get(1) === Meta.MagicNumbers.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
-                ));
-                _mm.push(..._metaMaps.filter(
-                    v => v.get(1) === Meta.MagicNumbers.CONTRACT_META_V1
-                ));
-                _mm.push(..._metaMaps.filter(
-                    v => v.get(1) === Meta.MagicNumbers.DOTRAIN_V1
-                ));
+                let _metaMaps;
                 try {
-                    await Promise.all(
-                        _mm.map(metamap => this.processMeta(_result, metamap))
-                    );
+                    _metaMaps = Meta.decode(_record);
                 }
                 catch {
-                    _result.sequence = {};
+                    _metaMaps = undefined;
+                }
+                if (_metaMaps === undefined) _result.problems.push({
+                    msg: "corrupt meta",
+                    position: _result.hashPosition,
+                    code: ErrorCode.CorruptMeta
+                });
+                else if (!isConsumableMeta(_metaMaps)) {
                     _result.problems.push({
-                        msg: "corrupt meta",
+                        msg: "inconsumable import",
                         position: _result.hashPosition,
-                        code: ErrorCode.CorruptMeta
+                        code: ErrorCode.InconsumableMeta
                     });
+                }
+                else {
+                    _result.sequence = {};
+                    const _mm: Map<any, any>[] = [];
+                    _mm.push(..._metaMaps.filter(v => 
+                        v.get(1) === Meta.MagicNumbers.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
+                    ));
+                    _mm.push(..._metaMaps.filter(
+                        v => v.get(1) === Meta.MagicNumbers.CONTRACT_META_V1
+                    ));
+                    _mm.push(..._metaMaps.filter(
+                        v => v.get(1) === Meta.MagicNumbers.DOTRAIN_V1
+                    ));
+                    try {
+                        await Promise.all(
+                            _mm.map(metamap => this.processMeta(_result, metamap))
+                        );
+                    }
+                    catch {
+                        _result.sequence = {};
+                        _result.problems.push({
+                            msg: "corrupt meta",
+                            position: _result.hashPosition,
+                            code: ErrorCode.CorruptMeta
+                        });
+                    }
                 }
             }
         }
