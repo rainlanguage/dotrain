@@ -11,7 +11,8 @@ import {
     getRandomInt, 
     inclusiveParse, 
     exclusiveParse, 
-    isConsumableMeta 
+    isConsumableMeta, 
+    uint8ArrayToString
 } from "../utils";
 import { 
     AST, 
@@ -462,8 +463,11 @@ export class RainDocument {
         }
         else if (_mn === Meta.MagicNumbers.DOTRAIN_V1) {
             try {
-                const _str = String.fromCharCode(
-                    ...Meta.decodeMap(meta) as Uint8Array
+                // const _str = String.fromCharCode(
+                //     ...Meta.decodeMap(meta) as Uint8Array
+                // );
+                const _str = await uint8ArrayToString(
+                    Meta.decodeMap(meta) as Uint8Array
                 );
                 imp.sequence.dotrain = new RainDocument(
                     TextDocument.create(
@@ -579,60 +583,56 @@ export class RainDocument {
             code: ErrorCode.InvalidImport
         });
 
-        if (_metaPromise !== undefined) {
-            // await this.metaStore.update(_result.hash as string);
-            // const _record = this.metaStore.getMeta(_result.hash as string);
-            if (this._shouldSearch) await _metaPromise;
-            if (!_record) _result.problems.push({
-                msg: `cannot find any settlement for hash: ${_result.hash}`,
+        if (this._shouldSearch) await _metaPromise;
+        if (!_record) _result.problems.push({
+            msg: `cannot find any settlement for hash: ${_result.hash}`,
+            position: _result.hashPosition,
+            code: ErrorCode.UndefinedMeta
+        });
+        else {
+            let _metaMaps;
+            try {
+                _metaMaps = Meta.decode(_record);
+            }
+            catch {
+                _metaMaps = undefined;
+            }
+            if (_metaMaps === undefined) _result.problems.push({
+                msg: "corrupt meta",
                 position: _result.hashPosition,
-                code: ErrorCode.UndefinedMeta
+                code: ErrorCode.CorruptMeta
             });
+            else if (!isConsumableMeta(_metaMaps)) {
+                _result.problems.push({
+                    msg: "inconsumable import",
+                    position: _result.hashPosition,
+                    code: ErrorCode.InconsumableMeta
+                });
+            }
             else {
-                let _metaMaps;
+                _result.sequence = {};
+                const _mm: Map<any, any>[] = [];
+                _mm.push(..._metaMaps.filter(v => 
+                    v.get(1) === Meta.MagicNumbers.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
+                ));
+                _mm.push(..._metaMaps.filter(
+                    v => v.get(1) === Meta.MagicNumbers.CONTRACT_META_V1
+                ));
+                _mm.push(..._metaMaps.filter(
+                    v => v.get(1) === Meta.MagicNumbers.DOTRAIN_V1
+                ));
                 try {
-                    _metaMaps = Meta.decode(_record);
+                    await Promise.all(
+                        _mm.map(metamap => this.processMeta(_result, metamap))
+                    );
                 }
                 catch {
-                    _metaMaps = undefined;
-                }
-                if (_metaMaps === undefined) _result.problems.push({
-                    msg: "corrupt meta",
-                    position: _result.hashPosition,
-                    code: ErrorCode.CorruptMeta
-                });
-                else if (!isConsumableMeta(_metaMaps)) {
-                    _result.problems.push({
-                        msg: "inconsumable import",
-                        position: _result.hashPosition,
-                        code: ErrorCode.InconsumableMeta
-                    });
-                }
-                else {
                     _result.sequence = {};
-                    const _mm: Map<any, any>[] = [];
-                    _mm.push(..._metaMaps.filter(v => 
-                        v.get(1) === Meta.MagicNumbers.EXPRESSION_DEPLOYER_V2_BYTECODE_V1
-                    ));
-                    _mm.push(..._metaMaps.filter(
-                        v => v.get(1) === Meta.MagicNumbers.CONTRACT_META_V1
-                    ));
-                    _mm.push(..._metaMaps.filter(
-                        v => v.get(1) === Meta.MagicNumbers.DOTRAIN_V1
-                    ));
-                    try {
-                        await Promise.all(
-                            _mm.map(metamap => this.processMeta(_result, metamap))
-                        );
-                    }
-                    catch {
-                        _result.sequence = {};
-                        _result.problems.push({
-                            msg: "corrupt meta",
-                            position: _result.hashPosition,
-                            code: ErrorCode.CorruptMeta
-                        });
-                    }
+                    _result.problems.push({
+                        msg: "corrupt meta",
+                        position: _result.hashPosition,
+                        code: ErrorCode.CorruptMeta
+                    });
                 }
             }
         }
@@ -1406,7 +1406,7 @@ export class RainDocument {
 //     .constss.new-name<1>()
 // );
 // `, v).then(v => {
-//         // console.log(v.getAllProblems());
-//         Compile.RainDocument(v, ["xx"]).then(e => console.log(e)).catch(e => console.log(e));
+//         console.log(v.namespace);
+//         // Compile.RainDocument(v, ["xx"]).then(e => console.log(e)).catch(e => console.log(e));
 //     }).catch(v => console.log(v));
 // }).catch(v => console.log(v));

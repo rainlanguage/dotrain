@@ -665,6 +665,18 @@ export const stringToUint8Array = (text: string): Uint8Array => {
 };
 
 /**
+ * @public Method to convert Uint8Array to string
+ * @param uint8array - The array
+ */
+export async function uint8ArrayToString(uint8array: Uint8Array): Promise<string> {
+    let str = "";
+    for (let i = 0; i < uint8array.length; i++) {
+        str = str + String.fromCharCode(uint8array[i]);
+    }
+    return str;
+}
+
+/**
  * @public Executes a contract bytecode given the contract abi, fnunction name and args
  * @param bytecode - The contract deployed byetcode
  * @param abi - The contract ABI
