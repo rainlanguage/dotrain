@@ -496,7 +496,7 @@ export class RainDocument {
      * @internal Handles an import statement
      */
     private async processImport(imp: ParsedChunk): Promise<AST.Import> {
-        let _record: string | null | undefined;
+        // let _record: string | null | undefined;
         let _metaPromise: Promise<void> | undefined;
         let _configPromise: Promise<void> | undefined;
         const _atPos: AST.Offsets = [imp[1][0] - 1, imp[1][0] - 1];
@@ -529,9 +529,9 @@ export class RainDocument {
                     _result.hash = _nameOrHash[0].toLowerCase();
                     _result.hashPosition = _nameOrHash[1];
                     _metaPromise = this.metaStore.update(_result.hash);
-                    if (this._shouldSearch) {
-                        _metaPromise.then(() => _record = this.metaStore.getMeta(_result.hash));
-                    }
+                    // if (this._shouldSearch) {
+                    //     _metaPromise.then(() => _record = this.metaStore.getMeta(_result.hash));
+                    // }
                 }
                 else _result.problems.push({
                     msg: "invalid hash, must be 32 bytes",
@@ -552,11 +552,11 @@ export class RainDocument {
                             _result.hash = _hash[0].toLowerCase();
                             _result.hashPosition = _hash[1];
                             _metaPromise = this.metaStore.update(_result.hash);
-                            if (this._shouldSearch) {
-                                _metaPromise.then(
-                                    () => _record = this.metaStore.getMeta(_result.hash)
-                                );
-                            }
+                            // if (this._shouldSearch) {
+                            //     _metaPromise.then(
+                            //         () => _record = this.metaStore.getMeta(_result.hash)
+                            //     );
+                            // }
                         }
                     }
                     else _result.problems.push({
@@ -582,7 +582,7 @@ export class RainDocument {
         });
 
         if (this._shouldSearch) await _metaPromise;
-        else _record = this.metaStore.getMeta(_result.hash);
+        const _record = this.metaStore.getMeta(_result.hash);
 
         if (_metaPromise !== undefined) {
             if (!_record) _result.problems.push({
