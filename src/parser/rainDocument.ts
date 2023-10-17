@@ -466,7 +466,7 @@ export class RainDocument {
                 // const _str = String.fromCharCode(
                 //     ...Meta.decodeMap(meta) as Uint8Array
                 // );
-                const _str = await uint8ArrayToString(
+                const _str = uint8ArrayToString(
                     Meta.decodeMap(meta) as Uint8Array
                 );
                 imp.sequence.dotrain = new RainDocument(

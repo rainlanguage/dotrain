@@ -668,7 +668,7 @@ export const stringToUint8Array = (text: string): Uint8Array => {
  * @public Method to convert Uint8Array to string
  * @param uint8array - The array
  */
-export async function uint8ArrayToString(uint8array: Uint8Array): Promise<string> {
+export function uint8ArrayToString(uint8array: Uint8Array): string {
     let str = "";
     for (let i = 0; i < uint8array.length; i++) {
         str = str + String.fromCharCode(uint8array[i]);
