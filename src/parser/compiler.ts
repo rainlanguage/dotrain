@@ -17,7 +17,6 @@ import {
     AST, 
     Position, 
     TextDocument, 
-    HASH_PATTERN, 
     WORD_PATTERN, 
     ExpressionConfig, 
     NATIVE_PARSER_ABI 
@@ -130,20 +129,11 @@ export namespace Compile {
         if (typeof source === "string") {
             _options = options;
             _entrypoints = entrypointsOrOptions as number;
-            if (HASH_PATTERN.test(bytecodeSourceOrEntrypoints as string)) {
-                _rainlang = await RL.create(
-                    source,
+            _rainlang = await RL.create(
+                source,
                 bytecodeSourceOrEntrypoints as string,
                 options?.metaStore
-                );
-            }
-            else {
-                _rainlang = await RL.create(
-                    source,
-                bytecodeSourceOrEntrypoints as string,
-                options?.metaStore
-                );
-            }
+            );
         }
         else {
             _rainlang = source;

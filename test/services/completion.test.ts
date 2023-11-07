@@ -1,11 +1,10 @@
 import assert from "assert";
-import { METAS } from "../fixtures/opmeta";
-import { contractMetaHash, opMetaHash } from "../utils";
-import { metaFromBytes, MAGIC_NUMBERS, toOpMeta } from "@rainprotocol/meta";
+import METAS from "../fixtures/meta.json";
+import { Meta } from "@rainprotocol/meta";
+import { contractMetaHash, deployerHash } from "../utils";
 import {
     Position,
     rainlang,
-    MetaStore, 
     TextDocument,
     RainDocument, 
     getCompletion,
@@ -37,34 +36,23 @@ async function testCompletion(
 }
 
 describe("LSP Code Completion Language Service Tests", async function () {
-    const store = new MetaStore();
+    const store = new Meta.Store();
     let AllOpcodeCompletions: CompletionItem[];
 
     before(async () => {
-        await store.updateStore(opMetaHash, METAS.validOpMeta.metaBytes);
-        await store.updateStore(contractMetaHash, METAS.validContractMeta.metaBytes);
-        const OpcodeMetas = toOpMeta(metaFromBytes(
-            store.getRecord(opMetaHash)!.sequence.find(
-                v => v.magicNumber === MAGIC_NUMBERS.OPS_META_V1
-            )!.content
-        ));
-        AllOpcodeCompletions = OpcodeMetas.flatMap(v => {
-            return [
-                {
-                    label: v.name,
-                    kind: CompletionItemKind.Function,
-                },
-                ...(
-                    v.aliases ? v.aliases.map(e => {
-                        return {
-                            label: e,
-                            kind: CompletionItemKind.Function
-                        };
-                    })
-                    : []
-                )
-            ];
-        });
+        const kv = Object.entries(METAS);
+        for (let i = 0; i < kv.length; i++) {
+            await store.update(kv[i][0], kv[i][1]);
+        }
+
+        const AuthoringMeta = Meta.Authoring.abiDecode(
+            Object.values(store.getAuthoringMetaCache())[0]
+        );
+
+        AllOpcodeCompletions = AuthoringMeta.flatMap(v => ({
+            label: v.word,
+            kind: CompletionItemKind.Function,
+        }));
         ["infinity", "max-uint256" ,"max-uint-256"].forEach(v => AllOpcodeCompletions.unshift({
             label: v,
             kind: CompletionItemKind.Constant
@@ -78,7 +66,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
             kind: CompletionItemKind.Class
         });
         await testCompletion(
-            rainlang`@${opMetaHash} #expression _: `, 
+            rainlang`@${deployerHash} #expression _: `, 
             Position.create(0, 89),
             _allCompletions,
             { metaStore: store }
@@ -86,17 +74,22 @@ describe("LSP Code Completion Language Service Tests", async function () {
     });
 
     it("should provide correct suggestions based on trailing characters", async () => {
+        const _allCompletions = [...AllOpcodeCompletions];
+        _allCompletions.unshift({
+            label: "exp",
+            kind: CompletionItemKind.Class
+        });
         await testCompletion(
-            rainlang`@${opMetaHash} #exp _: ad`,  
-            Position.create(0, 78),
-            AllOpcodeCompletions.filter(v => v.label.includes("ad")),
+            rainlang`@${deployerHash} #exp _: int-ad`,  
+            Position.create(0, 82),
+            _allCompletions,
             { metaStore: store }
         );
     });
 
     it("should provide no suggestions if cursor is in middle of a word", async () => {
         await testCompletion(
-            rainlang`@${opMetaHash} #exp _: add`,  
+            rainlang`@${deployerHash} #exp _: add`,  
             Position.create(0, 10),
             null,
             { metaStore: store }
@@ -104,10 +97,15 @@ describe("LSP Code Completion Language Service Tests", async function () {
     });
 
     it("should provide correct suggestions if leading character is non-word", async () => {
+        const _allCompletions = [...AllOpcodeCompletions];
+        _allCompletions.unshift({
+            label: "exp",
+            kind: CompletionItemKind.Class
+        });
         await testCompletion(
-            rainlang`@${opMetaHash} #exp _: add(1 2)`,  
+            rainlang`@${deployerHash} #exp _: add(1 2)`,  
             Position.create(0, 79),
-            AllOpcodeCompletions.filter(v => v.label.includes("add")),
+            _allCompletions,
             { metaStore: store }
         );
     });
@@ -115,34 +113,70 @@ describe("LSP Code Completion Language Service Tests", async function () {
     it("should include lhs alias in suggestions", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
         await testCompletion(
-            rainlang`@${opMetaHash} #expr name: n`,  
-            Position.create(0, 81),
+            rainlang`@${deployerHash} #exp name: n`,  
+            Position.create(0, 80),
             [
                 {
                     label: "name",
                     kind: CompletionItemKind.Variable
                 },
-                ..._allCompletions.filter(v => v.label.includes("n"))
+                {
+                    label: "exp",
+                    kind: CompletionItemKind.Class
+                },
+                ..._allCompletions
             ],
             { metaStore: store }
         );
     });
 
     it("should include contract context in suggestions", async () => {
+        const contractMetas = [
+            "vault-output-balance-decrease",
+            "vault-output-balance-before",
+            "vault-output-id",
+            "vault-output-token-decimals",
+            "vault-output-token-address",
+            "vault-outputs",
+            "vault-input-balance-increase",
+            "vault-input-balance-before",
+            "vault-input-id",
+            "vault-input-token-decimals",
+            "vault-input-token-address",
+            "vault-inputs",
+            "order-io-ratio",
+            "order-output-max",
+            "calculations",
+            "counterparty-address",
+            "order-owner-address",
+            "order-hash",
+            "calling-context",
+            "orderbook-contract-address",
+            "orderbook-caller-address",
+            "base"
+        ];
+        const _allCompletions = [...AllOpcodeCompletions];
+        contractMetas.reverse().forEach(v => _allCompletions.unshift({
+            label: v,
+            kind: CompletionItemKind.Function
+        }));
         await testCompletion(
-            rainlang`@${opMetaHash} @${contractMetaHash} 
+            rainlang`@${deployerHash} @${contractMetaHash} 
             #exp 
             _: counterpa`,  
             Position.create(2, 24),
-            [{
-                label: "counterparty-address",
-                kind: CompletionItemKind.Function
-            }],
+            [
+                {
+                    label: "exp",
+                    kind: CompletionItemKind.Class
+                },
+                ..._allCompletions
+            ],
             { metaStore: store }
         );
     });
     it("should include root namespaces items in suggestions", async () => {
-        const _expression = rainlang`@${opMetaHash}
+        const _expression = rainlang`@${deployerHash}
 #row
 1
 
@@ -168,7 +202,7 @@ _: .`;
     });
 
     it("should include correct namespaces items in suggestions", async () => {
-        const _expression = rainlang`@${opMetaHash}
+        const _expression = rainlang`@${deployerHash}
 #row
 1
 
@@ -188,7 +222,7 @@ _: .r`;
                             ? CompletionItemKind.Class 
                             : CompletionItemKind.Function
                 };
-            }).filter(v => v.label !== "Words").filter(v => v.label.includes("r")),
+            }).filter(v => v.label !== "Words"),
             { metaStore: store }
         );
     });
