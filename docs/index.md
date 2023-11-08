@@ -52,6 +52,7 @@
 |  [searchNamespace(name, namespace)](./variables/searchnamespace_1.md) | Search in a Namespace for a given name |
 |  [toInteger(value)](./variables/tointeger_1.md) | Convert Rainlang numeric values to interger as string |
 |  [trim(str)](./variables/trim_1.md) | Trims a text (removing start/end whitespaces) with reporting the number of deletions |
+|  [uint8ArrayToString(uint8array)](./variables/uint8arraytostring_1.md) | Method to convert Uint8Array to string |
 
 ## Interfaces
 
