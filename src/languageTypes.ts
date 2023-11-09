@@ -1,5 +1,5 @@
 import { Meta } from "@rainprotocol/meta";
-import { Rainlang } from "./parser/rainlang";
+import { Rainlang as RL } from "./parser/rainlang";
 import { RainDocument } from "./parser/rainDocument";
 import { MarkupKind } from "vscode-languageserver-types";
 import { BigNumberish, BytesLike, ParsedChunk, hexlify, BigNumber } from "./parser/helpers";
@@ -543,7 +543,7 @@ export namespace AST {
     /**
      * @public Type of a Rainlang AST
      */
-    export type RainlangAST = { 
+    export type Rainlang = { 
         lines: {
             nodes: Node[]; 
             position: Offsets; 
@@ -554,12 +554,12 @@ export namespace AST {
     /**
      * @public The namespace provides functionality to type check
      */
-    export namespace RainlangAST {
+    export namespace Rainlang {
         /**
          * @public Checks if a value is a valid RainlangAST
          * @param value - The value to check
          */
-        export function is(value: any): value is RainlangAST {
+        export function is(value: any): value is Rainlang {
             return Array.isArray(value)
                 && value.every(v => v !== null
                     && typeof v === "object"
@@ -610,7 +610,7 @@ export namespace AST {
         dependencies: string[];
         elided?: string;
         constant?: string;
-        exp?: Rainlang;
+        exp?: RL;
     }
     /**
      * @public The namespace provides functionality to type check
@@ -630,7 +630,7 @@ export namespace AST {
                 && Offsets.is(value.position)
                 && (
                     (
-                        value.exp instanceof Rainlang && 
+                        value.exp instanceof RL && 
                         typeof value.elided === "undefined" && 
                         typeof value.constant === "undefined"
                     ) || (
@@ -657,8 +657,8 @@ export namespace AST {
                 && typeof value.content === "string"
                 && Offsets.is(value.contentPosition)
                 && Offsets.is(value.position)
-                && value.exp instanceof Rainlang
-                && RainlangAST.isExpression(value.exp.ast);
+                && value.exp instanceof RL
+                && Rainlang.isExpression(value.exp.ast);
         }
     }
 

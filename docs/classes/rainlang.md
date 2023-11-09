@@ -14,7 +14,7 @@ class Rainlang
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [ast](./rainlang.md#ast-property) | [AST.RainlangAST](../namespaces/ast/types/rainlangast.md) |  |
+|  [ast](./rainlang.md#ast-property) | [AST.Rainlang](../namespaces/ast/types/rainlang.md) |  |
 |  [authoringMeta](./rainlang.md#authoringMeta-property) | `Meta.Authoring[]` |  |
 |  [binding](./rainlang.md#binding-property) | [AST.Binding](../namespaces/ast/types/binding.md) |  |
 |  [bytecode](./rainlang.md#bytecode-property) | `string` |  |
@@ -48,7 +48,7 @@ class Rainlang
 <b>Signature:</b>
 
 ```typescript
-ast: AST.RainlangAST;
+ast: AST.Rainlang;
 ```
 
 <a id="authoringMeta-property"></a>

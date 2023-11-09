@@ -35,7 +35,7 @@ namespace AST
 |  [Offsets](./ast/namespaces/offsets.md) | The namespace provides functionality to type check |
 |  [Opcode](./ast/namespaces/opcode.md) | The namespace provides functionality to type check |
 |  [Problem](./ast/namespaces/problem.md) | The namespace provides functionality to type check |
-|  [RainlangAST](./ast/namespaces/rainlangast.md) | The namespace provides functionality to type check |
+|  [Rainlang](./ast/namespaces/rainlang.md) | The namespace provides functionality to type check |
 |  [Value](./ast/namespaces/value.md) | The namespace provides functionality to type check |
 
 ## Type Aliases
@@ -48,5 +48,5 @@ namespace AST
 |  [NamespaceNode](./ast/types/namespacenode.md) | Type for a namespace node |
 |  [Node](./ast/types/node.md) | Type of an AST node |
 |  [Offsets](./ast/types/offsets.md) | Type for start and end indexes of node in a text, inclusive at both ends |
-|  [RainlangAST](./ast/types/rainlangast.md) | Type of a Rainlang AST |
+|  [Rainlang](./ast/types/rainlang.md) | Type of a Rainlang AST |
 

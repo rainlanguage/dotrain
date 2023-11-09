@@ -554,7 +554,7 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "Rainlang",
+                  "text": "RL",
                   "canonicalReference": "@rainprotocol/rainlang!Rainlang:class"
                 },
                 {
@@ -2461,21 +2461,21 @@
             },
             {
               "kind": "Namespace",
-              "canonicalReference": "@rainprotocol/rainlang!AST.RainlangAST:namespace",
+              "canonicalReference": "@rainprotocol/rainlang!AST.Rainlang:namespace",
               "docComment": "/**\n * The namespace provides functionality to type check\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "namespace RainlangAST "
+                  "text": "namespace Rainlang "
                 }
               ],
               "releaseTag": "Public",
-              "name": "RainlangAST",
+              "name": "Rainlang",
               "preserveMemberOrder": false,
               "members": [
                 {
                   "kind": "Function",
-                  "canonicalReference": "@rainprotocol/rainlang!AST.RainlangAST.is:function(1)",
+                  "canonicalReference": "@rainprotocol/rainlang!AST.Rainlang.is:function(1)",
                   "docComment": "/**\n * Checks if a value is a valid RainlangAST\n *\n * @param value - The value to check\n *\n * @public\n */\n",
                   "excerptTokens": [
                     {
@@ -2501,8 +2501,8 @@
                     },
                     {
                       "kind": "Reference",
-                      "text": "RainlangAST",
-                      "canonicalReference": "@rainprotocol/rainlang!AST.RainlangAST:type"
+                      "text": "Rainlang",
+                      "canonicalReference": "@rainprotocol/rainlang!AST.Rainlang:type"
                     },
                     {
                       "kind": "Content",
@@ -2529,7 +2529,7 @@
                 },
                 {
                   "kind": "Function",
-                  "canonicalReference": "@rainprotocol/rainlang!AST.RainlangAST.isExpression:function(1)",
+                  "canonicalReference": "@rainprotocol/rainlang!AST.Rainlang.isExpression:function(1)",
                   "docComment": "/**\n * Checks if a value is a valid RainlangAST Expression\n *\n * @param value - The value to check\n *\n * @public\n */\n",
                   "excerptTokens": [
                     {
@@ -2575,12 +2575,12 @@
             },
             {
               "kind": "TypeAlias",
-              "canonicalReference": "@rainprotocol/rainlang!AST.RainlangAST:type",
+              "canonicalReference": "@rainprotocol/rainlang!AST.Rainlang:type",
               "docComment": "/**\n * Type of a Rainlang AST\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "type RainlangAST = "
+                  "text": "type Rainlang = "
                 },
                 {
                   "kind": "Content",
@@ -2628,7 +2628,7 @@
                 }
               ],
               "releaseTag": "Public",
-              "name": "RainlangAST",
+              "name": "Rainlang",
               "typeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 10
@@ -8651,8 +8651,8 @@
                 },
                 {
                   "kind": "Reference",
-                  "text": "AST.RainlangAST",
-                  "canonicalReference": "@rainprotocol/rainlang!AST.RainlangAST:type"
+                  "text": "AST.Rainlang",
+                  "canonicalReference": "@rainprotocol/rainlang!AST.Rainlang:type"
                 },
                 {
                   "kind": "Content",

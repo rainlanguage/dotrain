@@ -1,13 +1,13 @@
-[Home](../../../index.md) &gt; [AST](../../ast.md) &gt; [RainlangAST](./rainlangast.md)
+[Home](../../../index.md) &gt; [AST](../../ast.md) &gt; [Rainlang](./rainlang.md)
 
-# Type AST.RainlangAST
+# Type AST.Rainlang
 
 Type of a Rainlang AST
 
 <b>Signature:</b>
 
 ```typescript
-type RainlangAST = {
+type Rainlang = {
         lines: {
             nodes: Node[];
             position: Offsets;

@@ -1,6 +1,6 @@
-[Home](../../../../../index.md) &gt; [AST](../../../../ast.md) &gt; [RainlangAST](../../rainlangast.md) &gt; [isExpression](./isexpression_1.md)
+[Home](../../../../../index.md) &gt; [AST](../../../../ast.md) &gt; [Rainlang](../../rainlang.md) &gt; [isExpression](./isexpression_1.md)
 
-# Function AST.RainlangAST.isExpression()
+# Function AST.Rainlang.isExpression()
 
 Checks if a value is a valid RainlangAST Expression
 

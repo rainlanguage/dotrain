@@ -17,6 +17,6 @@ type Binding = {
         dependencies: string[];
         elided?: string;
         constant?: string;
-        exp?: Rainlang;
+        exp?: RL;
     };
 ```

@@ -55,7 +55,7 @@ export class Rainlang {
     };
 
     public text: string;
-    public ast: AST.RainlangAST = [];
+    public ast: AST.Rainlang = [];
     public problems: AST.Problem[] = [];
     public comments: AST.Comment[] = [];
     public authoringMeta: Meta.Authoring[] = [];
