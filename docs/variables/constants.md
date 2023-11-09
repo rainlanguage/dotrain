@@ -7,5 +7,5 @@ ethers constants
 <b>Signature:</b>
 
 ```typescript
-CONSTANTS: typeof ethers.constants
+CONSTANTS: typeof constants
 ```

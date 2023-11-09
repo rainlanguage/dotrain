@@ -2,7 +2,7 @@ import { Meta } from "@rainprotocol/meta";
 import { Rainlang } from "./parser/rainlang";
 import { RainDocument } from "./parser/rainDocument";
 import { MarkupKind } from "vscode-languageserver-types";
-import { BigNumberish, BytesLike, ParsedChunk } from "./utils";
+import { BigNumberish, BytesLike, ParsedChunk, hexlify, BigNumber } from "./parser/helpers";
 import { TextDocument, TextDocumentContentChangeEvent } from "vscode-languageserver-textdocument";
 
 
@@ -238,6 +238,39 @@ export type ExpressionConfig = {
      * Constants verbatim.
      */
     constants: BigNumberish[];
+}
+/**
+ * @public namespace provides additional methods for the Expressionconfig type
+ */
+export namespace ExpressionConfig {
+    /**
+     * @public method to check ExpressionConfigs quality
+     * @param config1 - first ExpressionConfig
+     * @param config2 - second ExpressionConfig
+     * @returns boolean
+     */
+    export const eq = (
+        config1: ExpressionConfig,
+        config2: ExpressionConfig
+    ): boolean => {
+        // Range.
+        if (config1.constants.length !== config2.constants.length) return false;
+        if (config1.bytecode.length !== config2.bytecode.length) return false;
+        if (
+            hexlify(config1.bytecode, {allowMissingPrefix: true}).toLowerCase() !== 
+            hexlify(config2.bytecode, {allowMissingPrefix: true}).toLowerCase()
+        ) return false;
+
+        for (let i = 0; i < config1.constants.length; i++) {
+            if (
+                !BigNumber.from(config1.constants[i]).eq(
+                    BigNumber.from(config2.constants[i])
+                )
+            ) return false;
+        }
+
+        return true;
+    };
 }
 
 /**

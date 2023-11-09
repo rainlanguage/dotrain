@@ -1,21 +1,19 @@
 import { EVM } from "@ethereumjs/evm";
 import { MAGIC_NUMBERS } from "@rainprotocol/meta";
 import { Address, Account } from "@ethereumjs/util";
-import { BigNumber, BigNumberish, utils, ethers, BytesLike } from "ethers";
+import { BigNumber, BigNumberish, utils, constants, BytesLike } from "ethers";
 import { 
     AST, 
     Range, 
     Position, 
     TextDocument, 
-    ExpressionConfig, 
     TextDocumentContentChangeEvent 
-} from "./languageTypes";
-
+} from "../languageTypes";
 
 /**
  * @public ethers constants
  */
-export const CONSTANTS = ethers.constants;
+export const CONSTANTS = constants;
 export { BytesLike, BigNumber, BigNumberish };
 export const {
     /**
@@ -68,6 +66,55 @@ export const {
  * @public vitalik address used for evm simulations
  */
 export const VITALIK = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" as const;
+
+/**
+ * @public
+ * Deeply freezes an object, all of the properties of propterties gets frozen
+ * 
+ * @param object - object to freeze
+ * @returns frozen object
+ */
+export function deepFreeze(object: any) {
+    if (typeof object === "object") {
+        // Retrieve the property names defined on object
+        const propNames = Object.getOwnPropertyNames(object);
+    
+        // Freeze properties before freezing self
+        for (const name of propNames) {
+            const value = object[name];
+            if (value && typeof value === "object") {
+                deepFreeze(value);
+            }
+        }
+        return Object.freeze(object);
+    }
+}
+
+/**
+ * @public
+ * Deep copy an item in a way that all of its properties get new reference
+ * 
+ * @param variable - The variable to copy
+ * @returns a new deep copy of the variable
+ */
+export function deepCopy<T>(variable: T): T {
+    let _result: any;
+    if (Array.isArray(variable)) {
+        _result = [] as T;
+        for (let i = 0; i < variable.length; i++) {
+            _result.push(deepCopy(variable[i]));
+        }
+    }
+    else if (typeof variable === "object") {
+        _result = {};
+        const _keys = Object.keys(variable as object);
+        for (let i = 0; i < _keys.length; i++) {
+            _result[_keys[i]] = deepCopy((variable as any)[_keys[i]]);
+        }
+    }
+    else _result = variable;
+    return _result as T;
+}
 
 /**
  * @public
@@ -161,200 +208,6 @@ export function isBigNumberish(value: any): boolean {
         typeof value === "bigint" ||
         isBytes(value))
     );
-}
-
-/**
- * @public
- * Extract some of the properties from a Map as a new Map with same keys.
- *
- * @param map - the map to extract from
- * @param properties - name of the properties in second item of the map elements
- * @returns a new Map with extracted properties
- */
-export function extractFromMap(
-    map: Map<any, any>,
-    properties: string[]
-): Map<any, any> {
-    if (properties.length > 0) {
-        const _arr = Array.from(map.entries());
-        for (const item of _arr) {
-            let _newArr = {};
-            for (const key of Object.keys(item[1])) {
-                if (properties.includes(key)) {
-                    _newArr = {
-                        ..._newArr,
-                        [key]: item[1][key],
-                    };
-                }
-            }
-            item[1] = _newArr;
-        }
-        return new Map(_arr);
-    } else return map;
-}
-
-/**
- * @public
- * Extract some of the properties from a Record as new Record with same keys.
- *
- * @param record - the record to extract from.
- * @param properties - name of the properties in value item of the key/va;ue pair of a Record object
- * @returns a new Record with extracted key/value pairs
- */
-export function extractFromRecord<T extends string | number | symbol>(
-    record: Record<T, any>,
-    properties: string | string[]
-): Record<T, any> {
-    if (typeof properties === "string") {
-        for (const key in record) {
-            for (const value in record[key]) {
-                if (properties.includes(value)) {
-                    record[key] = record[key][value];
-                }
-            }
-        }
-        return record as Record<T, any>;
-    } else if (properties.length > 0) {
-        for (const key in record) {
-            for (const value in record[key]) {
-                if (!properties.includes(value)) {
-                    delete record[key][value];
-                }
-            }
-        }
-        return record as Record<T, any>;
-    } else return record;
-}
-
-/**
- * @public
- * Conver a Map to a equivalent Record (a key/value pair object). Map keys must be of type 
- * acceptable by Record constructor, which are string, number or symbol.
- *
- * @param map - The Map to conver to Record
- * @param properties - (optional) properties to pick from the second item of the Map's elements.
- * @returns a new Record from Map
- */
-export function mapToRecord<K extends string | number | symbol>(
-    map: Map<K, any>,
-    properties?: string[]
-): Record<K, any> {
-    const _ret: Record<any, any> = {};
-    const Properties = properties ? properties : [];
-
-    if (Properties.length === 1) {
-        for (const [key, value] of map) {
-            _ret[key] = value[Properties[0]];
-        }
-
-        return _ret as Record<K, any>;
-    } else {
-        for (const [key, value] of extractFromMap(map, Properties)) {
-            _ret[key] = value;
-        }
-
-        return _ret as Record<K, any>;
-    }
-}
-
-/**
- * @public
- * Conver a Record (a key/value pair object) to a equivalent Map. Map keys will 
- * be of type acceptable by Record constructor, which are string, number or symbol.
- *
- * @param record - The Record to convert to a Map
- * @param properties - (optional) properties to pick from the values of key/value 
- * pair items of the Record object.
- * @returns Map Object from Record
- */
-export function recordToMap<K extends string | number | symbol>(
-    record: Record<K, any>,
-    properties?: string | string[]
-): Map<K, any> {
-    const Properties = properties ? properties : [];
-
-    return new Map(
-        Object.entries(extractFromRecord(record, Properties))
-    ) as Map<K, any>;
-}
-
-/**
- * @public
- * Checks 2 ExpressionConfig objects to see if they are equal or not
- *
- * @param config1 - first ExpressionConfig
- * @param config2 - second ExpressionConfig
- * @returns boolean
- */
-export const areEqualStateConfigs = (
-    config1: ExpressionConfig,
-    config2: ExpressionConfig
-): boolean => {
-    if (config1.constants.length !== config2.constants.length) return false;
-    if (config1.bytecode.length !== config2.bytecode.length) return false;
-    if (
-        hexlify(config1.bytecode, {allowMissingPrefix: true}).toLowerCase() !== 
-        hexlify(config2.bytecode, {allowMissingPrefix: true}).toLowerCase()
-    ) return false;
-
-    for (let i = 0; i < config1.constants.length; i++) {
-        if (
-            !BigNumber.from(config1.constants[i]).eq(
-                BigNumber.from(config2.constants[i])
-            )
-        ) return false;
-    }
-
-    return true;
-};
-
-/**
- * @public
- * Deeply freezes an object, all of the properties of propterties gets frozen
- * 
- * @param object - object to freeze
- * @returns frozen object
- */
-export function deepFreeze(object: any) {
-    if (typeof object === "object") {
-        // Retrieve the property names defined on object
-        const propNames = Object.getOwnPropertyNames(object);
-    
-        // Freeze properties before freezing self
-        for (const name of propNames) {
-            const value = object[name];
-            if (value && typeof value === "object") {
-                deepFreeze(value);
-            }
-        }
-        return Object.freeze(object);
-    }
-}
-
-/**
- * @public
- * Deep copy an item in a way that all of its properties get new reference
- * 
- * @param variable - The variable to copy
- * @returns a new deep copy of the variable
- */
-export function deepCopy<T>(variable: T): T {
-    let _result: any;
-    if (Array.isArray(variable)) {
-        _result = [] as T;
-        for (let i = 0; i < variable.length; i++) {
-            _result.push(deepCopy(variable[i]));
-        }
-    }
-    else if (typeof variable === "object") {
-        _result = {};
-        const _keys = Object.keys(variable as object);
-        for (let i = 0; i < _keys.length; i++) {
-            _result[_keys[i]] = deepCopy((variable as any)[_keys[i]]);
-        }
-    }
-    else _result = variable;
-    return _result as T;
 }
 
 /**
@@ -596,7 +449,11 @@ export function fillOut(
  * Trims a text (removing start/end whitespaces) with reporting the number of deletions
  * @param str - The text to trim
  */
-export function trim(str: string): {text: string, startDelCount: number, endDelCount: number} {
+export function trackedTrim(str: string): {
+    text: string, 
+    startDelCount: number, 
+    endDelCount: number
+} {
     return {
         text: str.trim(),
         startDelCount: str.length - str.trimStart().length,
@@ -773,6 +630,5 @@ export const insertAccount = async(evm: EVM, address: Address) => {
         balance: BigInt(100) ** BigInt(18), // 1 eth
     };
     const account = Account.fromAccountData(acctData);
-  
     await evm.stateManager.putAccount(address, account);
 };

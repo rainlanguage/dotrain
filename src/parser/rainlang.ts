@@ -10,16 +10,16 @@ import {
     NATIVE_PARSER_ABI 
 } from "../languageTypes";
 import {
-    trim, 
     fillIn,
     hexlify, 
     toInteger, 
     CONSTANTS, 
     isBytesLike, 
+    trackedTrim, 
     execBytecode, 
     inclusiveParse, 
-    exclusiveParse 
-} from "../utils";
+    exclusiveParse
+} from "./helpers";
 
 
 /**
@@ -329,7 +329,7 @@ export class Rainlang {
         // begin parsing expression sources and cache them
         exclusiveParse(document, /;/gd).forEach((v, i, a) => {
             // trim excess whitespaces from start and end of the whole text
-            const _trimmed = trim(v[0]);
+            const _trimmed = trackedTrim(v[0]);
 
             if (i === a.length - 1) {
                 if (_trimmed.text) {
@@ -395,7 +395,7 @@ export class Rainlang {
 
             // parse and cache the sub-expressions
             exclusiveParse(_sourceExp[i], /,/gd, _sourceExpPos[i][0], true).forEach(v => {
-                const _trimmed = trim(v[0]);
+                const _trimmed = trackedTrim(v[0]);
                 _subExp.push(_trimmed.text);
                 _subExpPos.push([
                     v[1][0] + _trimmed.startDelCount,

@@ -2,10 +2,10 @@ import toposort from "toposort";
 import { Rainlang } from "./rainlang";
 import { Meta } from "@rainprotocol/meta";
 import { 
-    trim, 
-    fillIn, 
+    fillIn,  
     hexlify, 
     ParsedChunk, 
+    trackedTrim, 
     execBytecode, 
     hasDuplicate, 
     getRandomInt, 
@@ -13,7 +13,7 @@ import {
     exclusiveParse, 
     isConsumableMeta, 
     uint8ArrayToString
-} from "../utils";
+} from "./helpers";
 import { 
     AST, 
     Range, 
@@ -925,7 +925,7 @@ export class RainDocument {
                 _noCmContent = "";
             }
             else {
-                const _noCmTrimmed = trim(v[0].slice(_index + 1));
+                const _noCmTrimmed = trackedTrim(v[0].slice(_index + 1));
                 _noCmContent = !_noCmTrimmed.text ? v[0].slice(_index + 1) : _noCmTrimmed.text;
 
                 const _contentText = this.textDocument.getText(
@@ -934,7 +934,7 @@ export class RainDocument {
                         this.textDocument.positionAt(v[1][1] + 1)
                     )
                 );
-                const _trimmed = trim(_contentText.slice(_index + 1));
+                const _trimmed = trackedTrim(_contentText.slice(_index + 1));
                 name = v[0].slice(0, _index);
                 namePosition = [v[1][0], v[1][0] + _index - 1];
                 content = !_trimmed.text ? _contentText.slice(_index + 1) : _trimmed.text;

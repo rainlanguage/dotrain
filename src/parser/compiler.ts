@@ -12,7 +12,7 @@ import {
     getRandomInt, 
     exclusiveParse, 
     stringToUint8Array 
-} from "../utils";
+} from "./helpers";
 import { 
     AST, 
     Position, 
@@ -620,14 +620,14 @@ export namespace Compile {
 }
 
 /**
- * @public Parse a text using NP bytecode
+ * @internal Parse a text using NP bytecode
  * @param text - the text to parse
  * @param deployedBytecode - The NP contract deployed bytecode
  * @param entrypoints - The number of entrypoints
  * @param options - options
  * @returns A Promise that resolves with ExpressionConfig or rejects with NPError
  */
-export async function npParse(
+async function npParse(
     text: string,
     deployedBytecode: BytesLike,
     entrypoints: number,
@@ -693,12 +693,12 @@ export async function npParse(
 }
 
 /**
- * @public Search in a Namespace for a given name
+ * @internal Search in a Namespace for a given name
  * @param name - The name
  * @param namespace - The Namespace
  * @returns An object that contains the found item and the parent namespace
  */
-export function searchNamespace(
+function searchNamespace(
     name: string, 
     namespace: AST.Namespace
 ): {

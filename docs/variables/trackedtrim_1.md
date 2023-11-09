@@ -1,13 +1,13 @@
-[Home](../index.md) &gt; [trim](./trim_1.md)
+[Home](../index.md) &gt; [trackedTrim](./trackedtrim_1.md)
 
-# Function trim()
+# Function trackedTrim()
 
 Trims a text (removing start/end whitespaces) with reporting the number of deletions
 
 <b>Signature:</b>
 
 ```typescript
-function trim(str: string): {
+function trackedTrim(str: string): {
     text: string;
     startDelCount: number;
     endDelCount: number;

@@ -25,8 +25,6 @@
 |  [exclusiveParse(str, pattern, offset, includeEmptyEnds)](./variables/exclusiveparse_1.md) | Parses an string by extracting the strings outside of matches |
 |  [execBytecode(bytecode, abi, fn, args, evm)](./variables/execbytecode_1.md) | Executes a contract bytecode given the contract abi, fnunction name and args |
 |  [execBytecode(bytecode, data, evm)](./variables/execbytecode_2.md) | Executes a bytecode with given data |
-|  [extractFromMap(map, properties)](./variables/extractfrommap_1.md) | Extract some of the properties from a Map as a new Map with same keys. |
-|  [extractFromRecord(record, properties)](./variables/extractfromrecord_1.md) | Extract some of the properties from a Record as new Record with same keys. |
 |  [fillIn(text, position)](./variables/fillin_1.md) | Fills a poistion in a text with whitespaces by keeping line structure intact |
 |  [fillOut(text, position)](./variables/fillout_1.md) | Fills a text with whitespaces excluding a position by keeping line structure intact |
 |  [getCompletion(document, position, setting)](./variables/getcompletion_1.md) | Provides completion items |
@@ -44,14 +42,10 @@
 |  [isConsumableMeta(maps)](./variables/isconsumablemeta_1.md) | Method to check if a meta sequence is consumable for a dotrain |
 |  [isEmptyRange(range)](./variables/isemptyrange_1.md) | Checks if a range is empty |
 |  [isInRange(range, position)](./variables/isinrange_1.md) | Checks if a position is within a range |
-|  [mapToRecord(map, properties)](./variables/maptorecord_1.md) | Conver a Map to a equivalent Record (a key/value pair object). Map keys must be of type acceptable by Record constructor, which are string, number or symbol. |
 |  [matchRange(range1, range2)](./variables/matchrange_1.md) | Checks if 2 ranges match exactly together |
-|  [npParse(text, deployedBytecode, entrypoints, options)](./variables/npparse_1.md) | Parse a text using NP bytecode |
 |  [rainlang(stringChunks, vars)](./variables/rainlang_1.md) | Method to be used as Tagged Templates to activate embedded rainlang in javascript/typescript in vscode that highlights the rainlang syntax. Requires rainlang vscode extension to be installed. |
-|  [recordToMap(record, properties)](./variables/recordtomap_1.md) | Conver a Record (a key/value pair object) to a equivalent Map. Map keys will be of type acceptable by Record constructor, which are string, number or symbol. |
-|  [searchNamespace(name, namespace)](./variables/searchnamespace_1.md) | Search in a Namespace for a given name |
 |  [toInteger(value)](./variables/tointeger_1.md) | Convert Rainlang numeric values to interger as string |
-|  [trim(str)](./variables/trim_1.md) | Trims a text (removing start/end whitespaces) with reporting the number of deletions |
+|  [trackedTrim(str)](./variables/trackedtrim_1.md) | Trims a text (removing start/end whitespaces) with reporting the number of deletions |
 |  [uint8ArrayToString(uint8array)](./variables/uint8arraytostring_1.md) | Method to convert Uint8Array to string |
 
 ## Interfaces
@@ -69,13 +63,13 @@
 |  [AST](./namespaces/ast.md) | This namespace provides all types and functionalities for RainDocument and Rainlang AST |
 |  [ClientCapabilities](./namespaces/clientcapabilities.md) | Predefined latest client capabilities |
 |  [Compile](./namespaces/compile.md) | Compile namespace provides methods for compiling rainlang or rain document text or instances |
+|  [ExpressionConfig](./namespaces/expressionconfig.md) | namespace provides additional methods for the Expressionconfig type |
 |  [ParsedChunk](./namespaces/parsedchunk.md) | The namespace provides function to type checking |
 
 ## Variables
 
 |  Variable | Description |
 |  --- | --- |
-|  [areEqualStateConfigs](./variables/areequalstateconfigs.md) | Checks 2 ExpressionConfig objects to see if they are equal or not |
 |  [arrayify](./variables/arrayify.md) | ethers arrayify |
 |  [concat](./variables/concat.md) | ethers concat |
 |  [CONSTANTS](./variables/constants.md) | ethers constants |
