@@ -5,7 +5,7 @@ const { Command } = require("commander");
 const { execSync } = require("child_process");
 const { version } = require("../package.json");
 const { readFileSync, writeFileSync } = require("fs");
-const { Compile, Meta, keccak256 } = require("../cjs.js");
+const { Compile, Meta, keccak256, HASH_PATTERN } = require("../cjs.js");
 
 // main command
 const cmd = new Command("dotrain");
@@ -50,45 +50,71 @@ subcmd
                         catch { /* */ }
                     }
                     if (conf) {
-                        if (conf.subgraphs) {
+                        if (conf.subgraphs !== undefined) {
                             if (
                                 Array.isArray(conf.subgraphs) && 
                                 conf.subgraphs.every(v => typeof v === "string")
                             ) metaStore.addSubgraphs(conf.subgraphs, false);
                             else throw "config: unexpected subgraphs type, expected string array.";
                         }
-                        if (conf.meta) {
+                        if (conf.meta !== undefined) {
                             if (typeof conf.meta === "object") {
                                 if (conf.meta.binary) {
                                     if (
                                         Array.isArray(conf.meta.binary) && 
-                                        conf.meta.binary.every(v => typeof v === "string")
+                                        conf.meta.binary.every(v => 
+                                            typeof v === "string" ||
+                                            ( 
+                                                typeof v === "object" &&
+                                                v.path !== undefined &&
+                                                v.hash !== undefined &&
+                                                typeof v.path === "string" &&
+                                                typeof v.hash === "string" &&
+                                                HASH_PATTERN.test(v.hash)
+                                            )
+                                        )
                                     ) {
                                         for (const p of conf.meta.binary) {
                                             const meta = "0x" + readFileSync(
-                                                path.resolve(parentDir, p), 
+                                                path.resolve(
+                                                    parentDir, 
+                                                    typeof p === "string" ? p : p.path
+                                                ), 
                                                 { encoding: "hex" }
                                             );
-                                            const hash = keccak256(meta);
+                                            const hash = typeof p === "string" ? keccak256(meta) : p.hash;
                                             await metaStore.update(hash, meta);
                                         }
                                     }
-                                    else throw "config: unexpected meta.binary type, expected array of paths of binary files containing the meta data";
+                                    else throw "config: unexpected meta.binary type, expected array of paths (or object with path and hash) of binary files containing the meta data";
                                 }
                                 if (conf.meta.hex) {
                                     if (
                                         Array.isArray(conf.meta.hex) && 
-                                        conf.meta.hex.every(v => typeof v === "string")
+                                        conf.meta.hex.every(v => 
+                                            typeof v === "string" ||
+                                            ( 
+                                                typeof v === "object" &&
+                                                v.path !== undefined &&
+                                                v.hash !== undefined &&
+                                                typeof v.path === "string" &&
+                                                typeof v.hash === "string" &&
+                                                HASH_PATTERN.test(v.hash)
+                                            )
+                                        )
                                     ) {
                                         for (const p of conf.meta.hex) {
                                             const meta = readFileSync(
-                                                path.resolve(parentDir, p)
+                                                path.resolve(
+                                                    parentDir, 
+                                                    typeof p === "string" ? p : p.path
+                                                )
                                             ).toString();
-                                            const hash = keccak256(meta);
+                                            const hash = typeof p === "string" ? keccak256(meta) : p.hash;
                                             await metaStore.update(hash, meta);
                                         }
                                     }
-                                    else throw "config: unexpected meta.hex type, expected array of paths of txt files containing the meta data as utf8 encoded hex string starting with 0x";
+                                    else throw "config: unexpected meta.hex type, expected array of paths (or object with path and hash) of txt files containing the meta data as utf8 encoded hex string starting with 0x";
                                 }
                             }
                             else throw "config: unexpected meta type, expected object";
@@ -159,7 +185,7 @@ cmd
                                 await metaStore.update(hash, meta);
                             }
                         }
-                        else throw "config: unexpected meta.binary type, expected array of paths of binary files containing the meta data";
+                        else throw "config: unexpected meta.binary type, expected array of paths (or object with path and hash) of binary files containing the meta data";
                     }
                     if (conf.meta.hex) {
                         if (
@@ -174,7 +200,7 @@ cmd
                                 await metaStore.update(hash, meta);
                             }
                         }
-                        else throw "config: unexpected meta.hex type, expected array of paths of txt files containing the meta data as utf8 encoded hex string starting with 0x";
+                        else throw "config: unexpected meta.hex type, expected array of paths (or object with path and hash) of txt files containing the meta data as utf8 encoded hex string starting with 0x";
                     }
                 }
                 else throw "config: unexpected meta type, expected object";

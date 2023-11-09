@@ -13,8 +13,20 @@
     }
   ],
   "meta": {
-    "binary": ["./path/to/binary-meta", "./path/to/binary-another-meta"],
-    "hex": ["./path/to/hex-meta", "./path/to/hex-another-meta"]
+    "binary": [
+      "./path/to/binary-meta", 
+      {
+        "path": "./path/to/another-binary-meta",
+        "hash": "0x123456789abcdef..."
+      }
+    ],
+    "hex": [
+      "./path/to/hex-meta", 
+      {
+        "path": "./path/to/another-hex-meta",
+        "hash": "0x123456789abcdef..."
+      }
+    ]
   },
   "subgraphs": [
     "https://subgraph1-uril",

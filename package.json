@@ -76,7 +76,7 @@
         "@ethereumjs/evm": "^2.0.0",
         "@ethereumjs/util": "^9.0.0",
         "@ethereumjs/vm": "^7.0.0",
-        "@rainprotocol/meta": "^3.0.3",
+        "@rainprotocol/meta": "^3.0.4",
         "commander": "^11.0.0",
         "ethers": "^5.7.2",
         "magic-string": "^0.30.0",

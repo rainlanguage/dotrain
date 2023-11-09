@@ -113,7 +113,7 @@ Compile subcommand details:
 
 <br>
 
-example of a config file content (see `./example.mapping.json`):
+example of a config file content (see `./example.config.rain.json`):
 ```json
 {
   // list of mapping details of dotrain files to get compiled to the specified output with specified entrypoints
@@ -132,9 +132,27 @@ example of a config file content (see `./example.mapping.json`):
   // path of local meta files to use when compiling, fields are optional
   "meta": {
     // for meta files that are binary
-    "binary": ["./path/to/binary-meta", "./path/to/binary-another-meta"],
+    // if the hash is provided (such as secod item), the validity of the data will be checked against ot
+    "binary": [
+      // just path
+      "./path/to/binary-meta", 
+      // path with hash, this format will result in explicit hash check
+      {
+        "path": "./path/to/another-binary-meta",
+        "hash": "0x123456789abcdef..."
+      }
+    ],
     // for meta files that are utf8 encoded hex string starting with 0x
-    "hex": ["./path/to/hex-meta", "./path/to/hex-another-meta"]
+    // if the hash is provided (such as secod item), the validity of the data will be checked against ot
+    "hex": [
+      // just path
+      "./path/to/hex-meta", 
+      // path with hash, this format will result in explicit hash check
+      {
+        "path": "./path/to/another-hex-meta",
+        "hash": "0x123456789abcdef..."
+      }
+    ]
   },
   // list of subgraph endpoints to use when compiling
   "subgraphs": [
