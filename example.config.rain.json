@@ -1,6 +1,6 @@
 
 {
-  "compile": [
+  "src": [
     {
       "input": "./path/to/file1.rain",
       "output": "./path/to/compiled-file1.json",

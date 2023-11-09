@@ -84,10 +84,10 @@ Command details:
 
     Usage: dotrain [options] [command]
 
-    CLI command to compile a dotrain file(s).
+    CLI command to run dotrain compiler.
 
     Options:
-      -c, --config <path>  Path to a config json file(default is './config.rain.json' if not specified) that contains configurations, which can contain: mappings details for compiling, path of local meta files, list of subgraph endpoints, see 'example.config.rain.json' for more details.
+      -c, --config <path>  Path to a config json file(default is './config.rain.json' if not specified) that contains configurations, which can contain: list of mapping details for compiling, path of local meta files, list of subgraph endpoints, see 'example.config.rain.json' for more details.
       -s, --silent         Print no std logs.
       -V, --version        output the version number
       -h, --help           display help for command
@@ -106,9 +106,9 @@ Compile subcommand details:
       -e, --entrypoints <bindings...>  Entrypoints to compile
       -i, --input <path>               Path to .rain file
       -o, --output <path>              Path to output file, output format is .json
-      -l, --log                        Log the result in terminal
+      -l, --log                        Log the compilation result in terminal
       -c, --config <path>              Path to a config json file(default is './config.rain.json' if not specified) that contains configurations to get local meta files and subgraphs, see 'example.config.rain.json' for more details.
-      -s, --silent                     Print no std logs.
+      -s, --silent                     Print no informative logs, except compilation results if --log is used
       -h, --help                       display help for command
 
 <br>
@@ -116,8 +116,8 @@ Compile subcommand details:
 example of a config file content (see `./example.mapping.json`):
 ```json
 {
-  // list of dotrain files mappings to get compiled to the specified output with specified entrypoints
-  "compile": [
+  // list of mapping details of dotrain files to get compiled to the specified output with specified entrypoints
+  "src": [
     {
       "input": "./path/to/file1.rain",
       "output": "./path/to/compiled-file1.json",
@@ -129,7 +129,7 @@ example of a config file content (see `./example.mapping.json`):
       "entrypoints": ["entrypoint1", "entrypoint2"]
     }
   ],
-  // path of local meta files to use when compiling
+  // path of local meta files to use when compiling, fields are optional
   "meta": {
     // for meta files that are binary
     "binary": ["./path/to/binary-meta", "./path/to/binary-another-meta"],

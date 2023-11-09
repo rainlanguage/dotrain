@@ -2,26 +2,29 @@
 
 const path = require("path");
 const { Command } = require("commander");
-const { Compile, Meta } = require("../cjs.js");
 const { execSync } = require("child_process");
 const { version } = require("../package.json");
 const { readFileSync, writeFileSync } = require("fs");
-const { keccak256 } = require("@rainprotocol/meta");
+const { Compile, Meta, keccak256 } = require("../cjs.js");
 
-
+// main command
 const cmd = new Command("dotrain");
+
+// subcommand "compile"
 const subcmd = new Command("compile");
+
 subcmd
     .description("compile a single .rain file.")
     .requiredOption("-e, --entrypoints <bindings...>", "Entrypoints to compile")
     .requiredOption("-i, --input <path>", "Path to .rain file")
     .requiredOption("-o, --output <path>", "Path to output file, output format is .json")
-    .option("-l, --log", "Log the result in terminal")
+    .option("-l, --log", "Log the compilation result in terminal")
     .option("-c, --config <path>", "Path to a config json file(default is './config.rain.json' if not specified) that contains configurations to get local meta files and subgraphs, see 'example.config.rain.json' for more details.")
-    .option("-s, --silent", "Print no std logs.")
+    .option("-s, --silent", "Print no informative logs, except compilation results if --log is used")
     .action(async (_, cmd) => {
+        // since --config and --silent are global options, they arent present in local options (first arg: _)
+        // so we get all options from cmd using optsWithGlobals() method of the command object (second arg: cmd)
         const opts = cmd.optsWithGlobals();
-        console.log(opts);
         try {
             if (Array.isArray(opts.entrypoints) && opts.entrypoints.length > 0) {
                 if (!opts.input.endsWith(".rain")) throw "invalid input file!";
@@ -31,37 +34,40 @@ subcmd
                         path.resolve(parentDir, opts.input)
                     ).toString();
                     const metaStore = new Meta.Store();
-                    let configPath = path.resolve(parentDir, "./config.rain.json");
-                    let configContent;
+                    let confPath = path.resolve(parentDir, "./config.rain.json");
+                    let conf;
                     if (opts.config) {
                         if (!opts.config.endsWith(".json")) {
                             throw "unexpected config file, expected json!";
                         }
-                        else configPath = path.resolve(parentDir, opts.config);
+                        else confPath = path.resolve(parentDir, opts.config);
+                        conf = JSON.parse(readFileSync(confPath).toString());
                     }
-                    try {
-                        configContent = JSON.parse(readFileSync(configPath).toString());
+                    else {
+                        try {
+                            conf = JSON.parse(readFileSync(confPath).toString());
+                        }
+                        catch { /* */ }
                     }
-                    catch { /* */ }
-                    if (configContent) {
-                        if (configContent.subgraphs) {
+                    if (conf) {
+                        if (conf.subgraphs) {
                             if (
-                                Array.isArray(configContent.subgraphs) && 
-                                configContent.subgraphs.every(v => typeof v === "string")
-                            ) metaStore.addSubgraphs(configContent.subgraphs, false);
+                                Array.isArray(conf.subgraphs) && 
+                                conf.subgraphs.every(v => typeof v === "string")
+                            ) metaStore.addSubgraphs(conf.subgraphs, false);
                             else throw "config: unexpected subgraphs type, expected string array.";
                         }
-                        if (configContent.meta) {
-                            if (typeof configContent.meta === "object") {
-                                if (configContent.meta.binary) {
+                        if (conf.meta) {
+                            if (typeof conf.meta === "object") {
+                                if (conf.meta.binary) {
                                     if (
-                                        Array.isArray(configContent.meta.binary) && 
-                                        configContent.meta.binary.every(v => typeof v === "string")
+                                        Array.isArray(conf.meta.binary) && 
+                                        conf.meta.binary.every(v => typeof v === "string")
                                     ) {
-                                        for (const p of configContent.meta.binary) {
+                                        for (const p of conf.meta.binary) {
                                             const meta = "0x" + readFileSync(
                                                 path.resolve(parentDir, p), 
-                                                {encoding: "hex"}
+                                                { encoding: "hex" }
                                             );
                                             const hash = keccak256(meta);
                                             await metaStore.update(hash, meta);
@@ -69,12 +75,12 @@ subcmd
                                     }
                                     else throw "config: unexpected meta.binary type, expected array of paths of binary files containing the meta data";
                                 }
-                                if (configContent.meta.hex) {
+                                if (conf.meta.hex) {
                                     if (
-                                        Array.isArray(configContent.meta.hex) && 
-                                        configContent.meta.hex.every(v => typeof v === "string")
+                                        Array.isArray(conf.meta.hex) && 
+                                        conf.meta.hex.every(v => typeof v === "string")
                                     ) {
-                                        for (const p of configContent.meta.hex) {
+                                        for (const p of conf.meta.hex) {
                                             const meta = readFileSync(
                                                 path.resolve(parentDir, p)
                                             ).toString();
@@ -115,53 +121,52 @@ subcmd
     });
 
 cmd
-    .description("CLI command to compile a dotrain file(s).")
-    .option("-c, --config <path>", "Path to a config json file(default is './config.rain.json' if not specified) that contains configurations, which can contain: mappings details for compiling, path of local meta files, list of subgraph endpoints, see 'example.config.rain.json' for more details.")
+    .description("CLI command to run dotrain compiler.")
+    .option("-c, --config <path>", "Path to a config json file(default is './config.rain.json' if not specified) that contains configurations, which can contain: list of mapping details for compiling, path of local meta files, list of subgraph endpoints, see 'example.config.rain.json' for more details.")
     .option("-s, --silent", "Print no std logs.")
     .version(version)
     .addCommand(subcmd)
     .action(async (opts) => {
         try {
             const parentDir = execSync("pwd").toString().trim();
-            let configPath = path.resolve(parentDir, "./config.rain.json");
+            let confPath = path.resolve(parentDir, "./config.rain.json");
             if (opts.config) {
                 if (!opts.config.endsWith(".json")) {
                     throw "unexpected config file, expected json!";
                 }
-                else configPath = path.resolve(parentDir, opts.config);
+                else confPath = path.resolve(parentDir, opts.config);
             }
-        
-            const configContent = JSON.parse(readFileSync(configPath).toString());
+            const conf = JSON.parse(readFileSync(confPath).toString());
             const metaStore = new Meta.Store();
-            const filesToCompile = [];
-            if (configContent.subgraphs !== undefined) {
+            const toBeCompiled = [];
+            if (conf.subgraphs !== undefined) {
                 if (
-                    Array.isArray(configContent.subgraphs) && 
-                    configContent.subgraphs.every(v => typeof v === "string")
-                ) metaStore.addSubgraphs(configContent.subgraphs, false);
+                    Array.isArray(conf.subgraphs) && 
+                    conf.subgraphs.every(v => typeof v === "string")
+                ) metaStore.addSubgraphs(conf.subgraphs, false);
                 else throw "config: unexpected subgraphs type, expected string array.";
             }
-            if (configContent.meta !== undefined) {
-                if (typeof configContent.meta === "object") {
-                    if (configContent.meta.binary) {
+            if (conf.meta !== undefined) {
+                if (typeof conf.meta === "object") {
+                    if (conf.meta.binary) {
                         if (
-                            Array.isArray(configContent.meta.binary) && 
-                            configContent.meta.binary.every(v => typeof v === "string")
+                            Array.isArray(conf.meta.binary) && 
+                            conf.meta.binary.every(v => typeof v === "string")
                         ) {
-                            for (const p of configContent.meta.binary) {
-                                const meta = "0x" + readFileSync(path.resolve(parentDir, p), {encoding: "hex"});
+                            for (const p of conf.meta.binary) {
+                                const meta = "0x" + readFileSync(path.resolve(parentDir, p), { encoding: "hex" });
                                 const hash = keccak256(meta);
                                 await metaStore.update(hash, meta);
                             }
                         }
                         else throw "config: unexpected meta.binary type, expected array of paths of binary files containing the meta data";
                     }
-                    if (configContent.meta.hex) {
+                    if (conf.meta.hex) {
                         if (
-                            Array.isArray(configContent.meta.hex) && 
-                            configContent.meta.hex.every(v => typeof v === "string")
+                            Array.isArray(conf.meta.hex) && 
+                            conf.meta.hex.every(v => typeof v === "string")
                         ) {
-                            for (const p of configContent.meta.hex) {
+                            for (const p of conf.meta.hex) {
                                 const meta = readFileSync(
                                     path.resolve(parentDir, p)
                                 ).toString();
@@ -175,11 +180,11 @@ cmd
                 else throw "config: unexpected meta type, expected object";
             }
             if (
-                configContent.compile !== undefined && 
-                Array.isArray(configContent.compile) && 
-                configContent.compile.length > 0
+                conf.src !== undefined && 
+                Array.isArray(conf.src) && 
+                conf.src.length > 0
             ) {
-                for (const map of configContent.compile) {
+                for (const map of conf.src) {
                     if (
                         typeof map === "object" && 
                         map.input !== undefined && 
@@ -191,15 +196,15 @@ cmd
                         Array.isArray(map.entrypoints) && 
                         map.entrypoints.every(v => typeof v === "string")
                     ) {
-                        filesToCompile.push(map);
+                        toBeCompiled.push(map);
                     }
                     else throw "unexpected compile map, each compile mapping should contain 'input - path to .rain file', 'output - path to output' and 'entrypoints - array of entrypoints'";
                 }
             }
             else throw "config: unexpected compile type, expected array of compile mappings.";
 
-            const filesToWrite = [];
-            for (const map of filesToCompile) {
+            const toBeWritten = [];
+            for (const map of toBeCompiled) {
                 const dotrainContent = readFileSync(
                     path.resolve(parentDir, map.input)
                 ).toString();
@@ -208,9 +213,9 @@ cmd
                     map.entrypoints,
                     { metaStore }
                 );
-                filesToWrite.push([JSON.stringify(result, null, 2), map.output]);
+                toBeWritten.push([JSON.stringify(result, null, 2), map.output]);
             }
-            for (const file of filesToWrite) {
+            for (const file of toBeWritten) {
                 writeFileSync(
                     file[1].endsWith(".json") 
                         ? path.resolve(parentDir,file[1]) 
@@ -227,10 +232,10 @@ cmd
         }
     });
 
+
 const main = async args => {
     await cmd.parseAsync(args);
 };
-
 
 main(
     process.argv
