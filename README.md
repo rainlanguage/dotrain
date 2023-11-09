@@ -61,67 +61,87 @@ const expressionConfig = await Compile.Rainlang(rainlangText, bytecodeSource, en
 <br>
 
 ## CLI
-`npx` command to compile a dotrain file to `ExpressionConfig` in json format.
+`npx` command to compile dotrain file(s) to `ExpressionConfig` in json format.
  - if on current repo:
 ```bash
-node cli/dotrain [options]
+node cli/dotrain [options] [command]
 ```
  - if the package is already installed:
 ```bash
-npx dotrain [options]
+npx dotrain [options] [command]
 ```
  - if package is not installed (executing remotely): 
  `--yes` will accept the prompt to cache the package for execution
 ```bash
-npx @rainprotocol/rainlang [options] --yes
+npx @rainprotocol/rainlang [options] [command] --yes
 ```
  or
 ```bash
-npx --p @rainprotocol/rainlang dotrain [options] --yes
+npx --p @rainprotocol/rainlang dotrain [options] [command] --yes
 ```
- <br>
- Command details:
+<br>
+Command details:
 
-    Usage: dotrain [options]
+    Usage: dotrain [options] [command]
 
-    CLI command to compile a dotrain source file.
+    CLI command to compile a dotrain file(s).
 
     Options:
-      -c, --compile <entrypoints...>  Compiles specified entrypoints of --input .rain file to --output .json file
-      -i, --input <path>              Path to .rain file
-      -o, --output <path>             Path to output file, output format is .json
-      -b, --batch-compile <path>      Path to a json file that contains mappings details for compiling in batch, the path to the mapping array in the Json file can be specified as well with dot spearated keys (example 'compile.batch'), a mapping is an array of objects each having 3 keys 'input (path to .rain file)', 'output (path to output .json file)' and 'entrypoints (array of binding keys to compile)'
-      -s, --stdout                    Log the result in terminal
-      -V, --version                   output the version number
-      -h, --help                      display help for command
+      -c, --config <path>  Path to a config json file(default is './config.rain.json' if not specified) that contains configurations, which can contain: mappings details for compiling, path of local meta files, list of subgraph endpoints, see 'example.config.rain.json' for more details.
+      -s, --silent         Print no std logs.
+      -V, --version        output the version number
+      -h, --help           display help for command
+
+    Commands:
+      compile [options]    compile a single .rain file.
+
+<br>
+Compile subcommand details:
+
+    Usage: dotrain compile [options]
+
+    compile a single .rain file.
+
+    Options:
+      -e, --entrypoints <bindings...>  Entrypoints to compile
+      -i, --input <path>               Path to .rain file
+      -o, --output <path>              Path to output file, output format is .json
+      -l, --log                        Log the result in terminal
+      -c, --config <path>              Path to a config json file(default is './config.rain.json' if not specified) that contains configurations to get local meta files and subgraphs, see 'example.config.rain.json' for more details.
+      -s, --silent                     Print no std logs.
+      -h, --help                       display help for command
 
 <br>
 
-example of a mapping file content and its executing command (see `./example.mapping.json`):
-```bash
-dotrain --batch ./path/to/file.json compile.batch
-```
+example of a config file content (see `./example.mapping.json`):
 ```json
 {
-  "compile": {
-    "batch": [
-      {
-        "input": "./path/to/dotrain1.rain",
-        "output": "./path/to/compiled1.json",
-        "entrypoints": [
-          "exp-1", 
-          "exp-2"
-        ]
-      },
-      {
-        "input": "./path/to/dotrain12.rain",
-        "output": "./path/to/compiled2.json",
-        "entrypoints": [
-          "main"
-        ]
-      }
-    ]
-  }
+  // list of dotrain files mappings to get compiled to the specified output with specified entrypoints
+  "compile": [
+    {
+      "input": "./path/to/file1.rain",
+      "output": "./path/to/compiled-file1.json",
+      "entrypoints": ["entrypoint1", "entrypoint2"]
+    },
+    {
+      "input": "./path/to/file2.rain",
+      "output": "./path/to/compiled-file2.json",
+      "entrypoints": ["entrypoint1", "entrypoint2"]
+    }
+  ],
+  // path of local meta files to use when compiling
+  "meta": {
+    // for meta files that are binary
+    "binary": ["./path/to/binary-meta", "./path/to/binary-another-meta"],
+    // for meta files that are utf8 encoded hex string starting with 0x
+    "hex": ["./path/to/hex-meta", "./path/to/hex-another-meta"]
+  },
+  // list of subgraph endpoints to use when compiling
+  "subgraphs": [
+    "https://subgraph1-uril",
+    "https://subgraph2-uril",
+    "https://subgraph3-uril"
+  ]
 }
 ```
 
