@@ -87,16 +87,17 @@ Command details:
     CLI command to run dotrain compiler.
 
     Options:
-      -c, --config <path>  Path to a config json file(default is './config.rain.json' if not specified) that contains configurations, which can contain: list of mapping details for compiling, path of local meta files, list of subgraph endpoints, see 'example.config.rain.json' for more details.
+      -c, --config <path>  Path to the rainconfig json file(default is './rainconfig.json' or './.rainconfig.json' if not specified) that contains configurations, see './example.rainconfig.json' for more details.
       -s, --silent         Print no std logs.
       -V, --version        output the version number
       -h, --help           display help for command
 
     Commands:
       compile [options]    compile a single .rain file.
+      rainconfig           show detailed information about rainconfig.json
 
 <br>
-Compile subcommand details:
+Compile subcommand details (compiling specific file):
 
     Usage: dotrain compile [options]
 
@@ -107,16 +108,45 @@ Compile subcommand details:
       -i, --input <path>               Path to .rain file
       -o, --output <path>              Path to output file, output format is .json
       -l, --log                        Log the compilation result in terminal
-      -c, --config <path>              Path to a config json file(default is './config.rain.json' if not specified) that contains configurations to get local meta files and subgraphs, see 'example.config.rain.json' for more details.
+      -c, --config <path>              Path to the rainconfig json file(default is './rainconfig.json' or './.rainconfig.json' if not specified) that contains configurations, see './example.rainconfig.json' for more details.
       -s, --silent                     Print no informative logs, except compilation results if --log is used
       -h, --help                       display help for command
 
 <br>
+rainconfig information:
 
-example of a config file content (see `./example.config.rain.json`):
+    Description:
+    rainconfig.json provides configuration details and information required for .rain compiler.
+
+    usually it should be placed at the root directory of the working workspace and named as 
+    'rainconfig.json' or '.rainconfig.json', as by doing so it will automatically be read 
+    and having rainlang vscode extension, it will provide autocomplete and information on 
+    each field, however if this is not desired at times, it is possible to pass any path for 
+    rainconfig when using the dotrain command using --config option.
+
+    all fields in the rainconfig are optional and are as follows:
+
+    - src: Specifies list of .rain source files mappings for compilation, where specified 
+    .rain input files will get compiled and results written into output json file.
+
+    - include: Specifies a list of directories (files/folders) to be included and watched. 
+    'src' files are included by default and folders will be watched recursively for .rain files. 
+    These files will be available as dotrain meta in the cas so if their hash is specified in a
+    compilation target they will get resolved.
+
+    - subgraphs: Additional subgraph endpoint URLs to include when searching for metas of 
+    specified meta hashes in a rainlang document.
+
+    - meta: Lis of paths (or object of path and hash) of local meta files as binary or utf8 
+    encoded text file containing hex string starting with 0x. Binary meta files should go 
+    under 'meta.binary' field and hex meta files should go under 'meta.hex' field.
+
+<br>
+
+example of a config file content (see `./example.rainconfig.json`):
 ```json
 {
-  // list of mapping details of dotrain files to get compiled to the specified output with specified entrypoints
+  "include": ["./folder1", "./folder2"],
   "src": [
     {
       "input": "./path/to/file1.rain",
@@ -129,32 +159,22 @@ example of a config file content (see `./example.config.rain.json`):
       "entrypoints": ["entrypoint1", "entrypoint2"]
     }
   ],
-  // path of local meta files to use when compiling, fields are optional
   "meta": {
-    // for meta files that are binary
-    // if the hash is provided (such as secod item), the validity of the data will be checked against ot
     "binary": [
-      // just path
       "./path/to/binary-meta", 
-      // path with hash, this format will result in explicit hash check
       {
         "path": "./path/to/another-binary-meta",
         "hash": "0x123456789abcdef..."
       }
     ],
-    // for meta files that are utf8 encoded hex string starting with 0x
-    // if the hash is provided (such as secod item), the validity of the data will be checked against ot
     "hex": [
-      // just path
       "./path/to/hex-meta", 
-      // path with hash, this format will result in explicit hash check
       {
         "path": "./path/to/another-hex-meta",
         "hash": "0x123456789abcdef..."
       }
     ]
   },
-  // list of subgraph endpoints to use when compiling
   "subgraphs": [
     "https://subgraph1-uril",
     "https://subgraph2-uril",

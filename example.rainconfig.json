@@ -1,5 +1,6 @@
 
 {
+  "include": ["./folder1", "./folder2"],
   "src": [
     {
       "input": "./path/to/file1.rain",

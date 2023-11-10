@@ -28,7 +28,8 @@
         "/cjs.js",
         "/esm.js",
         "/cjs.d.ts",
-        "/esm.d.ts"
+        "/esm.d.ts",
+        "/example.rainconfig.json"
     ],
     "bin": {
         "dotrain": "./cli/dotrain.js"
