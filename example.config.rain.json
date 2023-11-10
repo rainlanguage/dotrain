@@ -1,0 +1,36 @@
+
+{
+  "src": [
+    {
+      "input": "./path/to/file1.rain",
+      "output": "./path/to/compiled-file1.json",
+      "entrypoints": ["entrypoint1", "entrypoint2"]
+    },
+    {
+      "input": "./path/to/file2.rain",
+      "output": "./path/to/compiled-file2.json",
+      "entrypoints": ["entrypoint1", "entrypoint2"]
+    }
+  ],
+  "meta": {
+    "binary": [
+      "./path/to/binary-meta", 
+      {
+        "path": "./path/to/another-binary-meta",
+        "hash": "0x123456789abcdef..."
+      }
+    ],
+    "hex": [
+      "./path/to/hex-meta", 
+      {
+        "path": "./path/to/another-hex-meta",
+        "hash": "0x123456789abcdef..."
+      }
+    ]
+  },
+  "subgraphs": [
+    "https://subgraph1-uril",
+    "https://subgraph2-uril",
+    "https://subgraph3-uril"
+  ]
+}

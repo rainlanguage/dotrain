@@ -32,15 +32,16 @@ await myRainDocument.updateText(newText)
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [bindings](./raindocument.md#bindings-property) | `Binding[]` |  |
-|  [comments](./raindocument.md#comments-property) | `Comment[]` |  |
+|  [authoringMeta](./raindocument.md#authoringMeta-property) | `Meta.Authoring[]` |  |
+|  [authoringMetaPath](./raindocument.md#authoringMetaPath-property) | `string` |  |
+|  [bindings](./raindocument.md#bindings-property) | `AST.Binding[]` |  |
+|  [bytecode](./raindocument.md#bytecode-property) | `string` |  |
+|  [comments](./raindocument.md#comments-property) | `AST.Comment[]` |  |
 |  [constants](./raindocument.md#constants-property) | `Record<string, string>` |  |
-|  [imports](./raindocument.md#imports-property) | `Import[]` |  |
-|  [metaStore](./raindocument.md#metaStore-property) | [MetaStore](./metastore.md) |  |
-|  [namespace](./raindocument.md#namespace-property) | [Namespace](../types/namespace.md) |  |
-|  [opmeta](./raindocument.md#opmeta-property) | `OpMeta[]` |  |
-|  [opmetaPath](./raindocument.md#opmetaPath-property) | `string` |  |
-|  [problems](./raindocument.md#problems-property) | `Problem[]` |  |
+|  [imports](./raindocument.md#imports-property) | `AST.Import[]` |  |
+|  [metaStore](./raindocument.md#metaStore-property) | `Meta.Store` |  |
+|  [namespace](./raindocument.md#namespace-property) | [AST.Namespace](../namespaces/ast/types/namespace.md) |  |
+|  [problems](./raindocument.md#problems-property) | `AST.Problem[]` |  |
 |  [runtimeError](./raindocument.md#runtimeError-property) | `Error \| undefined` |  |
 |  [textDocument](./raindocument.md#textDocument-property) | `TextDocument` |  |
 
@@ -64,6 +65,26 @@ await myRainDocument.updateText(newText)
 
 ## Property Details
 
+<a id="authoringMeta-property"></a>
+
+### authoringMeta
+
+<b>Signature:</b>
+
+```typescript
+authoringMeta: Meta.Authoring[];
+```
+
+<a id="authoringMetaPath-property"></a>
+
+### authoringMetaPath
+
+<b>Signature:</b>
+
+```typescript
+authoringMetaPath: string;
+```
+
 <a id="bindings-property"></a>
 
 ### bindings
@@ -71,7 +92,17 @@ await myRainDocument.updateText(newText)
 <b>Signature:</b>
 
 ```typescript
-bindings: Binding[];
+bindings: AST.Binding[];
+```
+
+<a id="bytecode-property"></a>
+
+### bytecode
+
+<b>Signature:</b>
+
+```typescript
+bytecode: string;
 ```
 
 <a id="comments-property"></a>
@@ -81,7 +112,7 @@ bindings: Binding[];
 <b>Signature:</b>
 
 ```typescript
-comments: Comment[];
+comments: AST.Comment[];
 ```
 
 <a id="constants-property"></a>
@@ -101,7 +132,7 @@ readonly constants: Record<string, string>;
 <b>Signature:</b>
 
 ```typescript
-imports: Import[];
+imports: AST.Import[];
 ```
 
 <a id="metaStore-property"></a>
@@ -111,7 +142,7 @@ imports: Import[];
 <b>Signature:</b>
 
 ```typescript
-metaStore: MetaStore;
+metaStore: Meta.Store;
 ```
 
 <a id="namespace-property"></a>
@@ -121,27 +152,7 @@ metaStore: MetaStore;
 <b>Signature:</b>
 
 ```typescript
-namespace: Namespace;
-```
-
-<a id="opmeta-property"></a>
-
-### opmeta
-
-<b>Signature:</b>
-
-```typescript
-opmeta: OpMeta[];
-```
-
-<a id="opmetaPath-property"></a>
-
-### opmetaPath
-
-<b>Signature:</b>
-
-```typescript
-opmetaPath: string;
+namespace: AST.Namespace;
 ```
 
 <a id="problems-property"></a>
@@ -151,7 +162,7 @@ opmetaPath: string;
 <b>Signature:</b>
 
 ```typescript
-problems: Problem[];
+problems: AST.Problem[];
 ```
 
 <a id="runtimeError-property"></a>
@@ -185,7 +196,7 @@ Creates a new RainDocument object instance with a TextDocument
 <b>Signature:</b>
 
 ```typescript
-static create(textDocument: TextDocument, metaStore?: MetaStore): Promise<RainDocument>;
+static create(textDocument: TextDocument, metaStore?: Meta.Store): Promise<RainDocument>;
 ```
 
 #### Parameters
@@ -193,7 +204,7 @@ static create(textDocument: TextDocument, metaStore?: MetaStore): Promise<RainDo
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  textDocument | `TextDocument` | The text document |
-|  metaStore | [MetaStore](./metastore.md) | (optional) The initial MetaStore object |
+|  metaStore | `Meta.Store` | (optional) The initial Meta.Store object |
 
 <b>Returns:</b>
 
@@ -210,7 +221,7 @@ Creates a new RainDocument object instance from a text string
 <b>Signature:</b>
 
 ```typescript
-static create(text: string, metaStore?: MetaStore, uri?: string, version?: number): Promise<RainDocument>;
+static create(text: string, metaStore?: Meta.Store, uri?: string, version?: number): Promise<RainDocument>;
 ```
 
 #### Parameters
@@ -218,7 +229,7 @@ static create(text: string, metaStore?: MetaStore, uri?: string, version?: numbe
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  text | `string` | The text string |
-|  metaStore | [MetaStore](./metastore.md) | (optional) The initial MetaStore object |
+|  metaStore | `Meta.Store` | (optional) The initial Meta.Store object |
 |  uri | `string` | (optional) The URI of the text, URI is the unique identifier of a TextDocument |
 |  version | `number` | (optional) The version of the text |
 
@@ -239,11 +250,11 @@ Get all problems of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getAllProblems(): Problem[];
+getAllProblems(): AST.Problem[];
 ```
 <b>Returns:</b>
 
-`Problem[]`
+`AST.Problem[]`
 
 <a id="getBindingsProblems-method-1"></a>
 
@@ -254,11 +265,11 @@ Get the expression problems of this RainDocument instance
 <b>Signature:</b>
 
 ```typescript
-getBindingsProblems(): Problem[];
+getBindingsProblems(): AST.Problem[];
 ```
 <b>Returns:</b>
 
-`Problem[]`
+`AST.Problem[]`
 
 <a id="getText-method-1"></a>
 

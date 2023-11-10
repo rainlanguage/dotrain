@@ -1,5 +1,5 @@
-import { RainDocument } from "../dotrain/rainDocument";
-import { Range, ErrorCode, Diagnostic, TextDocument, DiagnosticSeverity, LanguageServiceParams } from "../rainLanguageTypes";
+import { RainDocument } from "../parser/rainDocument";
+import { Range, ErrorCode, Diagnostic, TextDocument, DiagnosticSeverity, LanguageServiceParams } from "../languageTypes";
 
 
 /**
@@ -37,7 +37,7 @@ export async function getDiagnostics(
         _rd = document;
         _td = _rd.textDocument;
         if (setting?.metaStore && _rd.metaStore !== setting.metaStore) {
-            _rd.metaStore.updateStore(setting.metaStore);
+            _rd.metaStore.update(setting.metaStore);
             await _rd.parse();
         }
     }

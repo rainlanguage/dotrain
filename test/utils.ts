@@ -17,6 +17,11 @@ export const opMetaHash = "0xe4c000f3728f30e612b34e401529ce5266061cc1233dc54a6a8
  */
 export const contractMetaHash = "0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c";
 
+/**
+ * The main deployer hash
+ */
+export const deployerHash = "0x78fd1edb0bdb928db6015990fecafbb964b44692e2d435693062dd4efc6254dd";
+
 /** 
  * Assert errors thrown by functions
 */

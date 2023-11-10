@@ -2,7 +2,7 @@
 
 # Class Rainlang
 
-Rainlang class is a the main workhorse that does all the heavy work of parsing a document, written in TypeScript in order to parse a text document using an op meta into known types which later will be used in RainDocument object and Rain Language Services and Compiler
+Rainlang class is a the main workhorse that does all the heavy work of parsing a document, written in TypeScript in order to parse a text document using an authoring meta into known types which later will be used in RainDocument object and Rain Language Services and Compiler
 
 <b>Signature:</b>
 
@@ -14,20 +14,22 @@ class Rainlang
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [ast](./rainlang.md#ast-property) | [RainlangAST](../types/rainlangast.md) |  |
-|  [binding](./rainlang.md#binding-property) | [Binding](../types/binding.md) |  |
-|  [comments](./rainlang.md#comments-property) | `Comment[]` |  |
+|  [ast](./rainlang.md#ast-property) | [AST.Rainlang](../namespaces/ast/types/rainlang.md) |  |
+|  [authoringMeta](./rainlang.md#authoringMeta-property) | `Meta.Authoring[]` |  |
+|  [binding](./rainlang.md#binding-property) | [AST.Binding](../namespaces/ast/types/binding.md) |  |
+|  [bytecode](./rainlang.md#bytecode-property) | `string` |  |
+|  [comments](./rainlang.md#comments-property) | `AST.Comment[]` |  |
 |  [constants](./rainlang.md#constants-property) | `Record<string, string>` |  |
-|  [namespaces](./rainlang.md#namespaces-property) | [Namespace](../types/namespace.md) |  |
-|  [opmeta](./rainlang.md#opmeta-property) | `OpMeta[]` |  |
-|  [problems](./rainlang.md#problems-property) | `Problem[]` |  |
+|  [namespaces](./rainlang.md#namespaces-property) | [AST.Namespace](../namespaces/ast/types/namespace.md) |  |
+|  [problems](./rainlang.md#problems-property) | `AST.Problem[]` |  |
 |  [text](./rainlang.md#text-property) | `string` |  |
 
 ## Static Methods
 
 |  Method | Description |
 |  --- | --- |
-|  [create(text, opmetaHash, metaStore)](./rainlang.md#create-method-static-1) | Creates a new Rainlang instance with a opmeta hash |
+|  [create(text, bytecode, metaStore)](./rainlang.md#create-method-static-1) | Creates a new Rainlang instance with a contract bytecode |
+|  [create(text, bytecodeHash, metaStore)](./rainlang.md#create-method-static-2) | Creates a new Rainlang instance with a bytecode meta hash |
 
 ## Methods
 
@@ -46,7 +48,17 @@ class Rainlang
 <b>Signature:</b>
 
 ```typescript
-ast: RainlangAST;
+ast: AST.Rainlang;
+```
+
+<a id="authoringMeta-property"></a>
+
+### authoringMeta
+
+<b>Signature:</b>
+
+```typescript
+authoringMeta: Meta.Authoring[];
 ```
 
 <a id="binding-property"></a>
@@ -56,7 +68,17 @@ ast: RainlangAST;
 <b>Signature:</b>
 
 ```typescript
-binding?: Binding;
+binding?: AST.Binding;
+```
+
+<a id="bytecode-property"></a>
+
+### bytecode
+
+<b>Signature:</b>
+
+```typescript
+bytecode: string;
 ```
 
 <a id="comments-property"></a>
@@ -66,7 +88,7 @@ binding?: Binding;
 <b>Signature:</b>
 
 ```typescript
-comments: Comment[];
+comments: AST.Comment[];
 ```
 
 <a id="constants-property"></a>
@@ -86,17 +108,7 @@ readonly constants: Record<string, string>;
 <b>Signature:</b>
 
 ```typescript
-namespaces: Namespace;
-```
-
-<a id="opmeta-property"></a>
-
-### opmeta
-
-<b>Signature:</b>
-
-```typescript
-opmeta: OpMeta[];
+namespaces: AST.Namespace;
 ```
 
 <a id="problems-property"></a>
@@ -106,7 +118,7 @@ opmeta: OpMeta[];
 <b>Signature:</b>
 
 ```typescript
-problems: Problem[];
+problems: AST.Problem[];
 ```
 
 <a id="text-property"></a>
@@ -123,14 +135,14 @@ text: string;
 
 <a id="create-method-static-1"></a>
 
-### create(text, opmetaHash, metaStore)
+### create(text, bytecode, metaStore)
 
-Creates a new Rainlang instance with a opmeta hash
+Creates a new Rainlang instance with a contract bytecode
 
 <b>Signature:</b>
 
 ```typescript
-static create(text: string, opmetaHash: string, metaStore?: MetaStore): Promise<Rainlang>;
+static create(text: string, bytecode: string, metaStore?: Meta.Store): Promise<Rainlang>;
 ```
 
 #### Parameters
@@ -138,8 +150,32 @@ static create(text: string, opmetaHash: string, metaStore?: MetaStore): Promise<
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  text | `string` | The text |
-|  opmetaHash | `string` | The op meta hash |
-|  metaStore | [MetaStore](./metastore.md) | (optional) The MetaStore instance |
+|  bytecode | `string` | The ExpressionDeployerNP deployed bytecode |
+|  metaStore | `Meta.Store` | (optional) The Meta.Store instance |
+
+<b>Returns:</b>
+
+`Promise<Rainlang>`
+
+<a id="create-method-static-2"></a>
+
+### create(text, bytecodeHash, metaStore)
+
+Creates a new Rainlang instance with a bytecode meta hash
+
+<b>Signature:</b>
+
+```typescript
+static create(text: string, bytecodeHash: string, metaStore?: Meta.Store): Promise<Rainlang>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  text | `string` | The text |
+|  bytecodeHash | `string` | The bytecode meta hash |
+|  metaStore | `Meta.Store` | (optional) The Meta.Store instance |
 
 <b>Returns:</b>
 

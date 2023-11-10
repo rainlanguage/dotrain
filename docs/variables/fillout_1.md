@@ -7,7 +7,7 @@ Fills a text with whitespaces excluding a position by keeping line structure int
 <b>Signature:</b>
 
 ```typescript
-function fillOut(text: string, position: PositionOffset): string;
+function fillOut(text: string, position: AST.Offsets): string;
 ```
 
 ## Parameters
@@ -15,7 +15,7 @@ function fillOut(text: string, position: PositionOffset): string;
 |  Parameter | Type | Description |
 |  --- | --- | --- |
 |  text | `string` | The text |
-|  position | [PositionOffset](../types/positionoffset.md) | the position to exclude |
+|  position | [AST.Offsets](../namespaces/ast/types/offsets.md) | the position to exclude |
 
 <b>Returns:</b>
 

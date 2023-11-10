@@ -8,7 +8,7 @@ Type of valid parsed expression, i.e. compiled bytes
 
 ```typescript
 type ExpressionConfig = {
-    sources: BytesLike[];
+    bytecode: BytesLike;
     constants: BigNumberish[];
 };
 ```

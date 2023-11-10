@@ -38,91 +38,129 @@ const diagnostics = await langServices.doValidate(myTextDocument);
 ```
 <br>
 
-### **Compiler and Decompiler**
-- `dotrainc()` and `dotraind()` for compiling/decompiling `RainDocument` aka dotrain instances:
+### **Compiler**
+- Compiling a `RainDocument` aka dotrain instances:
 ```typescript
 // importing
-import { dotrainc, dotraind } from "@rainprotocol/rainlang";
+import { Compile } from "@rainprotocol/rainlang";
 
-// compiling a RainDocument to get ExpressionConfig aka deployable bytes
-const expressionConfig = await dotrainc(myDocument, ["entrypoint-1" , "entrypoint-2"], [...metaStore]);
-
-// decompiling an ExpressionConfig to a valid RainDocument
-const rainDocument = await dotraind(expressionConfig, [...metaStore]);
+// compiling a RainDocument to get ExpressionConfig
+const expressionConfig = await Compile.RainDocument(myDocument, ["entrypoint-1" , "entrypoint-2"], options);
 ```
 <br>
 
-- `rainlangc()` and `rainlangd()` for compiling/decompiling `Rainlang` instances:
+- Compiling `Rainlang` instances:
 ```typescript
 // importing
-import { rainlangc, rainlangd } from "@rainprotocol/rainlang";
+import { Compile } from "@rainprotocol/rainlang";
 
-// compiling a rainlang text to get ExpressionConfig aka deployable bytes
-const expressionConfig = await rainlangc(rainlangText, opMetaOrOpMetaHash);
-
-// decompiling an ExpressionConfig to a valid Rainlang instance
-const rainlangInstance = await rainlangd(expressionConfig, opMetaOrOpMetaHash);
+// compiling a rainlang text to get ExpressionConfig
+const expressionConfig = await Compile.Rainlang(rainlangText, bytecodeSource, entrypoints, options);
 ```
 
 <br>
 
 ## CLI
-`npx` command to compile a dotrain file to `ExpressionConfig` in json format or to decompiler an `ExpressionConfig` in json format to a dotrain file.
+`npx` command to compile dotrain file(s) to `ExpressionConfig` in json format.
  - if on current repo:
 ```bash
-node cli/dotrain [options]
+node cli/dotrain [options] [command]
 ```
  - if the package is already installed:
 ```bash
-npx dotrain [options]
+npx dotrain [options] [command]
 ```
  - if package is not installed (executing remotely): 
  `--yes` will accept the prompt to cache the package for execution
 ```bash
-npx @rainprotocol/rainlang [options] --yes
+npx @rainprotocol/rainlang [options] [command] --yes
 ```
  or
 ```bash
-npx --p @rainprotocol/rainlang dotrain [options] --yes
+npx --p @rainprotocol/rainlang dotrain [options] [command] --yes
 ```
- <br>
- Command details:
+<br>
+Command details:
 
-    Usage: dotrain [options]
+    Usage: dotrain [options] [command]
 
-    CLI command to compile/decompile a source file.
+    CLI command to run dotrain compiler.
 
     Options:
-      -c, --compile <entrypoints...>  Use compiling mode with specified entrypoints, to compile a .rain file to ExpressionConfig output in a .json
-      -d, --decompile <op meta hash>  Use decompiling mode with a specific opmeta hash, to decompile an ExpressionConfig in a .json to a .rain
-      -i, --input <path>              Path to input file, either a .rain file for compiling or .json for decompiling (always required)
-      -o, --output <path>             Path to output file, will output .json for compile mode and .rain for decompile mode (always required)
-      -b, --batch-compile <path>      Path to a json file of mappings of dotrain files paths, entrypoints (bindings names) and output json files paths to batch compile
-      -s, --stdout                    Log the result in terminal
-      -V, --version                   output the version number
-      -h, --help                      display help for command
+      -c, --config <path>  Path to a config json file(default is './config.rain.json' if not specified) that contains configurations, which can contain: list of mapping details for compiling, path of local meta files, list of subgraph endpoints, see 'example.config.rain.json' for more details.
+      -s, --silent         Print no std logs.
+      -V, --version        output the version number
+      -h, --help           display help for command
+
+    Commands:
+      compile [options]    compile a single .rain file.
+
+<br>
+Compile subcommand details:
+
+    Usage: dotrain compile [options]
+
+    compile a single .rain file.
+
+    Options:
+      -e, --entrypoints <bindings...>  Entrypoints to compile
+      -i, --input <path>               Path to .rain file
+      -o, --output <path>              Path to output file, output format is .json
+      -l, --log                        Log the compilation result in terminal
+      -c, --config <path>              Path to a config json file(default is './config.rain.json' if not specified) that contains configurations to get local meta files and subgraphs, see 'example.config.rain.json' for more details.
+      -s, --silent                     Print no informative logs, except compilation results if --log is used
+      -h, --help                       display help for command
 
 <br>
 
-example of a mapping file content (see `./example.mapping.json`):
+example of a config file content (see `./example.config.rain.json`):
 ```json
-[
-  {
-    "dotrain": "./path/to/dotrain1.rain",
-    "json": "./path/to/compiled1.json",
-    "entrypoints": [
-      "exp-1", 
-      "exp-2"
+{
+  // list of mapping details of dotrain files to get compiled to the specified output with specified entrypoints
+  "src": [
+    {
+      "input": "./path/to/file1.rain",
+      "output": "./path/to/compiled-file1.json",
+      "entrypoints": ["entrypoint1", "entrypoint2"]
+    },
+    {
+      "input": "./path/to/file2.rain",
+      "output": "./path/to/compiled-file2.json",
+      "entrypoints": ["entrypoint1", "entrypoint2"]
+    }
+  ],
+  // path of local meta files to use when compiling, fields are optional
+  "meta": {
+    // for meta files that are binary
+    // if the hash is provided (such as secod item), the validity of the data will be checked against ot
+    "binary": [
+      // just path
+      "./path/to/binary-meta", 
+      // path with hash, this format will result in explicit hash check
+      {
+        "path": "./path/to/another-binary-meta",
+        "hash": "0x123456789abcdef..."
+      }
+    ],
+    // for meta files that are utf8 encoded hex string starting with 0x
+    // if the hash is provided (such as secod item), the validity of the data will be checked against ot
+    "hex": [
+      // just path
+      "./path/to/hex-meta", 
+      // path with hash, this format will result in explicit hash check
+      {
+        "path": "./path/to/another-hex-meta",
+        "hash": "0x123456789abcdef..."
+      }
     ]
   },
-  {
-    "dotrain": "./path/to/dotrain12.rain",
-    "json": "./path/to/compiled2.json",
-    "entrypoints": [
-      "main"
-    ]
-  }
-]
+  // list of subgraph endpoints to use when compiling
+  "subgraphs": [
+    "https://subgraph1-uril",
+    "https://subgraph2-uril",
+    "https://subgraph3-uril"
+  ]
+}
 ```
 
 ## **Developers**
