@@ -1049,8 +1049,10 @@ export class RainDocument {
             // assign working words for this instance
             this.getWords();
 
+            let hasExp = false;
             this.bindings.forEach(v => {
                 if (v.constant === undefined && v.elided === undefined) {
+                    hasExp = true;
                     v.exp = new Rainlang(
                         v.content, 
                         this.authoringMeta, 
@@ -1086,6 +1088,15 @@ export class RainDocument {
                     );
                 }
             });
+            if (!hasExp && this.problems.length > 0) {
+                if (this.problems[this.problems.length - 1].msg === "cannot find any set of words") {
+                    this.problems.pop();
+                }
+                else {
+                    const i = this.problems.findIndex(v => v.msg === "cannot find any set of words");
+                    if (i > -1) this.problems.splice(i, 1);
+                }
+            }
         }
 
         // ignore next line problems
