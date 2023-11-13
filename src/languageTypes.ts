@@ -35,6 +35,11 @@ export const NUMERIC_PATTERN = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$
 export const HEX_PATTERN = /^0x[a-fA-F0-9]+$/;
 
 /**
+ * @public Binary pattern
+ */
+export const BINARY_PATTERN = /^0b[0-1]+$/;
+
+/**
  * @public RainDocument Namespace pattern
  */
 export const NAMESPACE_PATTERN = /^(\.?[a-z][0-9a-z-]*)*\.?$/;
