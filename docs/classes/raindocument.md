@@ -28,6 +28,12 @@ await myRainDocument.updateText(newText)
 
 ```
 
+## Static Properties
+
+|  Property | Type | Description |
+|  --- | --- | --- |
+|  [CONSTANTS](./raindocument.md#CONSTANTS-property-static) | `Record<string, string>` | Reserved constants key/value |
+
 ## Properties
 
 |  Property | Type | Description |
@@ -37,7 +43,6 @@ await myRainDocument.updateText(newText)
 |  [bindings](./raindocument.md#bindings-property) | `AST.Binding[]` |  |
 |  [bytecode](./raindocument.md#bytecode-property) | `string` |  |
 |  [comments](./raindocument.md#comments-property) | `AST.Comment[]` |  |
-|  [constants](./raindocument.md#constants-property) | `Record<string, string>` |  |
 |  [imports](./raindocument.md#imports-property) | `AST.Import[]` |  |
 |  [metaStore](./raindocument.md#metaStore-property) | `Meta.Store` |  |
 |  [namespace](./raindocument.md#namespace-property) | [AST.Namespace](../namespaces/ast/types/namespace.md) |  |
@@ -62,6 +67,20 @@ await myRainDocument.updateText(newText)
 |  [parse()](./raindocument.md#parse-method-1) | Parses this instance of RainDocument |
 |  [updateText(newText)](./raindocument.md#updateText-method-1) | Updates the TextDocument of this RainDocument instance with new text |
 |  [updateText(newTextDocument)](./raindocument.md#updateText-method-2) | Updates the TextDocument of this RainDocument instance |
+
+## Static Property Details
+
+<a id="CONSTANTS-property-static"></a>
+
+### CONSTANTS
+
+Reserved constants key/value
+
+<b>Signature:</b>
+
+```typescript
+static readonly CONSTANTS: Record<string, string>;
+```
 
 ## Property Details
 
@@ -113,16 +132,6 @@ bytecode: string;
 
 ```typescript
 comments: AST.Comment[];
-```
-
-<a id="constants-property"></a>
-
-### constants
-
-<b>Signature:</b>
-
-```typescript
-readonly constants: Record<string, string>;
 ```
 
 <a id="imports-property"></a>

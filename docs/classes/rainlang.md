@@ -19,7 +19,6 @@ class Rainlang
 |  [binding](./rainlang.md#binding-property) | [AST.Binding](../namespaces/ast/types/binding.md) |  |
 |  [bytecode](./rainlang.md#bytecode-property) | `string` |  |
 |  [comments](./rainlang.md#comments-property) | `AST.Comment[]` |  |
-|  [constants](./rainlang.md#constants-property) | `Record<string, string>` |  |
 |  [namespaces](./rainlang.md#namespaces-property) | [AST.Namespace](../namespaces/ast/types/namespace.md) |  |
 |  [problems](./rainlang.md#problems-property) | `AST.Problem[]` |  |
 |  [text](./rainlang.md#text-property) | `string` |  |
@@ -89,16 +88,6 @@ bytecode: string;
 
 ```typescript
 comments: AST.Comment[];
-```
-
-<a id="constants-property"></a>
-
-### constants
-
-<b>Signature:</b>
-
-```typescript
-readonly constants: Record<string, string>;
 ```
 
 <a id="namespaces-property"></a>

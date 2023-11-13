@@ -2838,6 +2838,30 @@
           ]
         },
         {
+          "kind": "Variable",
+          "canonicalReference": "@rainprotocol/rainlang!BINARY_PATTERN:var",
+          "docComment": "/**\n * Binary pattern\n *\n * @public\n */\n",
+          "excerptTokens": [
+            {
+              "kind": "Content",
+              "text": "BINARY_PATTERN: "
+            },
+            {
+              "kind": "Reference",
+              "text": "RegExp",
+              "canonicalReference": "!RegExp:interface"
+            }
+          ],
+          "fileUrlPath": "dist/types/languageTypes.d.ts",
+          "isReadonly": true,
+          "releaseTag": "Public",
+          "name": "BINARY_PATTERN",
+          "variableTypeTokenRange": {
+            "startIndex": 1,
+            "endIndex": 2
+          }
+        },
+        {
           "kind": "Interface",
           "canonicalReference": "@rainprotocol/rainlang!ClientCapabilities:interface",
           "docComment": "/**\n * Describes what LSP capabilities the client supports\n *\n * @public\n */\n",
@@ -7859,12 +7883,12 @@
             },
             {
               "kind": "Property",
-              "canonicalReference": "@rainprotocol/rainlang!RainDocument#constants:member",
-              "docComment": "",
+              "canonicalReference": "@rainprotocol/rainlang!RainDocument.CONSTANTS:member",
+              "docComment": "/**\n * Reserved constants key/value\n *\n * @public\n */\n",
               "excerptTokens": [
                 {
                   "kind": "Content",
-                  "text": "readonly constants: "
+                  "text": "static readonly CONSTANTS: "
                 },
                 {
                   "kind": "Reference",
@@ -7883,12 +7907,12 @@
               "isReadonly": true,
               "isOptional": false,
               "releaseTag": "Public",
-              "name": "constants",
+              "name": "CONSTANTS",
               "propertyTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 3
               },
-              "isStatic": false,
+              "isStatic": true,
               "isProtected": false,
               "isAbstract": false
             },
@@ -8794,41 +8818,6 @@
               "isOptional": false,
               "releaseTag": "Public",
               "name": "comments",
-              "propertyTypeTokenRange": {
-                "startIndex": 1,
-                "endIndex": 3
-              },
-              "isStatic": false,
-              "isProtected": false,
-              "isAbstract": false
-            },
-            {
-              "kind": "Property",
-              "canonicalReference": "@rainprotocol/rainlang!Rainlang#constants:member",
-              "docComment": "",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "readonly constants: "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Record",
-                  "canonicalReference": "!Record:type"
-                },
-                {
-                  "kind": "Content",
-                  "text": "<string, string>"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isReadonly": true,
-              "isOptional": false,
-              "releaseTag": "Public",
-              "name": "constants",
               "propertyTypeTokenRange": {
                 "startIndex": 1,
                 "endIndex": 3

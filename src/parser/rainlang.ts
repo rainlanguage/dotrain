@@ -1,4 +1,6 @@
+
 import { Meta } from "@rainprotocol/meta";
+import { RainDocument } from "./rainDocument";
 import { 
     AST, 
     ErrorCode, 
@@ -18,7 +20,7 @@ import {
     trackedTrim, 
     execBytecode, 
     inclusiveParse, 
-    exclusiveParse
+    exclusiveParse 
 } from "./helpers";
 
 
@@ -46,14 +48,6 @@ export function rainlang(
  * which later will be used in RainDocument object and Rain Language Services and Compiler
  */
 export class Rainlang {
-
-    // public readonly dotrainMode: boolean;
-    public readonly constants: Record<string, string> = {
-        "infinity"      : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-        "max-uint256"   : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-        "max-uint-256"  : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    };
-
     public text: string;
     public ast: AST.Rainlang = [];
     public problems: AST.Problem[] = [];
@@ -380,7 +374,7 @@ export class Rainlang {
         const _mainResKeys = [
             ...this.authoringMeta.map(v => v.word),
             // ...this.authoringMeta.map(v => v.aliases).filter(v => v !== undefined).flat(),
-            ...Object.keys(this.constants),
+            ...Object.keys(RainDocument.CONSTANTS),
         ];
         for (let i = 0; i < _sourceExp.length; i++) {
             const _reservedKeys = [
@@ -1153,10 +1147,10 @@ export class Rainlang {
                     });
                 }
                 else if (WORD_PATTERN.test(_chunk)) {
-                    if (Object.keys(this.constants).includes(_chunk)) {
+                    if (Object.keys(RainDocument.CONSTANTS).includes(_chunk)) {
                         this.updateState({
                             id: _chunk,
-                            value: this.constants[_chunk],
+                            value: RainDocument.CONSTANTS[_chunk],
                             position: [..._chunkPos],
                         });
                     }

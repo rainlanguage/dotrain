@@ -71,6 +71,7 @@
 |  Variable | Description |
 |  --- | --- |
 |  [arrayify](./variables/arrayify.md) | ethers arrayify |
+|  [BINARY\_PATTERN](./variables/binary_pattern.md) | Binary pattern |
 |  [concat](./variables/concat.md) | ethers concat |
 |  [CONSTANTS](./variables/constants.md) | ethers constants |
 |  [DEFAULT\_ELISION](./variables/default_elision.md) | the default elided binding msg |

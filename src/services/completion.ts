@@ -411,7 +411,7 @@ export async function getCompletion(
                         // .filter(
                         //     v => v.includes(_prefix)
                         // )
-                        Object.keys(_rd.constants).forEach(v => _result.unshift({
+                        Object.keys(RainDocument.CONSTANTS).forEach(v => _result.unshift({
                             label: v,
                             labelDetails: {
                                 description: "reserved constant alias"
@@ -420,7 +420,7 @@ export async function getCompletion(
                             detail: "reserved constant alias: " + v,
                             documentation: {
                                 kind: _documentionType,
-                                value: `value: ${_rd.constants[v]}`
+                                value: `value: ${RainDocument.CONSTANTS[v]}`
                             },
                             insertText: v
                         }));

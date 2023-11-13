@@ -11,7 +11,8 @@ import {
     execBytecode, 
     getRandomInt, 
     exclusiveParse, 
-    stringToUint8Array 
+    stringToUint8Array, 
+    toInteger
 } from "./helpers";
 import { 
     AST, 
@@ -19,7 +20,9 @@ import {
     TextDocument, 
     WORD_PATTERN, 
     ExpressionConfig, 
-    NATIVE_PARSER_ABI 
+    NATIVE_PARSER_ABI, 
+    HEX_PATTERN,
+    BINARY_PATTERN
 } from "../languageTypes";
 
 
@@ -432,12 +435,26 @@ export namespace Compile {
             ) => {
                 for (let i = 0; i < nodes.length; i++) {
                     const _node = nodes[i];
-                    if (AST.Value.is(_node) && _node.id) {
-                        sourcemapGenerator.update(
+                    if (AST.Value.is(_node)) {
+                        if (_node.id) sourcemapGenerator.update(
                             _node.position[0],
                             _node.position[1] + 1,
                             _node.value
                         );
+                        else {
+                            if (HEX_PATTERN.test(_node.value)) {
+                                if (_node.value.length % 2 === 1) sourcemapGenerator.update(
+                                    _node.position[0],
+                                    _node.position[1] + 1,
+                                    "0x" + _node.value.substring(2).padStart(_node.value.length - 1, "0")
+                                );
+                            }
+                            if (BINARY_PATTERN.test(_node.value)) sourcemapGenerator.update(
+                                _node.position[0],
+                                _node.position[1] + 1,
+                                toInteger(_node.value)
+                            );
+                        }
                     }
                     else if (AST.Opcode.is(_node)) {                    
                         const _contextOpcode = _node.isCtx;

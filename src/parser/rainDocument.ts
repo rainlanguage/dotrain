@@ -53,11 +53,21 @@ import {
  */
 export class RainDocument {
 
-    public readonly constants: Record<string, string> = {
+    /**
+     * @public Reserved constants key/value
+     */
+    public static readonly CONSTANTS: Record<string, string> = {
         "infinity"      : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-        "max-uint256"   : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
         "max-uint-256"  : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    };
+        "max-uint256"   : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "max-uint-128"  : "0xffffffffffffffffffffffffffffffff",
+        "max-uint128"   : "0xffffffffffffffffffffffffffffffff",
+        "max-uint-64"   : "0xffffffffffffffff",
+        "max-uint64"    : "0xffffffffffffffff",
+        "max-uint-32"   : "0xffffffff",
+        "max-uint32"    : "0xffffffff",
+    } as const;
+
     public metaStore: Meta.Store;
     public textDocument: TextDocument;
     public runtimeError: Error | undefined;

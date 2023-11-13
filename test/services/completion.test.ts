@@ -53,7 +53,17 @@ describe("LSP Code Completion Language Service Tests", async function () {
             label: v.word,
             kind: CompletionItemKind.Function,
         }));
-        ["infinity", "max-uint256" ,"max-uint-256"].forEach(v => AllOpcodeCompletions.unshift({
+        [
+            "infinity", 
+            "max-uint-256", 
+            "max-uint256", 
+            "max-uint-128", 
+            "max-uint128", 
+            "max-uint-64", 
+            "max-uint64", 
+            "max-uint-32", 
+            "max-uint32"
+        ].forEach(v => AllOpcodeCompletions.unshift({
             label: v,
             kind: CompletionItemKind.Constant
         }));
