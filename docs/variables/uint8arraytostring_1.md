@@ -2,7 +2,7 @@
 
 # Function uint8ArrayToString()
 
-Method to convert Uint8Array to string
+Method to convert Uint8Array to string using TextDecoder
 
 <b>Signature:</b>
 

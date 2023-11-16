@@ -46,7 +46,7 @@
 |  [rainlang(stringChunks, vars)](./variables/rainlang_1.md) | Method to be used as Tagged Templates to activate embedded rainlang in javascript/typescript in vscode that highlights the rainlang syntax. Requires rainlang vscode extension to be installed. |
 |  [toInteger(value)](./variables/tointeger_1.md) | Convert Rainlang numeric values to interger as string |
 |  [trackedTrim(str)](./variables/trackedtrim_1.md) | Trims a text (removing start/end whitespaces) with reporting the number of deletions |
-|  [uint8ArrayToString(uint8array)](./variables/uint8arraytostring_1.md) | Method to convert Uint8Array to string |
+|  [uint8ArrayToString(uint8array)](./variables/uint8arraytostring_1.md) | Method to convert Uint8Array to string using TextDecoder |
 
 ## Interfaces
 
@@ -98,7 +98,7 @@
 |  [paddedUInt32](./variables/paddeduint32.md) | Utility function to produce 32 bits size hexString |
 |  [paddedUInt64](./variables/paddeduint64.md) | Utility function to produce 64 bits size hexString |
 |  [parseUnits](./variables/parseunits.md) | ethers parseUnits |
-|  [stringToUint8Array](./variables/stringtouint8array.md) | Converts a string to uint8array |
+|  [stringToUint8Array](./variables/stringtouint8array.md) | Converts a string to uint8array using TextEncoder |
 |  [VITALIK](./variables/vitalik.md) | vitalik address used for evm simulations |
 |  [WORD\_PATTERN](./variables/word_pattern.md) | Rainlang word pattern |
 |  [zeroPad](./variables/zeropad.md) | ethers zeroPad |

@@ -9829,7 +9829,7 @@
         {
           "kind": "Variable",
           "canonicalReference": "@rainprotocol/rainlang!stringToUint8Array:var",
-          "docComment": "/**\n * Converts a string to uint8array\n *\n * @param text - the text to convert\n *\n * @public\n */\n",
+          "docComment": "/**\n * Converts a string to uint8array using TextEncoder\n *\n * @param text - the text to convert\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -9947,7 +9947,7 @@
         {
           "kind": "Function",
           "canonicalReference": "@rainprotocol/rainlang!uint8ArrayToString:function(1)",
-          "docComment": "/**\n * Method to convert Uint8Array to string\n *\n * @param uint8array - The array\n *\n * @public\n */\n",
+          "docComment": "/**\n * Method to convert Uint8Array to string using TextDecoder\n *\n * @param uint8array - The array\n *\n * @public\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",

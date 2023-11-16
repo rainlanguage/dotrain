@@ -2,7 +2,7 @@
 
 # Variable stringToUint8Array
 
-Converts a string to uint8array
+Converts a string to uint8array using TextEncoder
 
 <b>Signature:</b>
 
