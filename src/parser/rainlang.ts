@@ -756,7 +756,7 @@ export class Rainlang {
                         value: !_isQuote 
                             ? v[0]
                             : v[0].slice(1) ,
-                        name: _operandMeta[i]?.name ?? "unknown operand arg",
+                        name: _operandMeta[i]?.name ?? "operand argument",
                         position: v[1],
                         description: _operandMeta[i]?.desc ?? ""
                     });
