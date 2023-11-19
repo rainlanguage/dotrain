@@ -22,7 +22,7 @@ export const WORD_PATTERN = /^[a-z][0-9a-z-]*$/;
 /**
  * @public Import hash pattern 
  */
-export const HASH_PATTERN = /^0x[a-zA-F0-9]{64}$/;
+export const HASH_PATTERN = /^0x[a-fA-F0-9]{64}$/;
 
 /**
  * @public Rainlang numeric pattern 
