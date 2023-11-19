@@ -672,9 +672,11 @@ export class Rainlang {
             //     });
             // }
             _parsedVals.forEach((v, i) => {
-                const _validArgPattern = this.binding 
-                    ? /^[0-9]+$|^0x[a-fA-F0-9]+$|^'\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/
-                    : /^[0-9]+$|^0x[a-fA-F0-9]+$/;
+            //     const _validArgPattern = this.binding 
+            //         ? /^[0-9]+$|^0x[a-fA-F0-9]+$|^'\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/
+            //         : /^[0-9]+$|^0x[a-fA-F0-9]+$/;
+                const _validArgPattern = 
+                    /^[0-9]+$|^0x[a-fA-F0-9]+$|^'\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/;
                 if (_validArgPattern.test(v[0])) {
                     const _isQuote = v[0].startsWith("'");
                     if (_isQuote) {
