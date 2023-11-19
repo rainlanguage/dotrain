@@ -27,7 +27,7 @@ export const HASH_PATTERN = /^0x[a-zA-F0-9]{64}$/;
 /**
  * @public Rainlang numeric pattern 
  */
-export const NUMERIC_PATTERN = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
+export const NUMERIC_PATTERN = /^0x[0-9a-fA-F]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
 
 /**
  * @public Hex pattern

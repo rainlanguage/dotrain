@@ -96,7 +96,7 @@ export async function getHover(
                                             _operandArg.name,
                                             ...(
                                                 _operandArg.description
-                                                    ? _operandArg.description 
+                                                    ? [_operandArg.description] 
                                                     : []
                                             )
                                         ].join(_contentType === "markdown" ? "\n\n" : ", ")
