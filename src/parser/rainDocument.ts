@@ -1144,7 +1144,7 @@ export class RainDocument {
             });
         }
 
-        while (!_nodes.length || !_edges.length) {
+        while (_nodes.length && _edges.length) {
             try {
                 toposort.array(_nodes, _edges).reverse();
                 break;
