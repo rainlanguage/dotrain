@@ -1,7 +1,7 @@
 {
     "name": "@rainprotocol/rainlang",
     "description": "The Rain language (dotrain and rainlang) standalone, that encapsulates Language Serivces (in LSP spec) and compiler/decompiler for NodeJs and Browser environments",
-    "version": "5.1.1",
+    "version": "5.1.2",
     "author": "Rain Protocol",
     "license": "CAL-1.0",
     "repository": {
