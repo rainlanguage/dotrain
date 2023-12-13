@@ -27,7 +27,7 @@ export const HASH_PATTERN = /^0x[a-zA-F0-9]{64}$/;
 /**
  * @public Rainlang numeric pattern 
  */
-export const NUMERIC_PATTERN = /^0x[0-9a-zA-Z]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
+export const NUMERIC_PATTERN = /^0x[0-9a-fA-F]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$/;
 
 /**
  * @public Hex pattern
@@ -1049,3 +1049,8 @@ export const NATIVE_PARSER_MINIMAL_SIGHASH = {
     0xcbb7d173 : "integrityCheck(bytes,uint256[],uint256[])",
     0x31a66b65 : "deployExpression(bytes,uint256[],uint256[])"
 } as const;
+
+// const x = TextDocument.create("as", "as", 0, "a𐐀c");
+// console.log(x.getText(Range.create(0, 0, 0, 3)));
+const x = "abcd";
+console.log(x.split("k"));

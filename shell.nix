@@ -1,11 +1,7 @@
 let
     pkgs = import
-        (builtins.fetchTarball {
-            name = "nixos-unstable-2022-09-26";
-            url = "https://github.com/nixos/nixpkgs/archive/b8e83fd7e16529ee331313993508c3bf918f1d57.tar.gz";
-            sha256 = "1a98pgnhdhyg66176i36rcn3rklihy36y9z4176la7pxlzm4khwf";
-        })
-        { };
+        (builtins.fetchTarball https://github.com/NixOS/nixpkgs/archive/nixos-23.11.tar.gz )
+        {};
 
     local-test = pkgs.writeShellScriptBin "local-test" ''
         npm test
@@ -57,9 +53,10 @@ let
     '';
 
     in
-    pkgs.stdenv.mkDerivation {
+    pkgs.mkShell {
         name = "shell";
         buildInputs = [
+            pkgs.emscripten
             pkgs.nixpkgs-fmt
             pkgs.yarn
             pkgs.nodejs-18_x
@@ -74,11 +71,14 @@ let
             docgen
             lint
             lint-fix
-        ];
-
+        ] ++ (pkgs.lib.optionals pkgs.stdenv.isDarwin [
+            pkgs.libiconv
+            pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+        ]);
         shellHook = ''
             export PATH=$( npm bin ):$PATH
             # keep it fresh
             npm install
         '';
     }
+    

@@ -512,25 +512,21 @@ export function toInteger(value: string): string {
 }
 
 /**
- * @public Converts a string to uint8array
+ * @public Converts a string to uint8array using TextEncoder
  * @param text - the text to convert
  */
 export const stringToUint8Array = (text: string): Uint8Array => {
-    return Uint8Array.from(
-        Array.from(text).map(char => char.charCodeAt(0))
-    );
+    const encoder = new TextEncoder();
+    return encoder.encode(text);
 };
 
 /**
- * @public Method to convert Uint8Array to string
+ * @public Method to convert Uint8Array to string using TextDecoder
  * @param uint8array - The array
  */
 export function uint8ArrayToString(uint8array: Uint8Array): string {
-    let str = "";
-    for (let i = 0; i < uint8array.length; i++) {
-        str = str + String.fromCharCode(uint8array[i]);
-    }
-    return str;
+    const decoder = new TextDecoder("utf-16");
+    return decoder.decode(uint8array);
 }
 
 /**

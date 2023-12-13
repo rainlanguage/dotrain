@@ -12,6 +12,7 @@ node_modules
 .env
 
 # Generate output
+target
 dist
 ./rainlang.api.json
 
@@ -19,6 +20,7 @@ dist
 src/.DS_Store
 release-note.txt
 *.rain
-*.rl
-*.rainlang
+*rain.json
 *.tgz
+rainconfig.json
+

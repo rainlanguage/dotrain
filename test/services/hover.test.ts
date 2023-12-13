@@ -243,7 +243,7 @@ new-total-amount-sent);
                 range: toRange(5, 26, 5, 27),
                 contents: {
                     kind: "plaintext",
-                    value: "unknown operand arg, Operand Argument"
+                    value: "operand arg"
                 }
             }
         );

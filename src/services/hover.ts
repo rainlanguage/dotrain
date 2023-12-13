@@ -94,9 +94,11 @@ export async function getHover(
                                         kind: _contentType,
                                         value: [
                                             _operandArg.name,
-                                            _operandArg.description 
-                                                ? _operandArg.description 
-                                                : "Operand Argument"
+                                            ...(
+                                                _operandArg.description
+                                                    ? [_operandArg.description]
+                                                    : []
+                                            )
                                         ].join(_contentType === "markdown" ? "\n\n" : ", ")
                                     }
                                 } as Hover;
