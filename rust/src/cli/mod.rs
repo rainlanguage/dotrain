@@ -8,14 +8,14 @@ pub mod rainconfig;
 #[derive(Parser, Debug)]
 #[command(author, version, about = "iuyt", long_about = None)]
 pub struct RainCompilerCli {
-    /// Path to the rainconfig json file(default is './rainconfig.json'
-    /// if not specified) that contains configurations, see
+    /// Path to the rainconfig json file that contains configurations, see
     /// './example.rainconfig.json' for more details.
+    /// default is './rainconfig.json' if not specified
     #[arg(short, long, global = true)]
     config: Option<PathBuf>,
-    /// only use local meta
+    /// Only use local meta and deployers specified in rainconfig and dont search for them in subgraphs
     #[arg(short, long, global = true)]
-    local_meta_only: bool,
+    local_data_only: bool,
     #[command(subcommand)]
     subcmd: Option<SubCommands>,
 }
@@ -23,29 +23,27 @@ pub struct RainCompilerCli {
 #[derive(Subcommand, Debug)]
 pub enum SubCommands {
     Target(Target),
-    Rainonfig {},
+    /// Prints 'rainconfig' info and description
+    Rainconfig,
 }
 
-/// command for validating a meta
+/// Command for targeting a single .rain file to compile with options
 // #[derive(Subcommand)]
 #[derive(Parser, Debug)]
 pub struct Target {
-    /// input
+    /// Input .rain file path
     #[arg(short, long)]
     input: PathBuf,
-    /// output
+    /// Output .json file path
     #[arg(short, long)]
     output: PathBuf,
-    /// entrypoints
+    /// Entrypoints
     #[arg(short, long)]
     entrypoints: Vec<String>,
-    /// log results
+    /// Log the results to console
     #[arg(short, long)]
     stdout: Option<bool>,
-    /// config file
-    // #[arg(short, long)]
-    // config: Option<PathBuf>,
-    /// ignore rainconfig
+    /// Ignore rainconfig
     #[arg(long)]
     ignore_rainconfig: Option<bool>,
 }
@@ -54,19 +52,20 @@ pub async fn dispatch(cli: RainCompilerCli) -> anyhow::Result<()> {
     if let Some(subcmd) = cli.subcmd {
         match subcmd {
             SubCommands::Target(opts) => {
-                target_compile(opts, cli.config, cli.local_meta_only).await?;
+                target_compile(opts, cli.config, cli.local_data_only).await?;
             }
-            _ => {}
+            SubCommands::Rainconfig => {
+                println!("{}", rainconfig::RAINCONFIG_DESCRIPTION);
+            }
         }
     } else {
-        rainconfig_compile(cli.config, cli.local_meta_only).await?;
+        rainconfig_compile(cli.config, cli.local_data_only).await?;
     };
     Ok(())
 }
 
 pub async fn main() -> anyhow::Result<()> {
-    // tracing::subscriber::set_global_default(tracing_subscriber::fmt::Subscriber::new())?;
-    // clap::
+    tracing::subscriber::set_global_default(tracing_subscriber::fmt::Subscriber::new())?;
     let cli = RainCompilerCli::parse();
     dispatch(cli).await
 }

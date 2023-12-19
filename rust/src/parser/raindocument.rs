@@ -1,13 +1,10 @@
 // #![allow(non_snake_case)]
 
 use lsp_types::Url;
-use alloy_primitives::hex;
 use std::sync::{Arc, RwLock};
-use alloy_sol_types::SolCall;
 use serde::{Serialize, Deserialize};
 use async_recursion::async_recursion;
 use topo_sort::{SortResults, TopoSort};
-
 use std::collections::{HashMap, VecDeque};
 use futures::{executor::block_on, future::join_all};
 use rain_meta::{
@@ -18,13 +15,12 @@ use rain_meta::{
         dotrain::v1::DotrainMeta, authoring::v1::AuthoringMeta,
         interpreter_caller::v1::InterpreterCallerMeta,
     },
+    NPE2Deployer,
 };
 use super::{
-    rainlang::Rainlang,
-    super::types::{*, ast::*},
-    NATIVE_PARSER_INTERFACE::authoringMetaHashCall,
-    exclusive_parse, string_to_bigint, inclusive_parse, fill_in, is_consumable, exec_bytecode,
-    tracked_trim_str, line_number,
+    rainlang::RainlangDocument,
+    super::types::{*, ast::*, patterns::*},
+    exclusive_parse, to_bigint, inclusive_parse, fill_in, is_consumable, tracked_trim, line_number,
 };
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
@@ -32,6 +28,7 @@ use tsify::Tsify;
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use wasm_bindgen::prelude::wasm_bindgen;
 
+/// Reserved constant values keys of RainDocuments
 pub const RAIN_DOCUMENT_CONSTANTS: [(&str, &str); 9] = [
     (
         "infinity",
@@ -53,6 +50,19 @@ pub const RAIN_DOCUMENT_CONSTANTS: [(&str, &str); 9] = [
     ("max-uint32", "0xffffffff"),
 ];
 
+/// # RainDocument
+/// RainDocument is the main implementation block that enables parsing of a .rain file contents
+/// to its building blocks and parse tree by handling and resolving imports, namespaces, etc which
+/// later are used by LSP services and compiler as well as providing all the functionalities in between.
+///
+/// A portable, extensible and composable format for describing Rainlang fragments, .rain serve as
+/// a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and
+/// adversarial environment such as a public blockchain.
+///
+/// ## Examples
+///
+/// ```
+/// ```
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
     wasm_bindgen,
@@ -87,13 +97,13 @@ pub struct RainDocument {
     pub(crate) authoring_meta: Option<AuthoringMeta>,
     #[cfg_attr(
         any(feature = "js-api", target_family = "wasm"),
-        tsify(type = "Uint8Array")
+        tsify(type = "INPE2Deployer")
     )]
-    pub(crate) bytecode: Vec<u8>,
+    pub(crate) deployer: NPE2Deployer,
 }
 
 impl RainDocument {
-    /// creates an instance and parses with searching for metas from remote
+    /// Creates an instance and parses with remote meta search enabled
     pub async fn create_async(
         text: String,
         uri: Url,
@@ -104,21 +114,21 @@ impl RainDocument {
         rd
     }
 
-    /// creates an instance and parses with only cached metas
+    /// Creates an instance and parses with remote meta search disabled (cached metas only)
     pub fn create(text: String, uri: Url, meta_store: Option<Arc<RwLock<Store>>>) -> RainDocument {
         let mut rd = RainDocument::_new(text, uri, 0, meta_store, 0);
         rd.parse();
         rd
     }
 
-    /// Updates the TextDocument of this RainDocument instance with new text
+    /// Updates the text and parses right away with remote meta search disabled (cached metas only)
     pub fn update_text(&mut self, new_text: String) {
         self.text = new_text;
         self.version += 1;
         self.parse();
     }
 
-    /// Updates the TextDocument of this RainDocument instance with new text
+    /// Updates the text, uri, version and parses right away with remote meta search disabled (cached metas only)
     pub fn update(&mut self, new_text: String, uri: Url, version: usize) {
         self.text = new_text;
         self.uri = uri;
@@ -126,14 +136,14 @@ impl RainDocument {
         self.parse();
     }
 
-    /// Updates the TextDocument of this RainDocument instance with new text
+    /// Updates the text and parses right away with remote meta search enabled
     pub async fn update_text_async(&mut self, new_text: String) {
         self.text = new_text;
         self.version += 1;
         self.parse_async().await;
     }
 
-    /// Updates the TextDocument of this RainDocument instance with new text
+    /// Updates the text, uri, version and parses right away with remote meta search enabled
     pub async fn update_async(&mut self, new_text: String, uri: Url, version: usize) {
         self.text = new_text;
         self.uri = uri;
@@ -141,70 +151,76 @@ impl RainDocument {
         self.parse_async().await;
     }
 
-    /// Get the current text of this RainDocument instance
+    /// This instance's current text
     pub fn text(&self) -> &String {
         &self.text
     }
 
-    /// Get the current text of this RainDocument instance
+    /// This instance's current URI
     pub fn uri(&self) -> &Url {
         &self.uri
     }
 
-    /// Get the current text of this RainDocument instance
+    /// This instance's current version
     pub fn version(&self) -> usize {
         self.version
     }
 
+    /// This instance's top problems
     pub fn problems(&self) -> &Vec<Problem> {
         &self.problems
     }
-
+    /// This instance's comments
     pub fn comments(&self) -> &Vec<Comment> {
         &self.comments
     }
 
+    /// This instance's imports
     pub fn imports(&self) -> &Vec<Import> {
         &self.imports
     }
 
+    /// This instance's bindings
     pub fn bindings(&self) -> &Vec<Binding> {
         &self.bindings
     }
 
+    /// This instance's namespace
     pub fn namespace(&self) -> &Namespace {
         &self.namespace
     }
 
+    /// This instance's meta Store instance
     pub fn store(&self) -> Arc<RwLock<Store>> {
         self.meta_store.clone()
     }
 
-    pub fn imports_depth(&self) -> usize {
-        self.import_depth
-    }
-
+    /// If 'ignore_words' lint option is enabled or not
     pub fn ignore_words(&self) -> bool {
         self.ignore_words
     }
 
+    /// If 'ignore_undefined_words' lint option is enabled or not
     pub fn ignore_undefined_words(&self) -> bool {
         self.ignore_undefined_words
     }
 
+    /// This instance's AuthoringMeta
     pub fn authoring_meta(&self) -> &Option<AuthoringMeta> {
         &self.authoring_meta
     }
 
-    pub fn bytecode(&self) -> &Vec<u8> {
-        &self.bytecode
+    /// This instance's NPE2 Deployer details
+    pub fn deployer(&self) -> &NPE2Deployer {
+        &self.deployer
     }
 
+    /// The error msg if parsing had resulted in an error
     pub fn runtime_error(&self) -> &Option<String> {
         &self.error
     }
 
-    /// Get all problems of this RainDocument instance
+    /// This instance's all problems (bindings + top)
     pub fn all_problems(&self) -> Vec<&Problem> {
         let mut all = vec![];
         all.extend(&self.problems);
@@ -212,12 +228,12 @@ impl RainDocument {
         all
     }
 
-    /// Get the expression problems of this RainDocument instance
+    /// This instance's bindings problems
     pub fn bindings_problems(&self) -> Vec<&Problem> {
         self.bindings.iter().flat_map(|v| &v.problems).collect()
     }
 
-    /// Parses this instance of RainDocument async by searching for remote metas
+    /// Parses this instance's text with remote meta search enabled
     #[async_recursion(?Send)]
     pub async fn parse_async(&mut self) {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
@@ -235,18 +251,18 @@ impl RainDocument {
         } else {
             self.error = None;
             self.imports.clear();
-            self.bytecode.clear();
             self.problems.clear();
             self.comments.clear();
             self.bindings.clear();
             self.namespace.clear();
             self.authoring_meta = None;
+            self.deployer = NPE2Deployer::default();
             self.ignore_words = false;
             self.ignore_undefined_words = false;
         }
     }
 
-    /// Parses this instance of RainDocument sync with only cached metas
+    /// Parses this instance's text with remote meta search disabled (cached metas only)
     pub fn parse(&mut self) {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
             match block_on(self._parse(false)) {
@@ -263,12 +279,12 @@ impl RainDocument {
         } else {
             self.error = None;
             self.imports.clear();
-            self.bytecode.clear();
             self.problems.clear();
             self.comments.clear();
             self.bindings.clear();
             self.namespace.clear();
             self.authoring_meta = None;
+            self.deployer = NPE2Deployer::default();
             self.ignore_words = false;
             self.ignore_undefined_words = false;
         }
@@ -298,7 +314,7 @@ impl RainDocument {
             namespace: HashMap::new(),
             imports: vec![],
             authoring_meta: None,
-            bytecode: vec![],
+            deployer: NPE2Deployer::default(),
             comments: vec![],
             problems: vec![],
             import_depth,
@@ -337,7 +353,7 @@ impl RainDocument {
         }
     }
 
-    /// Checks if a text contains a single numeric value and returns it
+    /// Checks if a text contains a single numeric value and returns it ie is constant binding
     fn is_constant(text: &str) -> Option<Result<String, String>> {
         let items = exclusive_parse(text, &WS_PATTERN, 0, false);
         if items.len() != 1 {
@@ -345,7 +361,7 @@ impl RainDocument {
         } else {
             if NUMERIC_PATTERN.is_match(&items[0].0) {
                 if E_PATTERN.is_match(&items[0].0) || BINARY_PATTERN.is_match(&items[0].0) {
-                    match string_to_bigint(&items[0].0) {
+                    match to_bigint(&items[0].0) {
                         Ok(v) => Some(Ok(v.to_str_radix(10))),
                         Err(_e) => Some(Err("value out of range".to_owned())),
                     }
@@ -358,7 +374,7 @@ impl RainDocument {
         }
     }
 
-    /// Method to copy Namespaces
+    /// copies a namespaces with given import index and hash
     fn copy_namespace(namespace: &Namespace, index: isize, hash: &str) -> Namespace {
         let mut ns: Namespace = HashMap::new();
         for (key, item) in namespace {
@@ -388,6 +404,7 @@ impl RainDocument {
         ns
     }
 
+    /// processes an import statement
     #[async_recursion(?Send)]
     async fn process_import(&self, statement: &ParsedItem, should_search: bool) -> Import {
         let mut start_range;
@@ -629,25 +646,68 @@ impl RainDocument {
             });
         }
 
-        let meta_seq = if let Some(r) = self.meta_store.read().unwrap().get_meta(&result.hash) {
-            Some(rain_meta::RainMetaDocumentV1Item::cbor_decode(&r))
+        let mut npe2_deployer = None;
+        let meta_seq = if let Some(d) = self.meta_store.read().unwrap().get_deployer(&result.hash) {
+            npe2_deployer = Some(d.clone());
+            None
         } else {
-            if should_search {
-                let subgraphs = { self.meta_store.read().unwrap().subgraphs().clone() };
-                if let Ok(meta) = search(&result.hash, &subgraphs).await {
-                    self.meta_store
-                        .write()
-                        .unwrap()
-                        .update_with(&result.hash, &meta.bytes);
-                    Some(rain_meta::RainMetaDocumentV1Item::cbor_decode(&meta.bytes))
+            if let Some(r) = self.meta_store.read().unwrap().get_meta(&result.hash) {
+                Some(rain_meta::RainMetaDocumentV1Item::cbor_decode(&r))
+            } else {
+                if should_search {
+                    let subgraphs = { self.meta_store.read().unwrap().subgraphs().clone() };
+                    let deployer_search = search_deployer(&result.hash, &subgraphs);
+                    let meta_search = search(&result.hash, &subgraphs);
+                    if let Ok(deployer_res) = deployer_search.await {
+                        npe2_deployer = Some(
+                            self.meta_store
+                                .write()
+                                .unwrap()
+                                .set_deployer_from_query_response(&result.hash, deployer_res),
+                        );
+                        None
+                    } else {
+                        if let Ok(meta) = meta_search.await {
+                            self.meta_store
+                                .write()
+                                .unwrap()
+                                .update_with(&result.hash, &meta.bytes);
+                            Some(rain_meta::RainMetaDocumentV1Item::cbor_decode(&meta.bytes))
+                        } else {
+                            None
+                        }
+                    }
                 } else {
                     None
                 }
-            } else {
-                None
             }
         };
-        if let Some(seq) = meta_seq {
+        if let Some(deployer) = npe2_deployer {
+            result.sequence = Some(ImportSequence {
+                dispair: None,
+                ctxmeta: None,
+                dotrain: None,
+            });
+            if deployer.is_corrupt() {
+                result.sequence = None;
+                result.problems.push(Problem {
+                    msg: "corrupt meta".to_owned(),
+                    position: result.hash_position,
+                    code: ErrorCode::CorruptMeta,
+                });
+            } else {
+                if deployer.authoring_meta.is_none() {
+                    if !self.ignore_undefined_words {
+                        result.problems.push(Problem {
+                            msg: "deployer's authroing meta is undefined".to_owned(),
+                            position: result.hash_position,
+                            code: ErrorCode::UndefinedAuthoringMeta,
+                        });
+                    }
+                };
+                result.sequence.as_mut().unwrap().dispair = Some(deployer.into());
+            }
+        } else if let Some(seq) = meta_seq {
             if let Ok(v) = seq {
                 if is_consumable(&v) {
                     result.sequence = Some(ImportSequence {
@@ -657,97 +717,52 @@ impl RainDocument {
                     });
                     for meta in v {
                         match meta.unpack() {
-                            Ok(d) => {
-                                match meta.magic {
-                                    KnownMagic::ExpressionDeployerV2BytecodeV1 => {
-                                        result.sequence.as_mut().unwrap().dispair =
-                                            Some(DispairImportItem {
-                                                bytecode: vec![],
-                                                authoring_meta: None,
+                            Ok(d) => match meta.magic {
+                                KnownMagic::ExpressionDeployerV2BytecodeV1 => {
+                                    result.sequence.as_mut().unwrap().dispair = if let Some(
+                                        deployer,
+                                    ) =
+                                        self.meta_store.read().unwrap().get_deployer(&result.hash)
+                                    {
+                                        if deployer.is_corrupt() {
+                                            result.sequence = None;
+                                            result.problems.push(Problem {
+                                                msg: "corrupt meta".to_owned(),
+                                                position: result.hash_position,
+                                                code: ErrorCode::CorruptMeta,
                                             });
-                                        if !self.ignore_words {
-                                            match exec_bytecode(
-                                                &d,
-                                                &authoringMetaHashCall {}.abi_encode(),
-                                                None,
-                                            ) {
-                                                Ok(result_state) => {
-                                                    if let Some(output) =
-                                                        result_state.result.into_output()
-                                                    {
-                                                        match authoringMetaHashCall::abi_decode_returns(&output, true) {
-                                                            Ok(am_meta_hash_result) => {
-                                                                let hash = hex::encode_prefixed(am_meta_hash_result._0);
-                                                                let found_am_meta = if let Some(r) = self.meta_store.read().unwrap().get_authoring_meta(&hash) {
-                                                                    Some(AuthoringMeta::abi_decode_validate(r))
-                                                                } else {
-                                                                    if should_search {
-                                                                        let subgraphs = {
-                                                                            self.meta_store.read().unwrap().subgraphs().clone()
-                                                                        };
-                                                                        if let Ok(deployer) = search_deployer(&result.hash, &subgraphs).await {
-                                                                            self.meta_store.write().unwrap().update_with(&deployer.hash, &deployer.bytes);
-                                                                            if let Some(am) = deployer.get_authoring_meta() {
-                                                                                Some(Ok(am))
-                                                                            } else {
-                                                                                None
-                                                                            }
-                                                                        } else {
-                                                                            None
-                                                                        }
-                                                                    } else {
-                                                                        None
-                                                                    }
-                                                                };
-                                                                if let Some(am_meta_result) = found_am_meta {
-                                                                    match am_meta_result {
-                                                                        Ok(am) => {
-                                                                            result.sequence.as_mut().unwrap().dispair = Some(DispairImportItem {
-                                                                                bytecode: vec![],
-                                                                                authoring_meta: Some(am)
-                                                                            });
-                                                                        },
-                                                                        Err(_e_) => {
-                                                                            result.sequence = None;
-                                                                            result.problems.push(Problem {
-                                                                                msg: "corrupt meta".to_owned(),
-                                                                                position: result.hash_position,
-                                                                                code: ErrorCode::CorruptMeta
-                                                                            });
-                                                                            break;
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    if !self.ignore_undefined_words {
-                                                                        result.problems.push(Problem {
-                                                                            msg: "cannot find any settlement for authoring meta of specified dispair".to_owned(),
-                                                                            position: result.hash_position,
-                                                                            code: ErrorCode::UndefinedAuthoringMeta
-                                                                        });
-                                                                    }
-                                                                }
-                                                            },
-                                                            Err(_e) => {
-                                                                result.sequence = None;
-                                                                result.problems.push(Problem {
-                                                                    msg: "corrupt meta".to_owned(),
-                                                                    position: result.hash_position,
-                                                                    code: ErrorCode::CorruptMeta
-                                                                });
-                                                                break;
-                                                            }
-                                                        }
-                                                    } else {
-                                                        result.sequence = None;
-                                                        result.problems.push(Problem {
-                                                            msg: "corrupt meta".to_owned(),
-                                                            position: result.hash_position,
-                                                            code: ErrorCode::CorruptMeta,
-                                                        });
-                                                        break;
-                                                    }
+                                            break;
+                                        } else {
+                                            if deployer.authoring_meta.is_none() {
+                                                if !self.ignore_undefined_words {
+                                                    result.problems.push(Problem {
+                                                        msg:
+                                                            "deployer's authroing meta is undefined"
+                                                                .to_owned(),
+                                                        position: result.hash_position,
+                                                        code: ErrorCode::UndefinedAuthoringMeta,
+                                                    });
                                                 }
-                                                Err(_e) => {
+                                            };
+                                            Some(deployer.clone().into())
+                                        }
+                                    } else {
+                                        if should_search {
+                                            let subgraphs = {
+                                                self.meta_store.read().unwrap().subgraphs().clone()
+                                            };
+                                            if let Ok(deployer_res) =
+                                                search_deployer(&result.hash, &subgraphs).await
+                                            {
+                                                let deployer = self
+                                                    .meta_store
+                                                    .write()
+                                                    .unwrap()
+                                                    .set_deployer_from_query_response(
+                                                        &result.hash,
+                                                        deployer_res,
+                                                    );
+                                                if deployer.is_corrupt() {
                                                     result.sequence = None;
                                                     result.problems.push(Problem {
                                                         msg: "corrupt meta".to_owned(),
@@ -755,43 +770,45 @@ impl RainDocument {
                                                         code: ErrorCode::CorruptMeta,
                                                     });
                                                     break;
+                                                } else {
+                                                    if deployer.authoring_meta.is_none() {
+                                                        if !self.ignore_undefined_words {
+                                                            result.problems.push(Problem {
+                                                                    msg: "deployer's authroing meta is undefined".to_owned(),
+                                                                    position: result.hash_position,
+                                                                    code: ErrorCode::UndefinedAuthoringMeta
+                                                                });
+                                                        }
+                                                    };
+                                                    Some(deployer.into())
                                                 }
-                                            }
-                                        }
-                                        result
-                                            .sequence
-                                            .as_mut()
-                                            .unwrap()
-                                            .dispair
-                                            .as_mut()
-                                            .unwrap()
-                                            .bytecode = d;
-                                    }
-                                    KnownMagic::InterpreterCallerMetaV1 => {
-                                        if let Ok(cmeta) =
-                                            InterpreterCallerMeta::try_from(d.as_slice())
-                                        {
-                                            if let Ok(ctxmeta) =
-                                                ContextAlias::from_caller_meta(cmeta)
-                                            {
-                                                result.sequence.as_mut().unwrap().ctxmeta =
-                                                    Some(ctxmeta);
                                             } else {
-                                                result.sequence = None;
                                                 result.problems.push(Problem {
-                                                    msg: "corrupt meta".to_owned(),
-                                                    position: result.hash_position,
-                                                    code: ErrorCode::CorruptMeta,
-                                                });
-                                                break;
+                                                        msg: "cannot find deployer details of specified hash".to_owned(),
+                                                        position: result.hash_position,
+                                                        code: ErrorCode::UndefinedDeployer
+                                                    });
+                                                None
                                             }
                                         } else {
-                                            // if let Err(e) =
-                                            //     InterpreterCallerMeta::try_from(d.as_slice())
-                                            // {
-                                            //     println!("{:?}", e);
-                                            // }
-                                            // println!("{}", String::from_utf8(d).unwrap());
+                                            result.problems.push(Problem {
+                                                msg:
+                                                    "cannot find deployer details of specified hash"
+                                                        .to_owned(),
+                                                position: result.hash_position,
+                                                code: ErrorCode::UndefinedDeployer,
+                                            });
+                                            None
+                                        }
+                                    };
+                                }
+                                KnownMagic::InterpreterCallerMetaV1 => {
+                                    if let Ok(cmeta) = InterpreterCallerMeta::try_from(d.as_slice())
+                                    {
+                                        if let Ok(ctxmeta) = ContextAlias::from_caller_meta(cmeta) {
+                                            result.sequence.as_mut().unwrap().ctxmeta =
+                                                Some(ctxmeta);
+                                        } else {
                                             result.sequence = None;
                                             result.problems.push(Problem {
                                                 msg: "corrupt meta".to_owned(),
@@ -800,44 +817,51 @@ impl RainDocument {
                                             });
                                             break;
                                         }
+                                    } else {
+                                        result.sequence = None;
+                                        result.problems.push(Problem {
+                                            msg: "corrupt meta".to_owned(),
+                                            position: result.hash_position,
+                                            code: ErrorCode::CorruptMeta,
+                                        });
+                                        break;
                                     }
-                                    KnownMagic::DotrainV1 => {
-                                        if let Ok(dmeta) = DotrainMeta::from_utf8(d) {
-                                            let mut dotrain = RainDocument::_new(
-                                                dmeta,
-                                                Url::parse(&format!("import:///{}", result.hash))
-                                                    .unwrap(),
-                                                0,
-                                                Some(self.meta_store.clone()),
-                                                self.import_depth + 1,
-                                            );
-                                            if should_search {
-                                                dotrain.parse_async().await;
-                                            } else {
-                                                dotrain.parse();
-                                            }
-                                            if dotrain.problems.len() > 0 {
-                                                result.problems.push(Problem {
+                                }
+                                KnownMagic::DotrainV1 => {
+                                    if let Ok(dmeta) = DotrainMeta::from_utf8(d) {
+                                        let mut dotrain = RainDocument::_new(
+                                            dmeta,
+                                            Url::parse(&format!("import:///{}", result.hash))
+                                                .unwrap(),
+                                            0,
+                                            Some(self.meta_store.clone()),
+                                            self.import_depth + 1,
+                                        );
+                                        if should_search {
+                                            dotrain.parse_async().await;
+                                        } else {
+                                            dotrain.parse();
+                                        }
+                                        if dotrain.problems.len() > 0 {
+                                            result.problems.push(Problem {
                                                     msg: "imported rain document contains top level errors".to_owned(),
                                                     position: result.hash_position,
                                                     code: ErrorCode::InvalidRainDocument
                                                 });
-                                            }
-                                            result.sequence.as_mut().unwrap().dotrain =
-                                                Some(dotrain);
-                                        } else {
-                                            result.sequence = None;
-                                            result.problems.push(Problem {
-                                                msg: "corrupt meta".to_owned(),
-                                                position: result.hash_position,
-                                                code: ErrorCode::CorruptMeta,
-                                            });
-                                            break;
                                         }
+                                        result.sequence.as_mut().unwrap().dotrain = Some(dotrain);
+                                    } else {
+                                        result.sequence = None;
+                                        result.problems.push(Problem {
+                                            msg: "corrupt meta".to_owned(),
+                                            position: result.hash_position,
+                                            code: ErrorCode::CorruptMeta,
+                                        });
+                                        break;
                                     }
-                                    _ => {}
                                 }
-                            }
+                                _ => {}
+                            },
                             Err(_e) => {
                                 result.sequence = None;
                                 result.problems.push(Problem {
@@ -873,31 +897,31 @@ impl RainDocument {
         return result;
     }
 
+    /// the main method that takes out and processes each section of a RainDocument
+    /// text (comments, imports, etc) one after the other, builds the parse tree, builds
+    /// the namespace and checks for dependency issues and resolves the global words
     #[async_recursion(?Send)]
     async fn _parse(&mut self, should_search: bool) -> anyhow::Result<()> {
         self.imports.clear();
         self.problems.clear();
         self.comments.clear();
         self.bindings.clear();
-        self.bytecode.clear();
         self.namespace.clear();
         self.authoring_meta = None;
         self.ignore_words = false;
         self.ignore_undefined_words = false;
+        self.deployer = NPE2Deployer::default();
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
 
         // check for illegal characters
-        if !document.is_ascii() {
-            inclusive_parse(&document, &ILLEGAL_CHAR, 0)
-                .iter()
-                .for_each(|v| {
-                    self.problems.push(Problem {
-                        msg: format!("illegal character: {}", v.0),
-                        position: v.1,
-                        code: ErrorCode::IllegalChar,
-                    })
-                });
+        let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
+        if illegal_chars.len() > 0 {
+            self.problems.push(Problem {
+                msg: format!("illegal character: {}", illegal_chars[0].0),
+                position: [illegal_chars[0].1[0], illegal_chars[0].1[0]],
+                code: ErrorCode::IllegalChar,
+            });
             return Ok(());
         }
 
@@ -914,7 +938,7 @@ impl RainDocument {
                 comment: v.0.clone(),
                 position: v.1,
             });
-            fill_in(&mut document, &v.1)?;
+            fill_in(&mut document, v.1)?;
         }
 
         // search for the actionable comments
@@ -951,7 +975,7 @@ impl RainDocument {
                 v.0 = slices.0.to_owned();
                 v.1[1] = v.1[0] + index;
             };
-            fill_in(&mut document, &[v.1[0] - 1, v.1[1]])?;
+            fill_in(&mut document, [v.1[0] - 1, v.1[1]])?;
         }
 
         ignore_first = false;
@@ -1115,7 +1139,7 @@ impl RainDocument {
                                                             msg: "cannot elide undefined words"
                                                                 .to_owned(),
                                                             position: [conf.0 .1[0], new_conf.1[1]],
-                                                            code: ErrorCode::UndefinedDispair,
+                                                            code: ErrorCode::UndefinedDeployer,
                                                         });
                                                     }
                                                 } else {
@@ -1224,15 +1248,15 @@ impl RainDocument {
             let name_position: Offsets;
             let mut content = String::new();
             let content_position: Offsets;
-            let mut no_cm_content = String::new();
+            let mut no_cm_content = "";
 
             if let Some(index) = b.0.find([' ', '\t', '\r', '\n']) {
                 let slices = b.0.split_at(index + 1);
-                let no_cm_trimmed = tracked_trim_str(slices.1);
+                let no_cm_trimmed = tracked_trim(slices.1);
                 no_cm_content = if no_cm_trimmed.0.is_empty() {
-                    slices.1.to_owned()
+                    slices.1
                 } else {
-                    no_cm_trimmed.0.clone()
+                    no_cm_trimmed.0
                 };
 
                 let content_text = self.text.get(b.1[0]..b.1[1]).unwrap().to_owned();
@@ -1240,7 +1264,7 @@ impl RainDocument {
                 name_position = [b.1[0], b.1[0] + index];
 
                 let slices = content_text.split_at(index + 1);
-                let trimmed_content = tracked_trim_str(slices.1);
+                let trimmed_content = tracked_trim(slices.1);
                 content_position = if trimmed_content.0.is_empty() {
                     [b.1[0] + index + 1, b.1[1]]
                 } else {
@@ -1252,17 +1276,13 @@ impl RainDocument {
                 content = if trimmed_content.0.is_empty() {
                     slices.1.to_owned()
                 } else {
-                    trimmed_content.0
+                    trimmed_content.0.to_owned()
                 };
             } else {
                 name = b.0.clone();
                 name_position = b.1;
                 content_position = [b.1[1] + 1, b.1[1] + 1];
             }
-            // println!(
-            //     "{} {:?} {} {:?}",
-            //     name, name_position, content, content_position
-            // );
             let invalid_id = !WORD_PATTERN.is_match(&name);
             let dup_id = self.namespace.contains_key(&name);
 
@@ -1347,14 +1367,14 @@ impl RainDocument {
                     let binding = Binding {
                         name: name.clone(),
                         name_position,
-                        content: content.clone(),
+                        content,
                         content_position,
                         position,
                         problems: vec![],
                         dependencies: vec![],
                         item: BindingItem::Exp(
                             // dummy
-                            Rainlang::default(),
+                            RainlangDocument::default(),
                         ),
                     };
                     namespace.insert(
@@ -1368,7 +1388,7 @@ impl RainDocument {
                     self.bindings.push(binding);
                 }
             }
-            fill_in(&mut document, &[b.1[0] - 1, b.1[1]])?;
+            fill_in(&mut document, [b.1[0] - 1, b.1[1]])?;
         }
 
         // find non-top level imports
@@ -1405,7 +1425,7 @@ impl RainDocument {
         // instantiate rainlang for each expression
         if self.import_depth == 0 {
             // assign working words for this instance
-            self.resolve_global_words();
+            self.resolve_global_deployer();
 
             let mut has_exp = false;
             for b in &mut self.bindings {
@@ -1415,7 +1435,7 @@ impl RainDocument {
                     has_exp = true;
                 }
                 if is_exp {
-                    b.item = BindingItem::Exp(Rainlang::create(
+                    b.item = BindingItem::Exp(RainlangDocument::create(
                         b.content.clone(),
                         if let Some(am) = &self.authoring_meta {
                             Some(am)
@@ -1485,6 +1505,7 @@ impl RainDocument {
         Ok(())
     }
 
+    /// checks if a imported namespace can safely be merged into the main namespace
     fn check_namespace(nns: &Namespace, cns: &Namespace) -> Option<String> {
         if cns.len() == 0 {
             None
@@ -1552,7 +1573,7 @@ impl RainDocument {
         }
     }
 
-    /// merges namespaces
+    /// merges an imported namespaces to the main namespace
     fn merge_namespace(
         &mut self,
         name: String,
@@ -1595,6 +1616,7 @@ impl RainDocument {
         }
     }
 
+    /// recursivly merges 2 namespaces
     fn _merge(nns: &Namespace, cns: &mut Namespace) {
         if cns.is_empty() {
             cns.extend(nns.clone())
@@ -1613,7 +1635,7 @@ impl RainDocument {
         }
     }
 
-    /// Processes the expressions dependencies and instantiates RainlangParser for them
+    /// processes the expressions dependencies and checks for any possible dependecy issues
     fn process_dependencies(&mut self) {
         let mut topo_sort: TopoSort<&str> = TopoSort::new();
         let deps_map: Vec<&mut Binding> = self
@@ -1660,7 +1682,8 @@ impl RainDocument {
         }
     }
 
-    fn check_namespace_words<'a>(
+    /// checks and counts the word sets in a namespace by their hashs
+    fn check_namespace_deployer<'a>(
         namespace: &'a Namespace,
         mut hash: &'a str,
     ) -> (usize, &'a str, Option<&'a NamespaceNode>) {
@@ -1680,7 +1703,7 @@ impl RainDocument {
         }
         for (_key, item) in namespace {
             if !item.is_node() {
-                let result = Self::check_namespace_words(item.unwrap_namespace(), hash);
+                let result = Self::check_namespace_deployer(item.unwrap_namespace(), hash);
                 hash = result.1;
                 c += result.0;
                 if c > 1 {
@@ -1697,13 +1720,13 @@ impl RainDocument {
         return (c, hash, node);
     }
 
-    /// Method to assign working words for this instance and store its path
-    fn resolve_global_words(&mut self) {
-        let (words_set_count, _hash, node) = Self::check_namespace_words(&self.namespace, "");
+    /// assigns working word set for this RainDocument instance
+    fn resolve_global_deployer(&mut self) {
+        let (words_set_count, _hash, node) = Self::check_namespace_deployer(&self.namespace, "");
         if words_set_count > 1 {
             self.problems.push(Problem {
                 msg: format!(
-                    "words must be singleton, but namespaces include {} sets of words",
+                    "words (deployer) must be singleton, but namespaces include {} sets of words",
                     words_set_count
                 ),
                 position: [0, 0],
@@ -1713,28 +1736,29 @@ impl RainDocument {
             self.problems.push(Problem {
                 msg: "cannot find any set of words (undefined deployer)".to_owned(),
                 position: [0, 0],
-                code: ErrorCode::UndefinedDispair,
+                code: ErrorCode::UndefinedDeployer,
             });
         } else {
             if let Some(n) = node {
                 if n.is_dispair() {
                     let dis = n.unwrap_dispair();
-                    if let Some(am) = &dis.authoring_meta {
-                        self.authoring_meta = Some(am.clone())
-                    };
-                    self.bytecode = dis.bytecode.clone();
+                    // if let Some(am) = &dis.authoring_meta {
+                    //     self.authoring_meta = Some(am.clone())
+                    // };
+                    self.deployer = dis.clone().into();
+                    self.authoring_meta = self.deployer.authoring_meta.clone();
                 } else {
                     self.problems.push(Problem {
-                        msg: "could not resolve namespace words".to_owned(),
+                        msg: "could not resolve namespace deployer".to_owned(),
                         position: [0, 0],
-                        code: ErrorCode::UndefinedDispair,
+                        code: ErrorCode::UndefinedDeployer,
                     });
                 }
             } else {
                 self.problems.push(Problem {
-                    msg: "could not resolve namespace words".to_owned(),
+                    msg: "could not resolve namespace deployer".to_owned(),
                     position: [0, 0],
-                    code: ErrorCode::UndefinedDispair,
+                    code: ErrorCode::UndefinedDeployer,
                 });
             }
         }
@@ -1752,7 +1776,7 @@ impl PartialEq for RainDocument {
             && self.namespace == other.namespace
             && self.imports == other.imports
             && self.authoring_meta == other.authoring_meta
-            && self.bytecode == other.bytecode
+            && self.deployer == other.deployer
             && self.ignore_words == other.ignore_words
             && self.ignore_undefined_words == other.ignore_undefined_words
             && self.problems == other.problems

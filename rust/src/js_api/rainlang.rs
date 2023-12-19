@@ -1,21 +1,24 @@
 use wasm_bindgen::prelude::*;
-use rain_meta::types::authoring::v1::AuthoringMeta;
+use rain_meta::{types::authoring::v1::AuthoringMeta, NPE2Deployer};
 use serde_wasm_bindgen::{to_value as to_js_value, from_value as from_js_value};
+use crate::INPE2Deployer;
+
 use super::super::{
-    IRainlang, Namespace, IAuthoringMeta,
+    IRainlangDocument, Namespace, IAuthoringMeta,
     compiler::ParseResult,
-    parser::rainlang::Rainlang,
+    parser::rainlang::RainlangDocument,
     types::ast::{Comment, Problem, RainlangSource, Namespace as Ns},
 };
 
 #[wasm_bindgen]
-impl Rainlang {
+impl RainlangDocument {
+    /// Creates a new instance
     #[wasm_bindgen(js_name = "create")]
     pub fn js_create(
         text: &str,
         authoring_meta: Option<IAuthoringMeta>,
         namespace: Option<Namespace>,
-    ) -> Rainlang {
+    ) -> RainlangDocument {
         let opt_am = if let Some(iam) = authoring_meta {
             Some(from_js_value::<AuthoringMeta>(iam.obj).unwrap_throw())
         } else {
@@ -34,10 +37,10 @@ impl Rainlang {
             Some(v) => Some(v),
             None => None,
         };
-        Rainlang::create(text.to_string(), am, ns)
+        RainlangDocument::create(text.to_string(), am, ns)
     }
 
-    /// Updates the text of this Rainlang instance and parse it right after that
+    /// Updates the text of this instance and parses it right away
     #[wasm_bindgen(js_name = "update")]
     pub fn js_update(
         &mut self,
@@ -66,58 +69,55 @@ impl Rainlang {
         self.update(new_text.to_string(), am, ns);
     }
 
+    /// Creates an instance from interface object
     #[wasm_bindgen(js_name = "fromInterface")]
-    pub fn from_interface(value: IRainlang) -> Rainlang {
-        from_js_value::<Rainlang>(value.obj).unwrap_throw()
+    pub fn from_interface(value: IRainlangDocument) -> RainlangDocument {
+        from_js_value::<RainlangDocument>(value.obj).unwrap_throw()
     }
 
+    /// Creates an interface object from this instance
     #[wasm_bindgen(js_name = "toInterface")]
-    pub fn to_interface(&self) -> IRainlang {
-        IRainlang {
+    pub fn to_interface(&self) -> IRainlangDocument {
+        IRainlangDocument {
             obj: to_js_value(self).unwrap_throw(),
         }
     }
 
-    /// Get the current runtime error of this Rainlang instance
+    /// The error msg if parsing resulted in an error
     #[wasm_bindgen(getter, js_name = "error")]
     pub fn js_get_runtime_error(&self) -> Option<String> {
         self.error.clone()
     }
 
-    /// Get the current text of this RainDocument instance
+    /// This instance's text
     #[wasm_bindgen(getter, js_name = "text")]
     pub fn js_text(&self) -> String {
         self.text.clone()
     }
 
+    /// This instance's parse tree (AST)
     #[wasm_bindgen(getter, js_name = "ast")]
     pub fn js_ast(&self) -> Vec<RainlangSource> {
         self.ast.clone()
     }
 
+    /// This instance's problems
     #[wasm_bindgen(getter, js_name = "problems")]
     pub fn js_problems(&self) -> Vec<Problem> {
         self.problems.clone()
     }
 
+    /// This instance's comments
     #[wasm_bindgen(getter, js_name = "comments")]
     pub fn js_comments(&self) -> Vec<Comment> {
         self.comments.clone()
     }
 
-    #[wasm_bindgen(getter, js_name = "ignoreUndefinedAuthoringMeta")]
-    pub fn js_ignore_undefined_authoring_meta(&self) -> bool {
-        self.ignore_undefined_authoring_meta
-    }
-
+    /// Compiles this instance's text given the entrypoints and INPE2Deployer
     #[wasm_bindgen(js_name = "compile")]
-    pub async fn js_compile(
-        &self,
-        entrypoints: u8,
-        bytecode: &[u8],
-        min_outputs: Option<Vec<u8>>,
-    ) -> Result<ParseResult, String> {
-        match self.compile(entrypoints, bytecode, None, min_outputs.as_deref()) {
+    pub async fn js_compile(&self, npe2_deployer: INPE2Deployer) -> Result<ParseResult, String> {
+        let deployer: NPE2Deployer = from_js_value(npe2_deployer.obj).unwrap_throw();
+        match self.compile(&deployer, None) {
             Ok(v) => Ok(v),
             Err(e) => Err(e.to_string()),
         }

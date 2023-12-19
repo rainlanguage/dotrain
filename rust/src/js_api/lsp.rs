@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use lsp_types::{TextDocumentItem as TDI, Position as Pos};
+use lsp_types::{TextDocumentItem as TDI, Position as Pos, MarkupKind};
 use serde_wasm_bindgen::{to_value as to_js_value, from_value as from_js_value};
 use super::{
     store::MetaStore,
@@ -8,6 +8,14 @@ use super::{
         lsp::{RainLanguageServices, LanguageServiceParams},
     },
 };
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "Position")]
+    pub type Position;
+    #[wasm_bindgen(typescript_type = "TextDocumentItem")]
+    pub type TextDocumentItem;
+}
 
 #[wasm_bindgen(typescript_custom_section)]
 const RAIN_LANGUAGE_SERVICES_TYPESCRIPT_DEFINITION: &'static str = r#"/**
@@ -18,15 +26,11 @@ export class RainLanguageServices {
   free(): void;
   /**
    */
-  readonly clientCapabilities: ClientCapabilities;
-  /**
-   */
   readonly metaStore: MetaStore;
   /**
-   * @param {ClientCapabilities} client_capabilities
    * @param {MetaStore} meta_store
    */
-  constructor(client_capabilities: ClientCapabilities, meta_store: MetaStore);
+  constructor(meta_store: MetaStore);
   /**
    * @param {TextDocumentItem} text_document
    * @returns {RainDocument}
@@ -41,84 +45,62 @@ export class RainLanguageServices {
    * @param {TextDocumentItem} text_document
    * @returns {(Diagnostic)[]}
    */
-  doValidate(text_document: TextDocumentItem): Diagnostic[];
+  doValidate(text_document: TextDocumentItem, related_information: boolean): Diagnostic[];
   /**
    * @param {RainDocument} rain_document
+   * @param {boolean} related_information
    * @returns {(Diagnostic)[]}
    */
-  doValidateRainDocument(rain_document: RainDocument): Diagnostic[];
+  doValidateRainDocument(rain_document: RainDocument, related_information: boolean): Diagnostic[];
   /**
    * @param {TextDocumentItem} text_document
+   * @param {boolean} related_information
    * @returns {Promise<any>}
    */
   doValidateAsync(text_document: TextDocumentItem): Promise<Diagnostic[]>;
   /**
    * @param {TextDocumentItem} text_document
    * @param {Position} position
+   * @param {MarkupKind} documentation_format
    * @returns {(CompletionItem)[] | undefined}
    */
-  doComplete(text_document: TextDocumentItem, position: Position): CompletionItem[] | null;
+  doComplete(text_document: TextDocumentItem, position: Position, documentation_format?: MarkupKind): CompletionItem[] | null;
   /**
    * @param {RainDocument} rain_document
    * @param {Position} position
+   * @param {MarkupKind} documentation_format
    * @returns {(CompletionItem)[] | undefined}
    */
-  doCompleteRainDocument(rain_document: RainDocument, position: Position): CompletionItem[] | null;
+  doCompleteRainDocument(rain_document: RainDocument, position: Position, documentation_format?: MarkupKind): CompletionItem[] | null;
   /**
    * @param {TextDocumentItem} text_document
    * @param {Position} position
+   * @param {MarkupKind} content_format
    * @returns {Hover | undefined}
    */
-  doHover(text_document: TextDocumentItem, position: Position): Hover | null;
+  doHover(text_document: TextDocumentItem, position: Position, content_format?: MarkupKind): Hover | null;
   /**
    * @param {RainDocument} rain_document
    * @param {Position} position
+   * @param {MarkupKind} content_format
    * @returns {Hover | undefined}
    */
-  doHoverRainDocument(rain_document: RainDocument, position: Position): Hover | null;
+  doHoverRainDocument(rain_document: RainDocument, position: Position, content_format?: MarkupKind): Hover | null;
   /**
    * @param {TextDocumentItem} text_document
+   * @param {number} semantic_token_types_index
+   * @param {number} semantic_token_modifiers_len
    * @returns {SemanticTokensPartialResult}
    */
-  semanticTokens(text_document: TextDocumentItem): SemanticTokensPartialResult;
+  semanticTokens(text_document: TextDocumentItem, semantic_token_types_index: number, semantic_token_modifiers_len: number): SemanticTokensPartialResult;
   /**
    * @param {RainDocument} rain_document
+   * @param {number} semantic_token_types_index
+   * @param {number} semantic_token_modifiers_len
    * @returns {SemanticTokensPartialResult}
    */
-  rainDocumentSemanticTokens(rain_document: RainDocument): SemanticTokensPartialResult;
+  rainDocumentSemanticTokens(rain_document: RainDocument, semantic_token_types_index: number, semantic_token_modifiers_len: number): SemanticTokensPartialResult;
 }"#;
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(typescript_type = "ClientCapabilities")]
-    pub type ClientCapabilities;
-    #[wasm_bindgen(typescript_type = "ServerCapabilities")]
-    pub type ServerCapabilities;
-    #[wasm_bindgen(typescript_type = "Position")]
-    pub type Position;
-    #[wasm_bindgen(typescript_type = "TextDocumentItem")]
-    pub type TextDocumentItem;
-    #[wasm_bindgen(typescript_type = "SemanticTokensPartialResult")]
-    pub type SemanticTokensPartialResult;
-}
-
-// #[wasm_bindgen(module = "./z")]
-// extern "C" {
-//     type A;
-
-//     #[wasm_bindgen(method)]
-//     fn dd(arg: i32) -> i32;
-// }
-
-// /// Parameters for initiating Language Services
-// #[derive(Debug, Clone, Tsify, Serialize, Deserialize)]
-// #[tsify(into_wasm_abi, from_wasm_abi)]
-// pub struct LanguageServiceParamsJs {
-//     /// Describes the LSP capabilities the client supports.
-//     pub client_capabilities: CC,
-//     /// Object that keeps cache of metas
-//     pub meta_store: Option<MetaStore>,
-// }
 
 #[wasm_bindgen]
 impl RainLanguageServices {
@@ -126,20 +108,11 @@ impl RainLanguageServices {
     pub fn js_meta_store(&self) -> MetaStore {
         MetaStore(self.meta_store.clone())
     }
-    #[wasm_bindgen(getter, js_name = "clientCapabilities", skip_typescript)]
-    pub fn js_capabilities(&self) -> ClientCapabilities {
-        ClientCapabilities {
-            obj: to_js_value(&self.capabilities).unwrap_throw(),
-        }
-    }
+
     #[wasm_bindgen(constructor, skip_typescript)]
-    pub fn js_new(
-        client_capabilities: ClientCapabilities,
-        meta_store: &MetaStore,
-    ) -> RainLanguageServices {
+    pub fn js_new(meta_store: &MetaStore) -> RainLanguageServices {
         RainLanguageServices::new(&LanguageServiceParams {
             meta_store: Some(meta_store.0.clone()),
-            client_capabilities: from_js_value(client_capabilities.obj).unwrap_throw(),
         })
     }
 
@@ -159,50 +132,52 @@ impl RainLanguageServices {
     }
 
     #[wasm_bindgen(js_name = "doValidate", skip_typescript)]
-    pub fn js_do_validate(&self, text_document: TextDocumentItem) -> JsValue {
+    pub fn js_do_validate(
+        &self,
+        text_document: TextDocumentItem,
+        related_information: bool,
+    ) -> JsValue {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        // self.do_validate(&tdi).iter().map(|d| Diagnostic {
-        //     obj: to_js_value(d).unwrap_throw()
-        //     // .map_err(|_| JsValue::NULL)
-        // }).collect()
-        to_js_value(&self.do_validate(&tdi)).unwrap_throw()
+        to_js_value(&self.do_validate(&tdi, related_information)).unwrap_or(JsValue::NULL)
     }
 
     #[wasm_bindgen(js_name = "doValidateRainDocument", skip_typescript)]
-    pub fn js_do_validate_rain_document(&self, rain_document: &RainDocument) -> JsValue {
-        // self.do_validate_rain_document(rain_document).iter().map(|d| Diagnostic {
-        //     obj: to_js_value(d).unwrap_throw()
-        //     // .map_err(|_| JsValue::NULL)
-        // }).collect()
-        to_js_value(&self.do_validate_rain_document(rain_document)).unwrap_throw()
+    pub fn js_do_validate_rain_document(
+        &self,
+        rain_document: &RainDocument,
+        related_information: bool,
+    ) -> JsValue {
+        to_js_value(&self.do_validate_rain_document(rain_document, related_information))
+            .unwrap_or(JsValue::NULL)
     }
 
     #[wasm_bindgen(js_name = "doValidateAsync", skip_typescript)]
-    pub async fn js_do_validate_async(&self, text_document: TextDocumentItem) -> JsValue {
+    pub async fn js_do_validate_async(
+        &self,
+        text_document: TextDocumentItem,
+        related_information: bool,
+    ) -> JsValue {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        let x = self.do_validate_async(&tdi).await;
-        // Ok()
-        // let y = x.iter().map(|d| Diagnostic {
-        //     obj: to_js_value(d).unwrap_throw()
-        //     // .map_err(|_| JsValue::NULL)
-        // }).collect();
-        // let x = future_to_promise(self.do_validate_async(&tdi));
-        // let w = Promise::resolve(&to_js_value(&x).unwrap_throw());
-        // Ok(vec![Diagnostic{obj: to_js_value(&x).unwrap_throw()}])
-        // Diagnostic {obj: to_js_value(&x[0]).unwrap_throw()}
-        // let mut q = vec![];
-        // for d in &x {
-        //     q.push(Diagnostic {obj: to_js_value(d).unwrap_throw() })
-        // }
-        to_js_value(&x).unwrap_throw()
+        to_js_value(&self.do_validate_async(&tdi, related_information).await)
+            .unwrap_or(JsValue::NULL)
     }
 
     #[wasm_bindgen(js_name = "doComplete", skip_typescript)]
-    pub fn js_do_complete(&self, text_document: TextDocumentItem, position: Position) -> JsValue {
+    pub fn js_do_complete(
+        &self,
+        text_document: TextDocumentItem,
+        position: Position,
+        documentation_format: JsValue,
+    ) -> JsValue {
         let pos = from_js_value::<Pos>(position.obj).unwrap_throw();
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        if let Some(v) = self.do_complete(&tdi, pos) {
-            to_js_value(&v).unwrap_throw()
+        if let Some(v) = self.do_complete(
+            &tdi,
+            pos,
+            serde_wasm_bindgen::from_value::<Option<MarkupKind>>(documentation_format)
+                .unwrap_or(None),
+        ) {
+            to_js_value(&v).unwrap_or(JsValue::NULL)
         } else {
             JsValue::NULL
         }
@@ -213,21 +188,36 @@ impl RainLanguageServices {
         &self,
         rain_document: &RainDocument,
         position: Position,
+        documentation_format: JsValue,
     ) -> JsValue {
         let pos = from_js_value::<Pos>(position.obj).unwrap_throw();
-        if let Some(v) = self.do_complete_rain_document(rain_document, pos) {
-            to_js_value(&v).unwrap_throw()
+        if let Some(v) = self.do_complete_rain_document(
+            rain_document,
+            pos,
+            serde_wasm_bindgen::from_value::<Option<MarkupKind>>(documentation_format)
+                .unwrap_or(None),
+        ) {
+            to_js_value(&v).unwrap_or(JsValue::NULL)
         } else {
             JsValue::NULL
         }
     }
 
     #[wasm_bindgen(js_name = "doHover", skip_typescript)]
-    pub fn js_do_hover(&self, text_document: TextDocumentItem, position: Position) -> JsValue {
+    pub fn js_do_hover(
+        &self,
+        text_document: TextDocumentItem,
+        position: Position,
+        content_format: JsValue,
+    ) -> JsValue {
         let pos = from_js_value::<Pos>(position.obj).unwrap_throw();
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        if let Some(h) = self.do_hover(&tdi, pos) {
-            to_js_value(&h).unwrap_throw()
+        if let Some(h) = self.do_hover(
+            &tdi,
+            pos,
+            serde_wasm_bindgen::from_value::<Option<MarkupKind>>(content_format).unwrap_or(None),
+        ) {
+            to_js_value(&h).unwrap_or(JsValue::NULL)
         } else {
             JsValue::NULL
         }
@@ -238,23 +228,48 @@ impl RainLanguageServices {
         &self,
         rain_document: &RainDocument,
         position: Position,
+        content_format: JsValue,
     ) -> JsValue {
         let pos = from_js_value::<Pos>(position.obj).unwrap_throw();
-        if let Some(h) = self.do_hover_rain_document(rain_document, pos) {
-            to_js_value(&h).unwrap_throw()
+        if let Some(h) = self.do_hover_rain_document(
+            rain_document,
+            pos,
+            serde_wasm_bindgen::from_value::<Option<MarkupKind>>(content_format).unwrap_or(None),
+        ) {
+            to_js_value(&h).unwrap_or(JsValue::NULL)
         } else {
             JsValue::NULL
         }
     }
 
     #[wasm_bindgen(js_name = "semanticTokens", skip_typescript)]
-    pub fn js_semantic_tokens(&self, text_document: TextDocumentItem) -> JsValue {
+    pub fn js_semantic_tokens(
+        &self,
+        text_document: TextDocumentItem,
+        semantic_token_types_index: u32,
+        semantic_token_modifiers_len: usize,
+    ) -> JsValue {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        to_js_value(&self.semantic_tokens(&tdi)).unwrap_or(JsValue::NULL)
+        to_js_value(&self.semantic_tokens(
+            &tdi,
+            semantic_token_types_index,
+            semantic_token_modifiers_len,
+        ))
+        .unwrap_or(JsValue::NULL)
     }
 
     #[wasm_bindgen(js_name = "rainDocumentSemanticTokens", skip_typescript)]
-    pub fn js_rain_document_semantic_tokens(&self, rain_document: &RainDocument) -> JsValue {
-        to_js_value(&self.rain_document_semantic_tokens(rain_document)).unwrap_or(JsValue::NULL)
+    pub fn js_rain_document_semantic_tokens(
+        &self,
+        rain_document: &RainDocument,
+        semantic_token_types_index: u32,
+        semantic_token_modifiers_len: usize,
+    ) -> JsValue {
+        to_js_value(&self.rain_document_semantic_tokens(
+            rain_document,
+            semantic_token_types_index,
+            semantic_token_modifiers_len,
+        ))
+        .unwrap_or(JsValue::NULL)
     }
 }

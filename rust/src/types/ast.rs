@@ -2,25 +2,31 @@
 
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use super::{ErrorCode, super::parser::{rainlang::Rainlang, raindocument::RainDocument}};
-use rain_meta::types::{authoring::v1::AuthoringMeta, interpreter_caller::v1::InterpreterCallerMeta};
+use super::{
+    ErrorCode,
+    super::parser::{rainlang::RainlangDocument, raindocument::RainDocument},
+};
+use rain_meta::{
+    NPE2Deployer,
+    types::{authoring::v1::AuthoringMeta, interpreter_caller::v1::InterpreterCallerMeta},
+};
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use tsify::Tsify;
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use wasm_bindgen::prelude::*;
 
-/// Type for start and end indexes of an ast node in a text
+/// Type for start and end indexes of an ast node in a text, inclusive at start and exclusive at the end
 #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify::declare)]
 pub type Offsets = [usize; 2];
 
-/// Type for result of matches found in a String
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
     derive(Tsify),
     tsify(into_wasm_abi, from_wasm_abi)
 )]
+/// Type for result of matches found in a String
 pub struct ParsedItem(pub String, pub Offsets);
 
 /// Type for Rainlang/RainDocument problem
@@ -143,14 +149,72 @@ pub struct Comment {
 pub struct DispairImportItem {
     #[cfg_attr(
         any(feature = "js-api", target_family = "wasm"),
+        tsify(type = "string")
+    )]
+    pub constructor_meta_hash: String,
+    #[cfg_attr(
+        any(feature = "js-api", target_family = "wasm"),
         tsify(type = "Uint8Array")
     )]
+    #[serde(with = "serde_bytes")]
+    pub constructor_meta_bytes: Vec<u8>,
+    #[cfg_attr(
+        any(feature = "js-api", target_family = "wasm"),
+        tsify(type = "Uint8Array")
+    )]
+    #[serde(with = "serde_bytes")]
+    pub parser: Vec<u8>,
+    #[cfg_attr(
+        any(feature = "js-api", target_family = "wasm"),
+        tsify(type = "Uint8Array")
+    )]
+    #[serde(with = "serde_bytes")]
+    pub store: Vec<u8>,
+    #[cfg_attr(
+        any(feature = "js-api", target_family = "wasm"),
+        tsify(type = "Uint8Array")
+    )]
+    #[serde(with = "serde_bytes")]
+    pub interpreter: Vec<u8>,
+    #[cfg_attr(
+        any(feature = "js-api", target_family = "wasm"),
+        tsify(type = "Uint8Array")
+    )]
+    #[serde(with = "serde_bytes")]
     pub bytecode: Vec<u8>,
     #[cfg_attr(
         any(feature = "js-api", target_family = "wasm"),
         tsify(type = "IAuthoringMeta | undefined")
     )]
     pub authoring_meta: Option<AuthoringMeta>,
+}
+
+impl From<NPE2Deployer> for DispairImportItem {
+    fn from(value: NPE2Deployer) -> Self {
+        DispairImportItem {
+            constructor_meta_hash: value.meta_hash,
+            constructor_meta_bytes: value.meta_bytes,
+            parser: value.parser,
+            store: value.store,
+            interpreter: value.interpreter,
+            bytecode: value.bytecode,
+            authoring_meta: value.authoring_meta,
+        }
+    }
+}
+
+impl From<DispairImportItem> for NPE2Deployer {
+    fn from(value: DispairImportItem) -> Self {
+        NPE2Deployer {
+            meta_hash: value.constructor_meta_hash,
+            meta_bytes: value.constructor_meta_bytes,
+            bytecode: value.bytecode,
+            parser: value.parser,
+            store: value.store,
+            interpreter: value.interpreter,
+            authoring_meta: value.authoring_meta,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -282,7 +346,7 @@ pub struct ConstantBindingItem {
 pub enum BindingItem {
     Elided(ElidedBindingItem),
     Constant(ConstantBindingItem),
-    Exp(Rainlang),
+    Exp(RainlangDocument),
 }
 /// Type for a binding (named expressions)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -452,7 +516,7 @@ impl NamespaceNode {
         }
     }
 
-    pub fn unwrap_exp_binding(&self) -> &Rainlang {
+    pub fn unwrap_exp_binding(&self) -> &RainlangDocument {
         match &self.element {
             NamespaceNodeElement::Binding(b) => {
                 if let BindingItem::Exp(e) = &b.item {
@@ -658,7 +722,7 @@ impl NamespaceItem {
         }
     }
 
-    pub fn unwrap_exp_binding(&self) -> &Rainlang {
+    pub fn unwrap_exp_binding(&self) -> &RainlangDocument {
         if let NamespaceItem::Node(n) = self {
             match &n.element {
                 NamespaceNodeElement::Binding(b) => match &b.item {

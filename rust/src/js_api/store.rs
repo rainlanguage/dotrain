@@ -1,176 +1,279 @@
-use serde::Serialize;
-use js_sys::Uint8Array;
+use tsify::Tsify;
 use wasm_bindgen::prelude::*;
-use rain_meta::{Store, search, search_deployer};
+use serde::{Serialize, Deserialize};
 use std::{
     sync::{Arc, RwLock},
     collections::HashMap,
 };
+use rain_meta::{Store, search, search_deployer, NPE2Deployer};
 use serde_wasm_bindgen::{to_value as to_js_value, from_value as from_js_value, Serializer};
 
+// a wrapper struct for &[u8] to be serialized as Uint8Array from rust -> wasm -> js
+struct ToUint8ArraySerializer<'a>(&'a [u8]);
+impl<'a> Serialize for ToUint8ArraySerializer<'a> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_bytes(&self.0)
+    }
+}
+
+// Typescript definitions of MetaStore
 #[wasm_bindgen(typescript_custom_section)]
-const META_STORE_TYPESCRIPT_DEFINITIONS: &'static str = r#"export class MetaStore {
+const META_STORE_TYPESCRIPT_DEFINITIONS: &'static str = r#"/**
+* # MetaStore (CAS)
+* Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities 
+* to easliy utilize them. Hashes are 32 bytes (in hex string format) and will 
+* be stored as lower case and meta bytes are valid cbor encoded as Uint8Array.
+* 
+* @example
+* ```typescript
+* // to instantiate with including default subgraphs
+* // pass 'false' to not include default rain subgraph endpoints
+* const store = new MetaStore();
+* 
+* // or to instantiate with initial arguments
+* const store = MetaStore.create(options);
+* 
+* // add a new subgraph endpoint URLs
+* store.addSubgraphs(["sg-url-1", "sg-url-2", ...])
+* 
+* // merge another MetaStore instance to this instance
+* store.merge(anotherMetaStore)
+* 
+* // updates the meta store with a new meta by searching through subgraphs
+* await store.update(hash)
+* 
+* // to get a meta bytes of a corresponding hash from store
+* const meta = store.getMeta(hash);
+* ```
+*/
+export class MetaStore {
   free(): void;
 
   /**
-   * abcdgh
+   * Creates new instance of Store with given initial values,
+   * it checks the validity of each item and only stores those that are valid
+   * @param {MetaStoreOptions} options - initial values
+   * @returns {MetaStore}
    */
-  static create(
-    subgraphs: string[],
-    cache: Record<string, Uint8Array>,
-    authoringCache: Record<string, Uint8Array>,
-    dotrainCache: Record<string, string>,
-    includeRainSubgraphs: boolean
-  ): MetaStore;
+  static create(options: MetaStoreOptions): MetaStore;
 
   /**
-   * abcdgh
+   * Constructs a new instance
+   * @param include_rain_subgraphs - (optional) if default Rain subgraphs should be included
    */
-  constructor();
+  constructor(include_rain_subgraphs?: boolean);
 
   /**
-   * abcdgh
+   * All subgraph endpoint URLs of this instance
    */
   readonly subgraphs: string[];
   /**
-   * abcdgh
+   * All the cached meta hash/bytes pairs
    */
   readonly cache: Record<string, Uint8Array>;
   /**
-   * abcdgh
+   * All the cached dotrain uri/meta hash pairs
    */
   readonly dotrainCache: Record<string, string>;
   /**
-   * abcdgh
+   * All the cached NPE2 deployers
    */
-  readonly authoringCache: Record<string, Uint8Array>;
+  readonly deployerCache: Record<string, INPE2Deployer>;
 
   /**
-   * abcdgh
+   * Merges another instance of MetaStore to this instance lazily, avoids duplicates
+   * @param {MetaStore} other
    */
   merge(other: MetaStore): void;
   /**
-   * abcdgh
+   * Adds new subgraph endpoints
+   * @param {string[]} subgraphs
    */
   addSubgraphs(subgraphs: string[]): void;
   /**
-   * abcdgh
+   * Get the corresponding meta bytes of the given hash if it is cached
+   * @param {string} hash
+   * @returns {Uint8Array | undefined}
    */
   getMeta(hash: string): Uint8Array | undefined;
   /**
-   * abcdgh
+   * Get the corresponding dotrain hash of the given dotrain uri if it is cached
+   * @param {string} uri
+   * @returns {string | undefined}
    */
   getDotrainHash(uri: string): string | undefined;
   /**
-   * abcdgh
+   * Get the corresponding uri of the given dotrain hash if it is cached
+   * @param {string} hash
+   * @returns {string | undefined}
    */
   getDotrainUri(hash: string): string | undefined;
   /**
-   * abcdgh
+   * Get the corresponding meta bytes of the given dotrain uri if it is cached
+   * @param {string} uri
+   * @returns {Uint8Array | undefined}
    */
   getDotrainMeta(uri: string): Uint8Array | undefined;
   /**
-   * abcdgh
+   * Deletes a dotrain record given its uri
+   * @param {string} uri
    */
   deleteDotrain(uri: string, keep_meta: boolean): void;
   /**
-   * abcdgh
+   * Get the NPE2 deployer details of the given deployer bytecode hash if it is cached
+   * @param {string} hash
+   * @returns {INPE2Deployer | undefined}
    */
-  getAuthoringMeta(hash: string): Uint8Array | undefined;
+  getDeployer(hash: string): INPE2Deployer | undefined;
   /**
-   * abcdgh
+   * Stores (or updates in case the URI already exists) the given dotrain text as meta into the store cache
+   * and maps it to the given uri (path), it should be noted that reading the content of the dotrain is not in
+   * the scope of MetaStore and handling and passing on a correct URI for the given text must be handled
+   * externally by the implementer
+   * @param {string} text
+   * @param {string} uri
+   * @param {boolean} keep_old - keeps the old dotrain meta in the cache
+   * @returns {string[]} new hash and old hash if the given uri was already cached
    */
   setDotrain(text: string, uri: string, keep_old: boolean): string[];
   /**
-   * abcdgh
+   * Sets deployer record
+   * @param {string} deployer_bytecode_hash
+   * @param {INPE2Deployer} npe2_deployer
    */
-  updateWith(hash: string, bytes: Uint8Array): Uint8Array | undefined;
-
+  setDeployer(deployer_bytecode_hash: string, npe2_deployer: INPE2Deployer): void;
   /**
-   * abcdgh
+   * Updates the meta cache by the given hash and meta bytes, checks the hash to bytes validity
+   * @param {string} hash
+   * @param {Uint8Array} bytes
+   */
+  updateWith(hash: string, bytes: Uint8Array): void;
+  /**
+   * Updates the meta cache by searching through all subgraphs for the given hash
+   * @param {string} hash
+   * @returns {Promise<Uint8Array | undefined>}
    */
   update(hash: string): Promise<Uint8Array | undefined>;
   /**
-   * abcdgh
+   * First checks if the meta is stored and returns it if so, else will perform update()
+   * @param {string} hash
+   * @returns {Promise<Uint8Array | undefined>}
    */
   updateCheck(hash: string): Promise<Uint8Array | undefined>;
   /**
-   * abcdgh
+   * Searches for NPE2 deployer details in the subgraphs given the deployer hash
+   * @param {string} deployer_bytecode_hash
+   * @returns {Promise<INPE2Deployer | undefined>}
    */
-  searchAuthoringMeta(deployer_hash: string): Promise<Uint8Array | undefined>;
+  searchDeployer(deployer_bytecode_hash: string): Promise<INPE2Deployer | undefined>;
   /**
-   * abcdgh
+   * If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
+   * @param {string} deployer_bytecode_hash
+   * @returns {Promise<Uint8Array | undefined>}
    */
-  searchAuthoringMetaCheck(authoring_meta_hash: string, deployer_hash: string): Promise<Uint8Array | undefined>;
+  searchDeployerCheck(deployer_bytecode_hash: string): Promise<Uint8Array | undefined>;
 }"#;
 
+/// Options for instantiating MetaStore with initial values
+#[derive(Debug, Serialize, Deserialize, Clone, Tsify)]
+#[serde(rename_all = "camelCase")]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct MetaStoreOptions {
+    #[serde(default)]
+    #[tsify(optional)]
+    pub subgraphs: Vec<String>,
+    #[serde(default)]
+    #[tsify(optional, type = "Record<string, Uint8Array>")]
+    pub cache: HashMap<String, Vec<u8>>,
+    #[serde(default)]
+    #[tsify(optional, type = "Record<string, INPE2Deployer>")]
+    pub deployer_cache: HashMap<String, NPE2Deployer>,
+    #[serde(default)]
+    #[tsify(optional, type = "Record<string, string>")]
+    pub dotrain_cache: HashMap<String, String>,
+    #[serde(default = "_true")]
+    #[tsify(optional)]
+    pub include_rain_subgraphs: bool,
+}
+
+fn _true() -> bool {
+    true
+}
+
+// MetaStore is a wasm-bindgen wrapper struct for 'Arc<RwLock<Store>>' in order to
+// provide an easy API in Typescript/Javascript to instantiate and interact with all
+// the 'Store' struct (meta CAS) methods and functionalities and sharing an instance
+// of it between different instances of RainDocument the way it is convenient in
+// Typescript/Javascript while Rust side keep handling the read/write locks
+//
+/// # MetaStore (CAS)
+///
+/// Reads, stores and simply manages k/v pairs of meta hash and meta bytes and
+/// provides the functionalities to easliy utilize them.
+/// Hashes are 32 bytes (in hex string format) and will be stored as lower case and
+/// meta bytes are valid cbor encoded as Uint8Array.
+///
+/// @example
+/// ```javascript
+/// // to instantiate with including default subgraphs
+/// // pass 'false' to not include default rain subgraph endpoints
+/// const store = new MetaStore();
+///
+/// // or to instantiate with initial arguments
+/// const store = MetaStore.create(options);
+///
+/// // add a new subgraph endpoint URLs
+/// store.addSubgraphs(["sg-url-1", "sg-url-2", ...])
+///
+/// // merge another MetaStore instance to this instance
+/// store.merge(anotherMetaStore)
+///
+/// // updates the meta store with a new meta by searching through subgraphs
+/// await store.update(hash)
+///
+/// // to get a meta bytes of a corresponding hash from store
+/// const meta = store.getMeta(hash);
+/// ```
 #[derive(Debug, Clone)]
 #[wasm_bindgen(skip_typescript)]
 pub struct MetaStore(pub(crate) Arc<RwLock<Store>>);
 
-// #[wasm_bindgen]
-// impl MetaStore {
-//     /// creates a RainDocument instance with this MetaStore and parses with only cached metas
-//     #[wasm_bindgen(skip_typescript, js_name = "createRainDocument")]
-//     pub fn create_rain_document(&self, text: &str, uri: &str) -> RainDocument {
-//         let meta_store = self.0.clone();
-//         let mut rd = RainDocument::_new(text.to_string(), Url::parse(uri).unwrap_throw(), 0, Some(meta_store), 0);
-//         rd.parse();
-//         rd
-//     }
-
-//     /// creates a RainDocument instance with this MetaStore and parses with searching for metas from remote
-//     #[wasm_bindgen(skip_typescript, js_name = "createRainDocumentAsync")]
-//     pub async fn create_rain_document_async(&self, text: &str, uri: &str) -> RainDocument {
-//         let meta_store = self.0.clone();
-//         let mut rd = RainDocument::_new(text.to_string(), Url::parse(uri).unwrap_throw(), 0, Some(meta_store), 0);
-//         rd.parse_async().await;
-//         rd
-//     }
-// }
-
 #[wasm_bindgen]
 impl MetaStore {
+    /// Constructs a new instance
     #[wasm_bindgen(skip_typescript, constructor)]
-    pub fn new() -> MetaStore {
-        MetaStore(Arc::new(RwLock::new(Store::default())))
+    pub fn new(include_rain_subgraphs: Option<bool>) -> MetaStore {
+        if let Some(include_sgs) = include_rain_subgraphs {
+            if include_sgs {
+                MetaStore(Arc::new(RwLock::new(Store::default())))
+            } else {
+                MetaStore(Arc::new(RwLock::new(Store::new())))
+            }
+        } else {
+            MetaStore(Arc::new(RwLock::new(Store::default())))
+        }
     }
 
-    /// creates new instance of Store with given initial values
+    /// Creates new instance of Store with given initial values
     /// it checks the validity of each item of the provided values and only stores those that are valid
     #[wasm_bindgen(skip_typescript)]
-    pub fn create(
-        subgraphs: JsValue,
-        cache: JsValue,
-        authoring_cache: JsValue,
-        dotrain_cache: JsValue,
-        include_rain_subgraphs: JsValue,
-    ) -> MetaStore {
+    pub fn create(options: MetaStoreOptions) -> MetaStore {
         MetaStore(Arc::new(RwLock::new(Store::create(
-            &from_js_value::<Vec<String>>(subgraphs).unwrap_throw(),
-            &from_js_value::<HashMap<String, Vec<u8>>>(cache).unwrap_throw(),
-            &from_js_value::<HashMap<String, Vec<u8>>>(authoring_cache).unwrap_throw(),
-            &from_js_value::<HashMap<String, String>>(dotrain_cache).unwrap_throw(),
-            from_js_value::<bool>(include_rain_subgraphs).unwrap_throw(),
+            &options.subgraphs,
+            &options.cache,
+            &options.deployer_cache,
+            &options.dotrain_cache,
+            options.include_rain_subgraphs,
         ))))
     }
 
-    /// all subgraph endpoints in this instance
+    /// All subgraph endpoint URLs of this instance
     #[wasm_bindgen(skip_typescript, getter)]
     pub fn subgraphs(&self) -> Vec<String> {
         self.0.read().unwrap().subgraphs().clone()
     }
 
-    /// add new subgraph endpoints
-    #[wasm_bindgen(skip_typescript, js_name = "addSubgraphs")]
-    pub fn add_subgraphs(&mut self, subgraphs: JsValue) {
-        self.0
-            .write()
-            .unwrap()
-            .add_subgraphs(&from_js_value::<Vec<String>>(subgraphs).unwrap_throw());
-    }
-
-    /// getter method for the whole meta cache
+    /// All the cached meta hash/bytes pairs
     #[wasm_bindgen(skip_typescript, getter)]
     pub fn cache(&self) -> JsValue {
         let serializer = Serializer::new().serialize_maps_as_objects(true);
@@ -178,23 +281,26 @@ impl MetaStore {
             .read()
             .unwrap()
             .cache()
+            .iter()
+            .map(|(key, value)| (key, ToUint8ArraySerializer(value)))
+            .collect::<HashMap<&String, ToUint8ArraySerializer>>()
             .serialize(&serializer)
             .unwrap_throw()
     }
 
-    /// getter method for the whole authoring meta cache
-    #[wasm_bindgen(skip_typescript, js_name = "authoringCache", getter)]
-    pub fn authoring_cache(&self) -> JsValue {
+    /// All the cached NPE2 deployers
+    #[wasm_bindgen(skip_typescript, js_name = "deployerCache", getter)]
+    pub fn deployer_cache(&self) -> JsValue {
         let serializer = Serializer::new().serialize_maps_as_objects(true);
         self.0
             .read()
             .unwrap()
-            .authoring_cache()
+            .deployer_cache()
             .serialize(&serializer)
             .unwrap_throw()
     }
 
-    /// getter method for the whole dotrain cache
+    /// All the cached dotrain uri/meta hash pairs
     #[wasm_bindgen(skip_typescript, js_name = "dotrainCache", getter)]
     pub fn dotrain_cache(&self) -> JsValue {
         let serializer = Serializer::new().serialize_maps_as_objects(true);
@@ -206,164 +312,141 @@ impl MetaStore {
             .unwrap_throw()
     }
 
-    /// get the corresponding meta bytes of the given hash if it exists
-    #[wasm_bindgen(skip_typescript, js_name = "getMeta")]
-    pub fn get_meta(&self, hash: &str) -> Option<Vec<u8>> {
-        match self.0.read().unwrap().get_meta(hash) {
-            Some(v) => Some(v.clone()),
-            None => None,
-        }
-    }
-
-    /// get the corresponding authoring meta bytes of the given hash if it exists
-    #[wasm_bindgen(skip_typescript, js_name = "getAuthoringMeta")]
-    pub fn get_authoring_meta(&self, hash: &str) -> Option<Vec<u8>> {
-        match self.0.read().unwrap().get_authoring_meta(hash) {
-            Some(v) => Some(v.clone()),
-            None => None,
-        }
-    }
-
-    /// getter method for the whole dotrain cache
-    /// get the corresponding dotrain hash of the given dotrain uri if it exists
-    #[wasm_bindgen(skip_typescript, js_name = "getDotrainHash")]
-    pub fn get_dotrain_hash(&self, uri: &str) -> Option<String> {
-        match self.0.read().unwrap().get_dotrain_hash(uri) {
-            Some(v) => Some(v.clone()),
-            None => None,
-        }
-    }
-
-    /// get the corresponding uri of the given dotrain hash if it exists
-    #[wasm_bindgen(skip_typescript, js_name = "getDotrainUri")]
-    pub fn get_dotrain_uri(&self, hash: &str) -> Option<String> {
-        match self.0.read().unwrap().get_dotrain_uri(hash) {
-            Some(v) => Some(v.to_string()),
-            None => None,
-        }
-    }
-
-    /// get the corresponding meta bytes of the given dotrain uri if it exists
-    #[wasm_bindgen(skip_typescript, js_name = "getDotrainMeta")]
-    pub fn get_dotrain_meta(&self, uri: &str) -> Option<Vec<u8>> {
-        match self.0.read().unwrap().get_dotrain_meta(uri) {
-            Some(v) => Some(v.clone()),
-            None => None,
-        }
-    }
-
-    /// searches for authoring meta in the subgraphs given the deployer hash
-    #[wasm_bindgen(skip_typescript, js_name = "searchAuthoringMeta")]
-    pub async fn search_authoring_meta(&mut self, deployer_hash: &str) -> Option<Uint8Array> {
-        let subgraphs = self.0.read().unwrap().subgraphs().clone();
-        match search_deployer(deployer_hash, &subgraphs).await {
-            Ok(res) => {
-                if let Some(m) = self.0.write().unwrap().update_with(&res.hash, &res.bytes) {
-                    match to_js_value(m) {
-                        Ok(v) => return Some(Uint8Array::from(v)),
-                        Err(_) => return None,
-                    }
-                }
-                None
-            }
-            Err(_e) => None,
-        }
-    }
-
-    /// if the authoring meta already is cached it returns it immediately else
-    /// searches for authoring meta in the subgraphs given the deployer hash
-    #[wasm_bindgen(skip_typescript, js_name = "searchAuthoringMetaCheck")]
-    pub async fn search_authoring_meta_check(
-        &mut self,
-        authoring_meta_hash: &str,
-        deployer_hash: &str,
-    ) -> Option<Uint8Array> {
-        if let Some(v) = self
-            .0
-            .read()
+    /// Adds new subgraph endpoints
+    #[wasm_bindgen(skip_typescript, js_name = "addSubgraphs")]
+    pub fn add_subgraphs(&mut self, subgraphs: JsValue) {
+        self.0
+            .write()
             .unwrap()
-            .get_authoring_meta(authoring_meta_hash)
-        {
-            match to_js_value(v) {
-                Ok(e) => return Some(Uint8Array::from(e)),
-                Err(_) => return None,
+            .add_subgraphs(&from_js_value::<Vec<String>>(subgraphs).unwrap_throw());
+    }
+
+    /// Get the corresponding meta bytes of the given hash if it is cached
+    #[wasm_bindgen(skip_typescript, js_name = "getMeta")]
+    pub fn get_meta(&self, hash: &str) -> JsValue {
+        match self.0.read().unwrap().get_meta(hash) {
+            Some(v) => to_js_value(&ToUint8ArraySerializer(v)).unwrap_or(JsValue::UNDEFINED),
+            None => JsValue::UNDEFINED,
+        }
+    }
+
+    /// Get the NPE2 deployer details of the given deployer bytecode hash if it is cached
+    #[wasm_bindgen(skip_typescript, js_name = "getDeployer")]
+    pub fn get_deployer(&self, hash: &str) -> JsValue {
+        to_js_value(&self.0.read().unwrap().get_deployer(hash)).unwrap_or(JsValue::UNDEFINED)
+    }
+
+    /// Get the corresponding dotrain hash of the given dotrain uri if it is cached
+    #[wasm_bindgen(skip_typescript, js_name = "getDotrainHash")]
+    pub fn get_dotrain_hash(&self, uri: &str) -> JsValue {
+        to_js_value(&self.0.read().unwrap().get_dotrain_hash(uri)).unwrap_or(JsValue::UNDEFINED)
+    }
+
+    /// Get the corresponding uri of the given dotrain hash if it is cached
+    #[wasm_bindgen(skip_typescript, js_name = "getDotrainUri")]
+    pub fn get_dotrain_uri(&self, hash: &str) -> JsValue {
+        to_js_value(&self.0.read().unwrap().get_dotrain_uri(hash)).unwrap_or(JsValue::UNDEFINED)
+    }
+
+    /// Get the corresponding meta bytes of the given dotrain uri if it is cached
+    #[wasm_bindgen(skip_typescript, js_name = "getDotrainMeta")]
+    pub fn get_dotrain_meta(&self, uri: &str) -> JsValue {
+        match self.0.read().unwrap().get_dotrain_meta(uri) {
+            Some(v) => to_js_value(&ToUint8ArraySerializer(v)).unwrap_or(JsValue::UNDEFINED),
+            None => JsValue::UNDEFINED,
+        }
+    }
+
+    /// Searches for NPE2 deployer details in the subgraphs given the deployer hash
+    #[wasm_bindgen(skip_typescript, js_name = "searchDeployer")]
+    pub async fn search_deployer(&mut self, deployer_bytecode_hash: &str) -> JsValue {
+        let subgraphs = self.0.read().unwrap().subgraphs().clone();
+        match search_deployer(deployer_bytecode_hash, &subgraphs).await {
+            Ok(deployer_query_response) => {
+                let deployer = self.0.write().unwrap().set_deployer_from_query_response(
+                    deployer_bytecode_hash,
+                    deployer_query_response,
+                );
+                to_js_value(&deployer).unwrap_or(JsValue::UNDEFINED)
             }
+            Err(_e) => JsValue::UNDEFINED,
+        }
+    }
+
+    /// If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
+    #[wasm_bindgen(skip_typescript, js_name = "searchDeployerCheck")]
+    pub async fn search_deployer_check(&mut self, deployer_bytecode_hash: &str) -> JsValue {
+        if let Some(v) = self.0.read().unwrap().get_deployer(deployer_bytecode_hash) {
+            to_js_value(v).unwrap_or(JsValue::UNDEFINED)
         } else {
             let subgraphs = self.0.read().unwrap().subgraphs().clone();
-            match search_deployer(deployer_hash, &subgraphs).await {
-                Ok(res) => {
-                    if let Some(m) = self.0.write().unwrap().update_with(&res.hash, &res.bytes) {
-                        match to_js_value(m) {
-                            Ok(v) => return Some(Uint8Array::from(v)),
-                            Err(_) => return None,
-                        }
-                    }
-                    None
+            match search_deployer(deployer_bytecode_hash, &subgraphs).await {
+                Ok(deployer_query_response) => {
+                    let deployer = self.0.write().unwrap().set_deployer_from_query_response(
+                        deployer_bytecode_hash,
+                        deployer_query_response,
+                    );
+                    to_js_value(&deployer).unwrap_or(JsValue::UNDEFINED)
                 }
-                Err(_e) => None,
+                Err(_e) => JsValue::UNDEFINED,
             }
         }
     }
 
-    /// updates the meta cache by searching through all subgraphs for the given hash
-    /// returns the reference to the meta bytes in the cache if it was found
+    /// Sets deployer record
+    #[wasm_bindgen(skip_typescript, js_name = "setDeployer")]
+    pub async fn set_deployer(&mut self, deployer_bytecode_hash: &str, npe2_deployer: JsValue) {
+        let deployer: NPE2Deployer = from_js_value(npe2_deployer).unwrap_throw();
+        self.0
+            .write()
+            .unwrap()
+            .set_deployer(deployer_bytecode_hash, &deployer);
+    }
+
+    /// Updates the meta cache by searching through all subgraphs for the given hash
     #[wasm_bindgen(skip_typescript)]
-    pub async fn update(&mut self, hash: &str) -> Option<Uint8Array> {
+    pub async fn update(&mut self, hash: &str) -> JsValue {
         let subgraphs = self.0.read().unwrap().subgraphs().clone();
         match search(hash, &subgraphs).await {
             Ok(res) => {
-                if let Some(m) = self.0.write().unwrap().update_with(hash, &res.bytes) {
-                    match to_js_value(m) {
-                        Ok(v) => return Some(Uint8Array::from(v)),
-                        Err(_) => return None,
-                    }
-                }
-                None
+                self.0.write().unwrap().update_with(hash, &res.bytes);
+                to_js_value(&ToUint8ArraySerializer(&res.bytes)).unwrap_or(JsValue::UNDEFINED)
             }
-            Err(_e) => None,
+            Err(_e) => JsValue::UNDEFINED,
         }
     }
 
-    /// first checks if the meta is stored, if not will perform update()
+    /// First checks if the meta is stored and returns it if so, else will perform update()
     #[wasm_bindgen(skip_typescript, js_name = "updateCheck")]
-    pub async fn update_check(&mut self, hash: &str) -> Option<Uint8Array> {
+    pub async fn update_check(&mut self, hash: &str) -> JsValue {
         if let Some(v) = self.0.read().unwrap().get_meta(hash) {
-            match to_js_value(v) {
-                Ok(e) => return Some(Uint8Array::from(e)),
-                Err(_) => return None,
-            }
+            to_js_value(&ToUint8ArraySerializer(v)).unwrap_or(JsValue::UNDEFINED)
         } else {
             let subgraphs = self.0.read().unwrap().subgraphs().clone();
             match search(hash, &subgraphs).await {
                 Ok(res) => {
-                    if let Some(m) = self.0.write().unwrap().update_with(hash, &res.bytes) {
-                        match to_js_value(m) {
-                            Ok(v) => return Some(Uint8Array::from(v)),
-                            Err(_) => return None,
-                        }
-                    }
-                    None
+                    self.0.write().unwrap().update_with(hash, &res.bytes);
+                    to_js_value(&ToUint8ArraySerializer(&res.bytes)).unwrap_or(JsValue::UNDEFINED)
                 }
-                Err(_e) => None,
+                Err(_e) => JsValue::UNDEFINED,
             }
         }
     }
 
-    /// updates the meta cache by the given hash and meta bytes, checks the hash to bytes
-    /// validity returns the reference to the bytes if the updated meta bytes contained any
+    /// Updates the meta cache by the given hash and meta bytes, checks the hash to bytes
+    /// validity
     #[wasm_bindgen(skip_typescript, js_name = "updateWith")]
-    pub fn update_with(&mut self, hash: &str, bytes: &[u8]) -> Option<Vec<u8>> {
+    pub fn update_with(&mut self, hash: &str, bytes: &[u8]) {
         self.0.write().unwrap().update_with(hash, bytes);
-        Some(bytes.to_vec())
     }
 
-    /// deletes a dotrain record given a uri
+    /// Deletes a dotrain record given its uri
     #[wasm_bindgen(skip_typescript, js_name = "deleteDotrain")]
     pub fn delete_dotrain(&mut self, uri: &str, keep_meta: bool) {
         self.0.write().unwrap().delete_dotrain(uri, keep_meta);
     }
 
-    /// stores (or updates in case the URI already exists) the given dotrain text as meta into the store cache
+    /// Stores (or updates in case the URI already exists) the given dotrain text as meta into the store cache
     /// and maps it to the given uri (path), it should be noted that reading the content of the dotrain is not in
     /// the scope of Store and handling and passing on a correct URI (path) for the given text must be handled
     /// externally by the implementer
@@ -383,7 +466,7 @@ impl MetaStore {
         }
     }
 
-    /// lazilly merges another Store to the current one, avoids duplicates
+    /// Merges another instance of MetaStore to this instance lazily, avoids duplicates
     #[wasm_bindgen(skip_typescript)]
     pub fn merge(&mut self, other: &MetaStore) -> Result<(), JsError> {
         let store = if let Some(rw) = Arc::into_inner(other.0.clone()) {

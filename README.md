@@ -159,27 +159,67 @@ example of a config file content (see `./example.rainconfig.json`):
       "entrypoints": ["entrypoint1", "entrypoint2"]
     }
   ],
-  "meta": {
-    "binary": [
-      "./path/to/binary-meta", 
-      {
-        "path": "./path/to/another-binary-meta",
-        "hash": "0x123456789abcdef..."
-      }
-    ],
-    "hex": [
-      "./path/to/hex-meta", 
-      {
-        "path": "./path/to/another-hex-meta",
-        "hash": "0x123456789abcdef..."
-      }
-    ]
-  },
   "subgraphs": [
     "https://subgraph1-uril",
     "https://subgraph2-uril",
     "https://subgraph3-uril"
-  ]
+  ],
+  "meta": [
+    {
+      "binary": {
+        "path": "./path/to/another-binary-meta",
+        "hash": "0x123456789abcdef..."
+      }
+    },
+    {
+      "hex": "./path/to/hex-meta"
+    },
+    {
+      "binary": "./path/to/binary-meta"
+    },
+    {
+      "hex": {
+        "path": "./path/to/another-hex-meta",
+        "hash": "0x123456789abcdef..."
+      }
+    }
+  ],
+  "deployers": {
+    "0x1234...": {
+      "constructionMeta": {
+        "binary": "./path/to/binary-construction-meta"
+      },
+      "bytecode": {
+        "json": "./path/to/deployer-json-artifact"
+      },
+      "parser": {
+        "binary": "./path/to/binary-parser-bytecode"
+      },
+      "store": {
+        "hex": "./path/to/hex-store-bytecode"
+      },
+      "interpreter": {
+        "binary": "./path/to/binary-interpreter-bytecode"
+      }
+    },
+    "0xabcd...": {
+      "constructionMeta": {
+        "binary": "./path/to/binary-construction-meta"
+      },
+      "bytecode": {
+        "binary": "./path/to/binary-deployer-bytecode"
+      },
+      "parser": {
+        "json": "./path/to/parser-json-artifact"
+      },
+      "store": {
+        "hex": "./path/to/hex-parser-bytecode"
+      },
+      "interpreter": {
+        "json": "./path/to/interpreter-json-artifact"
+      }
+    }
+  }
 }
 ```
 

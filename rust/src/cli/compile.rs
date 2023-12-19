@@ -10,7 +10,7 @@ use std::{
 
 pub async fn rainconfig_compile(
     path: Option<PathBuf>,
-    local_meta_only: bool,
+    local_data_only: bool,
 ) -> anyhow::Result<()> {
     let rainconfig = if let Some(p) = path {
         RainConfig::read(&p)?
@@ -29,12 +29,12 @@ pub async fn rainconfig_compile(
                 Some(store.clone()),
                 0,
             );
-            if local_meta_only {
+            if local_data_only {
                 rd.parse();
             } else {
                 rd.parse_async().await;
             }
-            match rd.compile(&cmap.entrypoints, None, None) {
+            match rd.compile(&cmap.entrypoints, None) {
                 Ok(v) => compilation_results.push_back(serde_json::to_string_pretty(&v)?),
                 Err(e) => compilation_results.push_back(serde_json::to_string_pretty(&e)?),
             }
@@ -52,7 +52,7 @@ pub async fn rainconfig_compile(
 pub async fn target_compile(
     opts: Target,
     conf_path: Option<PathBuf>,
-    local_meta_only: bool,
+    local_data_only: bool,
 ) -> anyhow::Result<()> {
     let store = if let Some(ignore_rainconfig) = opts.ignore_rainconfig {
         if ignore_rainconfig {
@@ -77,12 +77,12 @@ pub async fn target_compile(
         Some(store.clone()),
         0,
     );
-    if local_meta_only {
+    if local_data_only {
         rd.parse();
     } else {
         rd.parse_async().await;
     }
-    let result = match rd.compile(&opts.entrypoints, None, None) {
+    let result = match rd.compile(&opts.entrypoints, None) {
         Ok(v) => serde_json::to_string_pretty(&v)?,
         Err(e) => serde_json::to_string_pretty(&e)?,
     };

@@ -1,35 +1,31 @@
 // #![allow(non_snake_case)]
 
 use regex::Regex;
-use alloy_primitives::U256;
-use std::convert::Infallible;
+use self::evm_helpers::*;
 use std::collections::VecDeque;
 use serde::{Serialize, Deserialize};
 use alloy_sol_types::{SolCall, SolInterface};
-use rain_meta::types::authoring::v1::AuthoringMeta;
-use magic_string::{MagicString, OverwriteOptions, DecodedMap, GenerateDecodedMapOptions};
+use rain_meta::{types::authoring::v1::AuthoringMeta, NPE2Deployer};
+use self::INativeParser::{INativeParserErrors, parseCall, parseReturn};
 use revm::{
     EVM,
-    db::{CacheDB, EmptyDBTyped},
+    db::{CacheDB, EmptyDB},
     primitives::{Halt, ExecutionResult},
 };
+use magic_string::{MagicString, OverwriteOptions, DecodedMap, GenerateDecodedMapOptions};
 use super::{
     types::{
-        ExpressionConfig, WORD_PATTERN, BINARY_PATTERN, HEX_PATTERN, NUMERIC_PATTERN,
+        ExpressionConfig,
+        patterns::{WORD_PATTERN, BINARY_PATTERN, HEX_PATTERN, NUMERIC_PATTERN},
         ast::{
             Offsets, Problem, Node, Namespace, NamespaceItem, NamespaceNode, Binding, BindingItem,
             NamespaceNodeElement,
         },
     },
-    parser::{
-        rainlang::Rainlang,
-        raindocument::RainDocument,
-        exec_bytecode, exclusive_parse, str_binary_to_int,
-        NATIVE_PARSER_INTERFACE::{
-            integrityCheckCall, NATIVE_PARSER_INTERFACEErrors, parseCall, parseReturn,
-        },
-    },
+    parser::{RainlangDocument, RainDocument, exclusive_parse, binary_to_int},
 };
+
+pub mod evm_helpers;
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use tsify::Tsify;
@@ -45,7 +41,7 @@ struct CompilationTargetElement {
     position: Offsets,
     problems: Vec<Problem>,
     dependencies: Vec<String>,
-    item: Rainlang,
+    item: RainlangDocument,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -55,6 +51,7 @@ struct CompilationTargetItem {
     element: CompilationTargetElement,
 }
 
+/// Returned by RainDocument compilation if it failed
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
@@ -66,7 +63,7 @@ pub enum RainDocumentCompileError {
     Problems(Vec<Problem>),
     Revert(
         #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(type = "any"))]
-        NATIVE_PARSER_INTERFACEErrors,
+        INativeParserErrors,
     ),
     Halt(#[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(type = "any"))] Halt),
 }
@@ -74,10 +71,11 @@ pub enum RainDocumentCompileError {
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 impl From<RainDocumentCompileError> for JsValue {
     fn from(value: RainDocumentCompileError) -> Self {
-        serde_wasm_bindgen::to_value(&value).unwrap_throw()
+        serde_wasm_bindgen::to_value(&value).unwrap_or(JsValue::NULL)
     }
 }
 
+/// Result of parsing a text with NativeParser
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
@@ -88,7 +86,7 @@ pub enum ParseResult {
     Success(ExpressionConfig),
     Revert(
         #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(type = "any"))]
-        NATIVE_PARSER_INTERFACEErrors,
+        INativeParserErrors,
     ),
     Halt(#[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(type = "any"))] Halt),
 }
@@ -96,28 +94,46 @@ pub enum ParseResult {
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 impl From<ParseResult> for JsValue {
     fn from(value: ParseResult) -> Self {
-        serde_wasm_bindgen::to_value(&value).unwrap_throw()
+        serde_wasm_bindgen::to_value(&value).unwrap_or(JsValue::NULL)
     }
 }
 
-impl Rainlang {
+impl TryFrom<ExecutionResult> for ParseResult {
+    type Error = anyhow::Error;
+    fn try_from(value: ExecutionResult) -> Result<Self, Self::Error> {
+        match value {
+            ExecutionResult::Success { output, .. } => Ok(ParseResult::Success(
+                parseCall::abi_decode_returns(output.data(), true)
+                    .map_err(anyhow::Error::from)?
+                    .into(),
+            )),
+            ExecutionResult::Revert { output, .. } => Ok(ParseResult::Revert(
+                INativeParserErrors::abi_decode(&output.0, true)
+                    .or(Err(anyhow::anyhow!("unknown revert error")))?,
+            )),
+            ExecutionResult::Halt { reason, .. } => Ok(ParseResult::Halt(reason)),
+        }
+    }
+}
+
+impl RainlangDocument {
+    /// Compiles this instance's text by the given NativeParser bytecode
     pub fn compile(
         &self,
-        entrypoints: u8,
-        bytecode: &[u8],
-        evm: Option<&mut EVM<CacheDB<EmptyDBTyped<Infallible>>>>,
-        min_outputs: Option<&[u8]>,
+        npe2_deployer: &NPE2Deployer,
+        evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
     ) -> anyhow::Result<ParseResult> {
-        np_parse(&self.text, bytecode, entrypoints, evm, min_outputs)
+        npe2_parse(&self.text, npe2_deployer, evm)
     }
 }
 
 impl RainDocument {
+    /// Compiles to ExpressionConfig after building a rainlang text from the specified
+    /// entrypoints by building sourcemap
     pub fn compile(
         &self,
         entrypoints: &[String],
-        evm: Option<&mut EVM<CacheDB<EmptyDBTyped<Infallible>>>>,
-        min_outputs: Option<&[u8]>,
+        evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
     ) -> Result<ExpressionConfig, RainDocumentCompileError> {
         if entrypoints.len() == 0 {
             return Err(RainDocumentCompileError::Reject(
@@ -150,8 +166,7 @@ impl RainDocument {
                                 .collect(),
                         ));
                     } else {
-                        // if node.import_index != -1 {
-                        let rl = Rainlang::create(
+                        let rl = RainlangDocument::create(
                             b.content.clone(),
                             if let Some(am) = &self.authoring_meta {
                                 Some(am)
@@ -162,13 +177,7 @@ impl RainDocument {
                                     Some(&binding_am)
                                 }
                             },
-                            // vec![],
-                            // Some(DotrainOptions{
-                            //     namespaces: Some(Arc::new(HashMap::new())),
-                            //     ignore_authoring_meta: Some(self.ignore_undefined_words)
-                            // })
                             Some(ns),
-                            // self.ignore_undefined_words
                         );
                         if rl.problems.len() > 0 {
                             return Err(RainDocumentCompileError::Problems(
@@ -232,8 +241,7 @@ impl RainDocument {
                                     .collect(),
                             ));
                         } else {
-                            // if node.import_index != -1 {
-                            let rl = Rainlang::create(
+                            let rl = RainlangDocument::create(
                                 b.content.clone(),
                                 if let Some(am) = &self.authoring_meta {
                                     Some(am)
@@ -244,14 +252,7 @@ impl RainDocument {
                                         Some(&binding_am)
                                     }
                                 },
-                                // AuthoringMeta(self.authoring_meta.clone()),
-                                // vec![],
-                                // Some(DotrainOptions{
-                                //     namespaces: Some(Arc::new(HashMap::new())),
-                                //     ignore_authoring_meta: Some(self.ignore_undefined_words)
-                                // })
                                 Some(ns),
-                                // self.ignore_undefined_words
                             );
                             if rl.problems.len() > 0 {
                                 return Err(RainDocumentCompileError::Problems(
@@ -300,15 +301,6 @@ impl RainDocument {
                                         deps_nodes.push(m);
                                     }
                                 }
-                                // const _index = _nodes.findIndex(
-                                //     v => v.child === _ns.child && v.parent === _ns.parent
-                                // );
-                                // if (_index === -1) {
-                                //     _d.push(_nodes.length);
-                                //     _nodes.push(_ns);
-                                //     _nodeKeys.push(_deps[j]);
-                                // }
-                                // else _d.push(_index);
                             }
                         }
                     }
@@ -374,7 +366,7 @@ impl RainDocument {
             })
             .collect();
 
-        let generated_rainlang = Rainlang::create(
+        let generated_rainlang = RainlangDocument::create(
             rl_string,
             if let Some(am) = &self.authoring_meta {
                 Some(am)
@@ -388,8 +380,7 @@ impl RainDocument {
             None,
         );
 
-        match generated_rainlang.compile(entrypoints.len() as u8, &self.bytecode, evm, min_outputs)
-        {
+        match generated_rainlang.compile(&self.deployer, evm) {
             Err(e) => Err(RainDocumentCompileError::Reject(e.to_string())),
             Ok(v) => match v {
                 ParseResult::Success(exp_conf) => Ok(exp_conf),
@@ -400,86 +391,7 @@ impl RainDocument {
     }
 }
 
-/// parse atext string using native parser contract
-pub fn np_parse(
-    text: &str,
-    bytecode: &[u8],
-    entrypoints: u8,
-    evm: Option<&mut EVM<CacheDB<EmptyDBTyped<Infallible>>>>,
-    min_outputs: Option<&[u8]>,
-) -> anyhow::Result<ParseResult> {
-    let minoutputs: Vec<U256> = if let Some(mo) = min_outputs {
-        if mo.len() != entrypoints as usize {
-            return Err(anyhow::anyhow!("entrypoints/minoutput mismatch length"));
-        } else {
-            mo.iter().map(|&v| U256::from(v)).collect()
-        }
-    } else {
-        vec![U256::ZERO; entrypoints as usize]
-    };
-
-    let mut revm: &mut EVM<CacheDB<EmptyDBTyped<Infallible>>> = &mut EVM::new();
-    if let Some(e) = evm {
-        revm = e;
-    };
-
-    let data = parseCall {
-        data: text.as_bytes().to_vec(),
-    }
-    .abi_encode();
-
-    match exec_bytecode(bytecode, &data, Some(revm))?
-        .result
-        .try_into()?
-    {
-        ParseResult::Success(exp_conf) => {
-            let data = integrityCheckCall {
-                bytecode: exp_conf.bytecode.clone(),
-                constants: exp_conf.constants.clone(),
-                minOutputs: minoutputs.clone(),
-            }
-            .abi_encode();
-            match exec_bytecode(bytecode, &data, Some(revm))?.result {
-                ExecutionResult::Success { .. } => Ok(ParseResult::Success(exp_conf)),
-                ExecutionResult::Revert { output, .. } => Ok(ParseResult::Revert(
-                    NATIVE_PARSER_INTERFACEErrors::abi_decode(&output.0[..], true)
-                        .or(Err(anyhow::anyhow!("unknown revert error")))?,
-                )),
-                ExecutionResult::Halt { reason, .. } => Ok(ParseResult::Halt(reason)),
-            }
-        }
-        other => Ok(other),
-    }
-}
-
-impl TryFrom<ExecutionResult> for ParseResult {
-    type Error = anyhow::Error;
-    fn try_from(value: ExecutionResult) -> Result<Self, Self::Error> {
-        match value {
-            ExecutionResult::Success { output, .. } => Ok(ParseResult::Success(
-                parseCall::abi_decode_returns(output.data(), true)
-                    .map_err(anyhow::Error::from)?
-                    .into(),
-            )),
-            ExecutionResult::Revert { output, .. } => Ok(ParseResult::Revert(
-                NATIVE_PARSER_INTERFACEErrors::abi_decode(&output.0[..], true)
-                    .or(Err(anyhow::anyhow!("unknown revert error")))?,
-            )),
-            ExecutionResult::Halt { reason, .. } => Ok(ParseResult::Halt(reason)),
-        }
-    }
-}
-
-impl From<parseReturn> for ExpressionConfig {
-    fn from(value: parseReturn) -> Self {
-        ExpressionConfig {
-            bytecode: value._0,
-            constants: value._1,
-        }
-    }
-}
-
-/// Search in a Namespace for a given name
+/// Searchs in a Namespace for a given name
 fn search_namespace<'a>(
     name: &str,
     namespace: &'a Namespace,
@@ -552,6 +464,7 @@ fn search_namespace<'a>(
     }
 }
 
+/// Builds sourcemaps for a given array of AST Nodes
 fn build_sourcemap(
     nodes: Vec<&Node>,
     generator: &mut MagicString,
@@ -565,7 +478,7 @@ fn build_sourcemap(
                         .overwrite(
                             v.position[0] as i64,
                             v.position[1] as i64,
-                            &str_binary_to_int(&v.value),
+                            &binary_to_int(&v.value),
                             OverwriteOptions::default(),
                         )
                         .or(Err("could not build sourcemap".to_owned()))?;
@@ -692,18 +605,11 @@ fn build_sourcemap(
     Ok(())
 }
 
-// /// Finds the original position from a generated text with sourcemap
-// fn find_org_pos(sourcemap: &DecodedMap, line: i64, col: i64) -> [i64; 2] {
-//     let mut char = 0;
-//     let map = &sourcemap.mappings[line as usize];
-//     for m in map {
-//         if m[0] == col {
-//             return [line, m[3]];
-//         } else if m[0] < col {
-//             char = m[3];
-//         } else {
-//             return [line, char];
-//         }
-//     }
-//     [line, char]
-// }
+impl From<parseReturn> for ExpressionConfig {
+    fn from(value: parseReturn) -> Self {
+        ExpressionConfig {
+            bytecode: value._0,
+            constants: value._1,
+        }
+    }
+}

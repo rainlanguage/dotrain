@@ -11,8 +11,11 @@ struct OrdRange {
     end: Position,
 }
 
+/// Provides semantic tokens for RainDocument's elided fragments
+/// token_modifiers bit are set with provided token_modifiers_len such as a length of 3 equals to 00000111
 pub fn get_semantic_token(
     rain_document: &RainDocument,
+    token_types_index: u32,
     token_modifiers_len: usize,
 ) -> SemanticTokensPartialResult {
     let mut ranges: BTreeSet<OrdRange> = BTreeSet::new();
@@ -83,7 +86,7 @@ pub fn get_semantic_token(
                     r.start.character
                 },
                 length: r.end.character - r.start.character,
-                token_type: 0,
+                token_type: token_types_index,
                 token_modifiers_bitset,
             };
             last_line = r.start.line;

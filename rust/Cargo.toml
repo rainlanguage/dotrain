@@ -5,19 +5,28 @@ edition = "2021"
 description = "Rain language server protocol implementation and compiler"
 license = "CAL-1.0"
 
-[lib]
-name = "rainlang"
-crate-type = ["rlib", "cdylib"]
 
 [features]
-cli = []
 lsp = []
+cli = ["dep:tracing", "dep:tracing-subscriber"]
 js-api = ["dep:js-sys", "dep:wasm-bindgen", "dep:serde-wasm-bindgen", "dep:wasm-bindgen-futures", "dep:tsify"]
+
+
+[lib]
+name = "dotrain"
+crate-type = ["rlib", "cdylib"]
+
+
+[[bin]]
+name = "dotrain"
+path = "src/main.rs"
+required-features = ["cli"]
+
 
 [dependencies]
 serde = "1.0.192"
 serde_json = "1.0.108"
-rain-meta = { git = "https://github.com/rainprotocol/rain.metadata.git", branch = "2023-11-11-slither", default-features = false }
+rain-meta = { git = "https://github.com/rainprotocol/rain.metadata.git", branch = "2023-11-11-slither" }
 regex = "1.10.2"
 clap = "4.4.8"
 anyhow = "1.0.75"
@@ -37,12 +46,17 @@ getrandom = { version = "0.2.11", features = ["js", "js-sys"] }
 revm = { version = "3.5.0", default-features = false, features = ["serde", "std"] }
 tokio = { version = "1.34.0", features = ["sync", "macros", "io-util", "rt", "time"] }
 
+# cli
+tracing = { version = "0.1.37", optional = true }
+tracing-subscriber = { version = "0.3.17", optional = true }
+
 # js-api
 js-sys = { version = "0.3.66", optional = true }
 wasm-bindgen = { version = "0.2.89", optional = true }
 serde-wasm-bindgen = { version = "0.6.1", optional = true }
 wasm-bindgen-futures = { version = "0.4.39", optional = true }
 tsify = { version = "0.4.5", default-features = false, features = ["js", "wasm-bindgen"], optional = true }
+serde_bytes = "0.11.12"
 
 # wasm
 [target.'cfg(target_family = "wasm")'.dependencies]
