@@ -11,13 +11,18 @@ use std::{
 pub async fn rainconfig_compile(
     path: Option<PathBuf>,
     local_data_only: bool,
+    force: bool,
 ) -> anyhow::Result<()> {
     let rainconfig = if let Some(p) = path {
         RainConfig::read(&p)?
     } else {
         RainConfig::read_default()?
     };
-    let store = rainconfig.build_store()?;
+    let store = if force {
+        rainconfig.force_build_store()?
+    } else {
+        rainconfig.build_store()?
+    };
     let mut compilation_results = VecDeque::new();
     if let Some(src) = &rainconfig.src {
         for cmap in src {
@@ -53,15 +58,20 @@ pub async fn target_compile(
     opts: Target,
     conf_path: Option<PathBuf>,
     local_data_only: bool,
+    force: bool,
 ) -> anyhow::Result<()> {
     let store = if let Some(ignore_rainconfig) = opts.ignore_rainconfig {
-        if ignore_rainconfig {
+        if !ignore_rainconfig {
             let rainconfig = if let Some(p) = conf_path {
                 RainConfig::read(&p)?
             } else {
                 RainConfig::read_default()?
             };
-            rainconfig.build_store()?
+            if force {
+                rainconfig.force_build_store()?
+            } else {
+                rainconfig.build_store()?
+            }
         } else {
             Arc::new(RwLock::new(Store::default()))
         }

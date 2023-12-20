@@ -43,35 +43,19 @@
       "constructionMeta": {
         "binary": "./path/to/binary-construction-meta"
       },
-      "bytecode": {
-        "json": "./path/to/deployer-json-artifact"
-      },
-      "parser": {
-        "binary": "./path/to/binary-parser-bytecode"
-      },
-      "store": {
-        "hex": "./path/to/hex-store-bytecode"
-      },
-      "interpreter": {
-        "binary": "./path/to/binary-interpreter-bytecode"
-      }
+      "expressionDeployer": "./path/to/deployer-json-artifact.json",
+      "parser": "./path/to/parser-artifact.json",
+      "store": "./path/to/store-artifact.json",
+      "interpreter": "./path/to/interpreter-artifact.json"
     },
     "0xabcd...": {
       "constructionMeta": {
-        "binary": "./path/to/binary-construction-meta"
+        "hex": "./path/to/hex-construction-meta"
       },
-      "bytecode": {
-        "binary": "./path/to/binary-deployer-bytecode"
-      },
-      "parser": {
-        "json": "./path/to/parser-json-artifact"
-      },
-      "store": {
-        "hex": "./path/to/hex-parser-bytecode"
-      },
-      "interpreter": {
-        "json": "./path/to/interpreter-json-artifact"
-      }
+      "expressionDeployer": "./path/to/deployer-json-artifact.json",
+      "parser": "./path/to/parser-artifact.json",
+      "store": "./path/to/store-artifact.json",
+      "interpreter": "./path/to/interpreter-artifact.json"
     }
   }
 }

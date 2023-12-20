@@ -6,16 +6,19 @@ pub mod compile;
 pub mod rainconfig;
 
 #[derive(Parser, Debug)]
-#[command(author, version, about = "iuyt", long_about = None)]
+#[command(author, version, about = "Rain compiler CLI to compiler .rain files", long_about = None)]
 pub struct RainCompilerCli {
     /// Path to the rainconfig json file that contains configurations, see
     /// './example.rainconfig.json' for more details.
     /// default is './rainconfig.json' if not specified
     #[arg(short, long, global = true)]
     config: Option<PathBuf>,
+    /// Force compile by ignoring all erroneous paths/contents specified in rainconfig
+    #[arg(short, long, global = true)]
+    force: Option<bool>,
     /// Only use local meta and deployers specified in rainconfig and dont search for them in subgraphs
     #[arg(short, long, global = true)]
-    local_data_only: bool,
+    local_data_only: Option<bool>,
     #[command(subcommand)]
     subcmd: Option<SubCommands>,
 }
@@ -49,17 +52,23 @@ pub struct Target {
 }
 
 pub async fn dispatch(cli: RainCompilerCli) -> anyhow::Result<()> {
+    let local_data_only = if let Some(v) = cli.local_data_only {
+        v
+    } else {
+        false
+    };
+    let force = if let Some(v) = cli.force { v } else { false };
     if let Some(subcmd) = cli.subcmd {
         match subcmd {
             SubCommands::Target(opts) => {
-                target_compile(opts, cli.config, cli.local_data_only).await?;
+                target_compile(opts, cli.config, local_data_only, force).await?;
             }
             SubCommands::Rainconfig => {
                 println!("{}", rainconfig::RAINCONFIG_DESCRIPTION);
             }
         }
     } else {
-        rainconfig_compile(cli.config, cli.local_data_only).await?;
+        rainconfig_compile(cli.config, local_data_only, force).await?;
     };
     Ok(())
 }

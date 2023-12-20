@@ -1049,8 +1049,3 @@ export const NATIVE_PARSER_MINIMAL_SIGHASH = {
     0xcbb7d173 : "integrityCheck(bytes,uint256[],uint256[])",
     0x31a66b65 : "deployExpression(bytes,uint256[],uint256[])"
 } as const;
-
-// const x = TextDocument.create("as", "as", 0, "a𐐀c");
-// console.log(x.getText(Range.create(0, 0, 0, 3)));
-const x = "abcd";
-console.log(x.split("k"));

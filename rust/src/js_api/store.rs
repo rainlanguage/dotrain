@@ -1,11 +1,13 @@
 use tsify::Tsify;
+use js_sys::Uint8Array;
 use wasm_bindgen::prelude::*;
 use serde::{Serialize, Deserialize};
+use super::super::DeployerQueryResponse;
 use std::{
     sync::{Arc, RwLock},
     collections::HashMap,
 };
-use rain_meta::{Store, search, search_deployer, NPE2Deployer};
+use rain_meta::{Store, search, search_deployer, NPE2Deployer, DeployerNPResponse};
 use serde_wasm_bindgen::{to_value as to_js_value, from_value as from_js_value, Serializer};
 
 // a wrapper struct for &[u8] to be serialized as Uint8Array from rust -> wasm -> js
@@ -139,9 +141,9 @@ export class MetaStore {
   /**
    * Sets deployer record
    * @param {string} deployer_bytecode_hash
-   * @param {INPE2Deployer} npe2_deployer
+   * @param {DeployerQueryResponse} deployer_response
    */
-  setDeployer(deployer_bytecode_hash: string, npe2_deployer: INPE2Deployer): void;
+  setDeployer(deployer_response: DeployerQueryResponse): INPE2Deployer;
   /**
    * Updates the meta cache by the given hash and meta bytes, checks the hash to bytes validity
    * @param {string} hash
@@ -162,16 +164,16 @@ export class MetaStore {
   updateCheck(hash: string): Promise<Uint8Array | undefined>;
   /**
    * Searches for NPE2 deployer details in the subgraphs given the deployer hash
-   * @param {string} deployer_bytecode_hash
+   * @param {string} hash
    * @returns {Promise<INPE2Deployer | undefined>}
    */
-  searchDeployer(deployer_bytecode_hash: string): Promise<INPE2Deployer | undefined>;
+  searchDeployer(hash: string): Promise<INPE2Deployer | undefined>;
   /**
    * If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
-   * @param {string} deployer_bytecode_hash
-   * @returns {Promise<Uint8Array | undefined>}
+   * @param {string} hash
+   * @returns {Promise<INPE2Deployer | undefined>}
    */
-  searchDeployerCheck(deployer_bytecode_hash: string): Promise<Uint8Array | undefined>;
+  searchDeployerCheck(hash: string): Promise<INPE2Deployer | undefined>;
 }"#;
 
 /// Options for instantiating MetaStore with initial values
@@ -359,14 +361,15 @@ impl MetaStore {
 
     /// Searches for NPE2 deployer details in the subgraphs given the deployer hash
     #[wasm_bindgen(skip_typescript, js_name = "searchDeployer")]
-    pub async fn search_deployer(&mut self, deployer_bytecode_hash: &str) -> JsValue {
+    pub async fn search_deployer(&mut self, hash: &str) -> JsValue {
         let subgraphs = self.0.read().unwrap().subgraphs().clone();
-        match search_deployer(deployer_bytecode_hash, &subgraphs).await {
+        match search_deployer(hash, &subgraphs).await {
             Ok(deployer_query_response) => {
-                let deployer = self.0.write().unwrap().set_deployer_from_query_response(
-                    deployer_bytecode_hash,
-                    deployer_query_response,
-                );
+                let deployer = self
+                    .0
+                    .write()
+                    .unwrap()
+                    .set_deployer_from_query_response(deployer_query_response);
                 to_js_value(&deployer).unwrap_or(JsValue::UNDEFINED)
             }
             Err(_e) => JsValue::UNDEFINED,
@@ -375,17 +378,18 @@ impl MetaStore {
 
     /// If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
     #[wasm_bindgen(skip_typescript, js_name = "searchDeployerCheck")]
-    pub async fn search_deployer_check(&mut self, deployer_bytecode_hash: &str) -> JsValue {
-        if let Some(v) = self.0.read().unwrap().get_deployer(deployer_bytecode_hash) {
+    pub async fn search_deployer_check(&mut self, hash: &str) -> JsValue {
+        if let Some(v) = self.0.read().unwrap().get_deployer(hash) {
             to_js_value(v).unwrap_or(JsValue::UNDEFINED)
         } else {
             let subgraphs = self.0.read().unwrap().subgraphs().clone();
-            match search_deployer(deployer_bytecode_hash, &subgraphs).await {
+            match search_deployer(hash, &subgraphs).await {
                 Ok(deployer_query_response) => {
-                    let deployer = self.0.write().unwrap().set_deployer_from_query_response(
-                        deployer_bytecode_hash,
-                        deployer_query_response,
-                    );
+                    let deployer = self
+                        .0
+                        .write()
+                        .unwrap()
+                        .set_deployer_from_query_response(deployer_query_response);
                     to_js_value(&deployer).unwrap_or(JsValue::UNDEFINED)
                 }
                 Err(_e) => JsValue::UNDEFINED,
@@ -395,12 +399,16 @@ impl MetaStore {
 
     /// Sets deployer record
     #[wasm_bindgen(skip_typescript, js_name = "setDeployer")]
-    pub async fn set_deployer(&mut self, deployer_bytecode_hash: &str, npe2_deployer: JsValue) {
-        let deployer: NPE2Deployer = from_js_value(npe2_deployer).unwrap_throw();
-        self.0
-            .write()
-            .unwrap()
-            .set_deployer(deployer_bytecode_hash, &deployer);
+    pub fn set_deployer(&mut self, deployer_response: JsValue) -> JsValue {
+        let deployer: DeployerNPResponse = from_js_value(deployer_response).unwrap_throw();
+        to_js_value(
+            &self
+                .0
+                .write()
+                .unwrap()
+                .set_deployer_from_query_response(deployer),
+        )
+        .unwrap_throw()
     }
 
     /// Updates the meta cache by searching through all subgraphs for the given hash
@@ -410,7 +418,7 @@ impl MetaStore {
         match search(hash, &subgraphs).await {
             Ok(res) => {
                 self.0.write().unwrap().update_with(hash, &res.bytes);
-                to_js_value(&ToUint8ArraySerializer(&res.bytes)).unwrap_or(JsValue::UNDEFINED)
+                to_js_value(&res.bytes).unwrap_or(JsValue::UNDEFINED)
             }
             Err(_e) => JsValue::UNDEFINED,
         }
@@ -426,7 +434,7 @@ impl MetaStore {
             match search(hash, &subgraphs).await {
                 Ok(res) => {
                     self.0.write().unwrap().update_with(hash, &res.bytes);
-                    to_js_value(&ToUint8ArraySerializer(&res.bytes)).unwrap_or(JsValue::UNDEFINED)
+                    to_js_value(&res.bytes).unwrap_or(JsValue::UNDEFINED)
                 }
                 Err(_e) => JsValue::UNDEFINED,
             }
@@ -479,5 +487,26 @@ impl MetaStore {
         };
         self.0.write().unwrap().merge(&store);
         Ok(())
+    }
+}
+
+#[wasm_bindgen(js_name = "searchMeta")]
+pub async fn js_search_meta(hash: &str, subgraphs: Vec<String>) -> Result<Uint8Array, JsValue> {
+    match search(hash, &subgraphs).await {
+        Ok(res) => Ok(res.bytes.as_slice().into()),
+        Err(e) => Err(e.to_string().into()),
+    }
+}
+
+#[wasm_bindgen(js_name = "searchDeployer")]
+pub async fn js_search_deployer(
+    hash: &str,
+    subgraphs: Vec<String>,
+) -> Result<DeployerQueryResponse, JsValue> {
+    match search_deployer(hash, &subgraphs).await {
+        Ok(res) => Ok(DeployerQueryResponse {
+            obj: to_js_value(&res).unwrap_throw(),
+        }),
+        Err(e) => Err(e.to_string().into()),
     }
 }

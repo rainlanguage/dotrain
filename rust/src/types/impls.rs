@@ -4,6 +4,7 @@ use wasm_bindgen::{
     JsValue,
     convert::*,
     describe::{WasmDescribeVector, inform, VECTOR, WasmDescribe},
+    UnwrapThrowExt,
 };
 
 impl VectorIntoWasmAbi for Problem {
@@ -14,7 +15,7 @@ impl VectorIntoWasmAbi for Problem {
 }
 impl From<Problem> for JsValue {
     fn from(value: Problem) -> Self {
-        to_value(&value).unwrap()
+        to_value(&value).unwrap_throw()
     }
 }
 impl TryFromJsValue for Problem {
@@ -44,7 +45,7 @@ impl VectorIntoWasmAbi for ParsedItem {
 }
 impl From<ParsedItem> for JsValue {
     fn from(value: ParsedItem) -> Self {
-        to_value(&value).unwrap()
+        to_value(&value).unwrap_throw()
     }
 }
 impl TryFromJsValue for ParsedItem {
@@ -74,7 +75,7 @@ impl VectorIntoWasmAbi for Comment {
 }
 impl From<Comment> for JsValue {
     fn from(value: Comment) -> Self {
-        to_value(&value).unwrap()
+        to_value(&value).unwrap_throw()
     }
 }
 impl TryFromJsValue for Comment {
@@ -104,7 +105,7 @@ impl VectorIntoWasmAbi for Import {
 }
 impl From<Import> for JsValue {
     fn from(value: Import) -> Self {
-        to_value(&value).unwrap()
+        to_value(&value).unwrap_throw()
     }
 }
 impl TryFromJsValue for Import {
@@ -134,7 +135,7 @@ impl VectorIntoWasmAbi for Binding {
 }
 impl From<Binding> for JsValue {
     fn from(value: Binding) -> Self {
-        to_value(&value).unwrap()
+        to_value(&value).unwrap_throw()
     }
 }
 impl TryFromJsValue for Binding {
@@ -164,7 +165,7 @@ impl VectorIntoWasmAbi for ContextAlias {
 }
 impl From<ContextAlias> for JsValue {
     fn from(value: ContextAlias) -> Self {
-        to_value(&value).unwrap()
+        to_value(&value).unwrap_throw()
     }
 }
 impl TryFromJsValue for ContextAlias {
@@ -194,7 +195,7 @@ impl VectorIntoWasmAbi for RainlangSource {
 }
 impl From<RainlangSource> for JsValue {
     fn from(value: RainlangSource) -> Self {
-        to_value(&value).unwrap()
+        to_value(&value).unwrap_throw()
     }
 }
 impl TryFromJsValue for RainlangSource {
@@ -224,7 +225,7 @@ impl VectorIntoWasmAbi for ExpressionConfig {
 }
 impl From<ExpressionConfig> for JsValue {
     fn from(value: ExpressionConfig) -> Self {
-        to_value(&value).unwrap()
+        to_value(&value).unwrap_throw()
     }
 }
 impl TryFromJsValue for ExpressionConfig {

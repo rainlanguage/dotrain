@@ -663,7 +663,7 @@ impl RainDocument {
                             self.meta_store
                                 .write()
                                 .unwrap()
-                                .set_deployer_from_query_response(&result.hash, deployer_res),
+                                .set_deployer_from_query_response(deployer_res),
                         );
                         None
                     } else {
@@ -758,10 +758,7 @@ impl RainDocument {
                                                     .meta_store
                                                     .write()
                                                     .unwrap()
-                                                    .set_deployer_from_query_response(
-                                                        &result.hash,
-                                                        deployer_res,
-                                                    );
+                                                    .set_deployer_from_query_response(deployer_res);
                                                 if deployer.is_corrupt() {
                                                     result.sequence = None;
                                                     result.problems.push(Problem {

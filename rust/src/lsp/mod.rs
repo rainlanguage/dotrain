@@ -32,7 +32,7 @@ pub struct LanguageServiceParams {
 /// position encodings will result in the same LSP provided Position value which is 1 for each char
 #[cfg_attr(
     all(feature = "lsp", any(feature = "js-api", target_family = "wasm")),
-    wasm_bindgen
+    wasm_bindgen(skip_typescript)
 )]
 pub struct RainLanguageServices {
     /// The meta Store (CAS) instance used for all parsings of this instance

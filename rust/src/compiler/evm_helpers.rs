@@ -31,7 +31,7 @@ pub fn npe2_parse(
 
     let parser_address = address!("921232a9244d53d104c3001fbac2d15524158c65");
     match exec_bytecode(
-        &npe2_deployer.bytecode,
+        &npe2_deployer.parser,
         &data,
         parser_address,
         Some(revm),
@@ -41,14 +41,14 @@ pub fn npe2_parse(
     {
         ParseResult::Success(exp_conf) => {
             let store_address = address!("0f6fa4730b95c154f470dff1ba7263f37f2615b6");
-            let store_bytecode = Bytecode::new_raw(Bytes::copy_from_slice(&npe2_deployer.parser));
+            let store_bytecode = Bytecode::new_raw(Bytes::copy_from_slice(&npe2_deployer.store));
             let store_account_info =
                 AccountInfo::new(Uint::ZERO, 0, store_bytecode.hash_slow(), store_bytecode);
             insert_acount(store_address, store_account_info, revm)?;
 
             let interpreter_address = address!("b0de12945c5952cd524704b2de01e5234fddb566");
             let interpreter_bytecode =
-                Bytecode::new_raw(Bytes::copy_from_slice(&npe2_deployer.parser));
+                Bytecode::new_raw(Bytes::copy_from_slice(&npe2_deployer.interpreter));
             let interpreter_account_info = AccountInfo::new(
                 Uint::ZERO,
                 0,

@@ -35,11 +35,15 @@ extern "C" {
 
     #[wasm_bindgen(typescript_type = "INPE2Deployer")]
     pub type INPE2Deployer;
+
+    #[wasm_bindgen(typescript_type = "DeployerQueryResponse")]
+    pub type DeployerQueryResponse;
 }
 
 #[cfg(all(feature = "lsp", any(feature = "js-api", target_family = "wasm")))]
 #[wasm_bindgen(typescript_custom_section)]
-const TYPESCRIPT_LSP_IMPORTS: &'static str = r#"import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
+const TYPESCRIPT_LSP_IMPORTS: &'static str = r#"
+import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
 import { Position, MarkupKind, TextDocumentItem } from "vscode-languageserver-types";
 "#;
 
@@ -61,4 +65,17 @@ const INPE2_DEPLOYER_TYPESCRIPT_DEFINITION: &'static str = r#"export interface I
     store: Uint8Array,
     interpreter: Uint8Array,
     authoringMeta: IAuthoringMeta | undefined
+}"#;
+
+#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[wasm_bindgen(typescript_custom_section)]
+const DEPLOYER_QUERY_RESPONSE_TYPESCRIPT_DEFINITION: &'static str = r#"export interface DeployerQueryResponse {
+    txHash: string,
+    bytecodeMetaHash: string,
+    metaHash: string,
+    metaBytes: Uint8Array,
+    bytecode: Uint8Array,
+    parser: Uint8Array,
+    store: Uint8Array,
+    interpreter: Uint8Array
 }"#;

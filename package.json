@@ -1,18 +1,18 @@
 {
-    "name": "@rainprotocol/rainlang",
-    "description": "The Rain language (dotrain and rainlang) standalone, that encapsulates Language Serivces (in LSP spec) and compiler/decompiler for NodeJs and Browser environments",
+    "name": "@rainlanguage/dotrain",
+    "description": "Rain language server protocol implementation and compiler for NodeJs and Browser",
     "version": "5.1.0",
-    "author": "Rain Protocol",
+    "author": "Rain Language",
     "license": "CAL-1.0",
     "repository": {
         "type": "git",
-        "url": "https://github.com/rainprotocol/rainlang.git"
+        "url": "https://github.com/rainlanguage/dotrain.git"
     },
     "keywords": [],
     "bugs": {
-        "url": "https://github.com/rainprotocol/rainlang/issues"
+        "url": "https://github.com/rainlanguage/dotrain/issues"
     },
-    "homepage": "https://github.com/rainprotocol/rainlang#readme",
+    "homepage": "https://github.com/rainlanguage/dotrain#readme",
     "main": "./dist/cjs/index.js",
     "module": "./dist/esm/index.js",
     "browser": {
@@ -31,9 +31,6 @@
         "/esm.d.ts",
         "/example.rainconfig.json"
     ],
-    "bin": {
-        "dotrain": "./cli/dotrain.js"
-    },
     "engines": {
         "node": ">=18"
     },
@@ -45,44 +42,28 @@
         "build-types": "tsc -b ./tsconfig.types.json",
         "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
         "lint": "eslint \"src/**\" \"test/**\"",
-        "lint-fix": "eslint \"src/**\" \"test/**\" --fix",
-        "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
-        "move-api": "copyfiles \"./rainlang.api.json\" \"./docs\" && rimraf ./rainlang.api.json"
+        "lint-fix": "eslint \"src/**\" \"test/**\" --fix"
     },
     "devDependencies": {
-        "@microsoft/api-extractor": "^7.33.5",
-        "@princjef/api-documenter": "^1.0.2",
         "@types/chai": "^4.3.3",
         "@types/chai-as-promised": "^7.1.5",
         "@types/mocha": "^10.0.0",
         "@types/node": "^18.13.0",
-        "@types/pako": "^2.0.0",
         "@types/prettier": "^2.7.2",
-        "@types/toposort": "^2.0.3",
         "@typescript-eslint/eslint-plugin": "^5.42.0",
         "@typescript-eslint/parser": "^5.42.0",
         "chai": "^4.3.6",
         "chai-as-promised": "7.1.1",
-        "copyfiles": "^2.4.1",
         "eslint": "^8.26.0",
         "hardhat": "^2.17.4",
         "mocha": "^10.1.0",
-        "rimraf": "^4.4.1",
         "ts-loader": "^9.4.2",
         "ts-node": "^10.9.1",
         "tslib": "^2.4.1",
         "typescript": "^4.8.4"
     },
     "dependencies": {
-        "@ethereumjs/evm": "^2.0.0",
-        "@ethereumjs/util": "^9.0.0",
-        "@ethereumjs/vm": "^7.0.0",
-        "@rainprotocol/meta": "^3.0.7",
-        "commander": "^11.0.0",
-        "ethers": "^5.7.2",
-        "magic-string": "^0.30.0",
-        "toposort": "^2.0.2",
-        "vscode-languageserver-textdocument": "^1.0.8",
+        "vscode-languageserver-protocol": "^3.17.5",
         "vscode-languageserver-types": "^3.17.3"
     }
 }

@@ -111,7 +111,7 @@ impl TryFrom<i32> for ErrorCode {
     tsify(into_wasm_abi, from_wasm_abi)
 )]
 pub struct ExpressionConfig {
-    /// Sources verbatim.
+    /// Bytecode verbatim.
     #[serde(
         serialize_with = "serialize_bytecode",
         deserialize_with = "deserialize_bytecode"

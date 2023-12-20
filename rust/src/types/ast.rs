@@ -53,7 +53,11 @@ pub struct Problem {
 pub struct Value {
     pub value: String,
     pub position: Offsets,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub lhs_alias: Option<Vec<Alias>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub id: Option<String>,
 }
 
@@ -109,7 +113,11 @@ pub struct Opcode {
     pub parens: Offsets,
     pub parameters: Vec<Node>,
     pub is_ctx: Option<(u8, Option<u8>)>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub lhs_alias: Option<Vec<Alias>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub operand_args: Option<OperandArg>,
 }
 
@@ -124,6 +132,8 @@ pub struct Opcode {
 pub struct Alias {
     pub name: String,
     pub position: Offsets,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub lhs_alias: Option<Vec<Alias>>,
 }
 
@@ -224,8 +234,17 @@ impl From<DispairImportItem> for NPE2Deployer {
     tsify(into_wasm_abi, from_wasm_abi)
 )]
 pub struct ImportSequence {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub dispair: Option<DispairImportItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub ctxmeta: Option<Vec<ContextAlias>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(
+        any(feature = "js-api", target_family = "wasm"),
+        tsify(type = "IRainDocument", optional)
+    )]
     pub dotrain: Option<RainDocument>,
 }
 
@@ -256,7 +275,11 @@ pub struct Import {
     pub hash_position: Offsets,
     pub position: Offsets,
     pub problems: Vec<Problem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub configuration: Option<ImportConfiguration>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub sequence: Option<ImportSequence>,
 }
 
@@ -346,7 +369,13 @@ pub struct ConstantBindingItem {
 pub enum BindingItem {
     Elided(ElidedBindingItem),
     Constant(ConstantBindingItem),
-    Exp(RainlangDocument),
+    Exp(
+        #[cfg_attr(
+            any(feature = "js-api", target_family = "wasm"),
+            tsify(type = "IRainlangDocument")
+        )]
+        RainlangDocument,
+    ),
 }
 /// Type for a binding (named expressions)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

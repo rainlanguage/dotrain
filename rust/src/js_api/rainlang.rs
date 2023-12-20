@@ -115,11 +115,11 @@ impl RainlangDocument {
 
     /// Compiles this instance's text given the entrypoints and INPE2Deployer
     #[wasm_bindgen(js_name = "compile")]
-    pub async fn js_compile(&self, npe2_deployer: INPE2Deployer) -> Result<ParseResult, String> {
-        let deployer: NPE2Deployer = from_js_value(npe2_deployer.obj).unwrap_throw();
+    pub async fn js_compile(&self, deployer: INPE2Deployer) -> Result<ParseResult, JsValue> {
+        let deployer: NPE2Deployer = from_js_value(deployer.obj).unwrap_throw();
         match self.compile(&deployer, None) {
             Ok(v) => Ok(v),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(e.to_string().into()),
         }
     }
 }
