@@ -25,7 +25,7 @@ pub struct LanguageServiceParams {
 /// # RainLanguageServices
 ///
 /// Provides methods for getting language service results (such as diagnostics, completion, etc)
-/// for a give LSP TextDocumentItem or a RainDocument
+/// for a given LSP TextDocumentItem or a RainDocument
 ///
 /// Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
 /// only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
@@ -61,7 +61,7 @@ impl RainLanguageServices {
         RainLanguageServices { meta_store }
     }
 
-    /// Instantiates a RainDocument with remote meta search disabled from the given TextDocumentItem
+    /// Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
     pub fn new_rain_document(&self, text_document: &TextDocumentItem) -> RainDocument {
         RainDocument::create(
             text_document.text.clone(),
@@ -69,7 +69,7 @@ impl RainLanguageServices {
             Some(self.meta_store.clone()),
         )
     }
-    /// Instantiates a RainDocument with remote meta search enabled from the given TextDocumentItem
+    /// Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
     pub async fn new_rain_document_async(&self, text_document: &TextDocumentItem) -> RainDocument {
         RainDocument::create_async(
             text_document.text.clone(),
@@ -79,7 +79,7 @@ impl RainLanguageServices {
         .await
     }
 
-    /// Validates the document with remote meta search disabled and reports LSP diagnostics
+    /// Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
     pub fn do_validate(
         &self,
         text_document: &TextDocumentItem,
@@ -92,7 +92,7 @@ impl RainLanguageServices {
         );
         diagnostic::get_diagnostics(&rd, related_information)
     }
-    /// reports LSP diagnostics from RainDocument's all problems
+    /// Reports LSP diagnostics from RainDocument's all problems
     pub fn do_validate_rain_document(
         &self,
         rain_document: &RainDocument,
@@ -100,7 +100,7 @@ impl RainLanguageServices {
     ) -> Vec<Diagnostic> {
         diagnostic::get_diagnostics(rain_document, related_information)
     }
-    /// Validates the document with remote meta search enabled and reports LSP diagnostics
+    /// Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
     pub async fn do_validate_async(
         &self,
         text_document: &TextDocumentItem,
@@ -115,7 +115,7 @@ impl RainLanguageServices {
         diagnostic::get_diagnostics(&rd, related_information)
     }
 
-    /// Provides completion items
+    /// Provides completion items at the given position
     pub fn do_complete(
         &self,
         text_document: &TextDocumentItem,
@@ -137,7 +137,7 @@ impl RainLanguageServices {
             },
         )
     }
-    /// Provides completion items
+    /// Provides completion items at the given position
     pub fn do_complete_rain_document(
         &self,
         rain_document: &RainDocument,
@@ -155,7 +155,7 @@ impl RainLanguageServices {
         )
     }
 
-    /// Provides hover for fragments
+    /// Provides hover for a fragment at the given position
     pub fn do_hover(
         &self,
         text_document: &TextDocumentItem,
@@ -177,7 +177,7 @@ impl RainLanguageServices {
             },
         )
     }
-    /// Provides hover for RainDocument fragments
+    /// Provides hover for a RainDocument fragment at the given position
     pub fn do_hover_rain_document(
         &self,
         rain_document: &RainDocument,

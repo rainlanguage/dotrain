@@ -5,7 +5,6 @@ pub mod types;
 pub mod parser;
 pub mod compiler;
 
-// #[cfg(all(feature = "cli", not(target_family = "wasm")))]
 #[cfg(feature = "cli")]
 pub mod cli;
 
@@ -44,7 +43,7 @@ extern "C" {
 #[wasm_bindgen(typescript_custom_section)]
 const TYPESCRIPT_LSP_IMPORTS: &'static str = r#"
 import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
-import { Position, MarkupKind, TextDocumentItem } from "vscode-languageserver-types";
+import { Hover, Position, MarkupKind, Diagnostic, TextDocumentItem, CompletionItem } from "vscode-languageserver-types";
 "#;
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]

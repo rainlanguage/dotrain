@@ -19,87 +19,130 @@ extern "C" {
 
 #[wasm_bindgen(typescript_custom_section)]
 const RAIN_LANGUAGE_SERVICES_TYPESCRIPT_DEFINITION: &'static str = r#"/**
- * Rain language services ready to receive
- * TextDocuments to provide the desired language services
+ * # RainLanguageServices
+ *
+ * Provides methods for getting language service results (such as diagnostics, completion, etc)
+ * for a given LSP TextDocumentItem or a RainDocument
+ *
+ * Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
+ * only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
+ * position encodings will result in the same LSP provided Position value which is 1 for each char
  */
 export class RainLanguageServices {
   free(): void;
   /**
+   * The meta Store associated with this RainLanguageServices instance
    */
   readonly metaStore: MetaStore;
   /**
+   * Instantiates with the given MetaStore
    * @param {MetaStore} meta_store
    */
   constructor(meta_store: MetaStore);
   /**
+   * Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
    * @param {TextDocumentItem} text_document
    * @returns {RainDocument}
    */
   newRainDocument(text_document: TextDocumentItem): RainDocument;
   /**
+   * Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
    * @param {TextDocumentItem} text_document
    * @returns {Promise<RainDocument>}
    */
   newRainDocumentAsync(text_document: TextDocumentItem): Promise<RainDocument>;
   /**
+   * Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
    * @param {TextDocumentItem} text_document
    * @returns {(Diagnostic)[]}
    */
   doValidate(text_document: TextDocumentItem, related_information: boolean): Diagnostic[];
   /**
+   * Reports LSP diagnostics from RainDocument's all problems
    * @param {RainDocument} rain_document
    * @param {boolean} related_information
    * @returns {(Diagnostic)[]}
    */
   doValidateRainDocument(rain_document: RainDocument, related_information: boolean): Diagnostic[];
   /**
+   * Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
    * @param {TextDocumentItem} text_document
    * @param {boolean} related_information
    * @returns {Promise<any>}
    */
   doValidateAsync(text_document: TextDocumentItem): Promise<Diagnostic[]>;
   /**
+   * Provides completion items at the given position
    * @param {TextDocumentItem} text_document
    * @param {Position} position
    * @param {MarkupKind} documentation_format
    * @returns {(CompletionItem)[] | undefined}
    */
-  doComplete(text_document: TextDocumentItem, position: Position, documentation_format?: MarkupKind): CompletionItem[] | null;
+  doComplete(
+    text_document: TextDocumentItem, 
+    position: Position, 
+    documentation_format?: MarkupKind
+  ): CompletionItem[] | null;
   /**
+   * Provides completion items at the given position
    * @param {RainDocument} rain_document
    * @param {Position} position
    * @param {MarkupKind} documentation_format
    * @returns {(CompletionItem)[] | undefined}
    */
-  doCompleteRainDocument(rain_document: RainDocument, position: Position, documentation_format?: MarkupKind): CompletionItem[] | null;
+  doCompleteRainDocument(
+    rain_document: RainDocument, 
+    position: Position, 
+    documentation_format?: MarkupKind
+  ): CompletionItem[] | null;
   /**
+   * Provides hover for a fragment at the given position
    * @param {TextDocumentItem} text_document
    * @param {Position} position
    * @param {MarkupKind} content_format
    * @returns {Hover | undefined}
    */
-  doHover(text_document: TextDocumentItem, position: Position, content_format?: MarkupKind): Hover | null;
+  doHover(
+    text_document: TextDocumentItem, 
+    position: Position, 
+    content_format?: MarkupKind
+  ): Hover | null;
   /**
+   * Provides hover for a RainDocument fragment at the given position
    * @param {RainDocument} rain_document
    * @param {Position} position
    * @param {MarkupKind} content_format
    * @returns {Hover | undefined}
    */
-  doHoverRainDocument(rain_document: RainDocument, position: Position, content_format?: MarkupKind): Hover | null;
+  doHoverRainDocument(
+    rain_document: RainDocument, 
+    position: Position, 
+    content_format?: MarkupKind
+  ): Hover | null;
   /**
+   * Provides semantic tokens for elided fragments
    * @param {TextDocumentItem} text_document
    * @param {number} semantic_token_types_index
    * @param {number} semantic_token_modifiers_len
    * @returns {SemanticTokensPartialResult}
    */
-  semanticTokens(text_document: TextDocumentItem, semantic_token_types_index: number, semantic_token_modifiers_len: number): SemanticTokensPartialResult;
+  semanticTokens(
+    text_document: TextDocumentItem, 
+    semantic_token_types_index: number, 
+    semantic_token_modifiers_len: number
+  ): SemanticTokensPartialResult;
   /**
+   * Provides semantic tokens for RainDocument's elided fragments
    * @param {RainDocument} rain_document
    * @param {number} semantic_token_types_index
    * @param {number} semantic_token_modifiers_len
    * @returns {SemanticTokensPartialResult}
    */
-  rainDocumentSemanticTokens(rain_document: RainDocument, semantic_token_types_index: number, semantic_token_modifiers_len: number): SemanticTokensPartialResult;
+  rainDocumentSemanticTokens(
+    rain_document: RainDocument, 
+    semantic_token_types_index: number, 
+    semantic_token_modifiers_len: number
+  ): SemanticTokensPartialResult;
 }"#;
 
 #[wasm_bindgen]
