@@ -36,7 +36,7 @@
         "build-wasm": "cargo build --target wasm32-unknown-unknown --lib --features 'lsp,js-api' -r",
         "node-bg": "wasm-bindgen --target nodejs ./target/wasm32-unknown-unknown/release/dotrain.wasm --out-dir ./temp/node",
         "web-bg": "wasm-bindgen --target web ./target/wasm32-unknown-unknown/release/dotrain.wasm --out-dir ./temp/web",
-        "build-bindings": "npm run node-bg && npm run web-bg && rimraf ./dist && node ./scripts/prepare && rimraf ./temp",
+        "build-bindings": "npm run node-bg && npm run web-bg && rimraf ./dist && node ./scripts/prepare",
         "lint-bindings": "eslint \"dist/**\" --fix",
         "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
         "lint": "eslint \"src/**\" \"test/**\"",
