@@ -23,12 +23,20 @@ let
         local-test
     '';
 
-    build-cjs = pkgs.writeShellScriptBin "build-cjs" ''
-        npm run build-cjs
+    build-wasm = pkgs.writeShellScriptBin "build-wasm" ''
+        npm run build-wasm
     '';
 
-    build-esm = pkgs.writeShellScriptBin "build-esm" ''
-        npm run build-esm
+    node-bg = pkgs.writeShellScriptBin "node-bg" ''
+        npm run node-bg
+    '';
+
+    web-bg = pkgs.writeShellScriptBin "web-bg" ''
+        npm run web-bg
+    '';
+
+    build-bindings = pkgs.writeShellScriptBin "build-bindings" ''
+        npm run build-bindings
     '';
 
     build = pkgs.writeShellScriptBin "build" ''
@@ -52,18 +60,24 @@ let
         npm run lint-fix
     '';
 
+    lint-bindings = pkgs.writeShellScriptBin "lint-bindings" ''
+        npm run lint-bindings
+    '';
+
     in
     pkgs.mkShell {
         name = "shell";
         buildInputs = [
             pkgs.emscripten
             pkgs.nixpkgs-fmt
-            pkgs.yarn
             pkgs.nodejs-18_x
+            pkgs.wasm-bindgen-cli
             build
-            build-cjs
-            build-esm
             build-all
+            build-wasm
+            build-bindings
+            node-bg
+            web-bg
             local-test
             ci-test
             flush
@@ -71,6 +85,7 @@ let
             docgen
             lint
             lint-fix
+            lint-bindings
         ] ++ (pkgs.lib.optionals pkgs.stdenv.isDarwin [
             pkgs.libiconv
             pkgs.darwin.apple_sdk.frameworks.SystemConfiguration

@@ -55,7 +55,7 @@ extern "C" {
 #[wasm_bindgen(typescript_custom_section)]
 const LSP_TS_IMPORTS: &'static str = r#"
 import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
-import { Hover, Position, MarkupKind, Diagnostic, TextDocumentItem, CompletionItem } from "vscode-languageserver-types";
+import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentItem } from "vscode-languageserver-types";
 "#;
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]

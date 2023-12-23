@@ -4,8 +4,8 @@ import {
     Position,
     MarkupKind,
     Diagnostic,
-    TextDocumentItem,
     CompletionItem,
+    TextDocumentItem,
 } from "vscode-languageserver-types";
 
 /**

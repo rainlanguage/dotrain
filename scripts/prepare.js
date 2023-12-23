@@ -21,12 +21,12 @@ dts = dts.replace(
 );
 dts = dts.replace(
     `import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
-import { Hover, Position, MarkupKind, Diagnostic, TextDocumentItem, CompletionItem } from "vscode-languageserver-types";`,
+import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentItem } from "vscode-languageserver-types";`,
     "",
 );
 dts =
     `import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
-import { Hover, Position, MarkupKind, Diagnostic, TextDocumentItem, CompletionItem } from "vscode-languageserver-types";
+import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentItem } from "vscode-languageserver-types";
 ` + dts;
 fs.writeFileSync("./dist/cjs/index.d.ts", dts);
 fs.writeFileSync("./dist/esm/index.d.ts", dts);
