@@ -2,7 +2,13 @@
 
 # Class RainDocument
 
-RainDocument aka dotrain is a class object that parses a text to provides data and functionalities in order to be used later on to provide Rain Language Services or in RainDocument compiler to get the ExpressionConfig (deployable bytes). It uses Rain parser under the hood which does all the heavy work.
+\# RainDocument RainDocument is the main implementation block that enables parsing of a .rain file contents to its building blocks and parse tree by handling and resolving imports, namespaces, etc which later are used by LSP services and compiler as well as providing all the functionalities in between.
+
+A portable, extensible and composable format for describing Rainlang fragments, .rain serve as a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and adversarial environment such as a public blockchain.
+
+\#\# Examples
+
+\`\`\` \`\`\`
 
 <b>Signature:</b>
 
@@ -10,347 +16,574 @@ RainDocument aka dotrain is a class object that parses a text to provides data a
 class RainDocument 
 ```
 
-## Example
-
-
-```typescript
-// to import
-import { RainDocument } from 'rainlang';
-
-// to create a new instance of the RainDocument object which parses right after instantiation
-const myRainDocument = await RainDocument.create(text)
-
-// to get the problems
-const problems = myRainDocument.getAllProblems()
-
-// to update the text
-await myRainDocument.updateText(newText)
-
-```
-
-## Static Properties
-
-|  Property | Type | Description |
-|  --- | --- | --- |
-|  [CONSTANTS](./raindocument.md#CONSTANTS-property-static) | `Record<string, string>` | Reserved constants key/value |
-
 ## Properties
 
 |  Property | Type | Description |
 |  --- | --- | --- |
-|  [authoringMeta](./raindocument.md#authoringMeta-property) | `Meta.Authoring[]` |  |
-|  [authoringMetaPath](./raindocument.md#authoringMetaPath-property) | `string` |  |
-|  [bindings](./raindocument.md#bindings-property) | `AST.Binding[]` |  |
-|  [bytecode](./raindocument.md#bytecode-property) | `string` |  |
-|  [comments](./raindocument.md#comments-property) | `AST.Comment[]` |  |
-|  [imports](./raindocument.md#imports-property) | `AST.Import[]` |  |
-|  [metaStore](./raindocument.md#metaStore-property) | `Meta.Store` |  |
-|  [namespace](./raindocument.md#namespace-property) | [AST.Namespace](../namespaces/ast/types/namespace.md) |  |
-|  [problems](./raindocument.md#problems-property) | `AST.Problem[]` |  |
-|  [runtimeError](./raindocument.md#runtimeError-property) | `Error \| undefined` |  |
-|  [textDocument](./raindocument.md#textDocument-property) | `TextDocument` |  |
+|  [allProblems](./raindocument.md#allProblems-property) | `Problem[]` | This instance's all problems (bindings + top) |
+|  [authoringMeta](./raindocument.md#authoringMeta-property) | `IAuthoringMeta \| undefined` | This instance's AuthoringMeta |
+|  [bindingProblems](./raindocument.md#bindingProblems-property) | `Problem[]` | This instance's bindings problems |
+|  [bindings](./raindocument.md#bindings-property) | `Binding[]` | This instance's bindings |
+|  [comments](./raindocument.md#comments-property) | `Comment[]` | This instance's comments |
+|  [deployer](./raindocument.md#deployer-property) | [INPE2Deployer](../interfaces/inpe2deployer.md) | This instance's NPE2 Deployer details |
+|  [error](./raindocument.md#error-property) | `string \| undefined` | The error msg if parsing had resulted in an error |
+|  [ignoreUndefinedWords](./raindocument.md#ignoreUndefinedWords-property) | `boolean` | If 'ignore\_undefined\_words' lint option is enabled or not |
+|  [ignoreWords](./raindocument.md#ignoreWords-property) | `boolean` | If 'ignore\_words' lint option is enabled or not |
+|  [imports](./raindocument.md#imports-property) | `Import[]` | This instance's imports |
+|  [metaStore](./raindocument.md#metaStore-property) | [MetaStore](./metastore.md) | This instance's MetaStore |
+|  [namespace](./raindocument.md#namespace-property) | [Namespace](../types/namespace.md) | This instance's namespace |
+|  [problems](./raindocument.md#problems-property) | `Problem[]` | This instance's top problems |
+|  [text](./raindocument.md#text-property) | `string` | This instance's current text |
+|  [uri](./raindocument.md#uri-property) | `string` | This instance's current URI |
+|  [version](./raindocument.md#version-property) | `number` | This instance's current version |
 
 ## Static Methods
 
 |  Method | Description |
 |  --- | --- |
-|  [create(textDocument, metaStore)](./raindocument.md#create-method-static-1) | Creates a new RainDocument object instance with a TextDocument |
-|  [create(text, metaStore, uri, version)](./raindocument.md#create-method-static-2) | Creates a new RainDocument object instance from a text string |
+|  [create(text, uri, meta\_store)](./raindocument.md#create-method-static-1) | Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only) |
+|  [createAsync(text, uri, meta\_store)](./raindocument.md#createAsync-method-static-1) | Creates an instance with the given MetaStore and parses with remote meta search enabled |
+|  [createAsyncRaw(text, uri)](./raindocument.md#createAsyncRaw-method-static-1) | creates an instance with a new raw MetaStore and parses with searching for metas from remote |
+|  [createRaw(text, uri)](./raindocument.md#createRaw-method-static-1) | Creates an instance with a new raw MetaStore and parses with remote meta search disabled (cached metas only) |
+|  [fromInterface(value, meta\_store)](./raindocument.md#fromInterface-method-static-1) |  |
+|  [fromInterfaceRaw(value)](./raindocument.md#fromInterfaceRaw-method-static-1) |  |
 
 ## Methods
 
 |  Method | Description |
 |  --- | --- |
-|  [getAllProblems()](./raindocument.md#getAllProblems-method-1) | Get all problems of this RainDocument instance |
-|  [getBindingsProblems()](./raindocument.md#getBindingsProblems-method-1) | Get the expression problems of this RainDocument instance |
-|  [getText()](./raindocument.md#getText-method-1) | Get the current text of this RainDocument instance |
-|  [parse()](./raindocument.md#parse-method-1) | Parses this instance of RainDocument |
-|  [updateText(newText)](./raindocument.md#updateText-method-1) | Updates the TextDocument of this RainDocument instance with new text |
-|  [updateText(newTextDocument)](./raindocument.md#updateText-method-2) | Updates the TextDocument of this RainDocument instance |
+|  [compile(entrypoints)](./raindocument.md#compile-method-1) | Compiles this instance |
+|  [free()](./raindocument.md#free-method-1) |  |
+|  [parse()](./raindocument.md#parse-method-1) | Parses this instance's text with remote meta search disabled (cached metas only) |
+|  [parseAsync()](./raindocument.md#parseAsync-method-1) | Parses this instance's text with remote meta search enabled |
+|  [toInterface()](./raindocument.md#toInterface-method-1) |  |
+|  [update(new\_text, uri, version)](./raindocument.md#update-method-1) | Updates the text, uri, version and parses right away with remote meta search disabled (cached metas only) |
+|  [updateAsync(new\_text, uri, version)](./raindocument.md#updateAsync-method-1) | Updates the text, uri, version and parses right away with remote meta search enabled |
+|  [updateText(new\_text)](./raindocument.md#updateText-method-1) | Updates the text and parses right away with remote meta search disabled (cached metas only) |
+|  [updateTextAsync(new\_text)](./raindocument.md#updateTextAsync-method-1) | Updates the text and parses right away with remote meta search enabled |
 
-## Static Property Details
+## Property Details
 
-<a id="CONSTANTS-property-static"></a>
+<a id="allProblems-property"></a>
 
-### CONSTANTS
+### allProblems
 
-Reserved constants key/value
+This instance's all problems (bindings + top)
 
 <b>Signature:</b>
 
 ```typescript
-static readonly CONSTANTS: Record<string, string>;
+readonly allProblems: Problem[];
 ```
-
-## Property Details
 
 <a id="authoringMeta-property"></a>
 
 ### authoringMeta
 
+This instance's AuthoringMeta
+
 <b>Signature:</b>
 
 ```typescript
-authoringMeta: Meta.Authoring[];
+readonly authoringMeta: IAuthoringMeta | undefined;
 ```
 
-<a id="authoringMetaPath-property"></a>
+<a id="bindingProblems-property"></a>
 
-### authoringMetaPath
+### bindingProblems
+
+This instance's bindings problems
 
 <b>Signature:</b>
 
 ```typescript
-authoringMetaPath: string;
+readonly bindingProblems: Problem[];
 ```
 
 <a id="bindings-property"></a>
 
 ### bindings
 
-<b>Signature:</b>
-
-```typescript
-bindings: AST.Binding[];
-```
-
-<a id="bytecode-property"></a>
-
-### bytecode
+This instance's bindings
 
 <b>Signature:</b>
 
 ```typescript
-bytecode: string;
+readonly bindings: Binding[];
 ```
 
 <a id="comments-property"></a>
 
 ### comments
 
+This instance's comments
+
 <b>Signature:</b>
 
 ```typescript
-comments: AST.Comment[];
+readonly comments: Comment[];
+```
+
+<a id="deployer-property"></a>
+
+### deployer
+
+This instance's NPE2 Deployer details
+
+<b>Signature:</b>
+
+```typescript
+readonly deployer: INPE2Deployer;
+```
+
+<a id="error-property"></a>
+
+### error
+
+The error msg if parsing had resulted in an error
+
+<b>Signature:</b>
+
+```typescript
+readonly error: string | undefined;
+```
+
+<a id="ignoreUndefinedWords-property"></a>
+
+### ignoreUndefinedWords
+
+If 'ignore\_undefined\_words' lint option is enabled or not
+
+<b>Signature:</b>
+
+```typescript
+readonly ignoreUndefinedWords: boolean;
+```
+
+<a id="ignoreWords-property"></a>
+
+### ignoreWords
+
+If 'ignore\_words' lint option is enabled or not
+
+<b>Signature:</b>
+
+```typescript
+readonly ignoreWords: boolean;
 ```
 
 <a id="imports-property"></a>
 
 ### imports
 
+This instance's imports
+
 <b>Signature:</b>
 
 ```typescript
-imports: AST.Import[];
+readonly imports: Import[];
 ```
 
 <a id="metaStore-property"></a>
 
 ### metaStore
 
+This instance's MetaStore
+
 <b>Signature:</b>
 
 ```typescript
-metaStore: Meta.Store;
+readonly metaStore: MetaStore;
 ```
 
 <a id="namespace-property"></a>
 
 ### namespace
 
+This instance's namespace
+
 <b>Signature:</b>
 
 ```typescript
-namespace: AST.Namespace;
+readonly namespace: Namespace;
 ```
 
 <a id="problems-property"></a>
 
 ### problems
 
+This instance's top problems
+
 <b>Signature:</b>
 
 ```typescript
-problems: AST.Problem[];
+readonly problems: Problem[];
 ```
 
-<a id="runtimeError-property"></a>
+<a id="text-property"></a>
 
-### runtimeError
+### text
+
+This instance's current text
 
 <b>Signature:</b>
 
 ```typescript
-runtimeError: Error | undefined;
+readonly text: string;
 ```
 
-<a id="textDocument-property"></a>
+<a id="uri-property"></a>
 
-### textDocument
+### uri
+
+This instance's current URI
 
 <b>Signature:</b>
 
 ```typescript
-textDocument: TextDocument;
+readonly uri: string;
+```
+
+<a id="version-property"></a>
+
+### version
+
+This instance's current version
+
+<b>Signature:</b>
+
+```typescript
+readonly version: number;
 ```
 
 ## Static Method Details
 
 <a id="create-method-static-1"></a>
 
-### create(textDocument, metaStore)
+### create(text, uri, meta\_store)
 
-Creates a new RainDocument object instance with a TextDocument
+Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only)
 
 <b>Signature:</b>
 
 ```typescript
-static create(textDocument: TextDocument, metaStore?: Meta.Store): Promise<RainDocument>;
+static create(text: string, uri: string, meta_store: MetaStore): RainDocument;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  textDocument | `TextDocument` | The text document |
-|  metaStore | `Meta.Store` | (optional) The initial Meta.Store object |
+|  text | `string` |  |
+|  uri | `string` |  |
+|  meta\_store | [MetaStore](./metastore.md) |  |
 
 <b>Returns:</b>
 
-`Promise<RainDocument>`
+`RainDocument`
 
-A new RainDocument instance
+{<!-- -->RainDocument<!-- -->}
 
-<a id="create-method-static-2"></a>
+<a id="createAsync-method-static-1"></a>
 
-### create(text, metaStore, uri, version)
+### createAsync(text, uri, meta\_store)
 
-Creates a new RainDocument object instance from a text string
+Creates an instance with the given MetaStore and parses with remote meta search enabled
 
 <b>Signature:</b>
 
 ```typescript
-static create(text: string, metaStore?: Meta.Store, uri?: string, version?: number): Promise<RainDocument>;
+static createAsync(text: string, uri: string, meta_store: MetaStore): Promise<RainDocument>;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  text | `string` | The text string |
-|  metaStore | `Meta.Store` | (optional) The initial Meta.Store object |
-|  uri | `string` | (optional) The URI of the text, URI is the unique identifier of a TextDocument |
-|  version | `number` | (optional) The version of the text |
+|  text | `string` |  |
+|  uri | `string` |  |
+|  meta\_store | [MetaStore](./metastore.md) |  |
 
 <b>Returns:</b>
 
 `Promise<RainDocument>`
 
-A new RainDocument instance
+{<!-- -->Promise<RainDocument>}
+
+<a id="createAsyncRaw-method-static-1"></a>
+
+### createAsyncRaw(text, uri)
+
+creates an instance with a new raw MetaStore and parses with searching for metas from remote
+
+<b>Signature:</b>
+
+```typescript
+static createAsyncRaw(text: string, uri: string): Promise<RainDocument>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  text | `string` |  |
+|  uri | `string` |  |
+
+<b>Returns:</b>
+
+`Promise<RainDocument>`
+
+{<!-- -->Promise<RainDocument>}
+
+<a id="createRaw-method-static-1"></a>
+
+### createRaw(text, uri)
+
+Creates an instance with a new raw MetaStore and parses with remote meta search disabled (cached metas only)
+
+<b>Signature:</b>
+
+```typescript
+static createRaw(text: string, uri: string): RainDocument;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  text | `string` |  |
+|  uri | `string` |  |
+
+<b>Returns:</b>
+
+`RainDocument`
+
+{<!-- -->RainDocument<!-- -->}
+
+<a id="fromInterface-method-static-1"></a>
+
+### fromInterface(value, meta\_store)
+
+<b>Signature:</b>
+
+```typescript
+static fromInterface(value: IRainDocument, meta_store: MetaStore): RainDocument;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  value | [IRainDocument](../interfaces/iraindocument.md) |  |
+|  meta\_store | [MetaStore](./metastore.md) |  |
+
+<b>Returns:</b>
+
+`RainDocument`
+
+{<!-- -->RainDocument<!-- -->}
+
+<a id="fromInterfaceRaw-method-static-1"></a>
+
+### fromInterfaceRaw(value)
+
+<b>Signature:</b>
+
+```typescript
+static fromInterfaceRaw(value: IRainDocument): RainDocument;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  value | [IRainDocument](../interfaces/iraindocument.md) |  |
+
+<b>Returns:</b>
+
+`RainDocument`
+
+{<!-- -->RainDocument<!-- -->}
 
 ## Method Details
 
-<a id="getAllProblems-method-1"></a>
+<a id="compile-method-1"></a>
 
-### getAllProblems()
+### compile(entrypoints)
 
-Get all problems of this RainDocument instance
-
-<b>Signature:</b>
-
-```typescript
-getAllProblems(): AST.Problem[];
-```
-<b>Returns:</b>
-
-`AST.Problem[]`
-
-<a id="getBindingsProblems-method-1"></a>
-
-### getBindingsProblems()
-
-Get the expression problems of this RainDocument instance
+Compiles this instance
 
 <b>Signature:</b>
 
 ```typescript
-getBindingsProblems(): AST.Problem[];
+compile(entrypoints: string[]): Promise<ExpressionConfig>;
 ```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  entrypoints | `string[]` |  |
+
 <b>Returns:</b>
 
-`AST.Problem[]`
+`Promise<ExpressionConfig>`
 
-<a id="getText-method-1"></a>
+{<!-- -->Promise<ExpressionConfig>}
 
-### getText()
+<a id="free-method-1"></a>
 
-Get the current text of this RainDocument instance
+### free()
 
 <b>Signature:</b>
 
 ```typescript
-getText(): string;
+free(): void;
 ```
 <b>Returns:</b>
 
-`string`
+`void`
 
 <a id="parse-method-1"></a>
 
 ### parse()
 
-Parses this instance of RainDocument
+Parses this instance's text with remote meta search disabled (cached metas only)
 
 <b>Signature:</b>
 
 ```typescript
-parse(): Promise<void>;
+parse(): void;
+```
+<b>Returns:</b>
+
+`void`
+
+<a id="parseAsync-method-1"></a>
+
+### parseAsync()
+
+Parses this instance's text with remote meta search enabled
+
+<b>Signature:</b>
+
+```typescript
+parseAsync(): Promise<void>;
 ```
 <b>Returns:</b>
 
 `Promise<void>`
+
+{<!-- -->Promise<void>}
+
+<a id="toInterface-method-1"></a>
+
+### toInterface()
+
+<b>Signature:</b>
+
+```typescript
+toInterface(): IRainDocument;
+```
+<b>Returns:</b>
+
+`IRainDocument`
+
+{<!-- -->IRainDocument<!-- -->}
+
+<a id="update-method-1"></a>
+
+### update(new\_text, uri, version)
+
+Updates the text, uri, version and parses right away with remote meta search disabled (cached metas only)
+
+<b>Signature:</b>
+
+```typescript
+update(new_text: string, uri: string, version: number): void;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  new\_text | `string` |  |
+|  uri | `string` |  |
+|  version | `number` |  |
+
+<b>Returns:</b>
+
+`void`
+
+<a id="updateAsync-method-1"></a>
+
+### updateAsync(new\_text, uri, version)
+
+Updates the text, uri, version and parses right away with remote meta search enabled
+
+<b>Signature:</b>
+
+```typescript
+updateAsync(new_text: string, uri: string, version: number): Promise<void>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  new\_text | `string` |  |
+|  uri | `string` |  |
+|  version | `number` |  |
+
+<b>Returns:</b>
+
+`Promise<void>`
+
+{<!-- -->Promise<void>}
 
 <a id="updateText-method-1"></a>
 
-### updateText(newText)
+### updateText(new\_text)
 
-Updates the TextDocument of this RainDocument instance with new text
+Updates the text and parses right away with remote meta search disabled (cached metas only)
 
 <b>Signature:</b>
 
 ```typescript
-updateText(newText: string): Promise<void>;
+updateText(new_text: string): void;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  newText | `string` | The new text |
+|  new\_text | `string` |  |
 
 <b>Returns:</b>
 
-`Promise<void>`
+`void`
 
-<a id="updateText-method-2"></a>
+<a id="updateTextAsync-method-1"></a>
 
-### updateText(newTextDocument)
+### updateTextAsync(new\_text)
 
-Updates the TextDocument of this RainDocument instance
+Updates the text and parses right away with remote meta search enabled
 
 <b>Signature:</b>
 
 ```typescript
-updateText(newTextDocument: TextDocument): Promise<void>;
+updateTextAsync(new_text: string): Promise<void>;
 ```
 
 #### Parameters
 
 |  Parameter | Type | Description |
 |  --- | --- | --- |
-|  newTextDocument | `TextDocument` | The new TextDocument |
+|  new\_text | `string` |  |
 
 <b>Returns:</b>
 
 `Promise<void>`
+
+{<!-- -->Promise<void>}
 

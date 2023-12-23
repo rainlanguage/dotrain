@@ -9,7 +9,7 @@ import {
     rainlang,
     TextDocument,
     LanguageServiceParams 
-} from "../../src";
+} from "../../z";
 
 
 async function testHover(

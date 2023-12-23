@@ -1,7 +1,6 @@
 *.md
 yarn.lock
 node_modules
-dist
 .env
 docs
 tsconfig.json
@@ -9,3 +8,4 @@ tsconfig.json
 op.meta.schema.json
 LICENSE
 *.json
+z
