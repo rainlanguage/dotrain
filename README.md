@@ -1,4 +1,5 @@
-![](./assets/rain-logo-800px.png)
+![](./assets/rainlang-banner.png)
+
 # **Dotrain/Rainlang - Standalone**
 The Rain language (dotrain and rainlang) standalone package written in typescript encapsulates language compiler/decompiler and language services (in [LSP specs](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/)). This is well suited for editors and IDE support, which can be intracted with directly through API and/or be used in tools like Slate and/or be utilized in any text editor that supports [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) such as vscode, monaco or codemirror.
 - Dotrain specs can be found [here](https://github.com/rainprotocol/specs/blob/main/dotrain.md)
