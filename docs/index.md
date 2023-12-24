@@ -21,8 +21,9 @@
 
 |  Function | Description |
 |  --- | --- |
-|  [searchDeployer(hash, subgraphs)](./variables/searchdeployer_1.md) |  |
-|  [searchMeta(hash, subgraphs)](./variables/searchmeta_1.md) |  |
+|  [rainlang(stringChunks, vars)](./variables/rainlang_1.md) | Method to be used as Tagged Templates to activate embedded rainlang in javascript/typescript in vscode that highlights the rainlang syntax. Requires rainlang vscode extension to be installed. |
+|  [searchDeployer(hash, subgraphs)](./variables/searchdeployer_1.md) | seraches for a ExpressionDeployer reproducible data for a given hash in the given subgraphs |
+|  [searchMeta(hash, subgraphs)](./variables/searchmeta_1.md) | seraches for a meta for a given hash in the given subgraphs |
 
 ## Interfaces
 

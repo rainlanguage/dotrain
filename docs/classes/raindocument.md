@@ -41,6 +41,10 @@ class RainDocument
 
 |  Method | Description |
 |  --- | --- |
+|  [compileText(text, entrypoints, meta\_store, uri)](./raindocument.md#compileText-method-static-1) | Compiles a text as RainDocument with remote meta search disabled for parsing |
+|  [compileTextAsync(text, entrypoints, meta\_store, uri)](./raindocument.md#compileTextAsync-method-static-1) | Compiles a text as RainDocument with remote meta search enabled for parsing |
+|  [compileTextRaw(text, entrypoints, uri)](./raindocument.md#compileTextRaw-method-static-1) | Compiles a text as RainDocument with remote meta search disabled for parsing |
+|  [compileTextRawAsync(text, entrypoints, uri)](./raindocument.md#compileTextRawAsync-method-static-1) | Compiles a text as RainDocument with remote meta search enabled for parsing |
 |  [create(text, uri, meta\_store)](./raindocument.md#create-method-static-1) | Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only) |
 |  [createAsync(text, uri, meta\_store)](./raindocument.md#createAsync-method-static-1) | Creates an instance with the given MetaStore and parses with remote meta search enabled |
 |  [createAsyncRaw(text, uri)](./raindocument.md#createAsyncRaw-method-static-1) | creates an instance with a new raw MetaStore and parses with searching for metas from remote |
@@ -258,6 +262,130 @@ readonly version: number;
 
 ## Static Method Details
 
+<a id="compileText-method-static-1"></a>
+
+### compileText(text, entrypoints, meta\_store, uri)
+
+Compiles a text as RainDocument with remote meta search disabled for parsing
+
+<b>Signature:</b>
+
+```typescript
+static compileText(
+        text: string,
+        entrypoints: string[],
+        meta_store: MetaStore,
+        uri?: string,
+    ): Promise<ExpressionConfig>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  text | `string` |  |
+|  entrypoints | `string[]` |  |
+|  meta\_store | [MetaStore](./metastore.md) |  |
+|  uri | `string` |  |
+
+<b>Returns:</b>
+
+`Promise<ExpressionConfig>`
+
+{<!-- -->Promise<ExpressionConfig>}
+
+<a id="compileTextAsync-method-static-1"></a>
+
+### compileTextAsync(text, entrypoints, meta\_store, uri)
+
+Compiles a text as RainDocument with remote meta search enabled for parsing
+
+<b>Signature:</b>
+
+```typescript
+static compileTextAsync(
+        text: string,
+        entrypoints: string[],
+        meta_store: MetaStore,
+        uri?: string,
+    ): Promise<ExpressionConfig>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  text | `string` |  |
+|  entrypoints | `string[]` |  |
+|  meta\_store | [MetaStore](./metastore.md) |  |
+|  uri | `string` |  |
+
+<b>Returns:</b>
+
+`Promise<ExpressionConfig>`
+
+{<!-- -->Promise<ExpressionConfig>}
+
+<a id="compileTextRaw-method-static-1"></a>
+
+### compileTextRaw(text, entrypoints, uri)
+
+Compiles a text as RainDocument with remote meta search disabled for parsing
+
+<b>Signature:</b>
+
+```typescript
+static compileTextRaw(
+        text: string,
+        entrypoints: string[],
+        uri?: string,
+    ): Promise<ExpressionConfig>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  text | `string` |  |
+|  entrypoints | `string[]` |  |
+|  uri | `string` |  |
+
+<b>Returns:</b>
+
+`Promise<ExpressionConfig>`
+
+{<!-- -->Promise<ExpressionConfig>}
+
+<a id="compileTextRawAsync-method-static-1"></a>
+
+### compileTextRawAsync(text, entrypoints, uri)
+
+Compiles a text as RainDocument with remote meta search enabled for parsing
+
+<b>Signature:</b>
+
+```typescript
+static compileTextRawAsync(
+        text: string,
+        entrypoints: string[],
+        uri?: string,
+    ): Promise<ExpressionConfig>;
+```
+
+#### Parameters
+
+|  Parameter | Type | Description |
+|  --- | --- | --- |
+|  text | `string` |  |
+|  entrypoints | `string[]` |  |
+|  uri | `string` |  |
+
+<b>Returns:</b>
+
+`Promise<ExpressionConfig>`
+
+{<!-- -->Promise<ExpressionConfig>}
+
 <a id="create-method-static-1"></a>
 
 ### create(text, uri, meta\_store)
@@ -416,7 +544,7 @@ Compiles this instance
 <b>Signature:</b>
 
 ```typescript
-compile(entrypoints: string[]): Promise<ExpressionConfig>;
+compile(entrypoints: string[]): ExpressionConfig;
 ```
 
 #### Parameters
@@ -427,9 +555,9 @@ compile(entrypoints: string[]): Promise<ExpressionConfig>;
 
 <b>Returns:</b>
 
-`Promise<ExpressionConfig>`
+`ExpressionConfig`
 
-{<!-- -->Promise<ExpressionConfig>}
+{<!-- -->ExpressionConfig<!-- -->}
 
 <a id="free-method-1"></a>
 

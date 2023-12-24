@@ -20,7 +20,7 @@ use rain_meta::{
 use super::{
     rainlang::RainlangDocument,
     super::types::{*, ast::*, patterns::*},
-    exclusive_parse, to_bigint, inclusive_parse, fill_in, is_consumable, tracked_trim, line_number,
+    exclusive_parse, inclusive_parse, fill_in, is_consumable, tracked_trim, line_number, to_u256,
 };
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
@@ -360,13 +360,9 @@ impl RainDocument {
             None
         } else {
             if NUMERIC_PATTERN.is_match(&items[0].0) {
-                if E_PATTERN.is_match(&items[0].0) || BINARY_PATTERN.is_match(&items[0].0) {
-                    match to_bigint(&items[0].0) {
-                        Ok(v) => Some(Ok(v.to_str_radix(10))),
-                        Err(_e) => Some(Err("value out of range".to_owned())),
-                    }
-                } else {
-                    Some(Ok(items[0].0.clone()))
+                match to_u256(&items[0].0) {
+                    Ok(v) => Some(Ok(v.to_string())),
+                    Err(_e) => Some(Err("value out of range".to_owned())),
                 }
             } else {
                 None

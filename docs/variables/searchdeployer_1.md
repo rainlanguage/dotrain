@@ -2,6 +2,8 @@
 
 # Function searchDeployer()
 
+seraches for a ExpressionDeployer reproducible data for a given hash in the given subgraphs
+
 <b>Signature:</b>
 
 ```typescript

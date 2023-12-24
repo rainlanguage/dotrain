@@ -1,4 +1,5 @@
 use lsp_types::{Position, MarkupKind, Hover, HoverContents, Range, MarkupContent};
+
 use super::super::{
     types::ast::{Node, BindingItem},
     parser::{OffsetAt, PositionAt, raindocument::RainDocument},
@@ -71,13 +72,25 @@ pub fn get_hover(
             {
                 match &b.item {
                     BindingItem::Exp(e) => {
+                        let mut nodes: Vec<&Node> = vec![];
+                        let mut alias_nodes: Vec<Node> = vec![];
+                        e.ast.iter().for_each(|src| {
+                            src.lines.iter().for_each(|line| {
+                                for a in &line.aliases {
+                                    alias_nodes.push(Node::Alias(a.clone()));
+                                }
+                                for n in &line.nodes {
+                                    nodes.push(n);
+                                }
+                            })
+                        });
+                        for a in &alias_nodes {
+                            nodes.push(a);
+                        }
                         return search(
-                            e.ast
-                                .iter()
-                                .flat_map(|src| src.lines.iter().flat_map(|line| &line.nodes))
-                                .collect::<Vec<_>>(),
+                            nodes,
                             b.content_position[0],
-                            0,
+                            target_offset - b.content_position[0],
                             content_type,
                             &rain_document.text,
                         );
@@ -140,8 +153,12 @@ fn search(
                                     return Some(Hover {
                                         contents: HoverContents::Markup(MarkupContent {
                                             kind,
-                                            value: [arg.name.clone(), arg.description.clone()]
-                                                .join("\n\n"),
+                                            value: if arg.description.is_empty() {
+                                                arg.name.clone()
+                                            } else {
+                                                [arg.name.clone(), arg.description.clone()]
+                                                    .join("\n")
+                                            },
                                         }),
                                         range: Some(Range::new(
                                             text.position_at(arg.position[0] + offset),
@@ -194,7 +211,7 @@ fn search(
                 Node::Alias(a) => {
                     let mut value = "Stack Alias".to_owned();
                     if a.name == "_" {
-                        value.push_str("Placeholder")
+                        value.push_str(" Placeholder")
                     };
                     return Some(Hover {
                         contents: HoverContents::Markup(MarkupContent { kind, value }),

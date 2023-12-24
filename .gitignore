@@ -25,6 +25,5 @@ release-note.txt
 *rain.json
 *.tgz
 rainconfig.json
-meta
 /old
 

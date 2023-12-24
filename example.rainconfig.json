@@ -22,7 +22,7 @@
     {
       "binary": {
         "path": "./path/to/another-binary-meta",
-        "hash": "0x123456789abcdef..."
+        "hash": "0x7a89034fd7a33df88ca474ff2e413d8a2f425ed29f09866344ac6d6070a30d12"
       }
     },
     {
@@ -34,12 +34,12 @@
     {
       "hex": {
         "path": "./path/to/another-hex-meta",
-        "hash": "0x123456789abcdef..."
+        "hash": "0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c"
       }
     }
   ],
   "deployers": {
-    "0x1234...": {
+    "0x78fd1edb0bdb928db6015990fecafbb964b44692e2d435693062dd4efc6254dd": {
       "constructionMeta": {
         "binary": "./path/to/binary-construction-meta"
       },
@@ -48,7 +48,7 @@
       "store": "./path/to/store-artifact.json",
       "interpreter": "./path/to/interpreter-artifact.json"
     },
-    "0xabcd...": {
+    "0xa60a26b92501195b72f34dad09dc163ff65d3a86109e76b8c80110904f574dbb": {
       "constructionMeta": {
         "hex": "./path/to/hex-construction-meta"
       },

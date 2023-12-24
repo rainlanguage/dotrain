@@ -27,6 +27,13 @@ import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentIt
 dts =
     `import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
 import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentItem } from "vscode-languageserver-types";
+
+/**
+ * Method to be used as Tagged Templates to activate embedded rainlang in
+ * javascript/typescript in vscode that highlights the rainlang syntax.
+ * Requires rainlang vscode extension to be installed.
+ */
+export declare function rainlang(stringChunks: TemplateStringsArray, ...vars: any[]): string;
 ` + dts;
 fs.writeFileSync("./dist/cjs/index.d.ts", dts);
 fs.writeFileSync("./dist/esm/index.d.ts", dts);
@@ -36,7 +43,22 @@ let cjs = fs.readFileSync("./temp/node/dotrain.js", { encoding: "utf-8" });
 cjs = cjs.replace(
     `const path = require('path').join(__dirname, 'dotrain_bg.wasm');
 const bytes = require('fs').readFileSync(path);`,
-    `const { Buffer } = require('buffer');
+    `
+/**
+ * Method to be used as Tagged Templates to activate embedded rainlang in
+ * javascript/typescript in vscode that highlights the rainlang syntax.
+ * Requires rainlang vscode extension to be installed.
+ */
+function rainlang(stringChunks, ...vars) {
+    let result = "";
+    for (let i = 0; i < stringChunks.length; i++) {
+        result = result + stringChunks[i] + (vars[i] ?? "");
+    }
+    return result;
+}
+module.exports.rainlang = rainlang;
+
+const { Buffer } = require('buffer');
 const wasmB64 = require('../wasm.json');
 const bytes = Buffer.from(wasmB64.wasm, 'base64');`,
 );
@@ -52,6 +74,19 @@ esm =
     "\n" +
     esm +
     `
+/**
+ * Method to be used as Tagged Templates to activate embedded rainlang in
+ * javascript/typescript in vscode that highlights the rainlang syntax.
+ * Requires rainlang vscode extension to be installed.
+ */
+export function rainlang(stringChunks, ...vars) {
+    let result = "";
+    for (let i = 0; i < stringChunks.length; i++) {
+        result = result + stringChunks[i] + (vars[i] ?? "");
+    }
+    return result;
+}
+
 imports = __wbg_get_imports();
 
 import { Buffer } from 'buffer';

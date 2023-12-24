@@ -9,6 +9,13 @@ import {
 } from "vscode-languageserver-types";
 
 /**
+ * Method to be used as Tagged Templates to activate embedded rainlang in
+ * javascript/typescript in vscode that highlights the rainlang syntax.
+ * Requires rainlang vscode extension to be installed.
+ */
+export declare function rainlang(stringChunks: TemplateStringsArray, ...vars: any[]): string;
+
+/**
  * seraches for a meta for a given hash in the given subgraphs
  * @param {string} hash
  * @param {(string)[]} subgraphs
@@ -93,41 +100,6 @@ export interface ExpressionConfig {
     constants: string[];
 }
 
-export type IAuthoringMeta = {
-    word: string;
-    description: string;
-    operandParserOffset: number;
-}[];
-
-export interface INPE2Deployer {
-    metaHash: string;
-    metaBytes: Uint8Array;
-    bytecode: Uint8Array;
-    parser: Uint8Array;
-    store: Uint8Array;
-    interpreter: Uint8Array;
-    authoringMeta: IAuthoringMeta | undefined;
-}
-
-export interface DeployerQueryResponse {
-    txHash: string;
-    bytecodeMetaHash: string;
-    metaHash: string;
-    metaBytes: Uint8Array;
-    bytecode: Uint8Array;
-    parser: Uint8Array;
-    store: Uint8Array;
-    interpreter: Uint8Array;
-}
-
-export type RainDocumentCompileError =
-    | { Reject: string }
-    | { Problems: Problem[] }
-    | { Revert: any }
-    | { Halt: any };
-
-export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
-
 export interface IRainDocument {
     version: number;
     uri: string;
@@ -143,151 +115,6 @@ export interface IRainDocument {
     namespace: Namespace;
     authoringMeta: IAuthoringMeta | undefined;
     deployer: INPE2Deployer;
-}
-
-export type Offsets = [number, number];
-
-export type ParsedItem = [string, Offsets];
-
-export interface Problem {
-    msg: string;
-    position: Offsets;
-    code: ErrorCode;
-}
-
-export interface Value {
-    value: string;
-    position: Offsets;
-    lhsAlias?: Alias[];
-    id?: string;
-}
-
-export interface OpcodeDetails {
-    name: string;
-    description: string;
-    position: Offsets;
-}
-
-export interface OperandArgItem {
-    value: string;
-    name: string;
-    position: Offsets;
-    description: string;
-}
-
-export interface OperandArg {
-    position: Offsets;
-    args: OperandArgItem[];
-}
-
-export interface Opcode {
-    opcode: OpcodeDetails;
-    operand: number | undefined;
-    output: number | undefined;
-    position: Offsets;
-    parens: Offsets;
-    parameters: Node[];
-    isCtx: [number, number | undefined] | undefined;
-    lhsAlias?: Alias[];
-    operandArgs?: OperandArg;
-}
-
-export interface Alias {
-    name: string;
-    position: Offsets;
-    lhsAlias?: Alias[];
-}
-
-export interface Comment {
-    comment: string;
-    position: Offsets;
-}
-
-export interface DispairImportItem {
-    constructorMetaHash: string;
-    constructorMetaBytes: Uint8Array;
-    parser: Uint8Array;
-    store: Uint8Array;
-    interpreter: Uint8Array;
-    bytecode: Uint8Array;
-    authoringMeta: IAuthoringMeta | undefined;
-}
-
-export interface ImportSequence {
-    dispair?: DispairImportItem;
-    ctxmeta?: ContextAlias[];
-    dotrain?: IRainDocument;
-}
-
-export interface ImportConfiguration {
-    problems: Problem[];
-    pairs: [ParsedItem, ParsedItem | undefined][];
-}
-
-export interface Import {
-    name: string;
-    namePosition: Offsets;
-    hash: string;
-    hashPosition: Offsets;
-    position: Offsets;
-    problems: Problem[];
-    configuration?: ImportConfiguration;
-    sequence?: ImportSequence;
-}
-
-export type Node = Value | Opcode | Alias;
-
-export interface RainlangLine {
-    nodes: Node[];
-    position: Offsets;
-    aliases: Alias[];
-}
-
-export interface RainlangSource {
-    lines: RainlangLine[];
-    position: Offsets;
-}
-
-export type RainlangAST = RainlangSource[];
-
-export interface ElidedBindingItem {
-    msg: string;
-}
-
-export interface ConstantBindingItem {
-    value: string;
-}
-
-export type BindingItem = ElidedBindingItem | ConstantBindingItem | IRainlangDocument;
-
-export interface Binding {
-    name: string;
-    namePosition: Offsets;
-    content: string;
-    contentPosition: Offsets;
-    position: Offsets;
-    problems: Problem[];
-    dependencies: string[];
-    item: BindingItem;
-}
-
-export type NamespaceNodeElement = Binding | ContextAlias | DispairImportItem;
-
-export interface NamespaceNode {
-    hash: string;
-    importIndex: number;
-    element: NamespaceNodeElement;
-}
-
-export type NamespaceItem = NamespaceNode | Namespace;
-
-export type Namespace = Map<string, NamespaceItem>;
-
-export interface ContextAlias {
-    name: string;
-    description: string;
-    column: number;
-    row: number | undefined;
 }
 
 export interface IRainlangDocument {
@@ -590,6 +417,186 @@ export class RainLanguageServices {
     ): SemanticTokensPartialResult;
 }
 
+export type Offsets = [number, number];
+
+export type ParsedItem = [string, Offsets];
+
+export interface Problem {
+    msg: string;
+    position: Offsets;
+    code: ErrorCode;
+}
+
+export interface Value {
+    value: string;
+    position: Offsets;
+    lhsAlias?: Alias[];
+    id?: string;
+}
+
+export interface OpcodeDetails {
+    name: string;
+    description: string;
+    position: Offsets;
+}
+
+export interface OperandArgItem {
+    value: string;
+    name: string;
+    position: Offsets;
+    description: string;
+}
+
+export interface OperandArg {
+    position: Offsets;
+    args: OperandArgItem[];
+}
+
+export interface Opcode {
+    opcode: OpcodeDetails;
+    operand: number | undefined;
+    output: number | undefined;
+    position: Offsets;
+    parens: Offsets;
+    parameters: Node[];
+    isCtx: [number, number | undefined] | undefined;
+    lhsAlias?: Alias[];
+    operandArgs?: OperandArg;
+}
+
+export interface Alias {
+    name: string;
+    position: Offsets;
+    lhsAlias?: Alias[];
+}
+
+export interface Comment {
+    comment: string;
+    position: Offsets;
+}
+
+export interface DispairImportItem {
+    constructorMetaHash: string;
+    constructorMetaBytes: Uint8Array;
+    parser: Uint8Array;
+    store: Uint8Array;
+    interpreter: Uint8Array;
+    bytecode: Uint8Array;
+    authoringMeta: IAuthoringMeta | undefined;
+}
+
+export interface ImportSequence {
+    dispair?: DispairImportItem;
+    ctxmeta?: ContextAlias[];
+    dotrain?: IRainDocument;
+}
+
+export interface ImportConfiguration {
+    problems: Problem[];
+    pairs: [ParsedItem, ParsedItem | undefined][];
+}
+
+export interface Import {
+    name: string;
+    namePosition: Offsets;
+    hash: string;
+    hashPosition: Offsets;
+    position: Offsets;
+    problems: Problem[];
+    configuration?: ImportConfiguration;
+    sequence?: ImportSequence;
+}
+
+export type Node = Value | Opcode | Alias;
+
+export interface RainlangLine {
+    nodes: Node[];
+    position: Offsets;
+    aliases: Alias[];
+}
+
+export interface RainlangSource {
+    lines: RainlangLine[];
+    position: Offsets;
+}
+
+export type RainlangAST = RainlangSource[];
+
+export interface ElidedBindingItem {
+    msg: string;
+}
+
+export interface ConstantBindingItem {
+    value: string;
+}
+
+export type BindingItem = ElidedBindingItem | ConstantBindingItem | IRainlangDocument;
+
+export interface Binding {
+    name: string;
+    namePosition: Offsets;
+    content: string;
+    contentPosition: Offsets;
+    position: Offsets;
+    problems: Problem[];
+    dependencies: string[];
+    item: BindingItem;
+}
+
+export type NamespaceNodeElement = Binding | ContextAlias | DispairImportItem;
+
+export interface NamespaceNode {
+    hash: string;
+    importIndex: number;
+    element: NamespaceNodeElement;
+}
+
+export type NamespaceItem = NamespaceNode | Namespace;
+
+export type Namespace = Map<string, NamespaceItem>;
+
+export interface ContextAlias {
+    name: string;
+    description: string;
+    column: number;
+    row: number | undefined;
+}
+
+export type IAuthoringMeta = {
+    word: string;
+    description: string;
+    operandParserOffset: number;
+}[];
+
+export interface INPE2Deployer {
+    metaHash: string;
+    metaBytes: Uint8Array;
+    bytecode: Uint8Array;
+    parser: Uint8Array;
+    store: Uint8Array;
+    interpreter: Uint8Array;
+    authoringMeta: IAuthoringMeta | undefined;
+}
+
+export interface DeployerQueryResponse {
+    txHash: string;
+    bytecodeMetaHash: string;
+    metaHash: string;
+    metaBytes: Uint8Array;
+    bytecode: Uint8Array;
+    parser: Uint8Array;
+    store: Uint8Array;
+    interpreter: Uint8Array;
+}
+
+export type RainDocumentCompileError =
+    | { Reject: string }
+    | { Problems: Problem[] }
+    | { Revert: any }
+    | { Halt: any };
+
+export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
+
 /**
  * # RainDocument
  * RainDocument is the main implementation block that enables parsing of a .rain file contents
@@ -690,9 +697,61 @@ export class RainDocument {
     /**
      * Compiles this instance
      * @param {(string)[]} entrypoints
+     * @returns {ExpressionConfig}
+     */
+    compile(entrypoints: string[]): ExpressionConfig;
+    /**
+     * Compiles a text as RainDocument with remote meta search enabled for parsing
+     * @param {string} text
+     * @param {(string)[]} entrypoints
+     * @param {MetaStore} meta_store
+     * @param {string | undefined} [uri]
      * @returns {Promise<ExpressionConfig>}
      */
-    compile(entrypoints: string[]): Promise<ExpressionConfig>;
+    static compileTextAsync(
+        text: string,
+        entrypoints: string[],
+        meta_store: MetaStore,
+        uri?: string,
+    ): Promise<ExpressionConfig>;
+    /**
+     * Compiles a text as RainDocument with remote meta search enabled for parsing
+     * @param {string} text
+     * @param {(string)[]} entrypoints
+     * @param {string | undefined} [uri]
+     * @returns {Promise<ExpressionConfig>}
+     */
+    static compileTextRawAsync(
+        text: string,
+        entrypoints: string[],
+        uri?: string,
+    ): Promise<ExpressionConfig>;
+    /**
+     * Compiles a text as RainDocument with remote meta search disabled for parsing
+     * @param {string} text
+     * @param {(string)[]} entrypoints
+     * @param {MetaStore} meta_store
+     * @param {string | undefined} [uri]
+     * @returns {Promise<ExpressionConfig>}
+     */
+    static compileText(
+        text: string,
+        entrypoints: string[],
+        meta_store: MetaStore,
+        uri?: string,
+    ): Promise<ExpressionConfig>;
+    /**
+     * Compiles a text as RainDocument with remote meta search disabled for parsing
+     * @param {string} text
+     * @param {(string)[]} entrypoints
+     * @param {string | undefined} [uri]
+     * @returns {Promise<ExpressionConfig>}
+     */
+    static compileTextRaw(
+        text: string,
+        entrypoints: string[],
+        uri?: string,
+    ): Promise<ExpressionConfig>;
     /**
      * This instance's all problems (bindings + top)
      */

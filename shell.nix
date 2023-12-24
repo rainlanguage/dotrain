@@ -68,6 +68,7 @@ let
     pkgs.mkShell {
         name = "shell";
         buildInputs = [
+            pkgs.rustup
             pkgs.emscripten
             pkgs.nixpkgs-fmt
             pkgs.nodejs-18_x
@@ -91,9 +92,8 @@ let
             pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
         ]);
         shellHook = ''
-            export PATH=$( npm bin ):$PATH
             # keep it fresh
             npm install
         '';
     }
-    
+

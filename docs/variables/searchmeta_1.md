@@ -2,6 +2,8 @@
 
 # Function searchMeta()
 
+seraches for a meta for a given hash in the given subgraphs
+
 <b>Signature:</b>
 
 ```typescript

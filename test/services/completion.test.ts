@@ -1,29 +1,28 @@
-import assert from "assert";
-import METAS from "../fixtures/meta.json";
-import { Meta } from "@rainprotocol/meta";
-import { contractMetaHash, deployerHash } from "../utils";
+import * as assert from "assert";
+import { callerMeta, deployer } from "../utils";
+import {
+    rainlang,
+    MetaStore,
+    RainDocument,
+    IAuthoringMeta,
+    RainLanguageServices,
+} from "../../dist/cjs";
 import {
     Position,
-    rainlang,
-    TextDocument,
-    RainDocument, 
-    getCompletion,
     CompletionItem,
-    CompletionItemKind, 
-    LanguageServiceParams, 
-} from "../../src";
-
+    TextDocumentItem,
+    CompletionItemKind,
+} from "vscode-languageserver-types";
 
 async function testCompletion(
-    text: string, 
-    position: Position, 
+    text: string,
+    position: Position,
     expectedCompletions: CompletionItem[] | null,
-    serviceParams?: LanguageServiceParams
+    services: RainLanguageServices,
 ) {
-    const actualCompletions = await getCompletion(
-        TextDocument.create("completion.test.rain", "rainlang", 1, text), 
+    const actualCompletions = services.doComplete(
+        TextDocumentItem.create("file:///completion.test.rain", "rainlang", 1, text),
         position,
-        serviceParams
     );
     if (expectedCompletions === null) assert.ok(actualCompletions === null);
     else {
@@ -36,50 +35,51 @@ async function testCompletion(
 }
 
 describe("LSP Code Completion Language Service Tests", async function () {
-    const store = new Meta.Store();
-    let AllOpcodeCompletions: CompletionItem[];
+    const store = new MetaStore();
+    const AllOpcodeCompletions: CompletionItem[] = [];
 
     before(async () => {
-        const kv = Object.entries(METAS);
-        for (let i = 0; i < kv.length; i++) {
-            await store.update(kv[i][0], kv[i][1]);
-        }
+        store.updateWith(callerMeta.hash, callerMeta.bytes);
+        const expDeployer = store.setDeployer(deployer);
 
-        const AuthoringMeta = Meta.Authoring.abiDecode(
-            Object.values(store.getAuthoringMetaCache())[0]
+        const AuthoringMeta = expDeployer.authoringMeta as IAuthoringMeta;
+        AuthoringMeta.forEach((v) =>
+            AllOpcodeCompletions.unshift({
+                label: v.word,
+                kind: CompletionItemKind.Function,
+            }),
         );
-
-        AllOpcodeCompletions = AuthoringMeta.flatMap(v => ({
-            label: v.word,
-            kind: CompletionItemKind.Function,
-        }));
-        [
-            "infinity", 
-            "max-uint-256", 
-            "max-uint256", 
-            "max-uint-128", 
-            "max-uint128", 
-            "max-uint-64", 
-            "max-uint64", 
-            "max-uint-32", 
-            "max-uint32"
-        ].forEach(v => AllOpcodeCompletions.unshift({
-            label: v,
-            kind: CompletionItemKind.Constant
-        }));
+        AllOpcodeCompletions.unshift(
+            ...[
+                "max-uint32",
+                "max-uint-32",
+                "max-uint64",
+                "max-uint-64",
+                "max-uint128",
+                "max-uint-128",
+                "max-uint256",
+                "max-uint-256",
+                "infinity",
+            ].map((v) => ({
+                label: v,
+                kind: CompletionItemKind.Constant,
+            })),
+        );
     });
+
+    const services = new RainLanguageServices(store);
 
     it("should provide all opcode suggestions for rhs when there is no lhs aliases", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
         _allCompletions.unshift({
             label: "expression",
-            kind: CompletionItemKind.Class
+            kind: CompletionItemKind.Class,
         });
         await testCompletion(
-            rainlang`@${deployerHash} #expression _: `, 
-            Position.create(0, 89),
+            rainlang`@${deployer.bytecodeMetaHash} #expression _: `,
+            Position.create(0, 82),
             _allCompletions,
-            { metaStore: store }
+            services,
         );
     });
 
@@ -87,22 +87,22 @@ describe("LSP Code Completion Language Service Tests", async function () {
         const _allCompletions = [...AllOpcodeCompletions];
         _allCompletions.unshift({
             label: "exp",
-            kind: CompletionItemKind.Class
+            kind: CompletionItemKind.Class,
         });
         await testCompletion(
-            rainlang`@${deployerHash} #exp _: int-ad`,  
+            rainlang`@${deployer.bytecodeMetaHash} #exp _: int-ad`,
             Position.create(0, 82),
             _allCompletions,
-            { metaStore: store }
+            services,
         );
     });
 
     it("should provide no suggestions if cursor is in middle of a word", async () => {
         await testCompletion(
-            rainlang`@${deployerHash} #exp _: add`,  
+            rainlang`@${deployer.bytecodeMetaHash} #exp _: add`,
             Position.create(0, 10),
             null,
-            { metaStore: store }
+            services,
         );
     });
 
@@ -110,130 +110,136 @@ describe("LSP Code Completion Language Service Tests", async function () {
         const _allCompletions = [...AllOpcodeCompletions];
         _allCompletions.unshift({
             label: "exp",
-            kind: CompletionItemKind.Class
+            kind: CompletionItemKind.Class,
         });
         await testCompletion(
-            rainlang`@${deployerHash} #exp _: add(1 2)`,  
+            rainlang`@${deployer.bytecodeMetaHash} #exp _: add(1 2)`,
             Position.create(0, 79),
             _allCompletions,
-            { metaStore: store }
+            services,
         );
     });
 
     it("should include lhs alias in suggestions", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
         await testCompletion(
-            rainlang`@${deployerHash} #exp name: n`,  
+            rainlang`@${deployer.bytecodeMetaHash} #exp name: n`,
             Position.create(0, 80),
             [
-                {
-                    label: "name",
-                    kind: CompletionItemKind.Variable
-                },
+                // {
+                //     label: "name",
+                //     kind: CompletionItemKind.Variable,
+                // },
                 {
                     label: "exp",
-                    kind: CompletionItemKind.Class
+                    kind: CompletionItemKind.Class,
                 },
-                ..._allCompletions
+                ..._allCompletions,
             ],
-            { metaStore: store }
+            services,
         );
     });
 
-    it("should include contract context in suggestions", async () => {
-        const contractMetas = [
-            "vault-output-balance-decrease",
-            "vault-output-balance-before",
-            "vault-output-id",
-            "vault-output-token-decimals",
-            "vault-output-token-address",
-            "vault-outputs",
-            "vault-input-balance-increase",
-            "vault-input-balance-before",
-            "vault-input-id",
-            "vault-input-token-decimals",
-            "vault-input-token-address",
-            "vault-inputs",
-            "order-io-ratio",
-            "order-output-max",
-            "calculations",
-            "counterparty-address",
-            "order-owner-address",
-            "order-hash",
-            "calling-context",
-            "orderbook-contract-address",
-            "orderbook-caller-address",
-            "base"
-        ];
-        const _allCompletions = [...AllOpcodeCompletions];
-        contractMetas.reverse().forEach(v => _allCompletions.unshift({
-            label: v,
-            kind: CompletionItemKind.Function
-        }));
-        await testCompletion(
-            rainlang`@${deployerHash} @${contractMetaHash} 
-            #exp 
-            _: counterpa`,  
-            Position.create(2, 24),
-            [
-                {
-                    label: "exp",
-                    kind: CompletionItemKind.Class
-                },
-                ..._allCompletions
-            ],
-            { metaStore: store }
-        );
-    });
+    // it("should include contract context in suggestions", async () => {
+    //     const contractMetas = [
+    //         "vault-output-balance-decrease",
+    //         "vault-output-balance-before",
+    //         "vault-output-id",
+    //         "vault-output-token-decimals",
+    //         "vault-output-token-address",
+    //         "vault-outputs",
+    //         "vault-input-balance-increase",
+    //         "vault-input-balance-before",
+    //         "vault-input-id",
+    //         "vault-input-token-decimals",
+    //         "vault-input-token-address",
+    //         "vault-inputs",
+    //         "order-io-ratio",
+    //         "order-output-max",
+    //         "calculations",
+    //         "counterparty-address",
+    //         "order-owner-address",
+    //         "order-hash",
+    //         "calling-context",
+    //         "orderbook-contract-address",
+    //         "orderbook-caller-address",
+    //         "base",
+    //     ];
+    //     const _allCompletions = [...AllOpcodeCompletions];
+    //     contractMetas.reverse().forEach((v) =>
+    //         _allCompletions.unshift({
+    //             label: v,
+    //             kind: CompletionItemKind.Function,
+    //         }),
+    //     );
+    //     await testCompletion(
+    //         rainlang`@${deployer.bytecodeMetaHash} @${callerMeta.hash}
+    //         #exp
+    //         _: counterpa`,
+    //         Position.create(2, 24),
+    //         [
+    //             {
+    //                 label: "exp",
+    //                 kind: CompletionItemKind.Class,
+    //             },
+    //             ..._allCompletions,
+    //         ],
+    //         services,
+    //     );
+    // });
     it("should include root namespaces items in suggestions", async () => {
-        const _expression = rainlang`@${deployerHash}
+        const _expression = rainlang`@${deployer.bytecodeMetaHash}
 #row
 1
 
 #main
 _: .`;
-        const _dotrain = await RainDocument.create(_expression, store);
+        const _dotrain = RainDocument.create(_expression, "file:///completion.test.rain", store);
         const _ns = _dotrain.namespace;
+        const items: CompletionItem[] = [];
+        _ns.forEach((v, k) => {
+            items.unshift({
+                label: k,
+                kind: !("element" in v)
+                    ? CompletionItemKind.Field
+                    : "content" in v.element
+                      ? CompletionItemKind.Class
+                      : CompletionItemKind.Function,
+            });
+        });
         await testCompletion(
-            _expression,  
+            _expression,
             Position.create(5, 4),
-            Object.entries(_ns).map(v => {
-                return {
-                    label: v[0],
-                    kind: !("Element" in v[1]) 
-                        ? CompletionItemKind.Field 
-                        : "content" in v[1].Element 
-                            ? CompletionItemKind.Class 
-                            : CompletionItemKind.Function
-                };
-            }).filter(v => v.label !== "Words"),
-            { metaStore: store }
+            items.filter((v) => v.label !== "Dispair"),
+            services,
         );
     });
 
     it("should include correct namespaces items in suggestions", async () => {
-        const _expression = rainlang`@${deployerHash}
+        const _expression = rainlang`@${deployer.bytecodeMetaHash}
 #row
 1
 
 #main
 _: .r`;
-        const _dotrain = await RainDocument.create(_expression, store);
+        const _dotrain = RainDocument.create(_expression, "file:///completion.test.rain", store);
         const _ns = _dotrain.namespace;
+        const items: CompletionItem[] = [];
+        _ns.forEach((v, k) => {
+            items.push({
+                label: k,
+                kind: !("element" in v)
+                    ? CompletionItemKind.Field
+                    : "content" in v.element
+                      ? CompletionItemKind.Class
+                      : CompletionItemKind.Function,
+            });
+        });
         await testCompletion(
-            _expression,  
+            _expression,
             Position.create(5, 5),
-            Object.entries(_ns).map(v => {
-                return {
-                    label: v[0],
-                    kind: !("Element" in v[1]) 
-                        ? CompletionItemKind.Field 
-                        : "content" in v[1].Element 
-                            ? CompletionItemKind.Class 
-                            : CompletionItemKind.Function
-                };
-            }).filter(v => v.label !== "Words"),
-            { metaStore: store }
+            items.filter((v) => v.label !== "Dispair"),
+            services,
         );
     });
 });

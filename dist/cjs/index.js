@@ -323,7 +323,7 @@ function handleError(f, args) {
         wasm.__wbindgen_exn_store(addHeapObject(e));
     }
 }
-function __wbg_adapter_209(arg0, arg1, arg2, arg3) {
+function __wbg_adapter_215(arg0, arg1, arg2, arg3) {
     wasm.wasm_bindgen__convert__closures__invoke2_mut__h0ba9c857928f5587(
         arg0,
         arg1,
@@ -1168,12 +1168,119 @@ class RainDocument {
     /**
      * Compiles this instance
      * @param {(string)[]} entrypoints
-     * @returns {Promise<ExpressionConfig>}
+     * @returns {ExpressionConfig}
      */
     compile(entrypoints) {
-        const ptr0 = passArrayJsValueToWasm0(entrypoints, wasm.__wbindgen_malloc);
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            const ptr0 = passArrayJsValueToWasm0(entrypoints, wasm.__wbindgen_malloc);
+            const len0 = WASM_VECTOR_LEN;
+            wasm.raindocument_compile(retptr, this.__wbg_ptr, ptr0, len0);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var r2 = getInt32Memory0()[retptr / 4 + 2];
+            if (r2) {
+                throw takeObject(r1);
+            }
+            return takeObject(r0);
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+     * Compiles a text as RainDocument with remote meta search enabled for parsing
+     * @param {string} text
+     * @param {(string)[]} entrypoints
+     * @param {MetaStore} meta_store
+     * @param {string | undefined} [uri]
+     * @returns {Promise<ExpressionConfig>}
+     */
+    static compileTextAsync(text, entrypoints, meta_store, uri) {
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.raindocument_compile(this.__wbg_ptr, ptr0, len0);
+        const ptr1 = passArrayJsValueToWasm0(entrypoints, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        _assertClass(meta_store, MetaStore);
+        var ptr2 = isLikeNone(uri)
+            ? 0
+            : passStringToWasm0(uri, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len2 = WASM_VECTOR_LEN;
+        const ret = wasm.raindocument_compileTextAsync(
+            ptr0,
+            len0,
+            ptr1,
+            len1,
+            meta_store.__wbg_ptr,
+            ptr2,
+            len2,
+        );
+        return takeObject(ret);
+    }
+    /**
+     * Compiles a text as RainDocument with remote meta search enabled for parsing
+     * @param {string} text
+     * @param {(string)[]} entrypoints
+     * @param {string | undefined} [uri]
+     * @returns {Promise<ExpressionConfig>}
+     */
+    static compileTextRawAsync(text, entrypoints, uri) {
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArrayJsValueToWasm0(entrypoints, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        var ptr2 = isLikeNone(uri)
+            ? 0
+            : passStringToWasm0(uri, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len2 = WASM_VECTOR_LEN;
+        const ret = wasm.raindocument_compileTextRawAsync(ptr0, len0, ptr1, len1, ptr2, len2);
+        return takeObject(ret);
+    }
+    /**
+     * Compiles a text as RainDocument with remote meta search disabled for parsing
+     * @param {string} text
+     * @param {(string)[]} entrypoints
+     * @param {MetaStore} meta_store
+     * @param {string | undefined} [uri]
+     * @returns {Promise<ExpressionConfig>}
+     */
+    static compileText(text, entrypoints, meta_store, uri) {
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArrayJsValueToWasm0(entrypoints, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        _assertClass(meta_store, MetaStore);
+        var ptr2 = isLikeNone(uri)
+            ? 0
+            : passStringToWasm0(uri, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len2 = WASM_VECTOR_LEN;
+        const ret = wasm.raindocument_compileText(
+            ptr0,
+            len0,
+            ptr1,
+            len1,
+            meta_store.__wbg_ptr,
+            ptr2,
+            len2,
+        );
+        return takeObject(ret);
+    }
+    /**
+     * Compiles a text as RainDocument with remote meta search disabled for parsing
+     * @param {string} text
+     * @param {(string)[]} entrypoints
+     * @param {string | undefined} [uri]
+     * @returns {Promise<ExpressionConfig>}
+     */
+    static compileTextRaw(text, entrypoints, uri) {
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArrayJsValueToWasm0(entrypoints, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        var ptr2 = isLikeNone(uri)
+            ? 0
+            : passStringToWasm0(uri, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len2 = WASM_VECTOR_LEN;
+        const ret = wasm.raindocument_compileTextRaw(ptr0, len0, ptr1, len1, ptr2, len2);
         return takeObject(ret);
     }
 }
@@ -1569,16 +1676,6 @@ module.exports.__wbindgen_object_drop_ref = function (arg0) {
     takeObject(arg0);
 };
 
-module.exports.__wbindgen_cb_drop = function (arg0) {
-    const obj = takeObject(arg0).original;
-    if (obj.cnt-- == 1) {
-        obj.a = 0;
-        return true;
-    }
-    const ret = false;
-    return ret;
-};
-
 module.exports.__wbindgen_number_new = function (arg0) {
     const ret = arg0;
     return addHeapObject(ret);
@@ -1672,6 +1769,16 @@ module.exports.__wbg_raindocument_new = function (arg0) {
 module.exports.__wbindgen_string_new = function (arg0, arg1) {
     const ret = getStringFromWasm0(arg0, arg1);
     return addHeapObject(ret);
+};
+
+module.exports.__wbindgen_cb_drop = function (arg0) {
+    const obj = takeObject(arg0).original;
+    if (obj.cnt-- == 1) {
+        obj.a = 0;
+        return true;
+    }
+    const ret = false;
+    return ret;
 };
 
 module.exports.__wbindgen_is_function = function (arg0) {
@@ -1803,6 +1910,10 @@ module.exports.__wbg_String_88810dfeb4021902 = function (arg0, arg1) {
 module.exports.__wbg_getwithrefkey_5e6d9547403deab8 = function (arg0, arg1) {
     const ret = getObject(arg0)[getObject(arg1)];
     return addHeapObject(ret);
+};
+
+module.exports.__wbg_set_841ac57cff3d672b = function (arg0, arg1, arg2) {
+    getObject(arg0)[takeObject(arg1)] = takeObject(arg2);
 };
 
 module.exports.__wbg_get_f01601b5a68d10e3 = function (arg0, arg1) {
@@ -1958,7 +2069,7 @@ module.exports.__wbg_new_60f57089c7563e81 = function (arg0, arg1) {
             const a = state0.a;
             state0.a = 0;
             try {
-                return __wbg_adapter_209(a, state0.b, arg0, arg1);
+                return __wbg_adapter_215(a, state0.b, arg0, arg1);
             } finally {
                 state0.a = a;
             }
@@ -2065,10 +2176,24 @@ module.exports.__wbindgen_memory = function () {
     return addHeapObject(ret);
 };
 
-module.exports.__wbindgen_closure_wrapper3503 = function (arg0, arg1, arg2) {
-    const ret = makeMutClosure(arg0, arg1, 1175, __wbg_adapter_50);
+module.exports.__wbindgen_closure_wrapper3553 = function (arg0, arg1, arg2) {
+    const ret = makeMutClosure(arg0, arg1, 1209, __wbg_adapter_50);
     return addHeapObject(ret);
 };
+
+/**
+ * Method to be used as Tagged Templates to activate embedded rainlang in
+ * javascript/typescript in vscode that highlights the rainlang syntax.
+ * Requires rainlang vscode extension to be installed.
+ */
+function rainlang(stringChunks, ...vars) {
+    let result = "";
+    for (let i = 0; i < stringChunks.length; i++) {
+        result = result + stringChunks[i] + (vars[i] ?? "");
+    }
+    return result;
+}
+module.exports.rainlang = rainlang;
 
 const { Buffer } = require("buffer");
 const wasmB64 = require("../wasm.json");

@@ -6,7 +6,7 @@ use rain_meta::types::authoring::v1::AuthoringMeta;
 use super::{
     raindocument::RAIN_DOCUMENT_CONSTANTS,
     super::types::{*, ast::*, patterns::*},
-    line_number, to_bigint, inclusive_parse, fill_in, exclusive_parse, tracked_trim,
+    line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
 };
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
@@ -185,7 +185,7 @@ impl Default for RainlangDocument {
 impl RainlangDocument {
     pub(crate) fn _new(text: String) -> RainlangDocument {
         RainlangDocument {
-            text: text,
+            text,
             ast: vec![],
             problems: vec![],
             comments: vec![],
@@ -486,7 +486,7 @@ impl RainlangDocument {
                     } else {
                         self.problems.push(Problem {
                             msg: "unexpected \")\"".to_owned(),
-                            position: [cursor, cursor],
+                            position: [cursor, cursor + 1],
                             code: ErrorCode::UnexpectedClosingParen,
                         });
                     }
@@ -495,7 +495,7 @@ impl RainlangDocument {
                         if !c.is_whitespace() && c != ',' && c != ')' {
                             self.problems.push(Problem {
                                 msg: "expected to be separated by space".to_owned(),
-                                position: [cursor, cursor],
+                                position: [cursor, cursor + 1],
                                 code: ErrorCode::ExpectedSpace,
                             });
                         }
@@ -536,7 +536,7 @@ impl RainlangDocument {
             self.problems.retain(|v| {
                 v.msg != "expected \")\""
                     || v.position[0] != node.opcode.position[0]
-                    || v.position[1] != node.parens[0]
+                    || v.position[1] != node.parens[0] + 1
             });
             Ok(())
         } else {
@@ -760,7 +760,7 @@ impl RainlangDocument {
                 self.problems.push(Problem {
                     msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis".to_owned(),
                     position: next_pos,
-                    code: ErrorCode::ExpectedSpace
+                    code: ErrorCode::ExpectedOpcode
                 });
             }
             if next.contains('.') {
@@ -789,7 +789,9 @@ impl RainlangDocument {
                     }
                 }
             } else {
-                if !WORD_PATTERN.is_match(next) {
+                if next.is_empty() {
+                    // @TODO - improve problems
+                } else if !WORD_PATTERN.is_match(next) {
                     self.problems.push(Problem {
                         msg: format!("invalid word pattern: {}", next),
                         position: next_pos,
@@ -830,7 +832,7 @@ impl RainlangDocument {
                 self.state.depth += 1;
                 self.problems.push(Problem {
                     msg: "expected \")\"".to_owned(),
-                    position: [next_pos[0], pos],
+                    position: [next_pos[0], pos + 1],
                     code: ErrorCode::ExpectedClosingParen,
                 });
             } else {
@@ -908,23 +910,12 @@ impl RainlangDocument {
                 }
             } else {
                 if NUMERIC_PATTERN.is_match(next) {
-                    match to_bigint(next) {
-                        Ok(v) => {
-                            if MAX_BIG_UINT_256.lt(&v) {
-                                self.problems.push(Problem {
-                                    msg: "value greater than 32 bytes in size".to_owned(),
-                                    position: next_pos,
-                                    code: ErrorCode::OutOfRangeValue,
-                                });
-                            }
-                        }
-                        Err(_e) => {
-                            self.problems.push(Problem {
-                                msg: "value out of range".to_owned(),
-                                position: next_pos,
-                                code: ErrorCode::OutOfRangeValue,
-                            });
-                        }
+                    if to_u256(next).is_err() {
+                        self.problems.push(Problem {
+                            msg: "value out of range".to_owned(),
+                            position: next_pos,
+                            code: ErrorCode::OutOfRangeValue,
+                        });
                     }
                     self.update_state(Node::Value(Value {
                         value: next.to_owned(),

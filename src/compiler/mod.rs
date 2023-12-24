@@ -1,11 +1,15 @@
 // #![allow(non_snake_case)]
 
 use regex::Regex;
+use lsp_types::Url;
 use self::evm_helpers::*;
-use std::collections::VecDeque;
 use serde::{Serialize, Deserialize};
 use alloy_sol_types::{SolCall, SolInterface};
-use rain_meta::{types::authoring::v1::AuthoringMeta, NPE2Deployer};
+use std::{
+    collections::VecDeque,
+    sync::{Arc, RwLock},
+};
+use rain_meta::{types::authoring::v1::AuthoringMeta, NPE2Deployer, Store};
 use self::INativeParser::{INativeParserErrors, parseCall, parseReturn};
 use revm::{
     EVM,
@@ -22,7 +26,7 @@ use super::{
             NamespaceNodeElement,
         },
     },
-    parser::{RainlangDocument, RainDocument, exclusive_parse, binary_to_int},
+    parser::{RainlangDocument, RainDocument, exclusive_parse, binary_to_u256},
 };
 
 pub mod evm_helpers;
@@ -128,6 +132,40 @@ impl RainlangDocument {
 }
 
 impl RainDocument {
+    /// compiles a given text as RainDocument with remote meta search disabled for parsing
+    pub fn compile_text(
+        text: &str,
+        entrypoints: &[String],
+        uri: Option<Url>,
+        meta_store: Option<Arc<RwLock<Store>>>,
+        evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
+    ) -> Result<ExpressionConfig, RainDocumentCompileError> {
+        let u = if let Some(v) = uri {
+            v
+        } else {
+            Url::parse("file:///untitled.rain").unwrap()
+        };
+        RainDocument::create(text.to_string(), u, meta_store).compile(entrypoints, evm)
+    }
+
+    /// compiles a given text as RainDocument with remote meta search enabled for parsing
+    pub async fn compile_text_async(
+        text: &str,
+        entrypoints: &[String],
+        uri: Option<Url>,
+        meta_store: Option<Arc<RwLock<Store>>>,
+        evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
+    ) -> Result<ExpressionConfig, RainDocumentCompileError> {
+        let u = if let Some(v) = uri {
+            v
+        } else {
+            Url::parse("file:///untitled.rain").unwrap()
+        };
+        RainDocument::create_async(text.to_string(), u, meta_store)
+            .await
+            .compile(entrypoints, evm)
+    }
+
     /// Compiles to ExpressionConfig after building a rainlang text from the specified
     /// entrypoints by building sourcemap
     pub fn compile(
@@ -391,6 +429,9 @@ impl RainDocument {
     }
 }
 
+pub struct Compile;
+impl Compile {}
+
 /// Searchs in a Namespace for a given name
 fn search_namespace<'a>(
     name: &str,
@@ -478,7 +519,7 @@ fn build_sourcemap(
                         .overwrite(
                             v.position[0] as i64,
                             v.position[1] as i64,
-                            &binary_to_int(&v.value),
+                            &binary_to_u256(&v.value).map_err(|e| e.to_string())?.to_string(),
                             OverwriteOptions::default(),
                         )
                         .or(Err("could not build sourcemap".to_owned()))?;

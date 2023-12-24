@@ -1,5 +1,4 @@
 use regex::Regex;
-use num_bigint::BigUint;
 use once_cell::sync::Lazy;
 
 /// Illegal character pattern
@@ -73,9 +72,6 @@ pub const LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*$
 
 /// the default elided binding msg
 pub const DEFAULT_ELISION: &str = "elided binding, requires rebinding";
-
-/// max uint256 as BigUint
-pub const MAX_BIG_UINT_256: Lazy<BigUint> = Lazy::new(|| BigUint::from_bytes_be(&[255u8; 32]));
 
 /// Lint patterns for RainDocument/RainlangDocument
 pub struct LintPatterns;

@@ -7,5 +7,6 @@ tsconfig.json
 .DS_Store
 op.meta.schema.json
 LICENSE
+fixtures
+*.rain
 *.json
-z

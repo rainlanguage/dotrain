@@ -781,7 +781,6 @@ dependencies = [
  "js-sys",
  "lsp-types",
  "magic_string",
- "num-bigint",
  "once_cell",
  "rain-meta",
  "regex",
@@ -796,6 +795,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tsify",
+ "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
 ]

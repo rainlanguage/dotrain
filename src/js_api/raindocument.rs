@@ -1,11 +1,9 @@
 use lsp_types::Url;
 use wasm_bindgen::prelude::*;
-use crate::INPE2Deployer;
-
 use super::{
     store::MetaStore,
     super::{
-        Namespace, IRainDocument, IAuthoringMeta,
+        Namespace, IRainDocument, IAuthoringMeta, INPE2Deployer,
         parser::raindocument::RainDocument,
         compiler::RainDocumentCompileError,
         types::{
@@ -234,10 +232,73 @@ impl RainDocument {
 
     /// Compiles this instance
     #[wasm_bindgen(js_name = "compile")]
-    pub async fn js_compile(
+    pub fn js_compile(
         &self,
         entrypoints: Vec<String>,
     ) -> Result<ExpressionConfig, RainDocumentCompileError> {
         self.compile(&entrypoints, None)
+    }
+
+    /// Compiles a text as RainDocument with remote meta search enabled for parsing
+    #[wasm_bindgen(js_name = "compileTextAsync")]
+    pub async fn js_compile_text_async(
+        text: &str,
+        entrypoints: Vec<String>,
+        meta_store: &MetaStore,
+        uri: Option<String>,
+    ) -> Result<ExpressionConfig, RainDocumentCompileError> {
+        let uri = if let Some(v) = uri {
+            Some(Url::parse(&v).unwrap_throw())
+        } else {
+            None
+        };
+        RainDocument::compile_text_async(text, &entrypoints, uri, Some(meta_store.0.clone()), None)
+            .await
+    }
+
+    /// Compiles a text as RainDocument with remote meta search enabled for parsing
+    #[wasm_bindgen(js_name = "compileTextRawAsync")]
+    pub async fn js_compile_text_raw_async(
+        text: &str,
+        entrypoints: Vec<String>,
+        uri: Option<String>,
+    ) -> Result<ExpressionConfig, RainDocumentCompileError> {
+        let uri = if let Some(v) = uri {
+            Some(Url::parse(&v).unwrap_throw())
+        } else {
+            None
+        };
+        RainDocument::compile_text_async(text, &entrypoints, uri, None, None).await
+    }
+
+    /// Compiles a text as RainDocument with remote meta search disabled for parsing
+    #[wasm_bindgen(js_name = "compileText")]
+    pub async fn js_compile_text(
+        text: &str,
+        entrypoints: Vec<String>,
+        meta_store: &MetaStore,
+        uri: Option<String>,
+    ) -> Result<ExpressionConfig, RainDocumentCompileError> {
+        let uri = if let Some(v) = uri {
+            Some(Url::parse(&v).unwrap_throw())
+        } else {
+            None
+        };
+        RainDocument::compile_text(text, &entrypoints, uri, Some(meta_store.0.clone()), None)
+    }
+
+    /// Compiles a text as RainDocument with remote meta search disabled for parsing
+    #[wasm_bindgen(js_name = "compileTextRaw")]
+    pub async fn js_compile_text_raw(
+        text: &str,
+        entrypoints: Vec<String>,
+        uri: Option<String>,
+    ) -> Result<ExpressionConfig, RainDocumentCompileError> {
+        let uri = if let Some(v) = uri {
+            Some(Url::parse(&v).unwrap_throw())
+        } else {
+            None
+        };
+        RainDocument::compile_text(text, &entrypoints, uri, None, None)
     }
 }
