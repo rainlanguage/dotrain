@@ -42,7 +42,7 @@
         "lint": "eslint \"src/**\" \"test/**\"",
         "lint-fix": "eslint \"dist/**\" \"test/**\" --fix",
         "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
-        "move-api": "copyfiles \"./dotrain.api.json\" \"./docs\" && rimraf ./dotrain.api.json"
+        "move-api": "copyfiles \"./dotrain.api.json\" \"./docs\" && rimraf ./dotrain.api.json && rimraf ./dist/cjs/tsdoc-metadata.json"
     },
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",

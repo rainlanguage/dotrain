@@ -9,23 +9,19 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Install NodeJS v18
-        uses: actions/setup-node@v3
+      - name: Install nix
+        uses: cachix/install-nix-action@v13
         with:
-          node-version: 18
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm install --ignore-scripts
+          nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Build
-        run: npm run build
+        run: nix-shell
 
       - name: Lint
-        run: npm run lint
+        run: nix-shell --run lint
 
       - name: Test
-        run: npm test
+        run: nix-shell --run local-test
 
       - name: Test Docs Generation
-        run: npm run docgen
+        run: nix-shell --run docgen
