@@ -1,6 +1,6 @@
 import * as assert from "assert";
-import { MetaStore, RainLanguageServices, rainlang } from "../../dist/cjs";
 import { callerMeta, deployer, toRange } from "../utils";
+import { MetaStore, RainLanguageServices, rainlang } from "../../dist/cjs";
 import { Hover, Position, TextDocumentItem } from "vscode-languageserver-types";
 
 async function testHover(

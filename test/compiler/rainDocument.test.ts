@@ -11,7 +11,7 @@ describe("RainDocument Compiler Tests", async function () {
     const metaStore = new MetaStore();
 
     before(async () => {
-        const x = metaStore.setDeployer(deployer);
+        metaStore.setDeployer(deployer);
     });
 
     it("should fail if no dispair is specified", async () => {
@@ -59,7 +59,7 @@ describe("RainDocument Compiler Tests", async function () {
     //     });
     // });
 
-    // it.only("should not accept rainlang fragment `_ _:;`", async () => {
+    // it("should not accept rainlang fragment `_ _:;`", async () => {
     //     await assertError(
     //         async () =>
     //             await RainDocument.compileText(
