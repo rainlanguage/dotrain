@@ -795,7 +795,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tsify",
- "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
 ]

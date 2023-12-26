@@ -1,8 +1,8 @@
 use tsify::Tsify;
 use js_sys::Uint8Array;
 use wasm_bindgen::prelude::*;
+use super::DeployerQueryResponse;
 use serde::{Serialize, Deserialize};
-use super::super::DeployerQueryResponse;
 use std::{
     sync::{Arc, RwLock},
     collections::HashMap,
@@ -21,10 +21,14 @@ impl<'a> Serialize for ToUint8ArraySerializer<'a> {
 // Typescript definitions of MetaStore
 #[wasm_bindgen(typescript_custom_section)]
 const META_STORE_TYPESCRIPT_DEFINITIONS: &'static str = r#"/**
-* # MetaStore (CAS)
-* Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities 
-* to easliy utilize them. Hashes are 32 bytes (in hex string format) and will 
-* be stored as lower case and meta bytes are valid cbor encoded as Uint8Array.
+* In-memory CAS (content addressed storage) for all metadata required for parsing
+* a RainDocument which basically stores k/v pairs of meta hash, meta bytes and 
+* ExpressionDeployer reproducible data as well as providing functionalities to easliy 
+* read them from the CAS.
+* 
+* Hashes are 32 bytes (in hex string format) and will be stored as lower case and
+* meta bytes are valid cbor encoded as Uint8Array. ExpressionDeployers data are in
+* form of js object mapped to deployedBytecode meta hash and deploy transaction hash.
 * 
 * @example
 * ```typescript
@@ -202,40 +206,49 @@ fn _true() -> bool {
     true
 }
 
-// MetaStore is a wasm-bindgen wrapper struct for 'Arc<RwLock<Store>>' in order to
-// provide an easy API in Typescript/Javascript to instantiate and interact with all
-// the 'Store' struct (meta CAS) methods and functionalities and sharing an instance
-// of it between different instances of RainDocument the way it is convenient in
-// Typescript/Javascript while Rust side keep handling the read/write locks
-//
-/// # MetaStore (CAS)
-///
-/// Reads, stores and simply manages k/v pairs of meta hash and meta bytes and
-/// provides the functionalities to easliy utilize them.
-/// Hashes are 32 bytes (in hex string format) and will be stored as lower case and
-/// meta bytes are valid cbor encoded as Uint8Array.
-///
-/// @example
-/// ```javascript
-/// // to instantiate with including default subgraphs
-/// // pass 'false' to not include default rain subgraph endpoints
-/// const store = new MetaStore();
-///
-/// // or to instantiate with initial arguments
-/// const store = MetaStore.create(options);
-///
-/// // add a new subgraph endpoint URLs
-/// store.addSubgraphs(["sg-url-1", "sg-url-2", ...])
-///
-/// // merge another MetaStore instance to this instance
-/// store.merge(anotherMetaStore)
-///
-/// // updates the meta store with a new meta by searching through subgraphs
-/// await store.update(hash)
-///
-/// // to get a meta bytes of a corresponding hash from store
-/// const meta = store.getMeta(hash);
-/// ```
+#[cfg_attr(
+    not(target_family = "wasm"),
+    doc = r#"Wrapper for `Arc<RwLock<Store>>` for js/ts API
+    
+A wasm-bindgen wrapper struct for `Arc<RwLock<Store>>` in order to provide an 
+easy API in Typescript/Javascript to instantiate and interact with all the 
+methods and functionalities of a [Store] struct (meta CAS) and sharing it 
+between different instances of RainDocument the way it is convenient in
+Typescript/Javascript while Rust side keep handling the read/write locks"#
+)]
+#[cfg_attr(
+    target_family = "wasm",
+    doc = " In-memory CAS (content addressed storage) for all metadata required for parsing
+ a RainDocument which basically stores k/v pairs of meta hash, meta bytes and 
+ ExpressionDeployer reproducible data as well as providing functionalities to easliy 
+ read them from the CAS.
+ 
+ Hashes are 32 bytes (in hex string format) and will be stored as lower case and
+ meta bytes are valid cbor encoded as Uint8Array. ExpressionDeployers data are in
+ form of js object mapped to deployedBytecode meta hash and deploy transaction hash.
+ 
+ @example
+ ```javascript
+ // to instantiate with including default subgraphs
+ // pass 'false' to not include default rain subgraph endpoints
+ const store = new MetaStore();
+ 
+ // or to instantiate with initial arguments
+ const store = MetaStore.create(options);
+ 
+ // add a new subgraph endpoint URLs
+ store.addSubgraphs([\"sg-url-1\", \"sg-url-2\", ...])
+ 
+ // merge another MetaStore instance to this instance
+ store.merge(anotherMetaStore)
+ 
+ // updates the meta store with a new meta by searching through subgraphs
+ await store.update(hash)
+ 
+ // to get a meta bytes of a corresponding hash from store
+ const meta = store.getMeta(hash);
+ ```
+")]
 #[derive(Debug, Clone)]
 #[wasm_bindgen(skip_typescript)]
 pub struct MetaStore(pub(crate) Arc<RwLock<Store>>);

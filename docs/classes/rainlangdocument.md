@@ -2,11 +2,11 @@
 
 # Class RainlangDocument
 
-\# RainlangDocument
+Data structure (parse tree) of a Rainlang text
 
-RainlangDocument struct implements methods for parsing a given rainlang text to its parse tree which are used by the RainDocument and for providing LSP services.
+RainlangDocument is a data structure of a parsed Rainlang text to its parse tree which are used by the RainDocument and for providing LSP services.
 
-it should be noted that generally this should not be used individually outside RainDocument unless there is a justified reason, as prasing a Rainlang text should be done through Rain NativeParser contract and parsing method of this struct has no effect on NativeParser prasing and is totally separate as it only provides AST data generally structure used in context of RainDocument for LSP services and sourcemap generation.
+it should be noted that generally this should not be used individually outside RainDocument unless there is a justified reason, as prasing a Rainlang text should be done through Rain NativeParser contract and parsing method of this struct has no effect on NativeParser prasing and is totally separate as it only provides AST data generally used in context of RainDocument for LSP services and sourcemap generation.
 
 <b>Signature:</b>
 

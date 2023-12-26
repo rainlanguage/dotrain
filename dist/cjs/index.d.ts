@@ -95,9 +95,13 @@ export enum ErrorCode {
     DuplicateImportStatement = 1795,
     DuplicateImport = 1796,
 }
-export interface ExpressionConfig {
-    bytecode: string;
-    constants: string[];
+export interface IRainlangDocument {
+    text: string;
+    ast: RainlangSource[];
+    problems: Problem[];
+    comments: Comment[];
+    error: string | undefined;
+    ignoreUndefinedAuthoringMeta: boolean;
 }
 
 export interface IRainDocument {
@@ -117,20 +121,15 @@ export interface IRainDocument {
     deployer: INPE2Deployer;
 }
 
-export interface IRainlangDocument {
-    text: string;
-    ast: RainlangSource[];
-    problems: Problem[];
-    comments: Comment[];
-    error: string | undefined;
-    ignoreUndefinedAuthoringMeta: boolean;
-}
-
 /**
- * # MetaStore (CAS)
- * Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities
- * to easliy utilize them. Hashes are 32 bytes (in hex string format) and will
- * be stored as lower case and meta bytes are valid cbor encoded as Uint8Array.
+ * In-memory CAS (content addressed storage) for all metadata required for parsing
+ * a RainDocument which basically stores k/v pairs of meta hash, meta bytes and
+ * ExpressionDeployer reproducible data as well as providing functionalities to easliy
+ * read them from the CAS.
+ *
+ * Hashes are 32 bytes (in hex string format) and will be stored as lower case and
+ * meta bytes are valid cbor encoded as Uint8Array. ExpressionDeployers data are in
+ * form of js object mapped to deployedBytecode meta hash and deploy transaction hash.
  *
  * @example
  * ```typescript
@@ -290,133 +289,6 @@ export interface MetaStoreOptions {
     includeRainSubgraphs?: boolean;
 }
 
-/**
- * # RainLanguageServices
- *
- * Provides methods for getting language service results (such as diagnostics, completion, etc)
- * for a given LSP TextDocumentItem or a RainDocument
- *
- * Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
- * only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
- * position encodings will result in the same LSP provided Position value which is 1 for each char
- */
-export class RainLanguageServices {
-    free(): void;
-    /**
-     * The meta Store associated with this RainLanguageServices instance
-     */
-    readonly metaStore: MetaStore;
-    /**
-     * Instantiates with the given MetaStore
-     * @param {MetaStore} meta_store
-     */
-    constructor(meta_store: MetaStore);
-    /**
-     * Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
-     * @param {TextDocumentItem} text_document
-     * @returns {RainDocument}
-     */
-    newRainDocument(text_document: TextDocumentItem): RainDocument;
-    /**
-     * Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
-     * @param {TextDocumentItem} text_document
-     * @returns {Promise<RainDocument>}
-     */
-    newRainDocumentAsync(text_document: TextDocumentItem): Promise<RainDocument>;
-    /**
-     * Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
-     * @param {TextDocumentItem} text_document
-     * @returns {(Diagnostic)[]}
-     */
-    doValidate(text_document: TextDocumentItem, related_information: boolean): Diagnostic[];
-    /**
-     * Reports LSP diagnostics from RainDocument's all problems
-     * @param {RainDocument} rain_document
-     * @param {boolean} related_information
-     * @returns {(Diagnostic)[]}
-     */
-    doValidateRainDocument(rain_document: RainDocument, related_information: boolean): Diagnostic[];
-    /**
-     * Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
-     * @param {TextDocumentItem} text_document
-     * @param {boolean} related_information
-     * @returns {Promise<any>}
-     */
-    doValidateAsync(text_document: TextDocumentItem): Promise<Diagnostic[]>;
-    /**
-     * Provides completion items at the given position
-     * @param {TextDocumentItem} text_document
-     * @param {Position} position
-     * @param {MarkupKind} documentation_format
-     * @returns {(CompletionItem)[] | undefined}
-     */
-    doComplete(
-        text_document: TextDocumentItem,
-        position: Position,
-        documentation_format?: MarkupKind,
-    ): CompletionItem[] | null;
-    /**
-     * Provides completion items at the given position
-     * @param {RainDocument} rain_document
-     * @param {Position} position
-     * @param {MarkupKind} documentation_format
-     * @returns {(CompletionItem)[] | undefined}
-     */
-    doCompleteRainDocument(
-        rain_document: RainDocument,
-        position: Position,
-        documentation_format?: MarkupKind,
-    ): CompletionItem[] | null;
-    /**
-     * Provides hover for a fragment at the given position
-     * @param {TextDocumentItem} text_document
-     * @param {Position} position
-     * @param {MarkupKind} content_format
-     * @returns {Hover | undefined}
-     */
-    doHover(
-        text_document: TextDocumentItem,
-        position: Position,
-        content_format?: MarkupKind,
-    ): Hover | null;
-    /**
-     * Provides hover for a RainDocument fragment at the given position
-     * @param {RainDocument} rain_document
-     * @param {Position} position
-     * @param {MarkupKind} content_format
-     * @returns {Hover | undefined}
-     */
-    doHoverRainDocument(
-        rain_document: RainDocument,
-        position: Position,
-        content_format?: MarkupKind,
-    ): Hover | null;
-    /**
-     * Provides semantic tokens for elided fragments
-     * @param {TextDocumentItem} text_document
-     * @param {number} semantic_token_types_index
-     * @param {number} semantic_token_modifiers_len
-     * @returns {SemanticTokensPartialResult}
-     */
-    semanticTokens(
-        text_document: TextDocumentItem,
-        semantic_token_types_index: number,
-        semantic_token_modifiers_len: number,
-    ): SemanticTokensPartialResult;
-    /**
-     * Provides semantic tokens for RainDocument's elided fragments
-     * @param {RainDocument} rain_document
-     * @param {number} semantic_token_types_index
-     * @param {number} semantic_token_modifiers_len
-     * @returns {SemanticTokensPartialResult}
-     */
-    rainDocumentSemanticTokens(
-        rain_document: RainDocument,
-        semantic_token_types_index: number,
-        semantic_token_modifiers_len: number,
-    ): SemanticTokensPartialResult;
-}
-
 export type Offsets = [number, number];
 
 export type ParsedItem = [string, Offsets];
@@ -562,6 +434,171 @@ export interface ContextAlias {
     row: number | undefined;
 }
 
+export interface ExpressionConfig {
+    bytecode: string;
+    constants: string[];
+}
+
+export type RainDocumentCompileError =
+    | { Reject: string }
+    | { Problems: Problem[] }
+    | { Revert: any }
+    | { Halt: any };
+
+export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
+
+/**
+ * Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)
+ *
+ * Provides methods for getting language services (such as diagnostics, completion, etc)
+ * for a given TextDocumentItem or a RainDocument. Each instance is linked to a shared locked
+ * MetaStore instance that holds all the required metadata/functionalities that are required during
+ * parsing a text.
+ *
+ * Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
+ * only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
+ * position encodings will result in the same LSP provided Position value which is 1 for each char.
+ *
+ * @example
+ * ```javascript
+ * // create new MetaStore instance
+ * let metaStore = new MetaStore();
+ *
+ * // crate new instance
+ * let langServices = new RainLanguageServices(metaStore);
+ *
+ * let textDocument = {
+ *   text: "some .rain text",
+ *   uri:  "file:///name.rain",
+ *   version: 0,
+ *   languageId: "rainlang"
+ * };
+ *
+ * // creat new RainDocument
+ * let rainDocument = langServices.newRainDocument(textdocument);
+ *
+ * // get LSP Diagnostics
+ * let diagnosticsRelatedInformation = true;
+ * let diagnostics = langServices.doValidate(textDocument, diagnosticsRelatedInformation);
+ * ```
+ */
+export class RainLanguageServices {
+    free(): void;
+    /**
+     * The meta Store associated with this RainLanguageServices instance
+     */
+    readonly metaStore: MetaStore;
+    /**
+     * Instantiates with the given MetaStore
+     * @param {MetaStore} meta_store
+     */
+    constructor(meta_store: MetaStore);
+    /**
+     * Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
+     * @param {TextDocumentItem} text_document
+     * @returns {RainDocument}
+     */
+    newRainDocument(text_document: TextDocumentItem): RainDocument;
+    /**
+     * Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
+     * @param {TextDocumentItem} text_document
+     * @returns {Promise<RainDocument>}
+     */
+    newRainDocumentAsync(text_document: TextDocumentItem): Promise<RainDocument>;
+    /**
+     * Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
+     * @param {TextDocumentItem} text_document
+     * @returns {(Diagnostic)[]}
+     */
+    doValidate(text_document: TextDocumentItem, related_information: boolean): Diagnostic[];
+    /**
+     * Reports LSP diagnostics from RainDocument's all problems
+     * @param {RainDocument} rain_document
+     * @param {boolean} related_information
+     * @returns {(Diagnostic)[]}
+     */
+    doValidateRainDocument(rain_document: RainDocument, related_information: boolean): Diagnostic[];
+    /**
+     * Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
+     * @param {TextDocumentItem} text_document
+     * @param {boolean} related_information
+     * @returns {Promise<any>}
+     */
+    doValidateAsync(text_document: TextDocumentItem): Promise<Diagnostic[]>;
+    /**
+     * Provides completion items at the given position
+     * @param {TextDocumentItem} text_document
+     * @param {Position} position
+     * @param {MarkupKind} documentation_format
+     * @returns {(CompletionItem)[] | undefined}
+     */
+    doComplete(
+        text_document: TextDocumentItem,
+        position: Position,
+        documentation_format?: MarkupKind,
+    ): CompletionItem[] | null;
+    /**
+     * Provides completion items at the given position
+     * @param {RainDocument} rain_document
+     * @param {Position} position
+     * @param {MarkupKind} documentation_format
+     * @returns {(CompletionItem)[] | undefined}
+     */
+    doCompleteRainDocument(
+        rain_document: RainDocument,
+        position: Position,
+        documentation_format?: MarkupKind,
+    ): CompletionItem[] | null;
+    /**
+     * Provides hover for a fragment at the given position
+     * @param {TextDocumentItem} text_document
+     * @param {Position} position
+     * @param {MarkupKind} content_format
+     * @returns {Hover | undefined}
+     */
+    doHover(
+        text_document: TextDocumentItem,
+        position: Position,
+        content_format?: MarkupKind,
+    ): Hover | null;
+    /**
+     * Provides hover for a RainDocument fragment at the given position
+     * @param {RainDocument} rain_document
+     * @param {Position} position
+     * @param {MarkupKind} content_format
+     * @returns {Hover | undefined}
+     */
+    doHoverRainDocument(
+        rain_document: RainDocument,
+        position: Position,
+        content_format?: MarkupKind,
+    ): Hover | null;
+    /**
+     * Provides semantic tokens for elided fragments
+     * @param {TextDocumentItem} text_document
+     * @param {number} semantic_token_types_index
+     * @param {number} semantic_token_modifiers_len
+     * @returns {SemanticTokensPartialResult}
+     */
+    semanticTokens(
+        text_document: TextDocumentItem,
+        semantic_token_types_index: number,
+        semantic_token_modifiers_len: number,
+    ): SemanticTokensPartialResult;
+    /**
+     * Provides semantic tokens for RainDocument's elided fragments
+     * @param {RainDocument} rain_document
+     * @param {number} semantic_token_types_index
+     * @param {number} semantic_token_modifiers_len
+     * @returns {SemanticTokensPartialResult}
+     */
+    rainDocumentSemanticTokens(
+        rain_document: RainDocument,
+        semantic_token_types_index: number,
+        semantic_token_modifiers_len: number,
+    ): SemanticTokensPartialResult;
+}
+
 export type IAuthoringMeta = {
     word: string;
     description: string;
@@ -589,27 +626,31 @@ export interface DeployerQueryResponse {
     interpreter: Uint8Array;
 }
 
-export type RainDocumentCompileError =
-    | { Reject: string }
-    | { Problems: Problem[] }
-    | { Revert: any }
-    | { Halt: any };
-
-export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
-
 /**
- * # RainDocument
+ * Data structure of a parsed .rain text
+ *
  * RainDocument is the main implementation block that enables parsing of a .rain file contents
  * to its building blocks and parse tree by handling and resolving imports, namespaces, etc which
  * later are used by LSP services and compiler as well as providing all the functionalities in between.
  *
- * A portable, extensible and composable format for describing Rainlang fragments, .rain serve as
+ * It is a portable, extensible and composable format for describing Rainlang fragments, .rain serve as
  * a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and
  * adversarial environment such as a public blockchain.
  *
- * ## Examples
+ * @example
+ * ```javascript
+ * // create a new instane
+ * // uri must be a valid URL
+ * const rainDocument = RainDocument.create(text, uri, meta_store);
  *
- * ```
+ * // alternatively instantiate with remote meta search enabled
+ * const rainDocument = await RainDocument.createAsync(text, uri, meta_store);
+ *
+ * // get all problems
+ * const problems = rainDocument.allProblems;
+ *
+ * // compile this instance to get ExpressionConfig
+ * const expConfig = rainDocument.compile(["entrypoint1", "entrypoint2"]);
  * ```
  */
 export class RainDocument {
@@ -623,13 +664,6 @@ export class RainDocument {
      */
     static createAsync(text: string, uri: string, meta_store: MetaStore): Promise<RainDocument>;
     /**
-     * creates an instance with a new raw MetaStore and parses with searching for metas from remote
-     * @param {string} text
-     * @param {string} uri
-     * @returns {Promise<RainDocument>}
-     */
-    static createAsyncRaw(text: string, uri: string): Promise<RainDocument>;
-    /**
      * Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only)
      * @param {string} text
      * @param {string} uri
@@ -638,23 +672,11 @@ export class RainDocument {
      */
     static create(text: string, uri: string, meta_store: MetaStore): RainDocument;
     /**
-     * Creates an instance with a new raw MetaStore and parses with remote meta search disabled (cached metas only)
-     * @param {string} text
-     * @param {string} uri
-     * @returns {RainDocument}
-     */
-    static createRaw(text: string, uri: string): RainDocument;
-    /**
      * @param {IRainDocument} value
      * @param {MetaStore} meta_store
      * @returns {RainDocument}
      */
     static fromInterface(value: IRainDocument, meta_store: MetaStore): RainDocument;
-    /**
-     * @param {IRainDocument} value
-     * @returns {RainDocument}
-     */
-    static fromInterfaceRaw(value: IRainDocument): RainDocument;
     /**
      * @returns {IRainDocument}
      */
@@ -715,18 +737,6 @@ export class RainDocument {
         uri?: string,
     ): Promise<ExpressionConfig>;
     /**
-     * Compiles a text as RainDocument with remote meta search enabled for parsing
-     * @param {string} text
-     * @param {(string)[]} entrypoints
-     * @param {string | undefined} [uri]
-     * @returns {Promise<ExpressionConfig>}
-     */
-    static compileTextRawAsync(
-        text: string,
-        entrypoints: string[],
-        uri?: string,
-    ): Promise<ExpressionConfig>;
-    /**
      * Compiles a text as RainDocument with remote meta search disabled for parsing
      * @param {string} text
      * @param {(string)[]} entrypoints
@@ -738,18 +748,6 @@ export class RainDocument {
         text: string,
         entrypoints: string[],
         meta_store: MetaStore,
-        uri?: string,
-    ): Promise<ExpressionConfig>;
-    /**
-     * Compiles a text as RainDocument with remote meta search disabled for parsing
-     * @param {string} text
-     * @param {(string)[]} entrypoints
-     * @param {string | undefined} [uri]
-     * @returns {Promise<ExpressionConfig>}
-     */
-    static compileTextRaw(
-        text: string,
-        entrypoints: string[],
         uri?: string,
     ): Promise<ExpressionConfig>;
     /**
@@ -818,17 +816,16 @@ export class RainDocument {
     readonly version: number;
 }
 /**
- * # RainlangDocument
+ * Data structure (parse tree) of a Rainlang text
  *
- * RainlangDocument struct implements methods for parsing a given rainlang text to
- * its parse tree which are used by the RainDocument and for providing LSP services.
+ * RainlangDocument is a data structure of a parsed Rainlang text to its parse tree
+ * which are used by the RainDocument and for providing LSP services.
  *
  * it should be noted that generally this should not be used individually outside
  * RainDocument unless there is a justified reason, as prasing a Rainlang text should
  * be done through Rain NativeParser contract and parsing method of this struct has no
  * effect on NativeParser prasing and is totally separate as it only provides AST data
- * generally structure used in context of RainDocument for LSP services and sourcemap
- * generation.
+ * generally used in context of RainDocument for LSP services and sourcemap generation.
  */
 export class RainlangDocument {
     free(): void;

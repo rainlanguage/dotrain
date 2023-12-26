@@ -8,6 +8,7 @@ use std::{
     fs::{read_to_string, write},
 };
 
+/// Compiles based on a the given rainconfig configurations
 pub async fn rainconfig_compile(
     path: Option<PathBuf>,
     local_data_only: bool,
@@ -54,6 +55,8 @@ pub async fn rainconfig_compile(
     Ok(())
 }
 
+
+/// Compiles only the given .rain files based on provided options
 pub async fn target_compile(
     opts: Target,
     conf_path: Option<PathBuf>,

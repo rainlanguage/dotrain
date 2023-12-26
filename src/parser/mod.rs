@@ -13,12 +13,12 @@ pub(crate) mod raindocument;
 pub use self::rainlang::*;
 pub use self::raindocument::*;
 
-/// Trait for converting offset to lsp position
+/// Trait for converting offset to lsp position (implemented for &str and String)
 pub trait PositionAt {
     fn position_at(&self, offset: usize) -> Position;
 }
 
-/// trait for converting lsp position to offset
+/// Trait for converting lsp position to offset (implemented for &str and String)
 pub trait OffsetAt {
     fn offset_at(&self, position: &Position) -> usize;
 }
@@ -148,7 +148,7 @@ pub fn inclusive_parse(text: &str, pattern: &Regex, offset: usize) -> Vec<Parsed
         .collect()
 }
 
-/// Parses an string by extracting the strings outside of matches
+/// Parses a string by extracting the strings outside of matches
 pub fn exclusive_parse(
     text: &str,
     pattern: &Regex,
@@ -239,7 +239,8 @@ pub fn tracked_trim(s: &str) -> (&str, usize, usize) {
     )
 }
 
-pub fn line_number(text: &str, pos: usize) -> usize {
+/// Calculates the line number of the given position in the given text
+pub(crate) fn line_number(text: &str, pos: usize) -> usize {
     let lines: Vec<_> = text.split_inclusive('\n').collect();
     let lines_count = lines.len();
     if pos >= lines_count {

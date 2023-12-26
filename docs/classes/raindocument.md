@@ -2,18 +2,35 @@
 
 # Class RainDocument
 
-\# RainDocument RainDocument is the main implementation block that enables parsing of a .rain file contents to its building blocks and parse tree by handling and resolving imports, namespaces, etc which later are used by LSP services and compiler as well as providing all the functionalities in between.
+Data structure of a parsed .rain text
 
-A portable, extensible and composable format for describing Rainlang fragments, .rain serve as a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and adversarial environment such as a public blockchain.
+RainDocument is the main implementation block that enables parsing of a .rain file contents to its building blocks and parse tree by handling and resolving imports, namespaces, etc which later are used by LSP services and compiler as well as providing all the functionalities in between.
 
-\#\# Examples
-
-\`\`\` \`\`\`
+It is a portable, extensible and composable format for describing Rainlang fragments, .rain serve as a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and adversarial environment such as a public blockchain.
 
 <b>Signature:</b>
 
 ```typescript
 class RainDocument 
+```
+
+## Example
+
+
+```javascript
+// create a new instane
+// uri must be a valid URL
+const rainDocument = RainDocument.create(text, uri, meta_store);
+
+// alternatively instantiate with remote meta search enabled
+const rainDocument = await RainDocument.createAsync(text, uri, meta_store);
+
+// get all problems
+const problems = rainDocument.allProblems;
+
+// compile this instance to get ExpressionConfig
+const expConfig = rainDocument.compile(["entrypoint1", "entrypoint2"]);
+
 ```
 
 ## Properties
@@ -43,14 +60,9 @@ class RainDocument
 |  --- | --- |
 |  [compileText(text, entrypoints, meta\_store, uri)](./raindocument.md#compileText-method-static-1) | Compiles a text as RainDocument with remote meta search disabled for parsing |
 |  [compileTextAsync(text, entrypoints, meta\_store, uri)](./raindocument.md#compileTextAsync-method-static-1) | Compiles a text as RainDocument with remote meta search enabled for parsing |
-|  [compileTextRaw(text, entrypoints, uri)](./raindocument.md#compileTextRaw-method-static-1) | Compiles a text as RainDocument with remote meta search disabled for parsing |
-|  [compileTextRawAsync(text, entrypoints, uri)](./raindocument.md#compileTextRawAsync-method-static-1) | Compiles a text as RainDocument with remote meta search enabled for parsing |
 |  [create(text, uri, meta\_store)](./raindocument.md#create-method-static-1) | Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only) |
 |  [createAsync(text, uri, meta\_store)](./raindocument.md#createAsync-method-static-1) | Creates an instance with the given MetaStore and parses with remote meta search enabled |
-|  [createAsyncRaw(text, uri)](./raindocument.md#createAsyncRaw-method-static-1) | creates an instance with a new raw MetaStore and parses with searching for metas from remote |
-|  [createRaw(text, uri)](./raindocument.md#createRaw-method-static-1) | Creates an instance with a new raw MetaStore and parses with remote meta search disabled (cached metas only) |
 |  [fromInterface(value, meta\_store)](./raindocument.md#fromInterface-method-static-1) |  |
-|  [fromInterfaceRaw(value)](./raindocument.md#fromInterfaceRaw-method-static-1) |  |
 
 ## Methods
 
@@ -326,66 +338,6 @@ static compileTextAsync(
 
 {<!-- -->Promise<ExpressionConfig>}
 
-<a id="compileTextRaw-method-static-1"></a>
-
-### compileTextRaw(text, entrypoints, uri)
-
-Compiles a text as RainDocument with remote meta search disabled for parsing
-
-<b>Signature:</b>
-
-```typescript
-static compileTextRaw(
-        text: string,
-        entrypoints: string[],
-        uri?: string,
-    ): Promise<ExpressionConfig>;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  text | `string` |  |
-|  entrypoints | `string[]` |  |
-|  uri | `string` |  |
-
-<b>Returns:</b>
-
-`Promise<ExpressionConfig>`
-
-{<!-- -->Promise<ExpressionConfig>}
-
-<a id="compileTextRawAsync-method-static-1"></a>
-
-### compileTextRawAsync(text, entrypoints, uri)
-
-Compiles a text as RainDocument with remote meta search enabled for parsing
-
-<b>Signature:</b>
-
-```typescript
-static compileTextRawAsync(
-        text: string,
-        entrypoints: string[],
-        uri?: string,
-    ): Promise<ExpressionConfig>;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  text | `string` |  |
-|  entrypoints | `string[]` |  |
-|  uri | `string` |  |
-
-<b>Returns:</b>
-
-`Promise<ExpressionConfig>`
-
-{<!-- -->Promise<ExpressionConfig>}
-
 <a id="create-method-static-1"></a>
 
 ### create(text, uri, meta\_store)
@@ -438,56 +390,6 @@ static createAsync(text: string, uri: string, meta_store: MetaStore): Promise<Ra
 
 {<!-- -->Promise<RainDocument>}
 
-<a id="createAsyncRaw-method-static-1"></a>
-
-### createAsyncRaw(text, uri)
-
-creates an instance with a new raw MetaStore and parses with searching for metas from remote
-
-<b>Signature:</b>
-
-```typescript
-static createAsyncRaw(text: string, uri: string): Promise<RainDocument>;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  text | `string` |  |
-|  uri | `string` |  |
-
-<b>Returns:</b>
-
-`Promise<RainDocument>`
-
-{<!-- -->Promise<RainDocument>}
-
-<a id="createRaw-method-static-1"></a>
-
-### createRaw(text, uri)
-
-Creates an instance with a new raw MetaStore and parses with remote meta search disabled (cached metas only)
-
-<b>Signature:</b>
-
-```typescript
-static createRaw(text: string, uri: string): RainDocument;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  text | `string` |  |
-|  uri | `string` |  |
-
-<b>Returns:</b>
-
-`RainDocument`
-
-{<!-- -->RainDocument<!-- -->}
-
 <a id="fromInterface-method-static-1"></a>
 
 ### fromInterface(value, meta\_store)
@@ -504,28 +406,6 @@ static fromInterface(value: IRainDocument, meta_store: MetaStore): RainDocument;
 |  --- | --- | --- |
 |  value | [IRainDocument](../interfaces/iraindocument.md) |  |
 |  meta\_store | [MetaStore](./metastore.md) |  |
-
-<b>Returns:</b>
-
-`RainDocument`
-
-{<!-- -->RainDocument<!-- -->}
-
-<a id="fromInterfaceRaw-method-static-1"></a>
-
-### fromInterfaceRaw(value)
-
-<b>Signature:</b>
-
-```typescript
-static fromInterfaceRaw(value: IRainDocument): RainDocument;
-```
-
-#### Parameters
-
-|  Parameter | Type | Description |
-|  --- | --- | --- |
-|  value | [IRainDocument](../interfaces/iraindocument.md) |  |
 
 <b>Returns:</b>
 

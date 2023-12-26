@@ -1,19 +1,23 @@
 use rain_meta::Store;
 use std::sync::{Arc, RwLock};
-use self::sematic_token::get_semantic_token;
 use super::parser::raindocument::RainDocument;
-use lsp_types::{
-    Hover, Position, Diagnostic, MarkupKind, CompletionItem, TextDocumentItem,
-    SemanticTokensPartialResult,
-};
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use wasm_bindgen::prelude::*;
 
-pub mod hover;
-pub mod completion;
-pub mod diagnostic;
-pub mod sematic_token;
+mod hover;
+mod completion;
+mod diagnostic;
+mod sematic_token;
+
+pub use hover::get_hover;
+pub use completion::get_completion;
+pub use diagnostic::get_diagnostics;
+pub use sematic_token::get_semantic_token;
+pub use lsp_types::{
+    Hover, Position, Diagnostic, MarkupKind, CompletionItem, TextDocumentItem,
+    SemanticTokensPartialResult,
+};
 
 /// Parameters for initiating Language Services
 #[derive(Debug, Clone)]
@@ -22,20 +26,100 @@ pub struct LanguageServiceParams {
     pub meta_store: Option<Arc<RwLock<Store>>>,
 }
 
-/// # RainLanguageServices
-///
-/// Provides methods for getting language service results (such as diagnostics, completion, etc)
-/// for a given LSP TextDocumentItem or a RainDocument
-///
-/// Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
-/// only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
-/// position encodings will result in the same LSP provided Position value which is 1 for each char
+/// Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)
+/// 
+#[cfg_attr(
+    not(target_family = "wasm"),
+    doc = r#"Provides methods for getting language services (such as diagnostics, completion, etc)
+for a given TextDocumentItem or a RainDocument. Each instance is linked to a shared locked
+[Store] instance `Arc<RwLock<Store>>` that holds all the required metadata/functionalities that 
+are required during parsing a text.
+
+Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
+only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
+position encodings will result in the same LSP provided Position value which is 1 for each char.
+
+## Example
+
+```rust
+use std::sync::{Arc, RwLock};
+use dotrain::{RainLanguageServices, LanguageServiceParams, Url, Store, TextDocumentItem, MarkupKind, Position};
+
+// instaniate a shared locked Store
+let meta_store = Arc::new(RwLock::new(Store::default()));
+
+// create instatiation params
+let params = LanguageServiceParams {
+    meta_store: Some(meta_store)
+};
+
+// create a new instane with a shared locked Store that is used for all
+// parsings that are triggered through available methods of this instance
+let lang_services = RainLanguageServices::new(&params);
+
+let text_document = TextDocumentItem {
+    uri: Url::parse("file:///example.rain").unwrap(),
+    text: "some .rain text content".to_string(),
+    version: 0,
+    language_id: "rainlang".to_string()
+};
+
+// create a new RainDocument instance
+let rain_document = lang_services.new_rain_document(&text_document);
+
+// get LSP Diagnostics for a given TextDocumentItem
+let diagnostics_related_information = true;
+let diagnostics = lang_services.do_validate(&text_document, diagnostics_related_information);
+
+let position = Position {
+    line: 0,
+    character: 10
+};
+let content_format = Some(MarkupKind::PlainText);
+let hover = lang_services.do_hover(&text_document, position, content_format);
+```
+"#
+)]
+#[cfg_attr(
+    target_family = "wasm",
+    doc = " Provides methods for getting language services (such as diagnostics, completion, etc)
+ for a given TextDocumentItem or a RainDocument. Each instance is linked to a shared locked
+ MetaStore instance that holds all the required metadata/functionalities that are required during 
+ parsing a text.
+
+ Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
+ only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
+ position encodings will result in the same LSP provided Position value which is 1 for each char.
+ 
+ @example
+ ```javascript
+ // create new MetaStore instance
+ let metaStore = new MetaStore();
+
+ // crate new instance
+ let langServices = new RainLanguageServices(metaStore);
+
+ let textDocument = {
+    text: \"some .rain text\",
+    uri:  \"file:///name.rain\",
+    version: 0,
+    languageId: \"rainlang\"
+ };
+
+ // creat new RainDocument
+ let rainDocument = langServices.newRainDocument(textdocument);
+
+ // get LSP Diagnostics
+ let diagnosticsRelatedInformation = true;
+ let diagnostics = langServices.doValidate(textDocument, diagnosticsRelatedInformation);
+ ```
+"
+)]
 #[cfg_attr(
     all(feature = "lsp", any(feature = "js-api", target_family = "wasm")),
     wasm_bindgen(skip_typescript)
 )]
 pub struct RainLanguageServices {
-    /// The meta Store (CAS) instance used for all parsings of this instance
     pub(crate) meta_store: Arc<RwLock<Store>>,
 }
 

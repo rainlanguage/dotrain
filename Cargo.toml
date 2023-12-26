@@ -55,8 +55,6 @@ wasm-bindgen = { version = "0.2.89", optional = true }
 serde-wasm-bindgen = { version = "0.6.1", optional = true }
 wasm-bindgen-futures = { version = "0.4.39", optional = true }
 tsify = { version = "0.4.5", default-features = false, features = ["js", "wasm-bindgen"], optional = true }
-url = "2.5.0"
-
 
 # wasm
 [target.'cfg(target_family = "wasm")'.dependencies]
@@ -65,6 +63,7 @@ wasm-bindgen = "0.2.89"
 serde-wasm-bindgen = "0.6.1"
 wasm-bindgen-futures = "0.4.39"
 tsify = { version = "0.4.5", default-features = false, features = ["js", "wasm-bindgen"] }
+
 
 [package.metadata.docs.rs]
 all-features = true

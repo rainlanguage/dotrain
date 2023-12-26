@@ -1,3 +1,5 @@
+//! All Regular Expression patterns used for parsing texts
+
 use regex::Regex;
 use once_cell::sync::Lazy;
 

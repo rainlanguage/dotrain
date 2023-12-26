@@ -19,7 +19,7 @@ use rain_meta::{
 };
 use super::{
     rainlang::RainlangDocument,
-    super::types::{*, ast::*, patterns::*},
+    super::types::{ast::*, patterns::*},
     exclusive_parse, inclusive_parse, fill_in, is_consumable, tracked_trim, line_number, to_u256,
 };
 
@@ -28,7 +28,7 @@ use tsify::Tsify;
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use wasm_bindgen::prelude::wasm_bindgen;
 
-/// Reserved constant values keys of RainDocuments
+/// Reserved constant values keys in RainDocuments
 pub const RAIN_DOCUMENT_CONSTANTS: [(&str, &str); 9] = [
     (
         "infinity",
@@ -50,19 +50,66 @@ pub const RAIN_DOCUMENT_CONSTANTS: [(&str, &str); 9] = [
     ("max-uint32", "0xffffffff"),
 ];
 
-/// # RainDocument
+/// Data structure of a parsed .rain text
+///
 /// RainDocument is the main implementation block that enables parsing of a .rain file contents
 /// to its building blocks and parse tree by handling and resolving imports, namespaces, etc which
 /// later are used by LSP services and compiler as well as providing all the functionalities in between.
 ///
-/// A portable, extensible and composable format for describing Rainlang fragments, .rain serve as
+/// It is a portable, extensible and composable format for describing Rainlang fragments, .rain serve as
 /// a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and
 /// adversarial environment such as a public blockchain.
 ///
-/// ## Examples
-///
-/// ```
-/// ```
+#[cfg_attr(
+    not(target_family = "wasm"),
+    doc = r#"
+## Example
+
+```rust
+use std::sync::{Arc, RwLock};
+use dotrain::{RainDocument, Url, Store};
+
+let text = "some .rain text content".to_string();
+let uri = Url::parse("file:///example.rain").unwrap();
+
+let meta_store = Arc::new(RwLock::new(Store::default()));
+
+// create a new instance that gets parsed right away
+let rain_document = RainDocument::create(text, uri, Some(meta_store));
+
+// get all problems
+let problems = rain_document.all_problems();
+
+let entrypoints = vec![
+   "entrypoint1".to_string(), 
+   "entrypoint2".to_string()
+];
+let revm = None;
+
+// compile this instance to get ExpressionConfig
+let result = rain_document.compile(&entrypoints, revm);
+```
+"#
+)]
+#[cfg_attr(
+    target_family = "wasm",
+    doc = " @example
+ ```javascript
+ // create a new instane
+ // uri must be a valid URL
+ const rainDocument = RainDocument.create(text, uri, meta_store);
+
+ // alternatively instantiate with remote meta search enabled
+ const rainDocument = await RainDocument.createAsync(text, uri, meta_store);
+
+ // get all problems
+ const problems = rainDocument.allProblems;
+
+ // compile this instance to get ExpressionConfig
+ const expConfig = rainDocument.compile([\"entrypoint1\", \"entrypoint2\"]);
+ ```
+"
+)]
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
     wasm_bindgen,

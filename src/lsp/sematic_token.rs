@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use lsp_types::{SemanticTokensPartialResult, Position, SemanticToken};
 use super::super::{
-    types::{ast::BindingItem, ErrorCode},
+    types::ast::{BindingItem, ErrorCode},
     parser::{OffsetAt, PositionAt, raindocument::RainDocument},
 };
 

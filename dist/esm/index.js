@@ -23,15 +23,6 @@ function takeObject(idx) {
     return ret;
 }
 
-function addHeapObject(obj) {
-    if (heap_next === heap.length) heap.push(heap.length + 1);
-    const idx = heap_next;
-    heap_next = heap[idx];
-
-    heap[idx] = obj;
-    return idx;
-}
-
 const cachedTextDecoder =
     typeof TextDecoder !== "undefined"
         ? new TextDecoder("utf-8", { ignoreBOM: true, fatal: true })
@@ -59,26 +50,13 @@ function getStringFromWasm0(ptr, len) {
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
 
-function isLikeNone(x) {
-    return x === undefined || x === null;
-}
+function addHeapObject(obj) {
+    if (heap_next === heap.length) heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
 
-let cachedFloat64Memory0 = null;
-
-function getFloat64Memory0() {
-    if (cachedFloat64Memory0 === null || cachedFloat64Memory0.byteLength === 0) {
-        cachedFloat64Memory0 = new Float64Array(wasm.memory.buffer);
-    }
-    return cachedFloat64Memory0;
-}
-
-let cachedInt32Memory0 = null;
-
-function getInt32Memory0() {
-    if (cachedInt32Memory0 === null || cachedInt32Memory0.byteLength === 0) {
-        cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
-    }
-    return cachedInt32Memory0;
+    heap[idx] = obj;
+    return idx;
 }
 
 let WASM_VECTOR_LEN = 0;
@@ -143,6 +121,28 @@ function passStringToWasm0(arg, malloc, realloc) {
 
     WASM_VECTOR_LEN = offset;
     return ptr;
+}
+
+function isLikeNone(x) {
+    return x === undefined || x === null;
+}
+
+let cachedInt32Memory0 = null;
+
+function getInt32Memory0() {
+    if (cachedInt32Memory0 === null || cachedInt32Memory0.byteLength === 0) {
+        cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
+    }
+    return cachedInt32Memory0;
+}
+
+let cachedFloat64Memory0 = null;
+
+function getFloat64Memory0() {
+    if (cachedFloat64Memory0 === null || cachedFloat64Memory0.byteLength === 0) {
+        cachedFloat64Memory0 = new Float64Array(wasm.memory.buffer);
+    }
+    return cachedFloat64Memory0;
 }
 
 let cachedBigInt64Memory0 = null;
@@ -338,7 +338,7 @@ function handleError(f, args) {
         wasm.__wbindgen_exn_store(addHeapObject(e));
     }
 }
-function __wbg_adapter_215(arg0, arg1, arg2, arg3) {
+function __wbg_adapter_210(arg0, arg1, arg2, arg3) {
     wasm.wasm_bindgen__convert__closures__invoke2_mut__h0ba9c857928f5587(
         arg0,
         arg1,
@@ -475,12 +475,14 @@ export const ErrorCode = Object.freeze({
     1796: "DuplicateImport",
 });
 /**
- * # MetaStore (CAS)
+ * In-memory CAS (content addressed storage) for all metadata required for parsing
+ * a RainDocument which basically stores k/v pairs of meta hash, meta bytes and
+ * ExpressionDeployer reproducible data as well as providing functionalities to easliy
+ * read them from the CAS.
  *
- * Reads, stores and simply manages k/v pairs of meta hash and meta bytes and
- * provides the functionalities to easliy utilize them.
  * Hashes are 32 bytes (in hex string format) and will be stored as lower case and
- * meta bytes are valid cbor encoded as Uint8Array.
+ * meta bytes are valid cbor encoded as Uint8Array. ExpressionDeployers data are in
+ * form of js object mapped to deployedBytecode meta hash and deploy transaction hash.
  *
  * @example
  * ```javascript
@@ -773,18 +775,30 @@ export class MetaStore {
     }
 }
 /**
- * # RainDocument
+ * Data structure of a parsed .rain text
+ *
  * RainDocument is the main implementation block that enables parsing of a .rain file contents
  * to its building blocks and parse tree by handling and resolving imports, namespaces, etc which
  * later are used by LSP services and compiler as well as providing all the functionalities in between.
  *
- * A portable, extensible and composable format for describing Rainlang fragments, .rain serve as
+ * It is a portable, extensible and composable format for describing Rainlang fragments, .rain serve as
  * a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and
  * adversarial environment such as a public blockchain.
  *
- * ## Examples
+ * @example
+ * ```javascript
+ * // create a new instane
+ * // uri must be a valid URL
+ * const rainDocument = RainDocument.create(text, uri, meta_store);
  *
- * ```
+ * // alternatively instantiate with remote meta search enabled
+ * const rainDocument = await RainDocument.createAsync(text, uri, meta_store);
+ *
+ * // get all problems
+ * const problems = rainDocument.allProblems;
+ *
+ * // compile this instance to get ExpressionConfig
+ * const expConfig = rainDocument.compile(["entrypoint1", "entrypoint2"]);
  * ```
  */
 export class RainDocument {
@@ -824,20 +838,6 @@ export class RainDocument {
         return takeObject(ret);
     }
     /**
-     * creates an instance with a new raw MetaStore and parses with searching for metas from remote
-     * @param {string} text
-     * @param {string} uri
-     * @returns {Promise<RainDocument>}
-     */
-    static createAsyncRaw(text, uri) {
-        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(uri, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len1 = WASM_VECTOR_LEN;
-        const ret = wasm.raindocument_createAsyncRaw(ptr0, len0, ptr1, len1);
-        return takeObject(ret);
-    }
-    /**
      * Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only)
      * @param {string} text
      * @param {string} uri
@@ -851,20 +851,6 @@ export class RainDocument {
         const len1 = WASM_VECTOR_LEN;
         _assertClass(meta_store, MetaStore);
         const ret = wasm.raindocument_create(ptr0, len0, ptr1, len1, meta_store.__wbg_ptr);
-        return RainDocument.__wrap(ret);
-    }
-    /**
-     * Creates an instance with a new raw MetaStore and parses with remote meta search disabled (cached metas only)
-     * @param {string} text
-     * @param {string} uri
-     * @returns {RainDocument}
-     */
-    static createRaw(text, uri) {
-        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(uri, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len1 = WASM_VECTOR_LEN;
-        const ret = wasm.raindocument_createRaw(ptr0, len0, ptr1, len1);
         return RainDocument.__wrap(ret);
     }
     /**
@@ -883,14 +869,6 @@ export class RainDocument {
         } finally {
             heap[stack_pointer++] = undefined;
         }
-    }
-    /**
-     * @param {IRainDocument} value
-     * @returns {RainDocument}
-     */
-    static fromInterfaceRaw(value) {
-        const ret = wasm.raindocument_fromInterfaceRaw(addHeapObject(value));
-        return RainDocument.__wrap(ret);
     }
     /**
      * @returns {IRainDocument}
@@ -1231,25 +1209,6 @@ export class RainDocument {
         return takeObject(ret);
     }
     /**
-     * Compiles a text as RainDocument with remote meta search enabled for parsing
-     * @param {string} text
-     * @param {(string)[]} entrypoints
-     * @param {string | undefined} [uri]
-     * @returns {Promise<ExpressionConfig>}
-     */
-    static compileTextRawAsync(text, entrypoints, uri) {
-        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passArrayJsValueToWasm0(entrypoints, wasm.__wbindgen_malloc);
-        const len1 = WASM_VECTOR_LEN;
-        var ptr2 = isLikeNone(uri)
-            ? 0
-            : passStringToWasm0(uri, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        var len2 = WASM_VECTOR_LEN;
-        const ret = wasm.raindocument_compileTextRawAsync(ptr0, len0, ptr1, len1, ptr2, len2);
-        return takeObject(ret);
-    }
-    /**
      * Compiles a text as RainDocument with remote meta search disabled for parsing
      * @param {string} text
      * @param {(string)[]} entrypoints
@@ -1278,35 +1237,41 @@ export class RainDocument {
         );
         return takeObject(ret);
     }
-    /**
-     * Compiles a text as RainDocument with remote meta search disabled for parsing
-     * @param {string} text
-     * @param {(string)[]} entrypoints
-     * @param {string | undefined} [uri]
-     * @returns {Promise<ExpressionConfig>}
-     */
-    static compileTextRaw(text, entrypoints, uri) {
-        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passArrayJsValueToWasm0(entrypoints, wasm.__wbindgen_malloc);
-        const len1 = WASM_VECTOR_LEN;
-        var ptr2 = isLikeNone(uri)
-            ? 0
-            : passStringToWasm0(uri, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        var len2 = WASM_VECTOR_LEN;
-        const ret = wasm.raindocument_compileTextRaw(ptr0, len0, ptr1, len1, ptr2, len2);
-        return takeObject(ret);
-    }
 }
 /**
- * # RainLanguageServices
+ * Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)
  *
- * Provides methods for getting language service results (such as diagnostics, completion, etc)
- * for a given LSP TextDocumentItem or a RainDocument
+ * Provides methods for getting language services (such as diagnostics, completion, etc)
+ * for a given TextDocumentItem or a RainDocument. Each instance is linked to a shared locked
+ * MetaStore instance that holds all the required metadata/functionalities that are required during
+ * parsing a text.
  *
  * Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
  * only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
- * position encodings will result in the same LSP provided Position value which is 1 for each char
+ * position encodings will result in the same LSP provided Position value which is 1 for each char.
+ *
+ * @example
+ * ```javascript
+ * // create new MetaStore instance
+ * let metaStore = new MetaStore();
+ *
+ * // crate new instance
+ * let langServices = new RainLanguageServices(metaStore);
+ *
+ * let textDocument = {
+ *    text: "some .rain text",
+ *    uri:  "file:///name.rain",
+ *    version: 0,
+ *    languageId: "rainlang"
+ * };
+ *
+ * // creat new RainDocument
+ * let rainDocument = langServices.newRainDocument(textdocument);
+ *
+ * // get LSP Diagnostics
+ * let diagnosticsRelatedInformation = true;
+ * let diagnostics = langServices.doValidate(textDocument, diagnosticsRelatedInformation);
+ * ```
  */
 export class RainLanguageServices {
     __destroy_into_raw() {
@@ -1321,6 +1286,7 @@ export class RainLanguageServices {
         wasm.__wbg_rainlanguageservices_free(ptr);
     }
     /**
+     * The meta Store associated with this RainLanguageServices instance
      * @returns {MetaStore}
      */
     get metaStore() {
@@ -1328,6 +1294,7 @@ export class RainLanguageServices {
         return MetaStore.__wrap(ret);
     }
     /**
+     * Instantiates with the given MetaStore
      * @param {MetaStore} meta_store
      */
     constructor(meta_store) {
@@ -1337,6 +1304,7 @@ export class RainLanguageServices {
         return this;
     }
     /**
+     * Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
      * @param {TextDocumentItem} text_document
      * @returns {RainDocument}
      */
@@ -1348,6 +1316,7 @@ export class RainLanguageServices {
         return RainDocument.__wrap(ret);
     }
     /**
+     * Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
      * @param {TextDocumentItem} text_document
      * @returns {Promise<RainDocument>}
      */
@@ -1359,6 +1328,7 @@ export class RainLanguageServices {
         return takeObject(ret);
     }
     /**
+     * Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
      * @param {TextDocumentItem} text_document
      * @param {boolean} related_information
      * @returns {any}
@@ -1372,6 +1342,7 @@ export class RainLanguageServices {
         return takeObject(ret);
     }
     /**
+     * Reports LSP diagnostics from RainDocument's all problems
      * @param {RainDocument} rain_document
      * @param {boolean} related_information
      * @returns {any}
@@ -1386,6 +1357,7 @@ export class RainLanguageServices {
         return takeObject(ret);
     }
     /**
+     * Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
      * @param {TextDocumentItem} text_document
      * @param {boolean} related_information
      * @returns {Promise<any>}
@@ -1399,6 +1371,7 @@ export class RainLanguageServices {
         return takeObject(ret);
     }
     /**
+     * Provides completion items at the given position
      * @param {TextDocumentItem} text_document
      * @param {Position} position
      * @param {any} documentation_format
@@ -1414,6 +1387,7 @@ export class RainLanguageServices {
         return takeObject(ret);
     }
     /**
+     * Provides completion items at the given position
      * @param {RainDocument} rain_document
      * @param {Position} position
      * @param {any} documentation_format
@@ -1430,6 +1404,7 @@ export class RainLanguageServices {
         return takeObject(ret);
     }
     /**
+     * Provides hover for a fragment at the given position
      * @param {TextDocumentItem} text_document
      * @param {Position} position
      * @param {any} content_format
@@ -1445,6 +1420,7 @@ export class RainLanguageServices {
         return takeObject(ret);
     }
     /**
+     * Provides hover for a RainDocument fragment at the given position
      * @param {RainDocument} rain_document
      * @param {Position} position
      * @param {any} content_format
@@ -1461,6 +1437,7 @@ export class RainLanguageServices {
         return takeObject(ret);
     }
     /**
+     * Provides semantic tokens for elided fragments
      * @param {TextDocumentItem} text_document
      * @param {number} semantic_token_types_index
      * @param {number} semantic_token_modifiers_len
@@ -1476,6 +1453,7 @@ export class RainLanguageServices {
         return takeObject(ret);
     }
     /**
+     * Provides semantic tokens for RainDocument's elided fragments
      * @param {RainDocument} rain_document
      * @param {number} semantic_token_types_index
      * @param {number} semantic_token_modifiers_len
@@ -1497,17 +1475,16 @@ export class RainLanguageServices {
     }
 }
 /**
- * # RainlangDocument
+ * Data structure (parse tree) of a Rainlang text
  *
- * RainlangDocument struct implements methods for parsing a given rainlang text to
- * its parse tree which are used by the RainDocument and for providing LSP services.
+ * RainlangDocument is a data structure of a parsed Rainlang text to its parse tree
+ * which are used by the RainDocument and for providing LSP services.
  *
  * it should be noted that generally this should not be used individually outside
  * RainDocument unless there is a justified reason, as prasing a Rainlang text should
  * be done through Rain NativeParser contract and parsing method of this struct has no
  * effect on NativeParser prasing and is totally separate as it only provides AST data
- * generally structure used in context of RainDocument for LSP services and sourcemap
- * generation.
+ * generally used in context of RainDocument for LSP services and sourcemap generation.
  */
 export class RainlangDocument {
     static __wrap(ptr) {
@@ -1716,15 +1693,42 @@ async function __wbg_load(module, imports) {
 function __wbg_get_imports() {
     const imports = {};
     imports.__wbindgen_placeholder__ = {};
+    imports.__wbindgen_placeholder__.__wbg_raindocument_new = function (arg0) {
+        const ret = RainDocument.__wrap(arg0);
+        return addHeapObject(ret);
+    };
     imports.__wbindgen_placeholder__.__wbindgen_object_drop_ref = function (arg0) {
         takeObject(arg0);
     };
-    imports.__wbindgen_placeholder__.__wbindgen_number_new = function (arg0) {
-        const ret = arg0;
+    imports.__wbindgen_placeholder__.__wbindgen_string_new = function (arg0, arg1) {
+        const ret = getStringFromWasm0(arg0, arg1);
         return addHeapObject(ret);
     };
-    imports.__wbindgen_placeholder__.__wbindgen_error_new = function (arg0, arg1) {
-        const ret = new Error(getStringFromWasm0(arg0, arg1));
+    imports.__wbindgen_placeholder__.__wbindgen_string_get = function (arg0, arg1) {
+        const obj = getObject(arg1);
+        const ret = typeof obj === "string" ? obj : undefined;
+        var ptr1 = isLikeNone(ret)
+            ? 0
+            : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len1 = WASM_VECTOR_LEN;
+        getInt32Memory0()[arg0 / 4 + 1] = len1;
+        getInt32Memory0()[arg0 / 4 + 0] = ptr1;
+    };
+    imports.__wbindgen_placeholder__.__wbindgen_object_clone_ref = function (arg0) {
+        const ret = getObject(arg0);
+        return addHeapObject(ret);
+    };
+    imports.__wbindgen_placeholder__.__wbindgen_cb_drop = function (arg0) {
+        const obj = takeObject(arg0).original;
+        if (obj.cnt-- == 1) {
+            obj.a = 0;
+            return true;
+        }
+        const ret = false;
+        return ret;
+    };
+    imports.__wbindgen_placeholder__.__wbindgen_number_new = function (arg0) {
+        const ret = arg0;
         return addHeapObject(ret);
     };
     imports.__wbindgen_placeholder__.__wbindgen_boolean_get = function (arg0) {
@@ -1754,16 +1758,6 @@ function __wbg_get_imports() {
         getFloat64Memory0()[arg0 / 8 + 1] = isLikeNone(ret) ? 0 : ret;
         getInt32Memory0()[arg0 / 4 + 0] = !isLikeNone(ret);
     };
-    imports.__wbindgen_placeholder__.__wbindgen_string_get = function (arg0, arg1) {
-        const obj = getObject(arg1);
-        const ret = typeof obj === "string" ? obj : undefined;
-        var ptr1 = isLikeNone(ret)
-            ? 0
-            : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        var len1 = WASM_VECTOR_LEN;
-        getInt32Memory0()[arg0 / 4 + 1] = len1;
-        getInt32Memory0()[arg0 / 4 + 0] = ptr1;
-    };
     imports.__wbindgen_placeholder__.__wbindgen_is_object = function (arg0) {
         const val = getObject(arg0);
         const ret = typeof val === "object" && val !== null;
@@ -1781,29 +1775,12 @@ function __wbg_get_imports() {
         const ret = getObject(arg0) === undefined;
         return ret;
     };
+    imports.__wbindgen_placeholder__.__wbindgen_error_new = function (arg0, arg1) {
+        const ret = new Error(getStringFromWasm0(arg0, arg1));
+        return addHeapObject(ret);
+    };
     imports.__wbindgen_placeholder__.__wbindgen_as_number = function (arg0) {
         const ret = +getObject(arg0);
-        return ret;
-    };
-    imports.__wbindgen_placeholder__.__wbindgen_object_clone_ref = function (arg0) {
-        const ret = getObject(arg0);
-        return addHeapObject(ret);
-    };
-    imports.__wbindgen_placeholder__.__wbg_raindocument_new = function (arg0) {
-        const ret = RainDocument.__wrap(arg0);
-        return addHeapObject(ret);
-    };
-    imports.__wbindgen_placeholder__.__wbindgen_string_new = function (arg0, arg1) {
-        const ret = getStringFromWasm0(arg0, arg1);
-        return addHeapObject(ret);
-    };
-    imports.__wbindgen_placeholder__.__wbindgen_cb_drop = function (arg0) {
-        const obj = takeObject(arg0).original;
-        if (obj.cnt-- == 1) {
-            obj.a = 0;
-            return true;
-        }
-        const ret = false;
         return ret;
     };
     imports.__wbindgen_placeholder__.__wbindgen_is_function = function (arg0) {
@@ -1826,6 +1803,20 @@ function __wbg_get_imports() {
         return addHeapObject(ret);
     };
     imports.__wbindgen_placeholder__.__wbg_set_9182712abebf82ef = function (arg0, arg1, arg2) {
+        getObject(arg0)[takeObject(arg1)] = takeObject(arg2);
+    };
+    imports.__wbindgen_placeholder__.__wbg_String_88810dfeb4021902 = function (arg0, arg1) {
+        const ret = String(getObject(arg1));
+        const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        getInt32Memory0()[arg0 / 4 + 1] = len1;
+        getInt32Memory0()[arg0 / 4 + 0] = ptr1;
+    };
+    imports.__wbindgen_placeholder__.__wbg_getwithrefkey_5e6d9547403deab8 = function (arg0, arg1) {
+        const ret = getObject(arg0)[getObject(arg1)];
+        return addHeapObject(ret);
+    };
+    imports.__wbindgen_placeholder__.__wbg_set_841ac57cff3d672b = function (arg0, arg1, arg2) {
         getObject(arg0)[takeObject(arg1)] = takeObject(arg2);
     };
     imports.__wbindgen_placeholder__.__wbg_fetch_6a2624d7f767e331 = function (arg0) {
@@ -1903,20 +1894,6 @@ function __wbg_get_imports() {
             const ret = getObject(arg0).arrayBuffer();
             return addHeapObject(ret);
         }, arguments);
-    };
-    imports.__wbindgen_placeholder__.__wbg_String_88810dfeb4021902 = function (arg0, arg1) {
-        const ret = String(getObject(arg1));
-        const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len1 = WASM_VECTOR_LEN;
-        getInt32Memory0()[arg0 / 4 + 1] = len1;
-        getInt32Memory0()[arg0 / 4 + 0] = ptr1;
-    };
-    imports.__wbindgen_placeholder__.__wbg_getwithrefkey_5e6d9547403deab8 = function (arg0, arg1) {
-        const ret = getObject(arg0)[getObject(arg1)];
-        return addHeapObject(ret);
-    };
-    imports.__wbindgen_placeholder__.__wbg_set_841ac57cff3d672b = function (arg0, arg1, arg2) {
-        getObject(arg0)[takeObject(arg1)] = takeObject(arg2);
     };
     imports.__wbindgen_placeholder__.__wbg_get_f01601b5a68d10e3 = function (arg0, arg1) {
         const ret = getObject(arg0)[arg1 >>> 0];
@@ -2048,7 +2025,7 @@ function __wbg_get_imports() {
                 const a = state0.a;
                 state0.a = 0;
                 try {
-                    return __wbg_adapter_215(a, state0.b, arg0, arg1);
+                    return __wbg_adapter_210(a, state0.b, arg0, arg1);
                 } finally {
                     state0.a = a;
                 }
@@ -2144,8 +2121,8 @@ function __wbg_get_imports() {
         const ret = wasm.memory;
         return addHeapObject(ret);
     };
-    imports.__wbindgen_placeholder__.__wbindgen_closure_wrapper3553 = function (arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 1209, __wbg_adapter_50);
+    imports.__wbindgen_placeholder__.__wbindgen_closure_wrapper3549 = function (arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 1208, __wbg_adapter_50);
         return addHeapObject(ret);
     };
 

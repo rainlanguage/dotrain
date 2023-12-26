@@ -2,7 +2,9 @@
 
 # Class MetaStore
 
-\# MetaStore (CAS) Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities to easliy utilize them. Hashes are 32 bytes (in hex string format) and will be stored as lower case and meta bytes are valid cbor encoded as Uint8Array.
+In-memory CAS (content addressed storage) for all metadata required for parsing a RainDocument which basically stores k/v pairs of meta hash, meta bytes and ExpressionDeployer reproducible data as well as providing functionalities to easliy read them from the CAS.
+
+Hashes are 32 bytes (in hex string format) and will be stored as lower case and meta bytes are valid cbor encoded as Uint8Array. ExpressionDeployers data are in form of js object mapped to deployedBytecode meta hash and deploy transaction hash.
 
 <b>Signature:</b>
 

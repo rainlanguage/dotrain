@@ -2,16 +2,42 @@
 
 # Class RainLanguageServices
 
-\# RainLanguageServices
+Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)
 
-Provides methods for getting language service results (such as diagnostics, completion, etc) for a given LSP TextDocumentItem or a RainDocument
+Provides methods for getting language services (such as diagnostics, completion, etc) for a given TextDocumentItem or a RainDocument. Each instance is linked to a shared locked MetaStore instance that holds all the required metadata/functionalities that are required during parsing a text.
 
-Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any position encodings will result in the same LSP provided Position value which is 1 for each char
+Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any position encodings will result in the same LSP provided Position value which is 1 for each char.
 
 <b>Signature:</b>
 
 ```typescript
 class RainLanguageServices 
+```
+
+## Example
+
+
+```javascript
+// create new MetaStore instance
+let metaStore = new MetaStore();
+
+// crate new instance
+let langServices = new RainLanguageServices(metaStore);
+
+let textDocument = {
+  text: "some .rain text",
+  uri:  "file:///name.rain",
+  version: 0,
+  languageId: "rainlang"
+};
+
+// creat new RainDocument
+let rainDocument = langServices.newRainDocument(textdocument);
+
+// get LSP Diagnostics
+let diagnosticsRelatedInformation = true;
+let diagnostics = langServices.doValidate(textDocument, diagnosticsRelatedInformation);
+
 ```
 
 ## Properties

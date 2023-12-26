@@ -20,16 +20,16 @@
   ],
   "meta": [
     {
-      "binary": {
-        "path": "./path/to/another-binary-meta",
-        "hash": "0x7a89034fd7a33df88ca474ff2e413d8a2f425ed29f09866344ac6d6070a30d12"
-      }
-    },
-    {
       "hex": "./path/to/hex-meta"
     },
     {
       "binary": "./path/to/binary-meta"
+    },
+    {
+      "binary": {
+        "path": "./path/to/another-binary-meta",
+        "hash": "0x7a89034fd7a33df88ca474ff2e413d8a2f425ed29f09866344ac6d6070a30d12"
+      }
     },
     {
       "hex": {

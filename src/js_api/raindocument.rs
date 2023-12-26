@@ -2,14 +2,11 @@ use lsp_types::Url;
 use wasm_bindgen::prelude::*;
 use super::{
     store::MetaStore,
+    Namespace, IRainDocument, IAuthoringMeta, INPE2Deployer,
     super::{
-        Namespace, IRainDocument, IAuthoringMeta, INPE2Deployer,
         parser::raindocument::RainDocument,
-        compiler::RainDocumentCompileError,
-        types::{
-            ExpressionConfig,
-            ast::{Problem, Import, Comment, Binding},
-        },
+        compiler::{RainDocumentCompileError, ExpressionConfig},
+        types::ast::{Problem, Import, Comment, Binding},
     },
 };
 
@@ -26,12 +23,6 @@ impl RainDocument {
         .await
     }
 
-    /// creates an instance with a new raw MetaStore and parses with searching for metas from remote
-    #[wasm_bindgen(js_name = "createAsyncRaw")]
-    pub async fn js_create_async_raw(text: &str, uri: &str) -> RainDocument {
-        RainDocument::create_async(text.to_string(), Url::parse(uri).unwrap_throw(), None).await
-    }
-
     /// Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only)
     #[wasm_bindgen(js_name = "create")]
     pub fn js_create(text: &str, uri: &str, meta_store: &MetaStore) -> RainDocument {
@@ -42,22 +33,12 @@ impl RainDocument {
         )
     }
 
-    /// Creates an instance with a new raw MetaStore and parses with remote meta search disabled (cached metas only)
-    #[wasm_bindgen(js_name = "createRaw")]
-    pub fn js_create_raw(text: &str, uri: &str) -> RainDocument {
-        RainDocument::create(text.to_string(), Url::parse(uri).unwrap_throw(), None)
-    }
-
     #[wasm_bindgen(js_name = "fromInterface")]
     pub fn from_interface(value: &IRainDocument, meta_store: &MetaStore) -> RainDocument {
         let mut rd =
             serde_wasm_bindgen::from_value::<RainDocument>(value.obj.clone()).unwrap_throw();
         rd.meta_store = meta_store.0.clone();
         rd
-    }
-    #[wasm_bindgen(js_name = "fromInterfaceRaw")]
-    pub fn from_interface_raw(value: IRainDocument) -> RainDocument {
-        serde_wasm_bindgen::from_value::<RainDocument>(value.obj).unwrap_throw()
     }
 
     #[wasm_bindgen(js_name = "toInterface")]
@@ -256,21 +237,6 @@ impl RainDocument {
             .await
     }
 
-    /// Compiles a text as RainDocument with remote meta search enabled for parsing
-    #[wasm_bindgen(js_name = "compileTextRawAsync")]
-    pub async fn js_compile_text_raw_async(
-        text: &str,
-        entrypoints: Vec<String>,
-        uri: Option<String>,
-    ) -> Result<ExpressionConfig, RainDocumentCompileError> {
-        let uri = if let Some(v) = uri {
-            Some(Url::parse(&v).unwrap_throw())
-        } else {
-            None
-        };
-        RainDocument::compile_text_async(text, &entrypoints, uri, None, None).await
-    }
-
     /// Compiles a text as RainDocument with remote meta search disabled for parsing
     #[wasm_bindgen(js_name = "compileText")]
     pub async fn js_compile_text(
@@ -285,20 +251,5 @@ impl RainDocument {
             None
         };
         RainDocument::compile_text(text, &entrypoints, uri, Some(meta_store.0.clone()), None)
-    }
-
-    /// Compiles a text as RainDocument with remote meta search disabled for parsing
-    #[wasm_bindgen(js_name = "compileTextRaw")]
-    pub async fn js_compile_text_raw(
-        text: &str,
-        entrypoints: Vec<String>,
-        uri: Option<String>,
-    ) -> Result<ExpressionConfig, RainDocumentCompileError> {
-        let uri = if let Some(v) = uri {
-            Some(Url::parse(&v).unwrap_throw())
-        } else {
-            None
-        };
-        RainDocument::compile_text(text, &entrypoints, uri, None, None)
     }
 }

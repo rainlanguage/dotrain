@@ -3989,7 +3989,7 @@
         {
           "kind": "Class",
           "canonicalReference": "@rainlanguage/dotrain!MetaStore:class",
-          "docComment": "/**\n * # MetaStore (CAS) Reads, stores and simply manages k/v pairs of meta hash and meta bytes and provides the functionalities to easliy utilize them. Hashes are 32 bytes (in hex string format) and will be stored as lower case and meta bytes are valid cbor encoded as Uint8Array.\n *\n * @example\n * ```typescript\n * // to instantiate with including default subgraphs\n * // pass 'false' to not include default rain subgraph endpoints\n * const store = new MetaStore();\n *\n * // or to instantiate with initial arguments\n * const store = MetaStore.create(options);\n *\n * // add a new subgraph endpoint URLs\n * store.addSubgraphs([\"sg-url-1\", \"sg-url-2\", ...])\n *\n * // merge another MetaStore instance to this instance\n * store.merge(anotherMetaStore)\n *\n * // updates the meta store with a new meta by searching through subgraphs\n * await store.update(hash)\n *\n * // to get a meta bytes of a corresponding hash from store\n * const meta = store.getMeta(hash);\n * ```\n *\n */\n",
+          "docComment": "/**\n * In-memory CAS (content addressed storage) for all metadata required for parsing a RainDocument which basically stores k/v pairs of meta hash, meta bytes and ExpressionDeployer reproducible data as well as providing functionalities to easliy read them from the CAS.\n *\n * Hashes are 32 bytes (in hex string format) and will be stored as lower case and meta bytes are valid cbor encoded as Uint8Array. ExpressionDeployers data are in form of js object mapped to deployedBytecode meta hash and deploy transaction hash.\n *\n * @example\n * ```typescript\n * // to instantiate with including default subgraphs\n * // pass 'false' to not include default rain subgraph endpoints\n * const store = new MetaStore();\n *\n * // or to instantiate with initial arguments\n * const store = MetaStore.create(options);\n *\n * // add a new subgraph endpoint URLs\n * store.addSubgraphs([\"sg-url-1\", \"sg-url-2\", ...])\n *\n * // merge another MetaStore instance to this instance\n * store.merge(anotherMetaStore)\n *\n * // updates the meta store with a new meta by searching through subgraphs\n * await store.update(hash)\n *\n * // to get a meta bytes of a corresponding hash from store\n * const meta = store.getMeta(hash);\n * ```\n *\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -6362,7 +6362,7 @@
         {
           "kind": "Class",
           "canonicalReference": "@rainlanguage/dotrain!RainDocument:class",
-          "docComment": "/**\n * # RainDocument RainDocument is the main implementation block that enables parsing of a .rain file contents to its building blocks and parse tree by handling and resolving imports, namespaces, etc which later are used by LSP services and compiler as well as providing all the functionalities in between.\n *\n * A portable, extensible and composable format for describing Rainlang fragments, .rain serve as a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and adversarial environment such as a public blockchain.\n *\n * ## Examples\n *\n * ``` ```\n */\n",
+          "docComment": "/**\n * Data structure of a parsed .rain text\n *\n * RainDocument is the main implementation block that enables parsing of a .rain file contents to its building blocks and parse tree by handling and resolving imports, namespaces, etc which later are used by LSP services and compiler as well as providing all the functionalities in between.\n *\n * It is a portable, extensible and composable format for describing Rainlang fragments, .rain serve as a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and adversarial environment such as a public blockchain.\n *\n * @example\n * ```javascript\n * // create a new instane\n * // uri must be a valid URL\n * const rainDocument = RainDocument.create(text, uri, meta_store);\n *\n * // alternatively instantiate with remote meta search enabled\n * const rainDocument = await RainDocument.createAsync(text, uri, meta_store);\n *\n * // get all problems\n * const problems = rainDocument.allProblems;\n *\n * // compile this instance to get ExpressionConfig\n * const expConfig = rainDocument.compile([\"entrypoint1\", \"entrypoint2\"]);\n * ```\n *\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -6823,194 +6823,6 @@
             },
             {
               "kind": "Method",
-              "canonicalReference": "@rainlanguage/dotrain!RainDocument.compileTextRaw:member(1)",
-              "docComment": "/**\n * Compiles a text as RainDocument with remote meta search disabled for parsing\n *\n * @param text - \n *\n * @param entrypoints - \n *\n * @param uri - \n *\n * @returns {Promise<ExpressionConfig>}\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "static compileTextRaw(\n        text: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": ",\n        entrypoints: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ",\n        uri?: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": ",\n    ): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Promise",
-                  "canonicalReference": "!Promise:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": "<"
-                },
-                {
-                  "kind": "Reference",
-                  "text": "ExpressionConfig",
-                  "canonicalReference": "@rainlanguage/dotrain!ExpressionConfig:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": ">"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": true,
-              "returnTypeTokenRange": {
-                "startIndex": 7,
-                "endIndex": 11
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [
-                {
-                  "parameterName": "text",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 1,
-                    "endIndex": 2
-                  },
-                  "isOptional": false
-                },
-                {
-                  "parameterName": "entrypoints",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 3,
-                    "endIndex": 4
-                  },
-                  "isOptional": false
-                },
-                {
-                  "parameterName": "uri",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 5,
-                    "endIndex": 6
-                  },
-                  "isOptional": true
-                }
-              ],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "compileTextRaw"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainlanguage/dotrain!RainDocument.compileTextRawAsync:member(1)",
-              "docComment": "/**\n * Compiles a text as RainDocument with remote meta search enabled for parsing\n *\n * @param text - \n *\n * @param entrypoints - \n *\n * @param uri - \n *\n * @returns {Promise<ExpressionConfig>}\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "static compileTextRawAsync(\n        text: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": ",\n        entrypoints: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string[]"
-                },
-                {
-                  "kind": "Content",
-                  "text": ",\n        uri?: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": ",\n    ): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Promise",
-                  "canonicalReference": "!Promise:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": "<"
-                },
-                {
-                  "kind": "Reference",
-                  "text": "ExpressionConfig",
-                  "canonicalReference": "@rainlanguage/dotrain!ExpressionConfig:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": ">"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": true,
-              "returnTypeTokenRange": {
-                "startIndex": 7,
-                "endIndex": 11
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [
-                {
-                  "parameterName": "text",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 1,
-                    "endIndex": 2
-                  },
-                  "isOptional": false
-                },
-                {
-                  "parameterName": "entrypoints",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 3,
-                    "endIndex": 4
-                  },
-                  "isOptional": false
-                },
-                {
-                  "parameterName": "uri",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 5,
-                    "endIndex": 6
-                  },
-                  "isOptional": true
-                }
-              ],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "compileTextRawAsync"
-            },
-            {
-              "kind": "Method",
               "canonicalReference": "@rainlanguage/dotrain!RainDocument.create:member(1)",
               "docComment": "/**\n * Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only)\n *\n * @param text - \n *\n * @param uri - \n *\n * @param meta_store - \n *\n * @returns {RainDocument}\n */\n",
               "excerptTokens": [
@@ -7187,149 +6999,6 @@
               "name": "createAsync"
             },
             {
-              "kind": "Method",
-              "canonicalReference": "@rainlanguage/dotrain!RainDocument.createAsyncRaw:member(1)",
-              "docComment": "/**\n * creates an instance with a new raw MetaStore and parses with searching for metas from remote\n *\n * @param text - \n *\n * @param uri - \n *\n * @returns {Promise<RainDocument>}\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "static createAsyncRaw(text: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": ", uri: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": "): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "Promise",
-                  "canonicalReference": "!Promise:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": "<"
-                },
-                {
-                  "kind": "Reference",
-                  "text": "RainDocument",
-                  "canonicalReference": "@rainlanguage/dotrain!RainDocument:class"
-                },
-                {
-                  "kind": "Content",
-                  "text": ">"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": true,
-              "returnTypeTokenRange": {
-                "startIndex": 5,
-                "endIndex": 9
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [
-                {
-                  "parameterName": "text",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 1,
-                    "endIndex": 2
-                  },
-                  "isOptional": false
-                },
-                {
-                  "parameterName": "uri",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 3,
-                    "endIndex": 4
-                  },
-                  "isOptional": false
-                }
-              ],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "createAsyncRaw"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainlanguage/dotrain!RainDocument.createRaw:member(1)",
-              "docComment": "/**\n * Creates an instance with a new raw MetaStore and parses with remote meta search disabled (cached metas only)\n *\n * @param text - \n *\n * @param uri - \n *\n * @returns {RainDocument}\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "static createRaw(text: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": ", uri: "
-                },
-                {
-                  "kind": "Content",
-                  "text": "string"
-                },
-                {
-                  "kind": "Content",
-                  "text": "): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "RainDocument",
-                  "canonicalReference": "@rainlanguage/dotrain!RainDocument:class"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": true,
-              "returnTypeTokenRange": {
-                "startIndex": 5,
-                "endIndex": 6
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [
-                {
-                  "parameterName": "text",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 1,
-                    "endIndex": 2
-                  },
-                  "isOptional": false
-                },
-                {
-                  "parameterName": "uri",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 3,
-                    "endIndex": 4
-                  },
-                  "isOptional": false
-                }
-              ],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "createRaw"
-            },
-            {
               "kind": "Property",
               "canonicalReference": "@rainlanguage/dotrain!RainDocument#deployer:member",
               "docComment": "/**\n * This instance's NPE2 Deployer details\n */\n",
@@ -7487,56 +7156,6 @@
               "isOptional": false,
               "isAbstract": false,
               "name": "fromInterface"
-            },
-            {
-              "kind": "Method",
-              "canonicalReference": "@rainlanguage/dotrain!RainDocument.fromInterfaceRaw:member(1)",
-              "docComment": "/**\n * @param value - \n *\n * @returns {RainDocument}\n */\n",
-              "excerptTokens": [
-                {
-                  "kind": "Content",
-                  "text": "static fromInterfaceRaw(value: "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "IRainDocument",
-                  "canonicalReference": "@rainlanguage/dotrain!IRainDocument:interface"
-                },
-                {
-                  "kind": "Content",
-                  "text": "): "
-                },
-                {
-                  "kind": "Reference",
-                  "text": "RainDocument",
-                  "canonicalReference": "@rainlanguage/dotrain!RainDocument:class"
-                },
-                {
-                  "kind": "Content",
-                  "text": ";"
-                }
-              ],
-              "isStatic": true,
-              "returnTypeTokenRange": {
-                "startIndex": 3,
-                "endIndex": 4
-              },
-              "releaseTag": "Public",
-              "isProtected": false,
-              "overloadIndex": 1,
-              "parameters": [
-                {
-                  "parameterName": "value",
-                  "parameterTypeTokenRange": {
-                    "startIndex": 1,
-                    "endIndex": 2
-                  },
-                  "isOptional": false
-                }
-              ],
-              "isOptional": false,
-              "isAbstract": false,
-              "name": "fromInterfaceRaw"
             },
             {
               "kind": "Property",
@@ -8319,7 +7938,7 @@
         {
           "kind": "Class",
           "canonicalReference": "@rainlanguage/dotrain!RainlangDocument:class",
-          "docComment": "/**\n * # RainlangDocument\n *\n * RainlangDocument struct implements methods for parsing a given rainlang text to its parse tree which are used by the RainDocument and for providing LSP services.\n *\n * it should be noted that generally this should not be used individually outside RainDocument unless there is a justified reason, as prasing a Rainlang text should be done through Rain NativeParser contract and parsing method of this struct has no effect on NativeParser prasing and is totally separate as it only provides AST data generally structure used in context of RainDocument for LSP services and sourcemap generation.\n */\n",
+          "docComment": "/**\n * Data structure (parse tree) of a Rainlang text\n *\n * RainlangDocument is a data structure of a parsed Rainlang text to its parse tree which are used by the RainDocument and for providing LSP services.\n *\n * it should be noted that generally this should not be used individually outside RainDocument unless there is a justified reason, as prasing a Rainlang text should be done through Rain NativeParser contract and parsing method of this struct has no effect on NativeParser prasing and is totally separate as it only provides AST data generally used in context of RainDocument for LSP services and sourcemap generation.\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",
@@ -9032,7 +8651,7 @@
         {
           "kind": "Class",
           "canonicalReference": "@rainlanguage/dotrain!RainLanguageServices:class",
-          "docComment": "/**\n * # RainLanguageServices\n *\n * Provides methods for getting language service results (such as diagnostics, completion, etc) for a given LSP TextDocumentItem or a RainDocument\n *\n * Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any position encodings will result in the same LSP provided Position value which is 1 for each char\n */\n",
+          "docComment": "/**\n * Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)\n *\n * Provides methods for getting language services (such as diagnostics, completion, etc) for a given TextDocumentItem or a RainDocument. Each instance is linked to a shared locked MetaStore instance that holds all the required metadata/functionalities that are required during parsing a text.\n *\n * Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any position encodings will result in the same LSP provided Position value which is 1 for each char.\n *\n * @example\n * ```javascript\n * // create new MetaStore instance\n * let metaStore = new MetaStore();\n *\n * // crate new instance\n * let langServices = new RainLanguageServices(metaStore);\n *\n * let textDocument = {\n *   text: \"some .rain text\",\n *   uri:  \"file:///name.rain\",\n *   version: 0,\n *   languageId: \"rainlang\"\n * };\n *\n * // creat new RainDocument\n * let rainDocument = langServices.newRainDocument(textdocument);\n *\n * // get LSP Diagnostics\n * let diagnosticsRelatedInformation = true;\n * let diagnostics = langServices.doValidate(textDocument, diagnosticsRelatedInformation);\n * ```\n *\n */\n",
           "excerptTokens": [
             {
               "kind": "Content",

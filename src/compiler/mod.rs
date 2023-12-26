@@ -3,8 +3,8 @@
 use regex::Regex;
 use lsp_types::Url;
 use self::evm_helpers::*;
-use serde::{Serialize, Deserialize};
 use alloy_sol_types::{SolCall, SolInterface};
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
 use std::{
     collections::VecDeque,
     sync::{Arc, RwLock},
@@ -19,7 +19,6 @@ use revm::{
 use magic_string::{MagicString, OverwriteOptions, DecodedMap, GenerateDecodedMapOptions};
 use super::{
     types::{
-        ExpressionConfig,
         patterns::{WORD_PATTERN, BINARY_PATTERN, HEX_PATTERN, NUMERIC_PATTERN},
         ast::{
             Offsets, Problem, Node, Namespace, NamespaceItem, NamespaceNode, Binding, BindingItem,
@@ -35,6 +34,75 @@ pub mod evm_helpers;
 use tsify::Tsify;
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use wasm_bindgen::prelude::*;
+
+/// Type of valid parsed expression, ready for deploying the expression onchain
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(
+    any(feature = "js-api", target_family = "wasm"),
+    derive(Tsify),
+    tsify(into_wasm_abi, from_wasm_abi)
+)]
+pub struct ExpressionConfig {
+    /// Bytecode verbatim.
+    #[serde(
+        serialize_with = "serialize_bytecode",
+        deserialize_with = "deserialize_bytecode"
+    )]
+    #[cfg_attr(
+        any(feature = "js-api", target_family = "wasm"),
+        tsify(type = "string")
+    )]
+    pub bytecode: Vec<u8>,
+    /// Constants verbatim.
+    #[cfg_attr(
+        any(feature = "js-api", target_family = "wasm"),
+        tsify(type = "string[]")
+    )]
+    pub constants: Vec<alloy_primitives::U256>,
+}
+
+fn serialize_bytecode<S: Serializer>(bytes: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error> {
+    let hex_string = alloy_primitives::hex::encode_prefixed(bytes);
+    serializer.serialize_str(&hex_string)
+}
+
+fn deserialize_bytecode<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
+    struct ExpConfVisitor;
+    impl<'de> serde::de::Visitor<'de> for ExpConfVisitor {
+        type Value = Vec<u8>;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("a hex string or bytes")
+        }
+
+        fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
+            alloy_primitives::hex::decode(value).map_err(serde::de::Error::custom)
+        }
+        fn visit_borrowed_str<E: serde::de::Error>(
+            self,
+            value: &'de str,
+        ) -> Result<Self::Value, E> {
+            alloy_primitives::hex::decode(value).map_err(serde::de::Error::custom)
+        }
+        fn visit_string<E: serde::de::Error>(self, value: String) -> Result<Self::Value, E> {
+            alloy_primitives::hex::decode(value).map_err(serde::de::Error::custom)
+        }
+
+        fn visit_bytes<E: serde::de::Error>(self, value: &[u8]) -> Result<Self::Value, E> {
+            Ok(value.to_vec())
+        }
+        fn visit_borrowed_bytes<E: serde::de::Error>(
+            self,
+            value: &'de [u8],
+        ) -> Result<Self::Value, E> {
+            Ok(value.to_vec())
+        }
+        fn visit_byte_buf<E: serde::de::Error>(self, value: Vec<u8>) -> Result<Self::Value, E> {
+            Ok(value)
+        }
+    }
+    deserializer.deserialize_any(ExpConfVisitor)
+}
 
 #[derive(Debug, PartialEq, Clone)]
 struct CompilationTargetElement {
@@ -135,7 +203,7 @@ impl RainDocument {
     /// compiles a given text as RainDocument with remote meta search disabled for parsing
     pub fn compile_text(
         text: &str,
-        entrypoints: &[String],
+        entrypoints: &Vec<String>,
         uri: Option<Url>,
         meta_store: Option<Arc<RwLock<Store>>>,
         evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
@@ -429,9 +497,6 @@ impl RainDocument {
     }
 }
 
-pub struct Compile;
-impl Compile {}
-
 /// Searchs in a Namespace for a given name
 fn search_namespace<'a>(
     name: &str,
@@ -519,7 +584,9 @@ fn build_sourcemap(
                         .overwrite(
                             v.position[0] as i64,
                             v.position[1] as i64,
-                            &binary_to_u256(&v.value).map_err(|e| e.to_string())?.to_string(),
+                            &binary_to_u256(&v.value)
+                                .map_err(|e| e.to_string())?
+                                .to_string(),
                             OverwriteOptions::default(),
                         )
                         .or(Err("could not build sourcemap".to_owned()))?;

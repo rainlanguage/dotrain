@@ -1,92 +1,47 @@
-#![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/rainlanguage/rainlang-vscode/master/docs/images/rain-logo-icon.svg",
     html_favicon_url = "https://raw.githubusercontent.com/rainlanguage/rainlang-vscode/master/docs/images/rain-logo-icon.svg"
 )]
-
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
-use wasm_bindgen::prelude::*;
+//! The Rain language server protocol ([LSP](https://microsoft.github.io/language-server-protocol/)) implementation (language services) and .rain
+//! compiler written in rust and made available for NodeJs and broswers through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/)
+//! in Typescript/Javascript which makes it well suited for editors and IDEs (as it is used in Rainlang vscode and codemirror language extension).
+//! - Dotrain specs can be found [here](https://github.com/rainprotocol/specs/blob/main/dotrain.md)
+//! - Rainlang specs can be found [here](https://github.com/rainprotocol/specs/blob/main/rainlang.md)
+//! - Dotrain has been implemented for vscode and codemirror, see [rainlang-vscode](https://github.com/rainprotocol/rainlang-vscode) and [rainlang-codemirror](https://github.com/rainprotocol/rainlang-codemirror) repositories for more details.
+//! - Dotrain vscode extension can be found [here](https://marketplace.visualstudio.com/items?itemName=rainprotocol.rainlang-vscode).
+//!
+//! The primary goal of the Rain language is to make smart contract development accessible
+//! for as many people as possible. This is fundamentally grounded in our belief that accessibility
+//!  is the difference between theoretical and practical decentralisation. There are many people
+//! who would like to participate in authoring and auditing crypto code but currently cannot.
+//! When someone wants/needs to do something but cannot, then they delegate to someone who can,
+//! this is by definition centralisation.
+//! Fast and easy queue abstraction.
+//!
+//! Provides an abstraction over a queue.  When the abstraction is used
+//! there are these advantages:
+//! - Fast
+//! - [`Easy`]
+//!
+//! [`Easy`]: http://thatwaseasy.example.com
 
 pub mod types;
-pub mod parser;
-pub mod compiler;
+pub(crate) mod parser;
+pub(crate) mod compiler;
 
 #[cfg(feature = "cli")]
 pub mod cli;
 
 #[cfg(feature = "lsp")]
-pub mod lsp;
+pub(crate) mod lsp;
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 pub mod js_api;
 
-pub use parser::{RainDocument, RainlangDocument};
-pub use types::ExpressionConfig;
+pub use lsp_types::Url;
+pub use rain_meta::Store;
+pub use parser::*;
+pub use compiler::*;
 
 #[cfg(feature = "lsp")]
-pub use lsp::RainLanguageServices;
-
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    pub fn log(s: &str);
-
-    #[wasm_bindgen(typescript_type = "IRainlangDocument")]
-    pub type IRainlangDocument;
-
-    #[wasm_bindgen(typescript_type = "IRainDocument")]
-    pub type IRainDocument;
-
-    #[wasm_bindgen(typescript_type = "IAuthoringMeta")]
-    pub type IAuthoringMeta;
-
-    #[wasm_bindgen(typescript_type = "Namespace")]
-    pub type Namespace;
-
-    #[wasm_bindgen(typescript_type = "INPE2Deployer")]
-    pub type INPE2Deployer;
-
-    #[wasm_bindgen(typescript_type = "DeployerQueryResponse")]
-    pub type DeployerQueryResponse;
-}
-
-#[cfg(all(feature = "lsp", any(feature = "js-api", target_family = "wasm")))]
-#[wasm_bindgen(typescript_custom_section)]
-const LSP_TS_IMPORTS: &'static str = r#"
-import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
-import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentItem } from "vscode-languageserver-types";
-"#;
-
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
-#[wasm_bindgen(typescript_custom_section)]
-const IAUTHORING_META_TS_INTERFACE: &'static str = r#"export type IAuthoringMeta = {
-    word: string,
-    description: string,
-    operandParserOffset: number,
-}[]"#;
-
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
-#[wasm_bindgen(typescript_custom_section)]
-const INPE2_DEPLOYER_TS_INTERFACE: &'static str = r#"export interface INPE2Deployer {
-    metaHash: string,
-    metaBytes: Uint8Array,
-    bytecode: Uint8Array,
-    parser: Uint8Array,
-    store: Uint8Array,
-    interpreter: Uint8Array,
-    authoringMeta: IAuthoringMeta | undefined
-}"#;
-
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
-#[wasm_bindgen(typescript_custom_section)]
-const DEPLOYER_QUERY_RESPONSE_TS_INTERFACE: &'static str = r#"export interface DeployerQueryResponse {
-    txHash: string,
-    bytecodeMetaHash: string,
-    metaHash: string,
-    metaBytes: Uint8Array,
-    bytecode: Uint8Array,
-    parser: Uint8Array,
-    store: Uint8Array,
-    interpreter: Uint8Array
-}"#;
+pub use lsp::*;

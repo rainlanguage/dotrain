@@ -9,8 +9,8 @@ use std::{
     collections::HashMap,
 };
 
-pub const DEFAULT_RAINCONFIG_PATH: &str = "rainconfig.json";
-pub const RAINCONFIG_DESCRIPTION: &str = r"
+pub(crate) const DEFAULT_RAINCONFIG_PATH: &str = "rainconfig.json";
+pub(crate) const RAINCONFIG_DESCRIPTION: &str = r"
 Description:
 rainconfig.json provides configuration details and information required for .rain compiler.
 
@@ -43,34 +43,51 @@ all fields in the rainconfig are optional and are as follows:
   bytecode and deployed bytecode can be read from and 'constructionMeta' is specified the same 
   as any other meta.
 ";
+pub(crate) const RAINCONFIG_SRC_DESCRIPTION: &str = r"Specifies list of .rain source files mappings for compilation, where specified .rain input files will get compiled and results written into output json file.";
+pub(crate) const RAINCONFIG_INCLUDE_DESCRIPTION: &str = r"Specifies a list of directories (files/folders) to be included and watched. 'src' files are included by default and folders will be watched recursively for .rain files. These files will be available as dotrain meta in the cas so if their hash is specified in a compilation target they will get resolved.";
+pub(crate) const RAINCONFIG_SUBGRAPHS_DESCRIPTION: &str = r"Additional subgraph endpoint URLs to include when searching for metas of specified meta hashes in a rainlang document.";
+pub(crate) const RAINCONFIG_META_DESCRIPTION: &str = r"List of paths (or object of path and hash) of local meta files as binary or utf8 encoded text file containing hex string starting with 0x.";
+pub(crate) const RAINCONFIG_DEPLOYERS_DESCRIPTION: &str = r"List of ExpressionDeployers data sets which represents all the data required for reproducing it on a local evm, paired with their corresponding hash as a key/value pair, each pair has the fields that hold a path to disk location to read data from, 'expressionDeployer', 'parser', 'store', 'interpreter' fields should point to contract json artifact where their bytecode and deployed bytecode can be read from and 'constructionMeta' is specified the same as any other meta.";
 
+/// A compilation map for single .rain file
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct RainConfigCompilationMap {
+    /// Path of the .rain file
     pub input: PathBuf,
+    /// Path where compilation result should written into
     pub output: PathBuf,
+    /// The entrypoints for compilation
     pub entrypoints: Vec<String>,
 }
 
+/// A Rain meta path with hash
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct MetaPathTypeFull {
     pub path: PathBuf,
     pub hash: String,
 }
 
+/// Type of a meta path
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum MetaPathType {
+    /// Indicates a full path with hash
     Full(MetaPathTypeFull),
+    /// Indicates the path only
     PathOnly(PathBuf),
 }
 
+/// Type of a meta data type
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum RainConfigMetaType {
+    /// Indicates a binary data
     Binary(MetaPathType),
+    /// Indicates a utf8 encoded hex string data
     Hex(MetaPathType),
 }
 
+/// Data structure of deserialized deployer item from rainconfig.json
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct RainConfigDeployer {
@@ -81,6 +98,7 @@ pub struct RainConfigDeployer {
     pub interpreter: PathBuf,
 }
 
+/// Data structure of deserialized rainconfig.json
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct RainConfig {
     pub src: Option<Vec<RainConfigCompilationMap>>,
@@ -175,6 +193,7 @@ impl RainConfig {
         Ok((dotrains, metas, np_deployers))
     }
 
+    /// Build a Store instance from all specified configuraion in rainconfig
     pub fn build_store(&self) -> anyhow::Result<Arc<RwLock<Store>>> {
         let temp: Vec<String> = vec![];
         let subgraphs = if let Some(sgs) = &self.subgraphs {
@@ -205,6 +224,7 @@ impl RainConfig {
         Ok(Arc::new(RwLock::new(store)))
     }
 
+    /// Builds a Store instance from all specified configuraion in rainconfig by ignoring all erroneous path/items
     pub fn force_build_store(&self) -> anyhow::Result<Arc<RwLock<Store>>> {
         let temp: Vec<String> = vec![];
         let subgraphs = if let Some(sgs) = &self.subgraphs {

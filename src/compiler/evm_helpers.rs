@@ -1,3 +1,5 @@
+//! Provides revm helper functions to easily deploy, call and transact with a local [mod@revm]
+
 use super::ParseResult;
 use alloy_sol_types::sol;
 use alloy_primitives::Uint;
@@ -223,7 +225,13 @@ pub fn deploy_contract(
     }
 }
 
+// @TODO - pull error selectors from the interpreter repo
 sol! {
+    /// NativeParser construction struct
+    /// 
+    /// Used with [mod@alloy_json_abi] and [mod@alloy_primitives] crates to easily encode
+    /// construction data for deploying an ExpressionDeployer contract into 
+    /// local [mod@revm]
     struct NativeParserConstructionConfig {
         address interpreter;
         address store;
@@ -231,6 +239,11 @@ sol! {
         bytes meta;
     }
 
+    /// NativeParser solidity/rust interface
+    /// 
+    /// Used with [mod@alloy_json_abi] and [mod@alloy_primitives] crates to easily encode/decode
+    /// function calldata or return data and decode errors from the execution result
+    /// of a local [mod@revm]
     #[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
     interface INativeParser {
         event Set(uint256 namespace, uint256 key, uint256 value);

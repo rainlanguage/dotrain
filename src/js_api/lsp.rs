@@ -11,22 +11,57 @@ use super::{
 
 #[wasm_bindgen]
 extern "C" {
+    /// A wrapped JsValue representing typescript LSP Position interface in rust,
+    /// it can be deserialized to rust `lsp_types` Position using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "Position")]
     pub type Position;
+    /// A wrapped JsValue representing typescript LSP Position interface in rust,
+    /// it can be deserialized to rust `lsp_types` TextDocumentItem using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "TextDocumentItem")]
     pub type TextDocumentItem;
 }
 
 #[wasm_bindgen(typescript_custom_section)]
+const LSP_TS_IMPORTS: &'static str = r#"
+import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
+import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentItem } from "vscode-languageserver-types";
+"#;
+
+#[wasm_bindgen(typescript_custom_section)]
 const RAIN_LANGUAGE_SERVICES_TYPESCRIPT_DEFINITION: &'static str = r#"/**
- * # RainLanguageServices
+ * Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)
  *
- * Provides methods for getting language service results (such as diagnostics, completion, etc)
- * for a given LSP TextDocumentItem or a RainDocument
+ * Provides methods for getting language services (such as diagnostics, completion, etc)
+ * for a given TextDocumentItem or a RainDocument. Each instance is linked to a shared locked
+ * MetaStore instance that holds all the required metadata/functionalities that are required during 
+ * parsing a text.
  *
  * Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
  * only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
- * position encodings will result in the same LSP provided Position value which is 1 for each char
+ * position encodings will result in the same LSP provided Position value which is 1 for each char.
+ * 
+ * @example
+ * ```javascript
+ * // create new MetaStore instance
+ * let metaStore = new MetaStore();
+ *
+ * // crate new instance
+ * let langServices = new RainLanguageServices(metaStore);
+ *
+ * let textDocument = {
+ *   text: "some .rain text",
+ *   uri:  "file:///name.rain",
+ *   version: 0,
+ *   languageId: "rainlang"
+ * };
+ *
+ * // creat new RainDocument
+ * let rainDocument = langServices.newRainDocument(textdocument);
+ * 
+ * // get LSP Diagnostics
+ * let diagnosticsRelatedInformation = true;
+ * let diagnostics = langServices.doValidate(textDocument, diagnosticsRelatedInformation);
+ * ```
  */
 export class RainLanguageServices {
   free(): void;
@@ -147,11 +182,13 @@ export class RainLanguageServices {
 
 #[wasm_bindgen]
 impl RainLanguageServices {
+    /// The meta Store associated with this RainLanguageServices instance
     #[wasm_bindgen(getter, js_name = "metaStore", skip_typescript)]
     pub fn js_meta_store(&self) -> MetaStore {
         MetaStore(self.meta_store.clone())
     }
 
+    /// Instantiates with the given MetaStore
     #[wasm_bindgen(constructor, skip_typescript)]
     pub fn js_new(meta_store: &MetaStore) -> RainLanguageServices {
         RainLanguageServices::new(&LanguageServiceParams {
@@ -159,12 +196,14 @@ impl RainLanguageServices {
         })
     }
 
+    /// Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
     #[wasm_bindgen(js_name = "newRainDocument", skip_typescript)]
     pub fn js_new_rain_document(&self, text_document: TextDocumentItem) -> RainDocument {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
         self.new_rain_document(&tdi)
     }
 
+    /// Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
     #[wasm_bindgen(js_name = "newRainDocumentAsync", skip_typescript)]
     pub async fn js_new_rain_document_async(
         &self,
@@ -174,6 +213,7 @@ impl RainLanguageServices {
         self.new_rain_document_async(&tdi).await
     }
 
+    /// Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
     #[wasm_bindgen(js_name = "doValidate", skip_typescript)]
     pub fn js_do_validate(
         &self,
@@ -184,6 +224,7 @@ impl RainLanguageServices {
         to_js_value(&self.do_validate(&tdi, related_information)).unwrap_or(JsValue::NULL)
     }
 
+    /// Reports LSP diagnostics from RainDocument's all problems
     #[wasm_bindgen(js_name = "doValidateRainDocument", skip_typescript)]
     pub fn js_do_validate_rain_document(
         &self,
@@ -194,6 +235,7 @@ impl RainLanguageServices {
             .unwrap_or(JsValue::NULL)
     }
 
+    /// Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
     #[wasm_bindgen(js_name = "doValidateAsync", skip_typescript)]
     pub async fn js_do_validate_async(
         &self,
@@ -205,6 +247,7 @@ impl RainLanguageServices {
             .unwrap_or(JsValue::NULL)
     }
 
+    /// Provides completion items at the given position
     #[wasm_bindgen(js_name = "doComplete", skip_typescript)]
     pub fn js_do_complete(
         &self,
@@ -226,6 +269,7 @@ impl RainLanguageServices {
         }
     }
 
+    /// Provides completion items at the given position
     #[wasm_bindgen(js_name = "doCompleteRainDocument", skip_typescript)]
     pub fn js_do_complete_rain_document(
         &self,
@@ -246,6 +290,7 @@ impl RainLanguageServices {
         }
     }
 
+    /// Provides hover for a fragment at the given position
     #[wasm_bindgen(js_name = "doHover", skip_typescript)]
     pub fn js_do_hover(
         &self,
@@ -266,6 +311,7 @@ impl RainLanguageServices {
         }
     }
 
+    /// Provides hover for a RainDocument fragment at the given position
     #[wasm_bindgen(js_name = "doHoverRainDocument", skip_typescript)]
     pub fn js_do_hover_rain_document(
         &self,
@@ -285,6 +331,7 @@ impl RainLanguageServices {
         }
     }
 
+    /// Provides semantic tokens for elided fragments
     #[wasm_bindgen(js_name = "semanticTokens", skip_typescript)]
     pub fn js_semantic_tokens(
         &self,
@@ -301,6 +348,8 @@ impl RainLanguageServices {
         .unwrap_or(JsValue::NULL)
     }
 
+
+    /// Provides semantic tokens for RainDocument's elided fragments
     #[wasm_bindgen(js_name = "rainDocumentSemanticTokens", skip_typescript)]
     pub fn js_rain_document_semantic_tokens(
         &self,

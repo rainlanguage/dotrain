@@ -1,4 +1,4 @@
-use super::{ast::*, ExpressionConfig};
+use super::{ast::*, super::compiler::ExpressionConfig};
 use serde_wasm_bindgen::{Error, to_value, from_value};
 use wasm_bindgen::{
     JsValue,

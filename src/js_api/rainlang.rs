@@ -1,13 +1,13 @@
 use wasm_bindgen::prelude::*;
 use rain_meta::{types::authoring::v1::AuthoringMeta, NPE2Deployer};
 use serde_wasm_bindgen::{to_value as to_js_value, from_value as from_js_value};
-use crate::INPE2Deployer;
-
-use super::super::{
-    IRainlangDocument, Namespace, IAuthoringMeta,
-    compiler::ParseResult,
-    parser::rainlang::RainlangDocument,
-    types::ast::{Comment, Problem, RainlangSource, Namespace as Ns},
+use super::{
+    IRainlangDocument, Namespace, IAuthoringMeta, INPE2Deployer,
+    super::{
+        compiler::ParseResult,
+        parser::rainlang::RainlangDocument,
+        types::ast::{Comment, Problem, RainlangSource, Namespace as Ns},
+    },
 };
 
 #[wasm_bindgen]
