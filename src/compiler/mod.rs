@@ -147,7 +147,7 @@ impl From<RainDocumentCompileError> for JsValue {
     }
 }
 
-/// Result of parsing a text with NativeParser
+/// Result of parsing a text via NativeParser
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),

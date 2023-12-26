@@ -33,6 +33,8 @@ pub mod js_api;
 
 pub use lsp_types::Url;
 pub use rain_meta::Store;
+/// Provides all types and functionalities of Rain metadata
+pub use rain_meta;
 pub use parser::*;
 pub use compiler::*;
 

@@ -1,18 +1,46 @@
-//! Provides revm helper functions to easily deploy, call and transact with a local [mod@revm]
+//! Provides helper functions to easily deploy, call and transact with a local [mod@revm]
+//! 
+//! It contains functions from creating a revm with empty in-memory cached database to deploying
+//! contracts, executinga contract method and even executing a contracts raw runtime bytecode
+//! 
+//! ## Example
+//! ```rust
+//! use dotrain::evm_helpers::*;
+//! 
+//! // create a new revm instance with empty database
+//! let mut revm = new_evm();
+//! 
+//! // some contract bytecode and construction encoded data
+//! let contract_bytecode: Vec<u8> = vec![];
+//! let contruction_data : Vec<u8> = vec![];
+//! 
+//! // deploy the contract into revm instance
+//! let deployment_result = deploy_contract(&contract_bytecode, &contruction_data, &mut revm);
+//! match deployment_result {
+//!     Err(e) => println!("failed to deploy {:?}", e),
+//!     Ok(address) => {
+//!         println!("{:?}", address);
+//!         
+//!         // some contract function encoded calldata
+//!         let function_calldata: Vec<u8> = vec![];
+//!         let exec_reult = exec_contract(address, &function_calldata, false, &mut revm, None);
+//!     }
+//! }
+//! ```
 
 use super::ParseResult;
-use alloy_sol_types::sol;
-use alloy_primitives::Uint;
 use rain_meta::NPE2Deployer;
-use alloy_sol_types::{SolCall, SolInterface, SolValue};
 use self::INativeParser::{INativeParserErrors, parseCall, deployExpression2Call};
-use revm::{
+
+pub use alloy_primitives::Uint;
+pub use alloy_sol_types::{sol, SolCall, SolInterface, SolValue};
+pub use revm::{
     EVM,
     db::{CacheDB, EmptyDB},
     primitives::{
         U256, ExecutionResult, Bytes, AccountInfo, Bytecode, TransactTo, Output, SpecId, Address,
         address,
-    },
+    }
 };
 
 /// Parse a text using NativeParser contract bytecode

@@ -9,13 +9,14 @@ use std::collections::{HashMap, VecDeque};
 use futures::{executor::block_on, future::join_all};
 use rain_meta::{
     Store,
+    NPE2Deployer,
     magic::KnownMagic,
+    RainMetaDocumentV1Item, 
     search_deployer, search,
     types::{
         dotrain::v1::DotrainMeta, authoring::v1::AuthoringMeta,
         interpreter_caller::v1::InterpreterCallerMeta,
-    },
-    NPE2Deployer,
+    }
 };
 use super::{
     rainlang::RainlangDocument,
@@ -695,7 +696,7 @@ impl RainDocument {
             None
         } else {
             if let Some(r) = self.meta_store.read().unwrap().get_meta(&result.hash) {
-                Some(rain_meta::RainMetaDocumentV1Item::cbor_decode(&r))
+                Some(RainMetaDocumentV1Item::cbor_decode(&r))
             } else {
                 if should_search {
                     let subgraphs = { self.meta_store.read().unwrap().subgraphs().clone() };
@@ -715,7 +716,7 @@ impl RainDocument {
                                 .write()
                                 .unwrap()
                                 .update_with(&result.hash, &meta.bytes);
-                            Some(rain_meta::RainMetaDocumentV1Item::cbor_decode(&meta.bytes))
+                            Some(RainMetaDocumentV1Item::cbor_decode(&meta.bytes))
                         } else {
                             None
                         }
