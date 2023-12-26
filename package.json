@@ -25,6 +25,7 @@
     "files": [
         "/dist",
         "/docs",
+        "assets",
         "/cjs.js",
         "/esm.js",
         "/cjs.d.ts",
