@@ -17,13 +17,6 @@
 //! When someone wants/needs to do something but cannot, then they delegate to someone who can,
 //! this is by definition centralisation.
 //! Fast and easy queue abstraction.
-//!
-//! Provides an abstraction over a queue.  When the abstraction is used
-//! there are these advantages:
-//! - Fast
-//! - [`Easy`]
-//!
-//! [`Easy`]: http://thatwaseasy.example.com
 
 pub mod types;
 pub(crate) mod parser;
