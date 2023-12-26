@@ -1,6 +1,6 @@
 //! Wrappers around main structs and functionalities to provide an js/ts API through [mod@wasm_bindgen]
-//! 
-//! All structs, implementation blocks, etc are just wrappers around what already is in the main 
+//!
+//! All structs, implementation blocks, etc are just wrappers around what already is in the main
 //! library, for the sole purpose of providing an easy, typed and native Javascript/Typescript API
 //! for generated wasm bindings
 
@@ -40,7 +40,7 @@ extern "C" {
     #[wasm_bindgen(typescript_type = "Namespace")]
     pub type Namespace;
 
-    /// A wrapped JsValue representing typescript NPE2Deployer interface in rust, 
+    /// A wrapped JsValue representing typescript NPE2Deployer interface in rust,
     /// it can be deserialized to rust INPE2Deployer using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "INPE2Deployer")]
     pub type INPE2Deployer;

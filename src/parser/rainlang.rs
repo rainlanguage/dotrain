@@ -51,7 +51,7 @@ impl Default for RainlangState {
 
 /// Data structure (parse tree) of a Rainlang text
 ///
-/// RainlangDocument is a data structure of a parsed Rainlang text to its parse tree 
+/// RainlangDocument is a data structure of a parsed Rainlang text to its parse tree
 /// which are used by the RainDocument and for providing LSP services.
 ///
 /// it should be noted that generally this should not be used individually outside

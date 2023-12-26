@@ -55,7 +55,6 @@ pub async fn rainconfig_compile(
     Ok(())
 }
 
-
 /// Compiles only the given .rain files based on provided options
 pub async fn target_compile(
     opts: Target,

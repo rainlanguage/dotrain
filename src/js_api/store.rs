@@ -248,7 +248,8 @@ Typescript/Javascript while Rust side keep handling the read/write locks"#
  // to get a meta bytes of a corresponding hash from store
  const meta = store.getMeta(hash);
  ```
-")]
+"
+)]
 #[derive(Debug, Clone)]
 #[wasm_bindgen(skip_typescript)]
 pub struct MetaStore(pub(crate) Arc<RwLock<Store>>);

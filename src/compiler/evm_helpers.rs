@@ -1,19 +1,19 @@
 //! Provides helper functions to easily deploy, call and transact with a local [mod@revm]
-//! 
+//!
 //! It contains functions from creating a revm with empty in-memory cached database to deploying
 //! contracts, executinga contract method and even executing a contracts raw runtime bytecode
-//! 
+//!
 //! ## Example
 //! ```rust
 //! use dotrain::evm_helpers::*;
-//! 
+//!
 //! // create a new revm instance with empty database
 //! let mut revm = new_evm();
-//! 
+//!
 //! // some contract bytecode and construction encoded data
 //! let contract_bytecode: Vec<u8> = vec![];
 //! let contruction_data : Vec<u8> = vec![];
-//! 
+//!
 //! // deploy the contract into revm instance
 //! let deployment_result = deploy_contract(&contract_bytecode, &contruction_data, &mut revm);
 //! match deployment_result {
@@ -40,7 +40,7 @@ pub use revm::{
     primitives::{
         U256, ExecutionResult, Bytes, AccountInfo, Bytecode, TransactTo, Output, SpecId, Address,
         address,
-    }
+    },
 };
 
 /// Parse a text using NativeParser contract bytecode
@@ -256,9 +256,9 @@ pub fn deploy_contract(
 // @TODO - pull error selectors from the interpreter repo
 sol! {
     /// NativeParser construction struct
-    /// 
+    ///
     /// Used with [mod@alloy_json_abi] and [mod@alloy_primitives] crates to easily encode
-    /// construction data for deploying an ExpressionDeployer contract into 
+    /// construction data for deploying an ExpressionDeployer contract into
     /// local [mod@revm]
     struct NativeParserConstructionConfig {
         address interpreter;
@@ -268,7 +268,7 @@ sol! {
     }
 
     /// NativeParser solidity/rust interface
-    /// 
+    ///
     /// Used with [mod@alloy_json_abi] and [mod@alloy_primitives] crates to easily encode/decode
     /// function calldata or return data and decode errors from the execution result
     /// of a local [mod@revm]

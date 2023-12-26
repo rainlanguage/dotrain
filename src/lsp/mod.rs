@@ -27,7 +27,7 @@ pub struct LanguageServiceParams {
 }
 
 /// Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)
-/// 
+///
 #[cfg_attr(
     not(target_family = "wasm"),
     doc = r#"Provides methods for getting language services (such as diagnostics, completion, etc)

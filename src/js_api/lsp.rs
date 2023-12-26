@@ -348,7 +348,6 @@ impl RainLanguageServices {
         .unwrap_or(JsValue::NULL)
     }
 
-
     /// Provides semantic tokens for RainDocument's elided fragments
     #[wasm_bindgen(js_name = "rainDocumentSemanticTokens", skip_typescript)]
     pub fn js_rain_document_semantic_tokens(

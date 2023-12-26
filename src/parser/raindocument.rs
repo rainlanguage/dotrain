@@ -8,15 +8,13 @@ use topo_sort::{SortResults, TopoSort};
 use std::collections::{HashMap, VecDeque};
 use futures::{executor::block_on, future::join_all};
 use rain_meta::{
-    Store,
-    NPE2Deployer,
+    Store, NPE2Deployer,
     magic::KnownMagic,
-    RainMetaDocumentV1Item, 
-    search_deployer, search,
+    RainMetaDocumentV1Item, search_deployer, search,
     types::{
         dotrain::v1::DotrainMeta, authoring::v1::AuthoringMeta,
         interpreter_caller::v1::InterpreterCallerMeta,
-    }
+    },
 };
 use super::{
     rainlang::RainlangDocument,

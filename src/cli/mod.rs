@@ -1,6 +1,6 @@
 //! A [mod@clap] based CLI app
-//! 
-//! struct, enums that use `clap` derive macro to produce CLI commands, argument 
+//!
+//! struct, enums that use `clap` derive macro to produce CLI commands, argument
 //! and options with underlying functions to handle each scenario
 
 use std::path::PathBuf;
