@@ -15,6 +15,7 @@
         naersk' = pkgs.callPackage naersk {};
 
       in rec {
+        
         # shell commands
         commands = rec {
           local-test = pkgs.writeShellScriptBin "local-test" ''
@@ -24,16 +25,19 @@
           flush = pkgs.writeShellScriptBin "flush" ''
               rm -rf dist
               rm -rf docs
+              rm -rf temp
           '';
 
-          flush-all = pkgs.writeShellScriptBin "flush-all" ''
+          hard-flush = pkgs.writeShellScriptBin "hard-flush" ''
               flush
+              rm -rf target
               rm -rf node_modules
           '';
 
           ci-test = pkgs.writeShellScriptBin "ci-test" ''
-              flush-all
+              hard-flush
               npm install
+              build
               local-test
           '';
 
@@ -58,8 +62,9 @@
           '';
 
           build-all = pkgs.writeShellScriptBin "build-all" ''
-              flush-all
+              hard-flush
               npm install
+              build
           '';
 
           docgen = pkgs.writeShellScriptBin "docgen" ''
@@ -95,7 +100,6 @@
             iconv 
             rustup
             emscripten
-            nixpkgs-fmt
             nodejs-18_x
             wasm-bindgen-cli
           ] ++ (with commands; [
@@ -108,7 +112,7 @@
             local-test
             ci-test
             flush
-            flush-all
+            hard-flush
             docgen
             lint
             lint-fix
