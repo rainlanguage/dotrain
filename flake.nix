@@ -17,7 +17,7 @@
       in rec {
         
         # shell commands
-        commands = rec {
+        packages = rec {
           local-test = pkgs.writeShellScriptBin "local-test" ''
               npm test
           '';
@@ -61,7 +61,7 @@
               npm run build
           '';
 
-          build-all = pkgs.writeShellScriptBin "build-all" ''
+          hard-build = pkgs.writeShellScriptBin "hard-build" ''
               hard-flush
               npm install
               build
@@ -102,9 +102,9 @@
             emscripten
             nodejs-18_x
             wasm-bindgen-cli
-          ] ++ (with commands; [
+          ] ++ (with packages; [
             build
-            build-all
+            hard-build
             build-wasm
             build-bindings
             node-bg
