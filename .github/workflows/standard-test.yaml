@@ -15,13 +15,13 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Build
-        run: nix run ./#build --extra-experimental-features nix-command flakes
+        run: nix run ./#build --extra-experimental-features nix-command --extra-experimental-features flakes
 
       - name: Lint
-        run: nix run ./#lint --extra-experimental-features nix-command flakes
+        run: nix run ./#lint --extra-experimental-features nix-command --extra-experimental-features flakes
 
       - name: Test
-        run: nix run ./#local-test --extra-experimental-features nix-command flakes
+        run: nix run ./#local-test --extra-experimental-features nix-command --extra-experimental-features flakes
 
       - name: Test Docs Generation
-        run: nix run ./#docgen --extra-experimental-features nix-command flakes
+        run: nix run ./#docgen --extra-experimental-features nix-command --extra-experimental-features flakes
