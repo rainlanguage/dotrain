@@ -15,13 +15,13 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Build
-        run: nix-shell
+        run: nix run ./#build
 
       - name: Lint
-        run: nix-shell --run lint
+        run: nix run ./#lint
 
       - name: Test
-        run: nix-shell --run local-test
+        run: nix run ./#local-test
 
       - name: Test Docs Generation
-        run: nix-shell --run docgen
+        run: nix run ./#docgen
