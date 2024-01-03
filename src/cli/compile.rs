@@ -48,7 +48,6 @@ pub async fn rainconfig_compile(
         for cmap in src {
             if let Some(s) = compilation_results.pop_front() {
                 write(&cmap.output, s.as_bytes())?;
-            } else {
             }
         }
     }

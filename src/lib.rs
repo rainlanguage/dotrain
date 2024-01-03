@@ -17,8 +17,16 @@
 //! When someone wants/needs to do something but cannot, then they delegate to someone who can,
 //! this is by definition centralisation.
 //! Fast and easy queue abstraction.
+//!
+//! ### Features
+//!
+//! Includes 3 features:
+//! - `cli`: A [mod@clap] based module (CLI app) for functionalities of this library, this features is required for building/installing the **binary**
+//! - `lsp`: includes all [LSP](https://microsoft.github.io/language-server-protocol/) (language services) related implementation.
+//! - `js-api`: includes wrappers around main structs and functionalities to provide an API through wasm-bindgen (this feature is always enabled when building for wasm family targets)
 
 pub mod types;
+pub(crate) mod error;
 pub(crate) mod parser;
 pub(crate) mod compiler;
 
@@ -33,10 +41,11 @@ pub mod js_api;
 
 pub use lsp_types::Url;
 pub use rain_meta::Store;
-/// Provides all types and functionalities of Rain metadata
-pub use rain_meta;
 pub use parser::*;
 pub use compiler::*;
+pub use error::Error;
+/// Provides all types and functionalities of Rain metadata
+pub use rain_meta;
 
 #[cfg(feature = "lsp")]
 pub use lsp::*;

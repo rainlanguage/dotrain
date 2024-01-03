@@ -16,7 +16,7 @@ pub fn get_diagnostics(rain_document: &RainDocument, related_information: bool) 
                 rain_document.text.position_at(v.position[1]),
             );
             Diagnostic::new(
-                range.clone(),
+                range,
                 Some(DiagnosticSeverity::ERROR),
                 Some(lsp_types::NumberOrString::Number(v.code.to_i32())),
                 Some("rainlang".to_owned()),

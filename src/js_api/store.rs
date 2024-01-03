@@ -7,14 +7,14 @@ use std::{
     sync::{Arc, RwLock},
     collections::HashMap,
 };
-use rain_meta::{Store, search, search_deployer, NPE2Deployer, DeployerNPResponse};
+use rain_meta::{Store, search, search_deployer, NPE2Deployer, DeployerResponse};
 use serde_wasm_bindgen::{to_value as to_js_value, from_value as from_js_value, Serializer};
 
 // a wrapper struct for &[u8] to be serialized as Uint8Array from rust -> wasm -> js
 struct ToUint8ArraySerializer<'a>(&'a [u8]);
 impl<'a> Serialize for ToUint8ArraySerializer<'a> {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_bytes(&self.0)
+        serializer.serialize_bytes(self.0)
     }
 }
 
@@ -392,6 +392,7 @@ impl MetaStore {
 
     /// If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
     #[wasm_bindgen(skip_typescript, js_name = "searchDeployerCheck")]
+    #[allow(clippy::await_holding_lock)]
     pub async fn search_deployer_check(&mut self, hash: &str) -> JsValue {
         if let Some(v) = self.0.read().unwrap().get_deployer(hash) {
             to_js_value(v).unwrap_or(JsValue::UNDEFINED)
@@ -413,8 +414,9 @@ impl MetaStore {
 
     /// Sets deployer record
     #[wasm_bindgen(skip_typescript, js_name = "setDeployer")]
+    #[allow(clippy::await_holding_lock)]
     pub fn set_deployer(&mut self, deployer_response: JsValue) -> JsValue {
-        let deployer: DeployerNPResponse = from_js_value(deployer_response).unwrap_throw();
+        let deployer: DeployerResponse = from_js_value(deployer_response).unwrap_throw();
         to_js_value(
             &self
                 .0
@@ -440,6 +442,7 @@ impl MetaStore {
 
     /// First checks if the meta is stored and returns it if so, else will perform update()
     #[wasm_bindgen(skip_typescript, js_name = "updateCheck")]
+    #[allow(clippy::await_holding_lock)]
     pub async fn update_check(&mut self, hash: &str) -> JsValue {
         if let Some(v) = self.0.read().unwrap().get_meta(hash) {
             to_js_value(&ToUint8ArraySerializer(v)).unwrap_or(JsValue::UNDEFINED)

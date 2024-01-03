@@ -33,7 +33,7 @@ pub fn get_hover(
             } else {
                 String::new()
             };
-            return Some(Hover {
+            Some(Hover {
                 contents: HoverContents::Markup(MarkupContent {
                     kind: content_type.clone(),
                     value,
@@ -42,9 +42,9 @@ pub fn get_hover(
                     rain_document.text.position_at(import.position[0]),
                     rain_document.text.position_at(import.position[1]),
                 )),
-            });
+            })
         } else {
-            return None;
+            None
         }
     } else {
         for b in &rain_document.bindings {
@@ -140,16 +140,18 @@ fn search(
                 Node::Opcode(op) => {
                     if op.parens[0] < target_offset && op.parens[1] > target_offset {
                         return search(
-                            op.parameters.iter().map(|p| p).collect(),
+                            op.parameters.iter().collect(),
                             offset,
                             target_offset,
                             kind,
                             text,
                         );
-                    } else {
-                        if let Some(og) = &op.operand_args {
-                            if og.position[0] < target_offset && og.position[1] > target_offset {
-                                for arg in &og.args {
+                    } else if let Some(og) = &op.operand_args {
+                        if og.position[0] < target_offset && og.position[1] > target_offset {
+                            for arg in &og.args {
+                                if arg.position[0] <= target_offset
+                                    && arg.position[1] > target_offset
+                                {
                                     return Some(Hover {
                                         contents: HoverContents::Markup(MarkupContent {
                                             kind,
@@ -166,18 +168,8 @@ fn search(
                                         )),
                                     });
                                 }
-                            } else {
-                                return Some(Hover {
-                                    contents: HoverContents::Markup(MarkupContent {
-                                        kind,
-                                        value: op.opcode.description.clone(),
-                                    }),
-                                    range: Some(Range::new(
-                                        text.position_at(op.opcode.position[0] + offset),
-                                        text.position_at(op.parens[1] + offset),
-                                    )),
-                                });
                             }
+                            return None;
                         } else {
                             return Some(Hover {
                                 contents: HoverContents::Markup(MarkupContent {
@@ -190,6 +182,17 @@ fn search(
                                 )),
                             });
                         }
+                    } else {
+                        return Some(Hover {
+                            contents: HoverContents::Markup(MarkupContent {
+                                kind,
+                                value: op.opcode.description.clone(),
+                            }),
+                            range: Some(Range::new(
+                                text.position_at(op.opcode.position[0] + offset),
+                                text.position_at(op.parens[1] + offset),
+                            )),
+                        });
                     }
                 }
                 Node::Value(v) => {

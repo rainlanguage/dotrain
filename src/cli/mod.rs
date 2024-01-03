@@ -1,5 +1,6 @@
-//! A [mod@clap] based CLI app
+//! A [mod@clap] based module to produce a CLI app
 //!
+//! Gets enabled by `cli` feature
 //! struct, enums that use `clap` derive macro to produce CLI commands, argument
 //! and options with underlying functions to handle each scenario
 

@@ -29,6 +29,7 @@
 //! ```
 
 use super::ParseResult;
+use crate::error::Error;
 use rain_meta::NPE2Deployer;
 use self::INativeParser::{INativeParserErrors, parseCall, deployExpression2Call};
 
@@ -48,7 +49,7 @@ pub fn npe2_parse(
     text: &str,
     npe2_deployer: &NPE2Deployer,
     evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
-) -> anyhow::Result<ParseResult> {
+) -> Result<ParseResult, Error> {
     let mut revm = &mut new_evm();
     if let Some(_evm) = evm {
         revm = _evm;
@@ -99,12 +100,11 @@ pub fn npe2_parse(
                 Err(e) => match e {
                     Ok(v) => match v {
                         ExecutionResult::Revert { output, .. } => Ok(ParseResult::Revert(
-                            INativeParserErrors::abi_decode(&output.0, true)
-                                .or(Err(anyhow::anyhow!("unknown revert error")))?,
+                            INativeParserErrors::abi_decode(&output.0, true)?,
                         )),
                         ExecutionResult::Halt { reason, .. } => Ok(ParseResult::Halt(reason)),
                         ExecutionResult::Success { .. } => {
-                            Err(anyhow::anyhow!("invalid NPE2Deployer details!"))
+                            Err(Error::InvalidExpressionDeployerData)
                         }
                     },
                     Err(e) => Err(e),
@@ -118,8 +118,7 @@ pub fn npe2_parse(
                     match exec_contract(deployer_address, &data, true, revm, None)? {
                         ExecutionResult::Success { .. } => Ok(ParseResult::Success(exp_conf)),
                         ExecutionResult::Revert { output, .. } => Ok(ParseResult::Revert(
-                            INativeParserErrors::abi_decode(&output.0, true)
-                                .or(Err(anyhow::anyhow!("unknown revert error")))?,
+                            INativeParserErrors::abi_decode(&output.0, true)?,
                         )),
                         ExecutionResult::Halt { reason, .. } => Ok(ParseResult::Halt(reason)),
                     }
@@ -148,7 +147,7 @@ pub fn exec_bytecode(
     address: Address, // address to load the bytecode into
     evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
     caller: Option<Address>,
-) -> anyhow::Result<ExecutionResult> {
+) -> Result<ExecutionResult, Error> {
     let mut revm = &mut new_evm();
     if let Some(_evm) = evm {
         revm = _evm;
@@ -156,7 +155,7 @@ pub fn exec_bytecode(
 
     let bcode = Bytecode::new_raw(Bytes::copy_from_slice(deployed_bytecode));
     if revm.db().is_none() {
-        return Err(anyhow::anyhow!("provided evm instance has no database!"));
+        return Err(Error::REVMHasNoDB);
     }
     revm.db().unwrap().insert_account_info(
         address,
@@ -172,8 +171,8 @@ pub fn exec_bytecode(
 
     let tx_result = revm.transact_ref();
     match tx_result {
-        Ok(result_state) => return Ok(result_state.result),
-        Err(e) => return Err(anyhow::Error::from(e)),
+        Ok(result_state) => Ok(result_state.result),
+        Err(e) => Err(e)?,
     }
 }
 
@@ -184,7 +183,7 @@ pub fn exec_contract(
     write_call: bool,
     evm: &mut EVM<CacheDB<EmptyDB>>,
     caller: Option<Address>,
-) -> anyhow::Result<ExecutionResult> {
+) -> Result<ExecutionResult, Error> {
     if let Some(c) = caller {
         evm.env.tx.caller = c;
     };
@@ -194,12 +193,12 @@ pub fn exec_contract(
 
     if write_call {
         match evm.transact_commit() {
-            Err(e) => Err(anyhow::Error::from(e)),
+            Err(e) => Err(e)?,
             Ok(v) => Ok(v),
         }
     } else {
         match evm.transact_ref() {
-            Err(e) => Err(anyhow::Error::from(e)),
+            Err(e) => Err(e)?,
             Ok(v) => Ok(v.result),
         }
     }
@@ -210,12 +209,12 @@ pub fn insert_acount(
     address: Address,
     account_info: AccountInfo,
     evm: &mut EVM<CacheDB<EmptyDB>>,
-) -> anyhow::Result<()> {
+) -> Result<(), Error> {
     if let Some(db) = evm.db() {
         db.insert_account_info(address, account_info);
         Ok(())
     } else {
-        Err(anyhow::anyhow!("evm instance has no database!"))
+        Err(Error::REVMHasNoDB)
     }
 }
 
@@ -224,7 +223,7 @@ pub fn deploy_contract(
     bytecode: &[u8],
     construction_data: &[u8],
     evm: &mut EVM<CacheDB<EmptyDB>>,
-) -> Result<Address, anyhow::Result<ExecutionResult>> {
+) -> Result<Address, Result<ExecutionResult, Error>> {
     let mut data = vec![];
     data.extend_from_slice(bytecode);
     data.extend_from_slice(construction_data);
@@ -234,18 +233,14 @@ pub fn deploy_contract(
     evm.env.tx.value = U256::ZERO;
 
     match evm.transact_commit() {
-        Err(e) => return Err(Err(anyhow::Error::from(e))),
+        Err(e) => Err(Err(Error::EVMError(e))),
         Ok(deploy_result) => {
-            if let ExecutionResult::Success { output, .. } = &deploy_result {
-                if let Output::Create(_, opts_add) = output {
-                    if let Some(a) = opts_add {
-                        Ok(*a)
-                    } else {
-                        Err(Ok(deploy_result))
-                    }
-                } else {
-                    Err(Ok(deploy_result))
-                }
+            if let ExecutionResult::Success {
+                output: Output::Create(_, Some(a)),
+                ..
+            } = &deploy_result
+            {
+                Ok(*a)
             } else {
                 Err(Ok(deploy_result))
             }
@@ -270,8 +265,8 @@ sol! {
     /// NativeParser solidity/rust interface
     ///
     /// Used with [mod@alloy_json_abi] and [mod@alloy_primitives] crates to easily encode/decode
-    /// function calldata or return data and decode errors from the execution result
-    /// of a local [mod@revm]
+    /// function calldata/return data and decode errors of a NativeParser ExpressionDeployer contract
+    /// methods execution result
     #[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq)]
     interface INativeParser {
         event Set(uint256 namespace, uint256 key, uint256 value);

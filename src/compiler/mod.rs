@@ -18,6 +18,7 @@ use revm::{
 };
 use magic_string::{MagicString, OverwriteOptions, DecodedMap, GenerateDecodedMapOptions};
 use super::{
+    error::Error,
     types::{
         patterns::{WORD_PATTERN, BINARY_PATTERN, HEX_PATTERN, NUMERIC_PATTERN},
         ast::{
@@ -171,17 +172,14 @@ impl From<ParseResult> for JsValue {
 }
 
 impl TryFrom<ExecutionResult> for ParseResult {
-    type Error = anyhow::Error;
+    type Error = Error;
     fn try_from(value: ExecutionResult) -> Result<Self, Self::Error> {
         match value {
             ExecutionResult::Success { output, .. } => Ok(ParseResult::Success(
-                parseCall::abi_decode_returns(output.data(), true)
-                    .map_err(anyhow::Error::from)?
-                    .into(),
+                parseCall::abi_decode_returns(output.data(), true)?.into(),
             )),
             ExecutionResult::Revert { output, .. } => Ok(ParseResult::Revert(
-                INativeParserErrors::abi_decode(&output.0, true)
-                    .or(Err(anyhow::anyhow!("unknown revert error")))?,
+                INativeParserErrors::abi_decode(&output.0, true)?,
             )),
             ExecutionResult::Halt { reason, .. } => Ok(ParseResult::Halt(reason)),
         }
@@ -194,7 +192,7 @@ impl RainlangDocument {
         &self,
         npe2_deployer: &NPE2Deployer,
         evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
-    ) -> anyhow::Result<ParseResult> {
+    ) -> Result<ParseResult, Error> {
         npe2_parse(&self.text, npe2_deployer, evm)
     }
 }
@@ -203,7 +201,7 @@ impl RainDocument {
     /// compiles a given text as RainDocument with remote meta search disabled for parsing
     pub fn compile_text(
         text: &str,
-        entrypoints: &Vec<String>,
+        entrypoints: &[String],
         uri: Option<Url>,
         meta_store: Option<Arc<RwLock<Store>>>,
         evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
@@ -236,17 +234,18 @@ impl RainDocument {
 
     /// Compiles to ExpressionConfig after building a rainlang text from the specified
     /// entrypoints by building sourcemap
+    #[allow(clippy::field_reassign_with_default)]
     pub fn compile(
         &self,
         entrypoints: &[String],
         evm: Option<&mut EVM<CacheDB<EmptyDB>>>,
     ) -> Result<ExpressionConfig, RainDocumentCompileError> {
-        if entrypoints.len() == 0 {
+        if entrypoints.is_empty() {
             return Err(RainDocumentCompileError::Reject(
                 "no entrypoints specified".to_owned(),
             ));
         }
-        if self.problems.len() > 0 {
+        if !self.problems.is_empty() {
             return Err(RainDocumentCompileError::Problems(self.problems.clone()));
         }
 
@@ -256,7 +255,7 @@ impl RainDocument {
         for ep in entrypoints.iter() {
             match search_namespace(ep, &self.namespace) {
                 Ok((ns, node, b)) => {
-                    if b.problems.len() > 0 {
+                    if !b.problems.is_empty() {
                         return Err(RainDocumentCompileError::Problems(
                             b.problems
                                 .iter()
@@ -276,16 +275,14 @@ impl RainDocument {
                             b.content.clone(),
                             if let Some(am) = &self.authoring_meta {
                                 Some(am)
+                            } else if self.ignore_undefined_words {
+                                None
                             } else {
-                                if self.ignore_undefined_words {
-                                    None
-                                } else {
-                                    Some(&binding_am)
-                                }
+                                Some(&binding_am)
                             },
                             Some(ns),
                         );
-                        if rl.problems.len() > 0 {
+                        if !rl.problems.is_empty() {
                             return Err(RainDocumentCompileError::Problems(
                                 rl.problems
                                     .iter()
@@ -331,7 +328,7 @@ impl RainDocument {
             for dep in node.element.dependencies.iter() {
                 match search_namespace(dep, &self.namespace) {
                     Ok((ns, node, b)) => {
-                        if b.problems.len() > 0 {
+                        if !b.problems.is_empty() {
                             return Err(RainDocumentCompileError::Problems(
                                 b.problems
                                     .iter()
@@ -351,16 +348,14 @@ impl RainDocument {
                                 b.content.clone(),
                                 if let Some(am) = &self.authoring_meta {
                                     Some(am)
+                                } else if self.ignore_undefined_words {
+                                    None
                                 } else {
-                                    if self.ignore_undefined_words {
-                                        None
-                                    } else {
-                                        Some(&binding_am)
-                                    }
+                                    Some(&binding_am)
                                 },
                                 Some(ns),
                             );
-                            if rl.problems.len() > 0 {
+                            if !rl.problems.is_empty() {
                                 return Err(RainDocumentCompileError::Problems(
                                     rl.problems
                                         .iter()
@@ -395,17 +390,15 @@ impl RainDocument {
                                     &nodes.iter().enumerate().find(|(_, middle)| **middle == m)
                                 {
                                     d.push_back(*index as u8);
+                                } else if let Some((index, _)) = &deps_nodes
+                                    .iter()
+                                    .enumerate()
+                                    .find(|(_, middle)| **middle == m)
+                                {
+                                    d.push_back((nodes.len() + index) as u8);
                                 } else {
-                                    if let Some((index, _)) = &deps_nodes
-                                        .iter()
-                                        .enumerate()
-                                        .find(|(_, middle)| **middle == m)
-                                    {
-                                        d.push_back((nodes.len() + index) as u8);
-                                    } else {
-                                        d.push_back((nodes.len() + deps_nodes.len()) as u8);
-                                        deps_nodes.push(m);
-                                    }
+                                    d.push_back((nodes.len() + deps_nodes.len()) as u8);
+                                    deps_nodes.push(m);
                                 }
                             }
                         }
@@ -438,7 +431,7 @@ impl RainDocument {
                     generator,
                     deps,
                 )
-                .map_err(|e| RainDocumentCompileError::Reject(e))?;
+                .map_err(RainDocumentCompileError::Reject)?;
                 let mut opts = GenerateDecodedMapOptions::default();
                 opts.hires = true;
                 let offset = if sourcemaps.is_empty() {
@@ -476,12 +469,10 @@ impl RainDocument {
             rl_string,
             if let Some(am) = &self.authoring_meta {
                 Some(am)
+            } else if self.ignore_undefined_words {
+                None
             } else {
-                if self.ignore_undefined_words {
-                    None
-                } else {
-                    Some(&binding_am)
-                }
+                Some(&binding_am)
             },
             None,
         );
@@ -537,36 +528,32 @@ fn search_namespace<'a>(
             }
         }
         match &result {
-            NamespaceItem::Namespace(_) => {
-                return Err(format!(
-                    "invalid entrypoint: {}, entrypoint must be bindings",
-                    name
-                ));
-            }
+            NamespaceItem::Namespace(_) => Err(format!(
+                "invalid entrypoint: {}, entrypoint must be bindings",
+                name
+            )),
             NamespaceItem::Node(node) => {
                 if let NamespaceNodeElement::Binding(b) = &node.element {
                     match &b.item {
                         BindingItem::Elided(e) => {
-                            return Err(format!("elided entrypoint: {}, {}", name, e.msg));
+                            Err(format!("elided entrypoint: {}, {}", name, e.msg))
                         }
-                        BindingItem::Constant(_c) => {
-                            return Err(format!(
-                                "invalid entrypoint: {}, constants cannot be entrypoint",
-                                name
-                            ));
-                        }
-                        BindingItem::Exp(_e) => return Ok((parent, node, b)),
+                        BindingItem::Constant(_c) => Err(format!(
+                            "invalid entrypoint: {}, constants cannot be entrypoint",
+                            name
+                        )),
+                        BindingItem::Exp(_e) => Ok((parent, node, b)),
                     }
                 } else {
-                    return Err(format!(
+                    Err(format!(
                         "invalid entrypoint: {}, entrypoint must be bindings",
                         name
-                    ));
+                    ))
                 }
             }
         }
     } else {
-        return Err(format!("undefined identifier: {}", name));
+        Err(format!("undefined identifier: {}", name))
     }
 }
 
@@ -654,19 +641,12 @@ fn build_sourcemap(
                             //     &s
                             // ).or(Err("could not build sourcemap".to_owned()))?;
                         }
-                    } else {
-                        if let Some(row) = row_opt {
-                            let mut s = "<".to_owned();
-                            s.extend([
-                                col.to_string().as_str(),
-                                " ",
-                                row.to_string().as_str(),
-                                ">",
-                            ]);
-                            generator
-                                .append_left((o.opcode.position[1]) as u32, &s)
-                                .or(Err("could not build sourcemap".to_owned()))?;
-                        }
+                    } else if let Some(row) = row_opt {
+                        let mut s = "<".to_owned();
+                        s.extend([col.to_string().as_str(), " ", row.to_string().as_str(), ">"]);
+                        generator
+                            .append_left((o.opcode.position[1]) as u32, &s)
+                            .or(Err("could not build sourcemap".to_owned()))?;
                     }
                 }
                 // else if o.opcode.name.contains('.') {
@@ -680,7 +660,7 @@ fn build_sourcemap(
                 //     ).or(Err("could not build sourcemap".to_owned()))?;
                 // }
 
-                if quotes.len() > 0 {
+                if !quotes.is_empty() {
                     if deps_indexes.is_empty() {
                         return Err("cannot resolve dependecies".to_owned());
                     }
@@ -700,11 +680,7 @@ fn build_sourcemap(
                     }
                 }
                 if !o.parameters.is_empty() {
-                    build_sourcemap(
-                        o.parameters.iter().map(|p| p).collect(),
-                        generator,
-                        deps_indexes,
-                    )?;
+                    build_sourcemap(o.parameters.iter().collect(), generator, deps_indexes)?;
                 }
             }
             _ => {}

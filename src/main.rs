@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod types;
+pub mod error;
 pub mod parser;
 pub mod compiler;
 

@@ -1,23 +1,24 @@
 use rain_meta::Store;
 use std::sync::{Arc, RwLock};
 use super::parser::raindocument::RainDocument;
+use lsp_types::{
+    Hover, Position, Diagnostic, MarkupKind, CompletionItem, TextDocumentItem,
+    SemanticTokensPartialResult,
+};
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use wasm_bindgen::prelude::*;
+
+pub use lsp_types;
+pub use hover::get_hover;
+pub use completion::get_completion;
+pub use diagnostic::get_diagnostics;
+pub use sematic_token::get_semantic_token;
 
 mod hover;
 mod completion;
 mod diagnostic;
 mod sematic_token;
-
-pub use hover::get_hover;
-pub use completion::get_completion;
-pub use diagnostic::get_diagnostics;
-pub use sematic_token::get_semantic_token;
-pub use lsp_types::{
-    Hover, Position, Diagnostic, MarkupKind, CompletionItem, TextDocumentItem,
-    SemanticTokensPartialResult,
-};
 
 /// Parameters for initiating Language Services
 #[derive(Debug, Clone)]

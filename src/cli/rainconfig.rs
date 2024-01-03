@@ -1,7 +1,7 @@
-use rain_meta::{Store, DeployerNPResponse, RainMetaDocumentV1Item};
+use serde_bytes::ByteBuf;
 use serde::{Serialize, Deserialize};
 use alloy_primitives::{keccak256, hex};
-use serde_bytes::ByteBuf;
+use rain_meta::{Store, DeployerResponse, RainMetaDocumentV1Item};
 use std::{
     path::PathBuf,
     sync::{Arc, RwLock},
@@ -140,14 +140,7 @@ impl RainConfig {
         Ok(files_contents)
     }
 
-    fn process(
-        &self,
-        force: bool,
-    ) -> anyhow::Result<(
-        Vec<(PathBuf, String)>,
-        Vec<(String, Vec<u8>)>,
-        Vec<DeployerNPResponse>,
-    )> {
+    fn process(&self, force: bool) -> anyhow::Result<ProcessType> {
         let mut dotrains = vec![];
         let mut metas = vec![];
         let mut np_deployers = vec![];
@@ -190,7 +183,7 @@ impl RainConfig {
                 }
             }
         }
-        Ok((dotrains, metas, np_deployers))
+        Ok(ProcessType(dotrains, metas, np_deployers))
     }
 
     /// Build a Store instance from all specified configuraion in rainconfig
@@ -201,9 +194,9 @@ impl RainConfig {
         } else {
             &temp
         };
-        let (dotrains, metas, mut deployers) = self.process(true)?;
+        let ProcessType(dotrains, metas, mut deployers) = self.process(true)?;
         let mut store = Store::default();
-        store.add_subgraphs(&subgraphs);
+        store.add_subgraphs(subgraphs);
         for (hash, bytes) in metas {
             store.update_with(&hash, &bytes);
         }
@@ -232,9 +225,9 @@ impl RainConfig {
         } else {
             &temp
         };
-        let (dotrains, metas, mut deployers) = self.process(false)?;
+        let ProcessType(dotrains, metas, mut deployers) = self.process(false)?;
         let mut store = Store::default();
-        store.add_subgraphs(&subgraphs);
+        store.add_subgraphs(subgraphs);
         for (hash, bytes) in metas {
             store.update_with(&hash, &bytes);
         }
@@ -265,16 +258,14 @@ fn read_dotrain_files(path: &PathBuf, force: bool) -> anyhow::Result<Vec<(PathBu
                     }
                 }
             }
-        } else {
-            if dir.is_file() {
-                if let Some(ext) = dir.extension() {
-                    if ext == "rain" {
-                        match read_to_string(&dir) {
-                            Ok(v) => files_contents.push((dir.clone(), v)),
-                            Err(e) => {
-                                if !force {
-                                    Err(e)?
-                                }
+        } else if dir.is_file() {
+            if let Some(ext) = dir.extension() {
+                if ext == "rain" {
+                    match read_to_string(&dir) {
+                        Ok(v) => files_contents.push((dir.clone(), v)),
+                        Err(e) => {
+                            if !force {
+                                Err(e)?
                             }
                         }
                     }
@@ -307,13 +298,11 @@ fn read_meta(
                     let hash = f.hash.to_ascii_lowercase();
                     if hex::encode_prefixed(keccak256(&data).0) == hash {
                         metas.push((hash, data));
-                    } else {
-                        if !force {
-                            return Err(anyhow::anyhow!(format!(
-                                "meta hash/content mismatch at {:?}",
-                                f.path
-                            )));
-                        }
+                    } else if !force {
+                        return Err(anyhow::anyhow!(format!(
+                            "meta hash/content mismatch at {:?}",
+                            f.path
+                        )));
                     }
                 }
                 Err(e) => {
@@ -325,7 +314,7 @@ fn read_meta(
         },
         RainConfigMetaType::Hex(hex_meta_path) => match hex_meta_path {
             MetaPathType::PathOnly(p) => match read_to_string(p) {
-                Ok(hex_string) => match hex::decode(&hex_string) {
+                Ok(hex_string) => match hex::decode(hex_string) {
                     Ok(data) => {
                         metas.push((hex::encode_prefixed(keccak256(&data).0), data));
                     }
@@ -342,18 +331,16 @@ fn read_meta(
                 }
             },
             MetaPathType::Full(f) => match read_to_string(&f.path) {
-                Ok(hex_string) => match hex::decode(&hex_string) {
+                Ok(hex_string) => match hex::decode(hex_string) {
                     Ok(data) => {
                         let hash = f.hash.to_ascii_lowercase();
                         if hex::encode_prefixed(keccak256(&data).0) == hash {
                             metas.push((hash, data));
-                        } else {
-                            if !force {
-                                return Err(anyhow::anyhow!(format!(
-                                    "meta hash/content mismatch at {:?}",
-                                    f.path
-                                )));
-                            }
+                        } else if !force {
+                            return Err(anyhow::anyhow!(format!(
+                                "meta hash/content mismatch at {:?}",
+                                f.path
+                            )));
                         }
                     }
                     Err(e) => {
@@ -373,7 +360,7 @@ fn read_meta(
     Ok(())
 }
 
-fn read_deployer(hash: &str, deployer: &RainConfigDeployer) -> anyhow::Result<DeployerNPResponse> {
+fn read_deployer(hash: &str, deployer: &RainConfigDeployer) -> anyhow::Result<DeployerResponse> {
     let mut metas = vec![];
     read_meta(&deployer.construction_meta, &mut metas, false)?;
     let (meta_hash, meta_bytes) = if metas.len() == 1 {
@@ -393,7 +380,7 @@ fn read_deployer(hash: &str, deployer: &RainConfigDeployer) -> anyhow::Result<De
         hex::encode_prefixed(
             RainMetaDocumentV1Item {
                 payload: ByteBuf::from(v),
-                magic: rain_meta::magic::KnownMagic::ExpressionDeployerV2BytecodeV1,
+                magic: rain_meta::KnownMagic::ExpressionDeployerV2BytecodeV1,
                 content_type: rain_meta::ContentType::OctetStream,
                 content_encoding: rain_meta::ContentEncoding::None,
                 content_language: rain_meta::ContentLanguage::None,
@@ -406,7 +393,7 @@ fn read_deployer(hash: &str, deployer: &RainConfigDeployer) -> anyhow::Result<De
             "could not find ExpressionDeployer deployed bytecode!"
         ));
     };
-    Ok(DeployerNPResponse {
+    Ok(DeployerResponse {
         meta_hash,
         meta_bytes,
         bytecode,
@@ -433,7 +420,7 @@ fn read_deployer(hash: &str, deployer: &RainConfigDeployer) -> anyhow::Result<De
     })
 }
 
-fn read_bytecode(path: &PathBuf) -> anyhow::Result<(Option<Vec<u8>>, Option<Vec<u8>>)> {
+fn read_bytecode(path: &PathBuf) -> anyhow::Result<ArtifactBytecode> {
     let content = read(path)?;
     let json = serde_json::from_slice::<serde_json::Value>(&content)?;
     let deployed_bytecode = &json["deployedBytecode"]["object"];
@@ -455,18 +442,18 @@ fn read_bytecode(path: &PathBuf) -> anyhow::Result<(Option<Vec<u8>>, Option<Vec<
             }
         };
         if b.is_none() || db.is_none() {
-            return err;
+            err
         } else {
-            return Ok((b, db));
+            Ok(ArtifactBytecode(b, db))
         }
     } else if !bytecode.is_string() && deployed_bytecode.is_string() {
         match hex::decode(deployed_bytecode.as_str().unwrap()) {
-            Ok(data) => Ok((None, Some(data))),
+            Ok(data) => Ok(ArtifactBytecode(None, Some(data))),
             Err(e) => Err(anyhow::anyhow!(format!("{:?} at {:?}", e, path))),
         }
     } else if bytecode.is_string() && !deployed_bytecode.is_string() {
         match hex::decode(bytecode.as_str().unwrap()) {
-            Ok(data) => Ok((Some(data), None)),
+            Ok(data) => Ok(ArtifactBytecode(Some(data), None)),
             Err(e) => Err(anyhow::anyhow!(format!("{:?} at {:?}", e, path))),
         }
     } else {
@@ -476,3 +463,11 @@ fn read_bytecode(path: &PathBuf) -> anyhow::Result<(Option<Vec<u8>>, Option<Vec<
         )))
     }
 }
+
+struct ProcessType(
+    Vec<(PathBuf, String)>,
+    Vec<(String, Vec<u8>)>,
+    Vec<DeployerResponse>,
+);
+
+struct ArtifactBytecode(Option<Vec<u8>>, Option<Vec<u8>>);

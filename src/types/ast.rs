@@ -3,6 +3,7 @@
 // #![allow(non_snake_case)]
 
 use std::collections::HashMap;
+use super::super::error::Error;
 use serde::{Serialize, Deserialize};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 use super::super::parser::{rainlang::RainlangDocument, raindocument::RainDocument};
@@ -98,10 +99,9 @@ impl ErrorCode {
 }
 
 impl TryFrom<i32> for ErrorCode {
-    type Error = anyhow::Error;
+    type Error = Error;
     fn try_from(value: i32) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_str::<ErrorCode>(&value.to_string())
-            .or(Err(anyhow::anyhow!("unknown error code")))?)
+        Ok(serde_json::from_str::<ErrorCode>(&value.to_string())?)
     }
 }
 
@@ -540,10 +540,7 @@ impl NamespaceNode {
     // }
 
     pub fn is_binding(&self) -> bool {
-        match self.element {
-            NamespaceNodeElement::Binding(_) => true,
-            _ => false,
-        }
+        matches!(self.element, NamespaceNodeElement::Binding(_))
     }
 
     pub fn unwrap_binding(&self) -> &Binding {
@@ -554,10 +551,7 @@ impl NamespaceNode {
     }
 
     pub fn is_context_alias(&self) -> bool {
-        match self.element {
-            NamespaceNodeElement::ContextAlias(_) => true,
-            _ => false,
-        }
+        matches!(self.element, NamespaceNodeElement::ContextAlias(_))
     }
 
     pub fn unwrap_context_alias(&self) -> &ContextAlias {
@@ -568,10 +562,7 @@ impl NamespaceNode {
     }
 
     pub fn is_dispair(&self) -> bool {
-        match self.element {
-            NamespaceNodeElement::Dispair(_) => true,
-            _ => false,
-        }
+        matches!(self.element, NamespaceNodeElement::Dispair(_))
     }
 
     pub fn unwrap_dispair(&self) -> &DispairImportItem {
@@ -584,11 +575,7 @@ impl NamespaceNode {
     pub fn is_elided_binding(&self) -> bool {
         match &self.element {
             NamespaceNodeElement::Binding(b) => {
-                if let BindingItem::Elided(_) = b.item {
-                    true
-                } else {
-                    false
-                }
+                matches!(b.item, BindingItem::Elided(_))
             }
             _ => false,
         }
@@ -610,11 +597,7 @@ impl NamespaceNode {
     pub fn is_constant_binding(&self) -> bool {
         match &self.element {
             NamespaceNodeElement::Binding(b) => {
-                if let BindingItem::Constant(_) = b.item {
-                    true
-                } else {
-                    false
-                }
+                matches!(b.item, BindingItem::Constant(_))
             }
             _ => false,
         }
@@ -636,11 +619,7 @@ impl NamespaceNode {
     pub fn is_exp_binding(&self) -> bool {
         match &self.element {
             NamespaceNodeElement::Binding(b) => {
-                if let BindingItem::Exp(_) = b.item {
-                    true
-                } else {
-                    false
-                }
+                matches!(b.item, BindingItem::Exp(_))
             }
             _ => false,
         }
@@ -719,10 +698,7 @@ impl NamespaceItem {
 
     pub fn is_binding(&self) -> bool {
         if let NamespaceItem::Node(n) = self {
-            match n.element {
-                NamespaceNodeElement::Binding(_) => true,
-                _ => false,
-            }
+            matches!(n.element, NamespaceNodeElement::Binding(_))
         } else {
             false
         }
@@ -741,10 +717,7 @@ impl NamespaceItem {
 
     pub fn is_context_alias(&self) -> bool {
         if let NamespaceItem::Node(n) = self {
-            match n.element {
-                NamespaceNodeElement::ContextAlias(_) => true,
-                _ => false,
-            }
+            matches!(n.element, NamespaceNodeElement::ContextAlias(_))
         } else {
             false
         }
@@ -763,10 +736,7 @@ impl NamespaceItem {
 
     pub fn is_dispair(&self) -> bool {
         if let NamespaceItem::Node(n) = self {
-            match n.element {
-                NamespaceNodeElement::Dispair(_) => true,
-                _ => false,
-            }
+            matches!(n.element, NamespaceNodeElement::Dispair(_))
         } else {
             false
         }
@@ -786,10 +756,7 @@ impl NamespaceItem {
     pub fn is_elided_binding(&self) -> bool {
         if let NamespaceItem::Node(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => match &b.item {
-                    BindingItem::Elided(_) => true,
-                    _ => false,
-                },
+                NamespaceNodeElement::Binding(b) => matches!(&b.item, BindingItem::Elided(_)),
                 _ => false,
             }
         } else {
@@ -814,10 +781,7 @@ impl NamespaceItem {
     pub fn is_constant_binding(&self) -> bool {
         if let NamespaceItem::Node(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => match &b.item {
-                    BindingItem::Constant(_) => true,
-                    _ => false,
-                },
+                NamespaceNodeElement::Binding(b) => matches!(&b.item, BindingItem::Constant(_)),
                 _ => false,
             }
         } else {
@@ -842,10 +806,7 @@ impl NamespaceItem {
     pub fn is_exp_binding(&self) -> bool {
         if let NamespaceItem::Node(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => match &b.item {
-                    BindingItem::Exp(_) => true,
-                    _ => false,
-                },
+                NamespaceNodeElement::Binding(b) => matches!(&b.item, BindingItem::Exp(_)),
                 _ => false,
             }
         } else {
@@ -857,7 +818,7 @@ impl NamespaceItem {
         if let NamespaceItem::Node(n) = self {
             match &n.element {
                 NamespaceNodeElement::Binding(b) => match &b.item {
-                    BindingItem::Exp(e) => &e,
+                    BindingItem::Exp(e) => e,
                     _ => panic!("not an exp binding"),
                 },
                 _ => panic!("not an exp binding"),
@@ -887,7 +848,7 @@ pub struct ContextAlias {
 }
 
 impl ContextAlias {
-    pub fn from_caller_meta(meta: InterpreterCallerMeta) -> anyhow::Result<Vec<ContextAlias>> {
+    pub fn from_caller_meta(meta: InterpreterCallerMeta) -> Result<Vec<ContextAlias>, Error> {
         let mut ctxs: Vec<ContextAlias> = vec![];
         for method in meta.methods {
             for exp in method.expressions {
@@ -907,7 +868,7 @@ impl ContextAlias {
                         ok = true;
                     }
                     if ctxs.iter().any(|v| v.name == ctx_coll.name) {
-                        return Err(anyhow::anyhow!("includes duplicates!"));
+                        return Err(Error::DuplicateContextAliases);
                     }
                     if ok {
                         ctxs.push(ctx_coll);
@@ -928,7 +889,7 @@ impl ContextAlias {
                             _ok = true;
                         }
                         if ctxs.iter().any(|v| v.name == ctx_cell.name) {
-                            return Err(anyhow::anyhow!("includes duplicates!"));
+                            return Err(Error::DuplicateContextAliases);
                         }
                         if _ok {
                             ctxs.push(ctx_cell);

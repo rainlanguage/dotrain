@@ -1,4 +1,5 @@
-//! Wrappers around main structs and functionalities to provide an js/ts API through [mod@wasm_bindgen]
+//! Wrappers around main structs and functionalities to provide an js/ts API through [mod@wasm_bindgen],
+//! enabled by `js-api` feature
 //!
 //! All structs, implementation blocks, etc are just wrappers around what already is in the main
 //! library, for the sole purpose of providing an easy, typed and native Javascript/Typescript API

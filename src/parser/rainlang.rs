@@ -5,7 +5,10 @@ use serde::{Serialize, Deserialize};
 use rain_meta::types::authoring::v1::AuthoringMeta;
 use super::{
     raindocument::RAIN_DOCUMENT_CONSTANTS,
-    super::types::{ast::*, patterns::*},
+    super::{
+        error::Error,
+        types::{ast::*, patterns::*},
+    },
     line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
 };
 
@@ -246,7 +249,7 @@ impl RainlangDocument {
         &mut self,
         namespace: &Namespace,
         authoring_meta: &AuthoringMeta,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), Error> {
         self.reset_state();
         self.ast.clear();
         self.problems.clear();
@@ -256,7 +259,7 @@ impl RainlangDocument {
 
         // check for illegal characters
         let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
-        if illegal_chars.len() > 0 {
+        if !illegal_chars.is_empty() {
             self.problems.push(Problem {
                 msg: format!("illegal character: {}", illegal_chars[0].0),
                 position: [illegal_chars[0].1[0], illegal_chars[0].1[0]],
@@ -285,10 +288,10 @@ impl RainlangDocument {
 
         // begin parsing expression sources and cache them
         let mut parsed_sources = exclusive_parse(&document, &SOURCE_PATTERN, 0, true);
-        if parsed_sources.last().is_some() {
-            if parsed_sources[parsed_sources.len() - 1].0.trim().is_empty() {
-                parsed_sources.pop();
-            }
+        if parsed_sources.last().is_some()
+            && parsed_sources[parsed_sources.len() - 1].0.trim().is_empty()
+        {
+            parsed_sources.pop();
         }
         for v in parsed_sources.iter() {
             let trimmed = tracked_trim(&v.0);
@@ -322,7 +325,7 @@ impl RainlangDocument {
             });
 
             // parse and cache the sub-expressions
-            exclusive_parse(&src, &SUB_SOURCE_PATTERN, src_items_pos[i][0], true)
+            exclusive_parse(src, &SUB_SOURCE_PATTERN, src_items_pos[i][0], true)
                 .iter()
                 .for_each(|v| {
                     let trimmed = tracked_trim(&v.0);
@@ -334,7 +337,7 @@ impl RainlangDocument {
             for (j, sub_src) in sub_src_items.iter().enumerate() {
                 self.reset_state();
                 let cursor_offset = sub_src_items_pos[j][0];
-                if self.ast[i].lines.len() > 0 {
+                if !self.ast[i].lines.is_empty() {
                     occupied_keys.extend(self.ast[i].lines[j - 1].aliases.iter().filter_map(|v| {
                         if v.name != "_" {
                             Some(v.name.clone())
@@ -357,7 +360,7 @@ impl RainlangDocument {
                         }
                     }
                     // begin parsing LHS
-                    if lhs.len() > 0 {
+                    if !lhs.is_empty() {
                         let lhs_items = inclusive_parse(lhs, &ANY_PATTERN, cursor_offset);
                         for item in lhs_items.iter() {
                             self.state.aliases.push(Alias {
@@ -417,7 +420,7 @@ impl RainlangDocument {
 
         // ignore next line problems
         for v in self.comments.iter() {
-            if LintPatterns::IGNORE_NEXT_LINE.is_match(&v.comment) {
+            if lint_patterns::IGNORE_NEXT_LINE.is_match(&v.comment) {
                 if let Some(line) = self.ast.iter().flat_map(|e| &e.lines).find(|&e| {
                     line_number(&self.text, e.position[0])
                         == line_number(&self.text, v.position[1]) + 1
@@ -441,13 +444,13 @@ impl RainlangDocument {
     }
 
     /// Method to update the parse state
-    fn update_state(&mut self, node: Node) -> anyhow::Result<()> {
+    fn update_state(&mut self, node: Node) -> Result<(), Error> {
         let mut nodes = &mut self.state.nodes;
         for _ in 0..self.state.depth {
             let len = nodes.len();
             match &mut nodes[len - 1] {
                 Node::Opcode(v) => nodes = &mut v.parameters,
-                _ => return Err(anyhow::anyhow!("failed to update state!")),
+                _ => return Err(Error::StateUpdateFailed),
             }
         }
         nodes.push(node);
@@ -461,7 +464,7 @@ impl RainlangDocument {
         offset: usize,
         namespace: &Namespace,
         authoring_meta: &AuthoringMeta,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), Error> {
         let mut exp = text;
         while !exp.is_empty() {
             let cursor = offset - exp.len();
@@ -478,7 +481,7 @@ impl RainlangDocument {
                     exp = exp.split_at(1).1;
                 }
                 ')' => {
-                    if self.state.parens.open.len() > 0 {
+                    if !self.state.parens.open.is_empty() {
                         self.state.parens.close.push(cursor + 1);
                         self.process_opcode()?;
                         self.state.depth -= 1;
@@ -510,21 +513,16 @@ impl RainlangDocument {
     }
 
     /// resolves the Opcode AST type once its respective closing paren has been consumed
-    fn process_opcode(&mut self) -> anyhow::Result<()> {
+    fn process_opcode(&mut self) -> Result<(), Error> {
         self.state.parens.open.pop();
-        let end_position = self
-            .state
-            .parens
-            .close
-            .pop()
-            .ok_or(anyhow::anyhow!("something went wrong!"))?;
+        let end_position = self.state.parens.close.pop().ok_or(Error::FailedToParse)?;
 
         let mut nodes = &mut self.state.nodes;
         for _ in 0..self.state.depth - 1 {
             let len = nodes.len();
             match &mut nodes[len - 1] {
                 Node::Opcode(v) => nodes = &mut v.parameters,
-                _ => return Err(anyhow::anyhow!("failed to update state!")),
+                _ => return Err(Error::StateUpdateFailed),
             }
         }
 
@@ -539,7 +537,7 @@ impl RainlangDocument {
             });
             Ok(())
         } else {
-            Err(anyhow::anyhow!("something went wrong!"))
+            Err(Error::FailedToParse)
         }
     }
 
@@ -553,7 +551,7 @@ impl RainlangDocument {
     ) -> usize {
         let mut remaining = exp.len();
         if let Some(operand_close_index) = exp.find('>') {
-            let slices = (&exp[1..]).split_at(operand_close_index - 1);
+            let slices = exp[1..].split_at(operand_close_index - 1);
             // remaining = slices.1[1..].to_owned();
             remaining = operand_close_index + 1;
             let operand_args = inclusive_parse(slices.0, &ANY_PATTERN, pos + 1);
@@ -622,70 +620,70 @@ impl RainlangDocument {
                                     code: ErrorCode::UndefinedQuote,
                                 });
                             }
-                        } else {
-                            if let Some(namespace_item) = namespace.get(quote) {
-                                if let NamespaceItem::Node(node) = namespace_item {
-                                    match &node.element {
-                                        NamespaceNodeElement::Binding(b) => {
-                                            match &b.item {
-                                                BindingItem::Elided(e) => {
+                        } else if let Some(namespace_item) = namespace.get(quote) {
+                            if let NamespaceItem::Node(node) = namespace_item {
+                                match &node.element {
+                                    NamespaceNodeElement::Binding(b) => {
+                                        match &b.item {
+                                            BindingItem::Elided(e) => {
+                                                self.problems.push(Problem {
+                                                    msg: e.msg.to_owned(),
+                                                    position: v.1,
+                                                    code: ErrorCode::ElidedBinding,
+                                                });
+                                            }
+                                            BindingItem::Constant(_c) => {
+                                                self.problems.push(Problem {
+                                                    msg: format!(
+                                                        "invalid quote: {}, cannot quote constants",
+                                                        quote
+                                                    ),
+                                                    position: v.1,
+                                                    code: ErrorCode::InvalidQuote,
+                                                });
+                                            }
+                                            _ => {
+                                                if let Some(_p) = b.problems.iter().find(|&v| {
+                                                    v.code == ErrorCode::CircularDependency
+                                                }) {
                                                     self.problems.push(Problem {
-                                                        msg: e.msg.to_owned(),
+                                                        msg:
+                                                            "quoted binding has circular dependency"
+                                                                .to_owned(),
                                                         position: v.1,
-                                                        code: ErrorCode::ElidedBinding,
+                                                        code: ErrorCode::CircularDependency,
                                                     });
                                                 }
-                                                BindingItem::Constant(_c) => {
-                                                    self.problems.push(Problem {
-                                                        msg: format!(
-                                                            "invalid quote: {}, cannot quote constants",
-                                                            quote
-                                                        ),
-                                                        position: v.1,
-                                                        code: ErrorCode::InvalidQuote
-                                                    });
-                                                }
-                                                _ => {
-                                                    if let Some(_p) = b.problems.iter().find(|&v| {
-                                                        v.code == ErrorCode::CircularDependency
-                                                    }) {
-                                                        self.problems.push(Problem {
-                                                            msg: "quoted binding has circular dependency".to_owned(),
-                                                            position: v.1,
-                                                            code: ErrorCode::CircularDependency
-                                                        });
-                                                    }
-                                                }
-                                            };
-                                        }
-                                        _ => {
-                                            self.problems.push(Problem {
-                                                msg: format!(
-                                                    "invalid quote: {}, only bindings can be quoted",
-                                                    quote
-                                                ),
-                                                position: v.1,
-                                                code: ErrorCode::InvalidQuote
-                                            });
-                                        }
-                                    };
-                                } else {
-                                    self.problems.push(Problem {
-                                        msg: format!(
-                                            "invalid quote: {}, only bindings can be quoted",
-                                            quote
-                                        ),
-                                        position: v.1,
-                                        code: ErrorCode::InvalidQuote,
-                                    });
-                                }
+                                            }
+                                        };
+                                    }
+                                    _ => {
+                                        self.problems.push(Problem {
+                                            msg: format!(
+                                                "invalid quote: {}, only bindings can be quoted",
+                                                quote
+                                            ),
+                                            position: v.1,
+                                            code: ErrorCode::InvalidQuote,
+                                        });
+                                    }
+                                };
                             } else {
                                 self.problems.push(Problem {
-                                    msg: format!("undefined quote: {}", quote),
+                                    msg: format!(
+                                        "invalid quote: {}, only bindings can be quoted",
+                                        quote
+                                    ),
                                     position: v.1,
-                                    code: ErrorCode::UndefinedQuote,
+                                    code: ErrorCode::InvalidQuote,
                                 });
                             }
+                        } else {
+                            self.problems.push(Problem {
+                                msg: format!("undefined quote: {}", quote),
+                                position: v.1,
+                                code: ErrorCode::UndefinedQuote,
+                            });
                         }
                     }
                     op.operand_args.as_mut().unwrap().args.push(OperandArgItem {
@@ -727,7 +725,7 @@ impl RainlangDocument {
         entry: usize,
         namespace: &Namespace,
         authoring_meta: &AuthoringMeta,
-    ) -> anyhow::Result<usize> {
+    ) -> Result<usize, Error> {
         let exp = text;
         let (next, mut remaining, mut offset) =
             match exp.find(['(', ')', '<', '>', ' ', '\t', '\r', '\n']) {
@@ -778,37 +776,29 @@ impl RainlangDocument {
                             });
                         }
                     }
-                } else {
-                    if !self.ignore_undefined_authoring_meta {
-                        self.problems.push(Problem {
-                            msg: format!("unknown opcode: {}", next),
-                            position: next_pos,
-                            code: ErrorCode::UndefinedOpcode,
-                        });
-                    }
-                }
-            } else {
-                if next.is_empty() {
-                    // @TODO - improve problems
-                } else if !WORD_PATTERN.is_match(next) {
+                } else if !self.ignore_undefined_authoring_meta {
                     self.problems.push(Problem {
-                        msg: format!("invalid word pattern: {}", next),
+                        msg: format!("unknown opcode: {}", next),
                         position: next_pos,
-                        code: ErrorCode::InvalidWordPattern,
+                        code: ErrorCode::UndefinedOpcode,
                     });
-                } else {
-                    if let Some(word) = authoring_meta.0.iter().find(|&v| v.word.as_str() == next) {
-                        op.opcode.description = word.description.clone();
-                    } else {
-                        if !self.ignore_undefined_authoring_meta {
-                            self.problems.push(Problem {
-                                msg: format!("unknown opcode: {}", next),
-                                position: next_pos,
-                                code: ErrorCode::UndefinedOpcode,
-                            });
-                        }
-                    }
                 }
+            } else if next.is_empty() {
+                // @TODO - improve problems
+            } else if !WORD_PATTERN.is_match(next) {
+                self.problems.push(Problem {
+                    msg: format!("invalid word pattern: {}", next),
+                    position: next_pos,
+                    code: ErrorCode::InvalidWordPattern,
+                });
+            } else if let Some(word) = authoring_meta.0.iter().find(|&v| v.word.as_str() == next) {
+                op.opcode.description = word.description.clone();
+            } else if !self.ignore_undefined_authoring_meta {
+                self.problems.push(Problem {
+                    msg: format!("unknown opcode: {}", next),
+                    position: next_pos,
+                    code: ErrorCode::UndefinedOpcode,
+                });
             }
             if remaining.starts_with('<') {
                 let consumed =
@@ -841,24 +831,129 @@ impl RainlangDocument {
                     code: ErrorCode::ExpectedOpeningParen,
                 });
             }
-        } else {
-            if next.contains('.') {
-                if let Some(namespace_item) = self.search_name(next, entry, true, namespace) {
-                    match namespace_item {
-                        NamespaceSearchResult::Binding(b) => match &b.item {
+        } else if next.contains('.') {
+            if let Some(namespace_item) = self.search_name(next, entry, true, namespace) {
+                match namespace_item {
+                    NamespaceSearchResult::Binding(b) => match &b.item {
+                        BindingItem::Constant(c) => {
+                            let value = c.value.to_owned();
+                            self.update_state(Node::Value(Value {
+                                id: Some(next.to_owned()),
+                                value,
+                                position: next_pos,
+                                lhs_alias: None,
+                            }))?;
+                        }
+                        BindingItem::Elided(e) => {
+                            let msg = e.msg.to_owned();
+                            self.problems.push(Problem {
+                                msg,
+                                position: next_pos,
+                                code: ErrorCode::ElidedBinding,
+                            });
+                            self.update_state(Node::Alias(Alias {
+                                name: next.to_owned(),
+                                position: next_pos,
+                                lhs_alias: None,
+                            }))?;
+                        }
+                        BindingItem::Exp(_e) => {
+                            self.problems.push(Problem {
+                                    msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
+                                    position: next_pos,
+                                    code: ErrorCode::InvalidReference
+                                });
+                            self.update_state(Node::Alias(Alias {
+                                name: next.to_owned(),
+                                position: next_pos,
+                                lhs_alias: None,
+                            }))?;
+                        }
+                    },
+                    other => {
+                        let msg = match other {
+                            NamespaceSearchResult::ContextAlias(_c) => {
+                                format!("invalid reference to context alias: {}", next)
+                            }
+                            NamespaceSearchResult::Binding(_b) => String::new(),
+                        };
+                        self.problems.push(Problem {
+                            msg,
+                            position: next_pos,
+                            code: ErrorCode::InvalidReference,
+                        });
+                        self.update_state(Node::Alias(Alias {
+                            name: next.to_owned(),
+                            position: next_pos,
+                            lhs_alias: None,
+                        }))?;
+                    }
+                }
+            } else {
+                self.update_state(Node::Alias(Alias {
+                    name: next.to_owned(),
+                    position: next_pos,
+                    lhs_alias: None,
+                }))?;
+            }
+        } else if NUMERIC_PATTERN.is_match(next) {
+            if to_u256(next).is_err() {
+                self.problems.push(Problem {
+                    msg: "value out of range".to_owned(),
+                    position: next_pos,
+                    code: ErrorCode::OutOfRangeValue,
+                });
+            }
+            self.update_state(Node::Value(Value {
+                value: next.to_owned(),
+                position: next_pos,
+                lhs_alias: None,
+                id: None,
+            }))?;
+        } else if WORD_PATTERN.is_match(next) {
+            if let Some(c) = RAIN_DOCUMENT_CONSTANTS.iter().find(|&&v| v.0 == next) {
+                self.update_state(Node::Value(Value {
+                    value: c.1.to_owned(),
+                    position: next_pos,
+                    lhs_alias: None,
+                    id: Some(next.to_owned()),
+                }))?;
+            } else if self.state.aliases.iter().any(|v| v.name == next) {
+                self.problems.push(Problem {
+                    msg: "cannot reference self".to_owned(),
+                    position: next_pos,
+                    code: ErrorCode::InvalidSelfReference,
+                });
+                self.update_state(Node::Alias(Alias {
+                    name: next.to_owned(),
+                    position: next_pos,
+                    lhs_alias: None,
+                }))?;
+            } else if self.ast[self.ast.len() - 1]
+                .lines
+                .iter()
+                .any(|v| v.aliases.iter().any(|e| e.name == next))
+            {
+                self.update_state(Node::Alias(Alias {
+                    name: next.to_owned(),
+                    position: next_pos,
+                    lhs_alias: None,
+                }))?;
+            } else if let Some(ns_type) = namespace.get(next) {
+                match ns_type {
+                    NamespaceItem::Node(node) => match &node.element {
+                        NamespaceNodeElement::Binding(b) => match &b.item {
                             BindingItem::Constant(c) => {
-                                let value = c.value.to_owned();
                                 self.update_state(Node::Value(Value {
-                                    id: Some(next.to_owned()),
-                                    value,
+                                    value: c.value.clone(),
                                     position: next_pos,
                                     lhs_alias: None,
+                                    id: Some(next.to_owned()),
                                 }))?;
                             }
                             BindingItem::Elided(e) => {
-                                let msg = e.msg.to_owned();
                                 self.problems.push(Problem {
-                                    msg,
+                                    msg: e.msg.clone(),
                                     position: next_pos,
                                     code: ErrorCode::ElidedBinding,
                                 });
@@ -870,10 +965,10 @@ impl RainlangDocument {
                             }
                             BindingItem::Exp(_e) => {
                                 self.problems.push(Problem {
-                                        msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
-                                        position: next_pos,
-                                        code: ErrorCode::InvalidReference
-                                    });
+                                            msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
+                                            position: next_pos,
+                                            code: ErrorCode::InvalidReference
+                                        });
                                 self.update_state(Node::Alias(Alias {
                                     name: next.to_owned(),
                                     position: next_pos,
@@ -881,15 +976,9 @@ impl RainlangDocument {
                                 }))?;
                             }
                         },
-                        other => {
-                            let msg = match other {
-                                NamespaceSearchResult::ContextAlias(_c) => {
-                                    format!("invalid reference to context alias: {}", next)
-                                }
-                                NamespaceSearchResult::Binding(_b) => String::new(),
-                            };
+                        NamespaceNodeElement::ContextAlias(_c) => {
                             self.problems.push(Problem {
-                                msg,
+                                msg: format!("invalid reference to context alias: {}", next),
                                 position: next_pos,
                                 code: ErrorCode::InvalidReference,
                             });
@@ -899,165 +988,57 @@ impl RainlangDocument {
                                 lhs_alias: None,
                             }))?;
                         }
-                    }
-                } else {
-                    self.update_state(Node::Alias(Alias {
-                        name: next.to_owned(),
-                        position: next_pos,
-                        lhs_alias: None,
-                    }))?;
-                }
-            } else {
-                if NUMERIC_PATTERN.is_match(next) {
-                    if to_u256(next).is_err() {
+                        NamespaceNodeElement::Dispair(_) => {
+                            self.problems.push(Problem {
+                                msg: format!("invalid reference: {}", next),
+                                position: next_pos,
+                                code: ErrorCode::InvalidReference,
+                            });
+                        }
+                    },
+                    NamespaceItem::Namespace(_ns) => {
                         self.problems.push(Problem {
-                            msg: "value out of range".to_owned(),
+                            msg: format!("invalid reference to namespace: {}", next),
                             position: next_pos,
-                            code: ErrorCode::OutOfRangeValue,
+                            code: ErrorCode::InvalidReference,
                         });
-                    }
-                    self.update_state(Node::Value(Value {
-                        value: next.to_owned(),
-                        position: next_pos,
-                        lhs_alias: None,
-                        id: None,
-                    }))?;
-                } else if WORD_PATTERN.is_match(next) {
-                    if let Some(c) = RAIN_DOCUMENT_CONSTANTS.iter().find(|&&v| v.0 == next) {
-                        self.update_state(Node::Value(Value {
-                            value: c.1.to_owned(),
+                        self.update_state(Node::Alias(Alias {
+                            name: next.to_owned(),
                             position: next_pos,
                             lhs_alias: None,
-                            id: Some(next.to_owned()),
                         }))?;
-                    } else {
-                        if self.state.aliases.iter().find(|v| v.name == next).is_some() {
-                            self.problems.push(Problem {
-                                msg: "cannot reference self".to_owned(),
-                                position: next_pos,
-                                code: ErrorCode::InvalidSelfReference,
-                            });
-                            self.update_state(Node::Alias(Alias {
-                                name: next.to_owned(),
-                                position: next_pos,
-                                lhs_alias: None,
-                            }))?;
-                        } else if self.ast[self.ast.len() - 1]
-                            .lines
-                            .iter()
-                            .find(|&v| v.aliases.iter().find(|&e| e.name == next).is_some())
-                            .is_some()
-                        {
-                            self.update_state(Node::Alias(Alias {
-                                name: next.to_owned(),
-                                position: next_pos,
-                                lhs_alias: None,
-                            }))?;
-                        } else if let Some(ns_type) = namespace.get(next) {
-                            match ns_type {
-                                NamespaceItem::Node(node) => match &node.element {
-                                    NamespaceNodeElement::Binding(b) => match &b.item {
-                                        BindingItem::Constant(c) => {
-                                            self.update_state(Node::Value(Value {
-                                                value: c.value.clone(),
-                                                position: next_pos,
-                                                lhs_alias: None,
-                                                id: Some(next.to_owned()),
-                                            }))?;
-                                        }
-                                        BindingItem::Elided(e) => {
-                                            self.problems.push(Problem {
-                                                msg: e.msg.clone(),
-                                                position: next_pos,
-                                                code: ErrorCode::ElidedBinding,
-                                            });
-                                            self.update_state(Node::Alias(Alias {
-                                                name: next.to_owned(),
-                                                position: next_pos,
-                                                lhs_alias: None,
-                                            }))?;
-                                        }
-                                        BindingItem::Exp(_e) => {
-                                            self.problems.push(Problem {
-                                                        msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
-                                                        position: next_pos,
-                                                        code: ErrorCode::InvalidReference
-                                                    });
-                                            self.update_state(Node::Alias(Alias {
-                                                name: next.to_owned(),
-                                                position: next_pos,
-                                                lhs_alias: None,
-                                            }))?;
-                                        }
-                                    },
-                                    NamespaceNodeElement::ContextAlias(_c) => {
-                                        self.problems.push(Problem {
-                                            msg: format!(
-                                                "invalid reference to context alias: {}",
-                                                next
-                                            ),
-                                            position: next_pos,
-                                            code: ErrorCode::InvalidReference,
-                                        });
-                                        self.update_state(Node::Alias(Alias {
-                                            name: next.to_owned(),
-                                            position: next_pos,
-                                            lhs_alias: None,
-                                        }))?;
-                                    }
-                                    NamespaceNodeElement::Dispair(_) => {
-                                        self.problems.push(Problem {
-                                            msg: format!("invalid reference: {}", next),
-                                            position: next_pos,
-                                            code: ErrorCode::InvalidReference,
-                                        });
-                                    }
-                                },
-                                NamespaceItem::Namespace(_ns) => {
-                                    self.problems.push(Problem {
-                                        msg: format!("invalid reference to namespace: {}", next),
-                                        position: next_pos,
-                                        code: ErrorCode::InvalidReference,
-                                    });
-                                    self.update_state(Node::Alias(Alias {
-                                        name: next.to_owned(),
-                                        position: next_pos,
-                                        lhs_alias: None,
-                                    }))?;
-                                }
-                            }
-                        } else {
-                            self.problems.push(Problem {
-                                msg: format!("undefined word: {}", next),
-                                position: next_pos,
-                                code: ErrorCode::UndefinedWord,
-                            });
-                            self.update_state(Node::Alias(Alias {
-                                name: next.to_owned(),
-                                position: next_pos,
-                                lhs_alias: None,
-                            }))?;
-                        }
                     }
-                } else {
-                    self.problems.push(Problem {
-                        msg: format!("{} is not a valid rainlang word", next),
-                        position: next_pos,
-                        code: ErrorCode::InvalidWordPattern,
-                    });
-                    self.update_state(Node::Alias(Alias {
-                        name: next.to_owned(),
-                        position: next_pos,
-                        lhs_alias: None,
-                    }))?;
                 }
+            } else {
+                self.problems.push(Problem {
+                    msg: format!("undefined word: {}", next),
+                    position: next_pos,
+                    code: ErrorCode::UndefinedWord,
+                });
+                self.update_state(Node::Alias(Alias {
+                    name: next.to_owned(),
+                    position: next_pos,
+                    lhs_alias: None,
+                }))?;
             }
+        } else {
+            self.problems.push(Problem {
+                msg: format!("{} is not a valid rainlang word", next),
+                position: next_pos,
+                code: ErrorCode::InvalidWordPattern,
+            });
+            self.update_state(Node::Alias(Alias {
+                name: next.to_owned(),
+                position: next_pos,
+                lhs_alias: None,
+            }))?;
         }
         // Ok(remaining)
         Ok(offset)
     }
 
     /// Search in namespaces for a name
+    #[allow(clippy::while_let_on_iterator)]
     fn search_name<'a>(
         &'a mut self,
         query: &str,
@@ -1145,7 +1126,7 @@ impl RainlangDocument {
                             code: ErrorCode::UnexpectedNamespacePath,
                         });
                     }
-                    return None;
+                    None
                 }
                 NamespaceItem::Node(node) => match &node.element {
                     NamespaceNodeElement::Binding(e) => {
@@ -1154,7 +1135,7 @@ impl RainlangDocument {
                     NamespaceNodeElement::ContextAlias(e) => {
                         return Some(NamespaceSearchResult::ContextAlias(e))
                     }
-                    NamespaceNodeElement::Dispair(_) => return None,
+                    NamespaceNodeElement::Dispair(_) => None,
                 },
             }
         } else {
@@ -1167,7 +1148,7 @@ impl RainlangDocument {
                 });
                 // }
             }
-            return None;
+            None
         }
     }
 }

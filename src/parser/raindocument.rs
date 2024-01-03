@@ -8,9 +8,7 @@ use topo_sort::{SortResults, TopoSort};
 use std::collections::{HashMap, VecDeque};
 use futures::{executor::block_on, future::join_all};
 use rain_meta::{
-    Store, NPE2Deployer,
-    magic::KnownMagic,
-    RainMetaDocumentV1Item, search_deployer, search,
+    Store, NPE2Deployer, KnownMagic, RainMetaDocumentV1Item, search_deployer, search,
     types::{
         dotrain::v1::DotrainMeta, authoring::v1::AuthoringMeta,
         interpreter_caller::v1::InterpreterCallerMeta,
@@ -18,7 +16,10 @@ use rain_meta::{
 };
 use super::{
     rainlang::RainlangDocument,
-    super::types::{ast::*, patterns::*},
+    super::{
+        error::Error,
+        types::{ast::*, patterns::*},
+    },
     exclusive_parse, inclusive_parse, fill_in, is_consumable, tracked_trim, line_number, to_u256,
 };
 
@@ -48,6 +49,40 @@ pub const RAIN_DOCUMENT_CONSTANTS: [(&str, &str); 9] = [
     ("max-uint-32", "0xffffffff"),
     ("max-uint32", "0xffffffff"),
 ];
+
+#[derive(Debug)]
+pub enum RainDocumentParseError {}
+
+impl std::fmt::Display for RainDocumentParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("corrupt meta")
+        // match self {
+        //     Error::CorruptMeta => f.write_str("corrupt meta"),
+        //     Error::UnknownMeta => f.write_str("unknown meta"),
+        //     Error::UnknownMagic => f.write_str("unknown magic"),
+        //     Error::UnsupportedMeta => f.write_str("unsupported meta"),
+        //     Error::InvalidHash => f.write_str("invalid keccak256 hash"),
+        //     Error::NoRecordFound => f.write_str("found no matching record"),
+        //     Error::UnsupportedNetwork => {
+        //         f.write_str("no rain subgraph is deployed for this network")
+        //     }
+        //     Error::BiggerThan32Bytes => {
+        //         f.write_str("unexpected input size, must be 32 bytes or less")
+        //     }
+        //     Error::ReqwestError(v) => write!(f, "{}", v),
+        //     Error::InflateError(v) => write!(f, "{}", v),
+        //     Error::Utf8Error(v) => write!(f, "{}", v),
+        //     Error::AbiCoderError(v) => write!(f, "{}", v),
+        //     Error::SerdeCborError(v) => write!(f, "{}", v),
+        //     Error::SerdeJsonError(v) => write!(f, "{}", v),
+        //     Error::FromUtf8Error(v) => write!(f, "{}", v),
+        //     Error::DecodeHexStringError(v) => write!(f, "{}", v),
+        //     Error::ValidationErrors(v) => write!(f, "{}", v),
+        // }
+    }
+}
+
+impl std::error::Error for RainDocumentParseError {}
 
 /// Data structure of a parsed .rain text
 ///
@@ -373,14 +408,10 @@ impl RainDocument {
     fn is_deep_import(import: &Import) -> bool {
         if let Some(seq) = &import.sequence {
             if let Some(dotrain) = &seq.dotrain {
-                match dotrain
+                dotrain
                     .problems
                     .iter()
-                    .find(|v| v.code == ErrorCode::DeepImport)
-                {
-                    Some(_) => true,
-                    None => false,
-                }
+                    .any(|v| v.code == ErrorCode::DeepImport)
             } else {
                 false
             }
@@ -390,6 +421,7 @@ impl RainDocument {
     }
 
     /// Checks if a binding is elided
+    #[allow(clippy::manual_strip)]
     fn is_elided(text: &str) -> Option<String> {
         let msg = text.trim();
         if msg.starts_with('!') {
@@ -404,15 +436,13 @@ impl RainDocument {
         let items = exclusive_parse(text, &WS_PATTERN, 0, false);
         if items.len() != 1 {
             None
-        } else {
-            if NUMERIC_PATTERN.is_match(&items[0].0) {
-                match to_u256(&items[0].0) {
-                    Ok(v) => Some(Ok(v.to_string())),
-                    Err(_e) => Some(Err("value out of range".to_owned())),
-                }
-            } else {
-                None
+        } else if NUMERIC_PATTERN.is_match(&items[0].0) {
+            match to_u256(&items[0].0) {
+                Ok(v) => Some(Ok(v.to_string())),
+                Err(_e) => Some(Err("value out of range".to_owned())),
             }
+        } else {
+            None
         }
     }
 
@@ -448,6 +478,7 @@ impl RainDocument {
 
     /// processes an import statement
     #[async_recursion(?Send)]
+    #[allow(clippy::await_holding_lock)]
     async fn process_import(&self, statement: &ParsedItem, should_search: bool) -> Import {
         let mut start_range;
         let at_pos: Offsets = [statement.1[0] - 1, statement.1[0] - 1];
@@ -518,7 +549,7 @@ impl RainDocument {
                     });
                 }
             }
-            if pieces[start_range..].len() > 0 {
+            if !pieces[start_range..].is_empty() {
                 result.configuration = Some(ImportConfiguration {
                     problems: vec![],
                     pairs: vec![],
@@ -537,21 +568,13 @@ impl RainDocument {
                 if piece.0 == "." {
                     if let Some(next) = remainings.next() {
                         if next.0 == "!" {
-                            if c.pairs
-                                .iter()
-                                .find(|v| {
-                                    if let Some(e) = &v.1 {
-                                        if v.0 .0 == piece.0 && e.0 == next.0 {
-                                            true
-                                        } else {
-                                            false
-                                        }
-                                    } else {
-                                        false
-                                    }
-                                })
-                                .is_some()
-                            {
+                            if c.pairs.iter().any(|v| {
+                                if let Some(e) = &v.1 {
+                                    v.0 .0 == piece.0 && e.0 == next.0
+                                } else {
+                                    false
+                                }
+                            }) {
                                 c.problems.push(Problem {
                                     msg: "duplicate statement".to_owned(),
                                     position: [piece.1[0], next.1[1]],
@@ -577,21 +600,13 @@ impl RainDocument {
                 } else if WORD_PATTERN.is_match(&piece.0) {
                     if let Some(next) = remainings.next() {
                         if NUMERIC_PATTERN.is_match(&next.0) || next.0 == "!" {
-                            if c.pairs
-                                .iter()
-                                .find(|v| {
-                                    if let Some(e) = &v.1 {
-                                        if v.0 .0 == piece.0 && e.0 == next.0 {
-                                            true
-                                        } else {
-                                            false
-                                        }
-                                    } else {
-                                        false
-                                    }
-                                })
-                                .is_some()
-                            {
+                            if c.pairs.iter().any(|v| {
+                                if let Some(e) = &v.1 {
+                                    v.0 .0 == piece.0 && e.0 == next.0
+                                } else {
+                                    false
+                                }
+                            }) {
                                 c.problems.push(Problem {
                                     msg: "duplicate statement".to_owned(),
                                     position: [piece.1[0], next.1[1]],
@@ -618,21 +633,13 @@ impl RainDocument {
                     if let Some(next) = remainings.next() {
                         if WORD_PATTERN.is_match(&piece.0[1..]) {
                             if WORD_PATTERN.is_match(&next.0) {
-                                if c.pairs
-                                    .iter()
-                                    .find(|v| {
-                                        if let Some(e) = &v.1 {
-                                            if v.0 .0 == piece.0 && e.0 == next.0 {
-                                                true
-                                            } else {
-                                                false
-                                            }
-                                        } else {
-                                            false
-                                        }
-                                    })
-                                    .is_some()
-                                {
+                                if c.pairs.iter().any(|v| {
+                                    if let Some(e) = &v.1 {
+                                        v.0 .0 == piece.0 && e.0 == next.0
+                                    } else {
+                                        false
+                                    }
+                                }) {
                                     c.problems.push(Problem {
                                         msg: "duplicate statement".to_owned(),
                                         position: [piece.1[0], next.1[1]],
@@ -668,13 +675,8 @@ impl RainDocument {
                         position: piece.1,
                         code: ErrorCode::UnexpectedToken,
                     });
-                    c.pairs.push((piece.clone(), {
-                        if let Some(n) = remainings.next() {
-                            Some(n.clone())
-                        } else {
-                            None
-                        }
-                    }));
+                    c.pairs
+                        .push((piece.clone(), { remainings.next().map(|n| n.clone()) }));
                 }
             }
             if has_conf {
@@ -689,39 +691,45 @@ impl RainDocument {
         }
 
         let mut npe2_deployer = None;
-        let meta_seq = if let Some(d) = self.meta_store.read().unwrap().get_deployer(&result.hash) {
-            npe2_deployer = Some(d.clone());
-            None
-        } else {
-            if let Some(r) = self.meta_store.read().unwrap().get_meta(&result.hash) {
-                Some(RainMetaDocumentV1Item::cbor_decode(&r))
-            } else {
-                if should_search {
-                    let subgraphs = { self.meta_store.read().unwrap().subgraphs().clone() };
-                    let deployer_search = search_deployer(&result.hash, &subgraphs);
-                    let meta_search = search(&result.hash, &subgraphs);
-                    if let Ok(deployer_res) = deployer_search.await {
-                        npe2_deployer = Some(
-                            self.meta_store
-                                .write()
-                                .unwrap()
-                                .set_deployer_from_query_response(deployer_res),
-                        );
-                        None
-                    } else {
-                        if let Ok(meta) = meta_search.await {
-                            self.meta_store
-                                .write()
-                                .unwrap()
-                                .update_with(&result.hash, &meta.bytes);
-                            Some(RainMetaDocumentV1Item::cbor_decode(&meta.bytes))
-                        } else {
-                            None
-                        }
-                    }
+        let meta_seq = {
+            let mut did_find = false;
+            let seq = {
+                if let Some(d) = self.meta_store.read().unwrap().get_deployer(&result.hash) {
+                    npe2_deployer = Some(d.clone());
+                    did_find = true;
+                    None
+                } else if let Some(r) = self.meta_store.read().unwrap().get_meta(&result.hash) {
+                    did_find = true;
+                    Some(RainMetaDocumentV1Item::cbor_decode(r))
                 } else {
                     None
                 }
+            };
+            if !did_find && should_search {
+                let subgraphs = { self.meta_store.read().unwrap().subgraphs().clone() };
+                let deployer_search = search_deployer(&result.hash, &subgraphs);
+                let meta_search = search(&result.hash, &subgraphs);
+                if let Ok(deployer_res) = deployer_search.await {
+                    npe2_deployer = Some(
+                        self.meta_store
+                            .write()
+                            .unwrap()
+                            .set_deployer_from_query_response(deployer_res),
+                    );
+                    None
+                } else if let Ok(meta) = meta_search.await {
+                    self.meta_store
+                        .write()
+                        .unwrap()
+                        .update_with(&result.hash, &meta.bytes);
+                    Some(RainMetaDocumentV1Item::cbor_decode(&meta.bytes))
+                } else {
+                    None
+                }
+            } else if did_find {
+                seq
+            } else {
+                None
             }
         };
         if let Some(deployer) = npe2_deployer {
@@ -738,14 +746,12 @@ impl RainDocument {
                     code: ErrorCode::CorruptMeta,
                 });
             } else {
-                if deployer.authoring_meta.is_none() {
-                    if !self.ignore_undefined_words {
-                        result.problems.push(Problem {
-                            msg: "deployer's authroing meta is undefined".to_owned(),
-                            position: result.hash_position,
-                            code: ErrorCode::UndefinedAuthoringMeta,
-                        });
-                    }
+                if deployer.authoring_meta.is_none() && !self.ignore_undefined_words {
+                    result.problems.push(Problem {
+                        msg: "deployer's authroing meta is undefined".to_owned(),
+                        position: result.hash_position,
+                        code: ErrorCode::UndefinedAuthoringMeta,
+                    });
                 };
                 result.sequence.as_mut().unwrap().dispair = Some(deployer.into());
             }
@@ -761,22 +767,25 @@ impl RainDocument {
                         match meta.unpack() {
                             Ok(d) => match meta.magic {
                                 KnownMagic::ExpressionDeployerV2BytecodeV1 => {
-                                    result.sequence.as_mut().unwrap().dispair = if let Some(
-                                        deployer,
-                                    ) =
-                                        self.meta_store.read().unwrap().get_deployer(&result.hash)
-                                    {
-                                        if deployer.is_corrupt() {
-                                            result.sequence = None;
-                                            result.problems.push(Problem {
-                                                msg: "corrupt meta".to_owned(),
-                                                position: result.hash_position,
-                                                code: ErrorCode::CorruptMeta,
-                                            });
-                                            break;
-                                        } else {
-                                            if deployer.authoring_meta.is_none() {
-                                                if !self.ignore_undefined_words {
+                                    result.sequence.as_mut().unwrap().dispair =
+                                        if let Some(deployer) = self
+                                            .meta_store
+                                            .read()
+                                            .unwrap()
+                                            .get_deployer(&result.hash)
+                                        {
+                                            if deployer.is_corrupt() {
+                                                result.sequence = None;
+                                                result.problems.push(Problem {
+                                                    msg: "corrupt meta".to_owned(),
+                                                    position: result.hash_position,
+                                                    code: ErrorCode::CorruptMeta,
+                                                });
+                                                break;
+                                            } else {
+                                                if deployer.authoring_meta.is_none()
+                                                    && !self.ignore_undefined_words
+                                                {
                                                     result.problems.push(Problem {
                                                         msg:
                                                             "deployer's authroing meta is undefined"
@@ -784,12 +793,10 @@ impl RainDocument {
                                                         position: result.hash_position,
                                                         code: ErrorCode::UndefinedAuthoringMeta,
                                                     });
-                                                }
-                                            };
-                                            Some(deployer.clone().into())
-                                        }
-                                    } else {
-                                        if should_search {
+                                                };
+                                                Some(deployer.clone().into())
+                                            }
+                                        } else if should_search {
                                             let subgraphs = {
                                                 self.meta_store.read().unwrap().subgraphs().clone()
                                             };
@@ -810,23 +817,27 @@ impl RainDocument {
                                                     });
                                                     break;
                                                 } else {
-                                                    if deployer.authoring_meta.is_none() {
-                                                        if !self.ignore_undefined_words {
-                                                            result.problems.push(Problem {
-                                                                    msg: "deployer's authroing meta is undefined".to_owned(),
-                                                                    position: result.hash_position,
-                                                                    code: ErrorCode::UndefinedAuthoringMeta
-                                                                });
-                                                        }
+                                                    if deployer.authoring_meta.is_none()
+                                                        && !self.ignore_undefined_words
+                                                    {
+                                                        result.problems.push(Problem {
+                                                        msg:
+                                                            "deployer's authroing meta is undefined"
+                                                                .to_owned(),
+                                                        position: result.hash_position,
+                                                        code: ErrorCode::UndefinedAuthoringMeta,
+                                                    });
                                                     };
                                                     Some(deployer.into())
                                                 }
                                             } else {
                                                 result.problems.push(Problem {
-                                                        msg: "cannot find deployer details of specified hash".to_owned(),
-                                                        position: result.hash_position,
-                                                        code: ErrorCode::UndefinedDeployer
-                                                    });
+                                                msg:
+                                                    "cannot find deployer details of specified hash"
+                                                        .to_owned(),
+                                                position: result.hash_position,
+                                                code: ErrorCode::UndefinedDeployer,
+                                            });
                                                 None
                                             }
                                         } else {
@@ -838,8 +849,7 @@ impl RainDocument {
                                                 code: ErrorCode::UndefinedDeployer,
                                             });
                                             None
-                                        }
-                                    };
+                                        };
                                 }
                                 KnownMagic::InterpreterCallerMetaV1 => {
                                     if let Ok(cmeta) = InterpreterCallerMeta::try_from(d.as_slice())
@@ -881,7 +891,7 @@ impl RainDocument {
                                         } else {
                                             dotrain.parse();
                                         }
-                                        if dotrain.problems.len() > 0 {
+                                        if !dotrain.problems.is_empty() {
                                             result.problems.push(Problem {
                                                     msg: "imported rain document contains top level errors".to_owned(),
                                                     position: result.hash_position,
@@ -940,7 +950,7 @@ impl RainDocument {
     /// text (comments, imports, etc) one after the other, builds the parse tree, builds
     /// the namespace and checks for dependency issues and resolves the global words
     #[async_recursion(?Send)]
-    async fn _parse(&mut self, should_search: bool) -> anyhow::Result<()> {
+    async fn _parse(&mut self, should_search: bool) -> Result<(), Error> {
         self.imports.clear();
         self.problems.clear();
         self.comments.clear();
@@ -955,7 +965,7 @@ impl RainDocument {
 
         // check for illegal characters
         let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
-        if illegal_chars.len() > 0 {
+        if !illegal_chars.is_empty() {
             self.problems.push(Problem {
                 msg: format!("illegal character: {}", illegal_chars[0].0),
                 position: [illegal_chars[0].1[0], illegal_chars[0].1[0]],
@@ -984,16 +994,14 @@ impl RainDocument {
         if self
             .comments
             .iter()
-            .find(|v| LintPatterns::IGNORE_WORDS.is_match(&v.comment))
-            .is_some()
+            .any(|v| lint_patterns::IGNORE_WORDS.is_match(&v.comment))
         {
             self.ignore_words = true;
         }
         if self
             .comments
             .iter()
-            .find(|v| LintPatterns::IGNORE_UNDEFINED_WORDS.is_match(&v.comment))
-            .is_some()
+            .any(|v| lint_patterns::IGNORE_UNDEFINED_WORDS.is_match(&v.comment))
         {
             self.ignore_undefined_words = true;
         }
@@ -1060,7 +1068,7 @@ impl RainDocument {
 
         let mut imported_namespaces = VecDeque::new();
         for (i, _imp) in self.imports.iter().enumerate() {
-            if _imp.problems.len() == 0 {
+            if _imp.problems.is_empty() {
                 if let Some(item) = namespace.get(&_imp.name) {
                     if item.is_node() {
                         self.problems.push(Problem {
@@ -1069,203 +1077,187 @@ impl RainDocument {
                             code: ErrorCode::InvalidImport,
                         });
                     }
+                } else if Self::is_deep_import(_imp) {
+                    self.problems.push(Problem {
+                        msg: "import too deep".to_owned(),
+                        position: _imp.hash_position,
+                        code: ErrorCode::DeepImport,
+                    });
                 } else {
-                    if Self::is_deep_import(_imp) {
-                        self.problems.push(Problem {
-                            msg: "import too deep".to_owned(),
-                            position: _imp.hash_position,
-                            code: ErrorCode::DeepImport,
-                        });
-                    } else {
-                        let mut has_dispair = false;
-                        let mut has_dup_keys = false;
-                        let mut has_dup_words = false;
-                        let mut ns: Namespace = HashMap::new();
-                        if let Some(seq) = &_imp.sequence {
-                            if let Some(dispair) = &seq.dispair {
-                                ns.insert(
-                                    "Dispair".to_owned(),
-                                    NamespaceItem::Node(NamespaceNode {
-                                        hash: _imp.hash.clone(),
-                                        import_index: i as isize,
-                                        element: NamespaceNodeElement::Dispair(dispair.clone()),
-                                    }),
-                                );
-                                has_dispair = true;
-                            }
-                            if let Some(ctxmeta) = &seq.ctxmeta {
-                                let iter = &mut ctxmeta.iter();
-                                while let Some(ctx) = iter.next() {
-                                    if ns.contains_key(&ctx.name) {
-                                        has_dup_keys = true;
-                                        break;
-                                    }
-                                }
-                                if !has_dup_keys {
-                                    for ctx in ctxmeta {
-                                        ns.insert(
-                                            ctx.name.clone(),
-                                            NamespaceItem::Node(NamespaceNode {
-                                                hash: _imp.hash.clone(),
-                                                import_index: i as isize,
-                                                element: NamespaceNodeElement::ContextAlias(
-                                                    ctx.clone(),
-                                                ),
-                                            }),
-                                        );
-                                    }
+                    let mut has_dispair = false;
+                    let mut has_dup_keys = false;
+                    let mut has_dup_words = false;
+                    let mut ns: Namespace = HashMap::new();
+                    if let Some(seq) = &_imp.sequence {
+                        if let Some(dispair) = &seq.dispair {
+                            ns.insert(
+                                "Dispair".to_owned(),
+                                NamespaceItem::Node(NamespaceNode {
+                                    hash: _imp.hash.clone(),
+                                    import_index: i as isize,
+                                    element: NamespaceNodeElement::Dispair(dispair.clone()),
+                                }),
+                            );
+                            has_dispair = true;
+                        }
+                        if let Some(ctxmeta) = &seq.ctxmeta {
+                            let iter = &mut ctxmeta.iter();
+                            for ctx in iter.by_ref() {
+                                if ns.contains_key(&ctx.name) {
+                                    has_dup_keys = true;
+                                    break;
                                 }
                             }
-                            if let Some(dmeta) = &seq.dotrain {
-                                if !has_dup_keys {
-                                    if has_dispair && dmeta.namespace.contains_key("Dispair") {
-                                        has_dup_words = true;
-                                    } else {
-                                        let iter = &mut ns.keys();
-                                        while let Some(key) = iter.next() {
-                                            if dmeta.namespace.contains_key(key) {
-                                                has_dup_keys = true;
-                                                break;
-                                            }
-                                        }
-                                        if !has_dup_keys {
-                                            ns.extend(Self::copy_namespace(
-                                                &dmeta.namespace,
-                                                i as isize,
-                                                &_imp.hash,
-                                            ));
-                                        }
-                                    }
+                            if !has_dup_keys {
+                                for ctx in ctxmeta {
+                                    ns.insert(
+                                        ctx.name.clone(),
+                                        NamespaceItem::Node(NamespaceNode {
+                                            hash: _imp.hash.clone(),
+                                            import_index: i as isize,
+                                            element: NamespaceNodeElement::ContextAlias(
+                                                ctx.clone(),
+                                            ),
+                                        }),
+                                    );
                                 }
                             }
-                            if has_dup_keys || has_dup_words {
-                                if has_dup_keys {
-                                    self.problems.push(Problem {
-                                        msg: "import contains items with duplicate identifiers"
-                                            .to_owned(),
-                                        position: _imp.hash_position,
-                                        code: ErrorCode::DuplicateIdentifier,
-                                    });
+                        }
+                        if let Some(dmeta) = &seq.dotrain {
+                            if !has_dup_keys {
+                                if has_dispair && dmeta.namespace.contains_key("Dispair") {
+                                    has_dup_words = true;
                                 } else {
-                                    self.problems.push(Problem {
-                                        msg: "import contains multiple sets of words in its namespace".to_owned(),
-                                        position: _imp.hash_position,
-                                        code: ErrorCode::MultipleWords
-                                    });
+                                    let iter = &mut ns.keys();
+                                    for key in iter.by_ref() {
+                                        if dmeta.namespace.contains_key(key) {
+                                            has_dup_keys = true;
+                                            break;
+                                        }
+                                    }
+                                    if !has_dup_keys {
+                                        ns.extend(Self::copy_namespace(
+                                            &dmeta.namespace,
+                                            i as isize,
+                                            &_imp.hash,
+                                        ));
+                                    }
                                 }
+                            }
+                        }
+                        if has_dup_keys || has_dup_words {
+                            if has_dup_keys {
+                                self.problems.push(Problem {
+                                    msg: "import contains items with duplicate identifiers"
+                                        .to_owned(),
+                                    position: _imp.hash_position,
+                                    code: ErrorCode::DuplicateIdentifier,
+                                });
                             } else {
-                                if let Some(configs) = &_imp.configuration {
-                                    for conf in &configs.pairs {
-                                        if let Some(new_conf) = &conf.1 {
-                                            if new_conf.0 == "!" {
-                                                if conf.0 .0 == "." {
-                                                    let dis = ns.remove("Dispair");
-                                                    if let Some(words) = dis {
-                                                        if let NamespaceItem::Node(n) = words {
-                                                            if let NamespaceNodeElement::Dispair(
-                                                                d,
-                                                            ) = n.element
-                                                            {
-                                                                if let Some(am) = d.authoring_meta {
-                                                                    for word in am.0 {
-                                                                        ns.remove(&word.word);
-                                                                    }
-                                                                }
+                                self.problems.push(Problem {
+                                    msg: "import contains multiple sets of words in its namespace"
+                                        .to_owned(),
+                                    position: _imp.hash_position,
+                                    code: ErrorCode::MultipleWords,
+                                });
+                            }
+                        } else if let Some(configs) = &_imp.configuration {
+                            for conf in &configs.pairs {
+                                if let Some(new_conf) = &conf.1 {
+                                    if new_conf.0 == "!" {
+                                        if conf.0 .0 == "." {
+                                            let dis = ns.remove("Dispair");
+                                            if let Some(words) = dis {
+                                                if let NamespaceItem::Node(n) = words {
+                                                    if let NamespaceNodeElement::Dispair(d) =
+                                                        n.element
+                                                    {
+                                                        if let Some(am) = d.authoring_meta {
+                                                            for word in am.0 {
+                                                                ns.remove(&word.word);
                                                             }
                                                         }
-                                                    } else {
-                                                        self.problems.push(Problem {
-                                                            msg: "cannot elide undefined words"
-                                                                .to_owned(),
-                                                            position: [conf.0 .1[0], new_conf.1[1]],
-                                                            code: ErrorCode::UndefinedDeployer,
-                                                        });
-                                                    }
-                                                } else {
-                                                    if ns.remove(&conf.0 .0).is_none() {
-                                                        self.problems.push(Problem {
-                                                            msg: format!(
-                                                                "undefined identifier {}",
-                                                                conf.0 .0
-                                                            ),
-                                                            position: conf.0 .1,
-                                                            code: ErrorCode::UndefinedIdentifier,
-                                                        });
                                                     }
                                                 }
                                             } else {
-                                                let key = {
-                                                    if conf.0 .0.starts_with('\'') {
-                                                        conf.0 .0.split_at(1).1
-                                                    } else {
-                                                        conf.0 .0.as_str()
-                                                    }
-                                                };
-                                                if ns.contains_key(key) {
-                                                    // if _ns.get(key).unwrap().is_word() {
-                                                    //     self.problems.push(Problem {
-                                                    //         msg: format!("cannot rename or rebind single word: {}", key),
-                                                    //         position: [c.0.1[0], new.1[1]],
-                                                    //         code: ErrorCode::SingleWordModify
-                                                    //     });
-                                                    // } else {
-                                                    if conf.0 .0.starts_with('\'') {
-                                                        if ns.contains_key(&new_conf.0) {
-                                                            self.problems.push(Problem {
-                                                                msg: format!("cannot rename, name {} already exists", new_conf.0),
-                                                                position: new_conf.1,
-                                                                code: ErrorCode::DuplicateIdentifier
-                                                            });
-                                                        } else {
-                                                            let ns_item = ns.remove(key).unwrap();
-                                                            ns.insert(new_conf.0.clone(), ns_item);
-                                                        }
-                                                    } else {
-                                                        let ns_item = ns.get_mut(key).unwrap();
-                                                        if ns_item.is_binding() {
-                                                            if let NamespaceItem::Node(n) = ns_item
-                                                            {
-                                                                if let NamespaceNodeElement::Binding(b) = &mut n.element {
-                                                                    b.item = BindingItem::Constant(
-                                                                        ConstantBindingItem { value: new_conf.0.clone() }
-                                                                    )
-                                                                }
-                                                            }
-                                                        } else {
-                                                            self.problems.push(Problem {
-                                                                msg: "unexpected rebinding"
-                                                                    .to_owned(),
-                                                                position: [
-                                                                    conf.0 .1[0],
-                                                                    new_conf.1[1],
-                                                                ],
-                                                                code:
-                                                                    ErrorCode::UnexpectedRebinding,
-                                                            });
-                                                        }
-                                                    }
-                                                    // }
-                                                } else {
+                                                self.problems.push(Problem {
+                                                    msg: "cannot elide undefined words".to_owned(),
+                                                    position: [conf.0 .1[0], new_conf.1[1]],
+                                                    code: ErrorCode::UndefinedDeployer,
+                                                });
+                                            }
+                                        } else if ns.remove(&conf.0 .0).is_none() {
+                                            self.problems.push(Problem {
+                                                msg: format!("undefined identifier {}", conf.0 .0),
+                                                position: conf.0 .1,
+                                                code: ErrorCode::UndefinedIdentifier,
+                                            });
+                                        }
+                                    } else {
+                                        let key = {
+                                            if conf.0 .0.starts_with('\'') {
+                                                conf.0 .0.split_at(1).1
+                                            } else {
+                                                conf.0 .0.as_str()
+                                            }
+                                        };
+                                        if ns.contains_key(key) {
+                                            // if _ns.get(key).unwrap().is_word() {
+                                            //     self.problems.push(Problem {
+                                            //         msg: format!("cannot rename or rebind single word: {}", key),
+                                            //         position: [c.0.1[0], new.1[1]],
+                                            //         code: ErrorCode::SingleWordModify
+                                            //     });
+                                            // } else {
+                                            if conf.0 .0.starts_with('\'') {
+                                                if ns.contains_key(&new_conf.0) {
                                                     self.problems.push(Problem {
                                                         msg: format!(
-                                                            "undefined identifier {}",
-                                                            key
+                                                            "cannot rename, name {} already exists",
+                                                            new_conf.0
                                                         ),
-                                                        position: conf.0 .1,
-                                                        code: ErrorCode::UndefinedIdentifier,
+                                                        position: new_conf.1,
+                                                        code: ErrorCode::DuplicateIdentifier,
+                                                    });
+                                                } else {
+                                                    let ns_item = ns.remove(key).unwrap();
+                                                    ns.insert(new_conf.0.clone(), ns_item);
+                                                }
+                                            } else {
+                                                let ns_item = ns.get_mut(key).unwrap();
+                                                if ns_item.is_binding() {
+                                                    if let NamespaceItem::Node(n) = ns_item {
+                                                        if let NamespaceNodeElement::Binding(b) =
+                                                            &mut n.element
+                                                        {
+                                                            b.item = BindingItem::Constant(
+                                                                ConstantBindingItem {
+                                                                    value: new_conf.0.clone(),
+                                                                },
+                                                            )
+                                                        }
+                                                    }
+                                                } else {
+                                                    self.problems.push(Problem {
+                                                        msg: "unexpected rebinding".to_owned(),
+                                                        position: [conf.0 .1[0], new_conf.1[1]],
+                                                        code: ErrorCode::UnexpectedRebinding,
                                                     });
                                                 }
                                             }
+                                            // }
+                                        } else {
+                                            self.problems.push(Problem {
+                                                msg: format!("undefined identifier {}", key),
+                                                position: conf.0 .1,
+                                                code: ErrorCode::UndefinedIdentifier,
+                                            });
                                         }
                                     }
                                 }
                             }
-                            imported_namespaces.push_back((
-                                _imp.name.clone(),
-                                _imp.hash_position,
-                                ns,
-                            ));
                         }
+                        imported_namespaces.push_back((_imp.name.clone(), _imp.hash_position, ns));
                     }
                 }
             }
@@ -1348,7 +1340,7 @@ impl RainDocument {
             }
 
             if !invalid_id && !dup_id {
-                if let Some(mut msg) = Self::is_elided(&no_cm_content) {
+                if let Some(mut msg) = Self::is_elided(no_cm_content) {
                     if msg.is_empty() {
                         msg = DEFAULT_ELISION.to_owned();
                     }
@@ -1371,7 +1363,7 @@ impl RainDocument {
                         }),
                     );
                     self.bindings.push(binding);
-                } else if let Some(constant) = Self::is_constant(&no_cm_content) {
+                } else if let Some(constant) = Self::is_constant(no_cm_content) {
                     match constant {
                         Ok(c) => {
                             let binding = Binding {
@@ -1431,7 +1423,7 @@ impl RainDocument {
         }
 
         // find non-top level imports
-        if self.bindings.len() > 0 {
+        if !self.bindings.is_empty() {
             for imp in &self.imports {
                 if imp.position[0] >= self.bindings[0].name_position[0] {
                     self.problems.push(Problem {
@@ -1478,12 +1470,10 @@ impl RainDocument {
                         b.content.clone(),
                         if let Some(am) = &self.authoring_meta {
                             Some(am)
+                        } else if self.ignore_undefined_words {
+                            None
                         } else {
-                            if self.ignore_undefined_words {
-                                None
-                            } else {
-                                Some(&binding_am)
-                            }
+                            Some(&binding_am)
                         },
                         Some(&self.namespace),
                     ));
@@ -1514,21 +1504,20 @@ impl RainDocument {
                 if self.problems[len - 1].msg == "cannot find any set of words (undefined deployer)"
                 {
                     self.problems.pop();
-                } else {
-                    if let Some((i, _)) =
-                        self.problems.iter().enumerate().find(|(_, p)| {
-                            p.msg == "cannot find any set of words (undefined deployer)"
-                        })
-                    {
-                        self.problems.remove(i);
-                    }
+                } else if let Some((i, _)) = self
+                    .problems
+                    .iter()
+                    .enumerate()
+                    .find(|(_, p)| p.msg == "cannot find any set of words (undefined deployer)")
+                {
+                    self.problems.remove(i);
                 }
             }
         }
 
         // ignore next line problems
         for cm in &self.comments {
-            if LintPatterns::IGNORE_NEXT_LINE.is_match(&cm.comment) {
+            if lint_patterns::IGNORE_NEXT_LINE.is_match(&cm.comment) {
                 let line = line_number(&self.text, cm.position[1]);
                 while let Some((i, _)) = self
                     .problems
@@ -1546,7 +1535,7 @@ impl RainDocument {
 
     /// checks if a imported namespace can safely be merged into the main namespace
     fn check_namespace(nns: &Namespace, cns: &Namespace) -> Option<String> {
-        if cns.len() == 0 {
+        if cns.is_empty() {
             None
         } else {
             // let dup_words;
@@ -1608,7 +1597,7 @@ impl RainDocument {
                     }
                 }
             }
-            return None;
+            None
         }
     }
 
@@ -1618,7 +1607,7 @@ impl RainDocument {
         name: String,
         hash_position: Offsets,
         ns: Namespace,
-        mut cns: &mut Namespace,
+        cns: &mut Namespace,
     ) {
         if name != "." {
             if let Some(ns_item) = cns.get_mut(&name) {
@@ -1651,7 +1640,7 @@ impl RainDocument {
                 cns.insert(name.clone(), NamespaceItem::Namespace(ns));
             }
         } else {
-            Self::_merge(&ns, &mut cns);
+            Self::_merge(&ns, cns);
         }
     }
 
@@ -1663,11 +1652,9 @@ impl RainDocument {
             for (key, item) in nns {
                 if !cns.contains_key(key) {
                     cns.insert(key.clone(), item.clone());
-                } else {
-                    if let NamespaceItem::Namespace(_n) = item {
-                        if let NamespaceItem::Namespace(_c) = cns.get(key).unwrap() {
-                            Self::_merge(nns, cns)
-                        }
+                } else if let NamespaceItem::Namespace(_n) = item {
+                    if let NamespaceItem::Namespace(_c) = cns.get(key).unwrap() {
+                        Self::_merge(nns, cns)
                     }
                 }
             }
@@ -1703,7 +1690,7 @@ impl RainDocument {
         }
         let mut resolved_nodes: Vec<String> = vec![];
         match topo_sort.into_vec_nodes() {
-            SortResults::Full(_) => return (),
+            SortResults::Full(_) => return,
             SortResults::Partial(resolved_deps) => {
                 for d in resolved_deps {
                     resolved_nodes.push(d.to_owned());
@@ -1722,6 +1709,7 @@ impl RainDocument {
     }
 
     /// checks and counts the word sets in a namespace by their hashs
+    #[allow(clippy::for_kv_map)]
     fn check_namespace_deployer<'a>(
         namespace: &'a Namespace,
         mut hash: &'a str,
@@ -1734,10 +1722,8 @@ impl RainDocument {
                 c += 1;
                 hash = &dis.hash;
                 node = Some(dis);
-            } else {
-                if dis.hash.to_ascii_lowercase() != hash.to_ascii_lowercase() {
-                    return (c + 1, hash, None);
-                }
+            } else if dis.hash.to_ascii_lowercase() != hash.to_ascii_lowercase() {
+                return (c + 1, hash, None);
             }
         }
         for (_key, item) in namespace {
@@ -1749,14 +1735,12 @@ impl RainDocument {
                     node = None;
                     break;
                 }
-                if result.2.is_some() {
-                    if node.is_none() {
-                        node = result.2;
-                    }
+                if result.2.is_some() && node.is_none() {
+                    node = result.2;
                 }
             }
         }
-        return (c, hash, node);
+        (c, hash, node)
     }
 
     /// assigns working word set for this RainDocument instance
@@ -1777,22 +1761,14 @@ impl RainDocument {
                 position: [0, 0],
                 code: ErrorCode::UndefinedDeployer,
             });
-        } else {
-            if let Some(n) = node {
-                if n.is_dispair() {
-                    let dis = n.unwrap_dispair();
-                    // if let Some(am) = &dis.authoring_meta {
-                    //     self.authoring_meta = Some(am.clone())
-                    // };
-                    self.deployer = dis.clone().into();
-                    self.authoring_meta = self.deployer.authoring_meta.clone();
-                } else {
-                    self.problems.push(Problem {
-                        msg: "could not resolve namespace deployer".to_owned(),
-                        position: [0, 0],
-                        code: ErrorCode::UndefinedDeployer,
-                    });
-                }
+        } else if let Some(n) = node {
+            if n.is_dispair() {
+                let dis = n.unwrap_dispair();
+                // if let Some(am) = &dis.authoring_meta {
+                //     self.authoring_meta = Some(am.clone())
+                // };
+                self.deployer = dis.clone().into();
+                self.authoring_meta = self.deployer.authoring_meta.clone();
             } else {
                 self.problems.push(Problem {
                     msg: "could not resolve namespace deployer".to_owned(),
@@ -1800,6 +1776,12 @@ impl RainDocument {
                     code: ErrorCode::UndefinedDeployer,
                 });
             }
+        } else {
+            self.problems.push(Problem {
+                msg: "could not resolve namespace deployer".to_owned(),
+                position: [0, 0],
+                code: ErrorCode::UndefinedDeployer,
+            });
         }
     }
 }

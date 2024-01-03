@@ -95,32 +95,6 @@ export enum ErrorCode {
     DuplicateImportStatement = 1795,
     DuplicateImport = 1796,
 }
-export interface IRainlangDocument {
-    text: string;
-    ast: RainlangSource[];
-    problems: Problem[];
-    comments: Comment[];
-    error: string | undefined;
-    ignoreUndefinedAuthoringMeta: boolean;
-}
-
-export interface IRainDocument {
-    version: number;
-    uri: string;
-    text: string;
-    error: string | undefined;
-    bindings: Binding[];
-    imports: Import[];
-    comments: Comment[];
-    problems: Problem[];
-    importDepth: number;
-    ignoreWords: boolean;
-    ignoreUndefinedWords: boolean;
-    namespace: Namespace;
-    authoringMeta: IAuthoringMeta | undefined;
-    deployer: INPE2Deployer;
-}
-
 /**
  * In-memory CAS (content addressed storage) for all metadata required for parsing
  * a RainDocument which basically stores k/v pairs of meta hash, meta bytes and
@@ -289,6 +263,45 @@ export interface MetaStoreOptions {
     includeRainSubgraphs?: boolean;
 }
 
+export interface IRainDocument {
+    version: number;
+    uri: string;
+    text: string;
+    error: string | undefined;
+    bindings: Binding[];
+    imports: Import[];
+    comments: Comment[];
+    problems: Problem[];
+    importDepth: number;
+    ignoreWords: boolean;
+    ignoreUndefinedWords: boolean;
+    namespace: Namespace;
+    authoringMeta: IAuthoringMeta | undefined;
+    deployer: INPE2Deployer;
+}
+
+export interface ExpressionConfig {
+    bytecode: string;
+    constants: string[];
+}
+
+export type RainDocumentCompileError =
+    | { Reject: string }
+    | { Problems: Problem[] }
+    | { Revert: any }
+    | { Halt: any };
+
+export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
+
+export interface IRainlangDocument {
+    text: string;
+    ast: RainlangSource[];
+    problems: Problem[];
+    comments: Comment[];
+    error: string | undefined;
+    ignoreUndefinedAuthoringMeta: boolean;
+}
+
 export type Offsets = [number, number];
 
 export type ParsedItem = [string, Offsets];
@@ -433,19 +446,6 @@ export interface ContextAlias {
     column: number;
     row: number | undefined;
 }
-
-export interface ExpressionConfig {
-    bytecode: string;
-    constants: string[];
-}
-
-export type RainDocumentCompileError =
-    | { Reject: string }
-    | { Problems: Problem[] }
-    | { Revert: any }
-    | { Halt: any };
-
-export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
 
 /**
  * Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)

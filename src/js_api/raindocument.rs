@@ -152,13 +152,9 @@ impl RainDocument {
     /// This instance's AuthoringMeta
     #[wasm_bindgen(getter, js_name = "authoringMeta")]
     pub fn js_authoring_meta(&self) -> Option<IAuthoringMeta> {
-        if let Some(am) = &self.authoring_meta {
-            Some(IAuthoringMeta {
-                obj: serde_wasm_bindgen::to_value(am).unwrap_or(JsValue::UNDEFINED),
-            })
-        } else {
-            None
-        }
+        self.authoring_meta.as_ref().map(|am| IAuthoringMeta {
+            obj: serde_wasm_bindgen::to_value(am).unwrap_or(JsValue::UNDEFINED),
+        })
     }
 
     /// This instance's NPE2 Deployer details
@@ -228,11 +224,7 @@ impl RainDocument {
         meta_store: &MetaStore,
         uri: Option<String>,
     ) -> Result<ExpressionConfig, RainDocumentCompileError> {
-        let uri = if let Some(v) = uri {
-            Some(Url::parse(&v).unwrap_throw())
-        } else {
-            None
-        };
+        let uri = uri.map(|v| Url::parse(&v).unwrap_throw());
         RainDocument::compile_text_async(text, &entrypoints, uri, Some(meta_store.0.clone()), None)
             .await
     }
@@ -245,11 +237,7 @@ impl RainDocument {
         meta_store: &MetaStore,
         uri: Option<String>,
     ) -> Result<ExpressionConfig, RainDocumentCompileError> {
-        let uri = if let Some(v) = uri {
-            Some(Url::parse(&v).unwrap_throw())
-        } else {
-            None
-        };
+        let uri = uri.map(|v| Url::parse(&v).unwrap_throw());
         RainDocument::compile_text(text, &entrypoints, uri, Some(meta_store.0.clone()), None)
     }
 }

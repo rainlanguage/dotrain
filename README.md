@@ -64,7 +64,7 @@ cargo add dotrain
 
 ### Features
 Rust library includes 3 features:
-- `cli`: includes functionalities and structs for producing `clap` based CLI app.
+- `cli`: A [clap](https://docs.rs/clap/latest/clap/) based module (CLI app) for functionalities of this library, this features is required for building the **binary**
 - `lsp`: includes all LSP (language services) related implementation.
 - `js-api`: includes wrappers around main structs and functionalities to provide an API through wasm-bindgen (this feature is always enabled when building for wasm family targets)
 
