@@ -42,15 +42,13 @@
           mkdir -p $out/bin
           cp target/release/dotrain $out/bin/
         '';
-        # buildInputs = with pkgs; [ 
-        #   openssl 
-        #   pkg-config
-        # ];
         buildInputs = with pkgs; [ 
-          # gmp
-          # iconv
-          openssl 
+          # openssl 
           pkg-config
+        ];
+        nativeBuildInputs = with pkgs; [ 
+          openssl 
+          # pkg-config
         ] ++ lib.optionals stdenv.isDarwin [
           darwin.apple_sdk.frameworks.SystemConfiguration
         ];

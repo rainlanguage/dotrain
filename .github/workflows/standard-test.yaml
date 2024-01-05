@@ -14,8 +14,11 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
-      - name: Build Rust Crate Binary
+      - name: Build Nix Default Package
         run: nix build
+
+      - name: Test Rust Crate
+        run: nix develop -c cargo build --all-features
 
       - name: Lint Rust Crate
         run: nix develop -c cargo fmt --check && nix develop -c cargo clippy --all-features -- -D clippy::all
