@@ -42,11 +42,12 @@
           mkdir -p $out/bin
           cp target/release/dotrain $out/bin/
         '';
-        buildInputs = with pkgs; [ 
-          openssl 
-          pkg-config
-        ];
+        # buildInputs = with pkgs; [ 
+        #   openssl 
+        #   pkg-config
+        # ];
         nativeBuildInputs = with pkgs; [ 
+          gmp
           openssl 
           pkg-config
         ] ++ lib.optionals stdenv.isDarwin [
@@ -65,6 +66,7 @@
           rust
         ] ++ (with pkgs; [ 
           # iconv 
+          # gmp
           openssl
           pkg-config
           # emscripten

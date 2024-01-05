@@ -44,7 +44,10 @@ position encodings will result in the same LSP provided Position value which is 
 
 ```rust
 use std::sync::{Arc, RwLock};
-use dotrain::{RainLanguageServices, LanguageServiceParams, Url, Store, TextDocumentItem, MarkupKind, Position};
+use dotrain::{
+    RainLanguageServices, LanguageServiceParams, Url, Store, 
+    lsp_types::{TextDocumentItem, MarkupKind, Position}
+};
 
 // instaniate a shared locked Store
 let meta_store = Arc::new(RwLock::new(Store::default()));
