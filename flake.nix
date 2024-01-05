@@ -43,29 +43,15 @@
           cp target/release/dotrain $out/bin/
         '';
         buildInputs = with pkgs; [ 
-          gmp
-          iconv 
-          openssl 
-          pkg-config
+          # iconv 
         ] ++ (lib.optionals stdenv.isDarwin [
-          libiconv
-          darwin.apple_sdk.frameworks.Security
-          darwin.apple_sdk.frameworks.CoreServices
-          darwin.apple_sdk.frameworks.CoreFoundation
+          # libiconv
           darwin.apple_sdk.frameworks.SystemConfiguration
         ]);
         nativeBuildInputs = with pkgs; [ 
-          gmp
-          iconv 
           openssl 
-          pkg-config
-        ] ++ (lib.optionals stdenv.isDarwin [
-          libiconv
-          darwin.apple_sdk.frameworks.Security
-          darwin.apple_sdk.frameworks.CoreServices
-          darwin.apple_sdk.frameworks.CoreFoundation
-          darwin.apple_sdk.frameworks.SystemConfiguration
-        ]);
+          # pkg-config
+        ];
         # pname = "dotrain";
         # version = "0.0.0";
         # cargoBuildType = "release";
@@ -78,8 +64,9 @@
         nativeBuildInputs = [
           rust
         ] ++ (with pkgs; [ 
-          iconv 
-          emscripten
+          # iconv 
+          openssl
+          # emscripten
           nodejs-18_x
           wasm-bindgen-cli
           (writeShellScriptBin "flush" ''
@@ -100,10 +87,10 @@
             npm run build
           '')
         ] ++ lib.optionals stdenv.isDarwin [
-          libiconv
-          darwin.apple_sdk.frameworks.Security
-          darwin.apple_sdk.frameworks.CoreServices
-          darwin.apple_sdk.frameworks.CoreFoundation
+          # libiconv
+          # darwin.apple_sdk.frameworks.Security
+          # darwin.apple_sdk.frameworks.CoreServices
+          # darwin.apple_sdk.frameworks.CoreFoundation
           darwin.apple_sdk.frameworks.SystemConfiguration
         ]);
         shellHook = '' npm install '';
