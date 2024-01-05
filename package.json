@@ -1,7 +1,7 @@
 {
     "name": "@rainlanguage/dotrain",
     "description": "Rain language server protocol implementation and compiler for NodeJs and Browser",
-    "version": "5.1.0",
+    "version": "5.1.6",
     "author": "Rain Language",
     "license": "CAL-1.0",
     "repository": {
