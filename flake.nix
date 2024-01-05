@@ -99,12 +99,12 @@
             npm install
             npm run build
           '')
-        ]) ++ (pkgs.lib.optionals pkgs.stdenv.isDarwin [
-          pkgs.libiconv
-          pkgs.darwin.apple_sdk.frameworks.Security
-          pkgs.darwin.apple_sdk.frameworks.CoreServices
-          pkgs.darwin.apple_sdk.frameworks.CoreFoundation
-          pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+        ] ++ lib.optionals stdenv.isDarwin [
+          libiconv
+          darwin.apple_sdk.frameworks.Security
+          darwin.apple_sdk.frameworks.CoreServices
+          darwin.apple_sdk.frameworks.CoreFoundation
+          darwin.apple_sdk.frameworks.SystemConfiguration
         ]);
         shellHook = '' npm install '';
       };
