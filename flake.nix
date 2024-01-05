@@ -42,15 +42,12 @@
           mkdir -p $out/bin
           cp target/release/dotrain $out/bin/
         '';
-        buildInputs = with pkgs; [ 
-          # iconv 
-        ] ++ (lib.optionals stdenv.isDarwin [
-          # libiconv
-          darwin.apple_sdk.frameworks.SystemConfiguration
-        ]);
+        buildInputs = pkgs.lib.optionals pkgs.stdenv.isDarwin [
+          pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+        ];
         nativeBuildInputs = with pkgs; [ 
           openssl 
-          # pkg-config
+          pkg-config
         ];
         # pname = "dotrain";
         # version = "0.0.0";
@@ -66,6 +63,7 @@
         ] ++ (with pkgs; [ 
           # iconv 
           openssl
+          pkg-config
           # emscripten
           nodejs-18_x
           wasm-bindgen-cli
