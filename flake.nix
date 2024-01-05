@@ -42,38 +42,34 @@
           mkdir -p $out/bin
           cp target/release/dotrain $out/bin/
         '';
-        buildInputs = [
-          rust
-        ] ++ (with pkgs; [ 
+        buildInputs = with pkgs; [ 
           gmp
           iconv 
           openssl 
           pkg-config
-        ]) ++ (pkgs.lib.optionals pkgs.stdenv.isDarwin [
-          pkgs.libiconv
-          pkgs.darwin.apple_sdk.frameworks.Security
-          pkgs.darwin.apple_sdk.frameworks.CoreServices
-          pkgs.darwin.apple_sdk.frameworks.CoreFoundation
-          pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+        ] ++ (lib.optionals stdenv.isDarwin [
+          libiconv
+          darwin.apple_sdk.frameworks.Security
+          darwin.apple_sdk.frameworks.CoreServices
+          darwin.apple_sdk.frameworks.CoreFoundation
+          darwin.apple_sdk.frameworks.SystemConfiguration
         ]);
-        nativeBuildInputs = [
-          rust
-        ] ++ (with pkgs; [ 
+        nativeBuildInputs = with pkgs; [ 
           gmp
           iconv 
           openssl 
           pkg-config
-        ]) ++ (pkgs.lib.optionals pkgs.stdenv.isDarwin [
-          pkgs.libiconv
-          pkgs.darwin.apple_sdk.frameworks.Security
-          pkgs.darwin.apple_sdk.frameworks.CoreServices
-          pkgs.darwin.apple_sdk.frameworks.CoreFoundation
-          pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+        ] ++ (lib.optionals stdenv.isDarwin [
+          libiconv
+          darwin.apple_sdk.frameworks.Security
+          darwin.apple_sdk.frameworks.CoreServices
+          darwin.apple_sdk.frameworks.CoreFoundation
+          darwin.apple_sdk.frameworks.SystemConfiguration
         ]);
         # pname = "dotrain";
         # version = "0.0.0";
         # cargoBuildType = "release";
-        # cargoBuildFlags
+        # cargoBuildFlags = [];
         # cargoBuildFeatures = ["cli"];
       };
 

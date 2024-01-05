@@ -14,8 +14,14 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
-      - name: Build Binary
+      - name: Build Rust Crate Binary
         run: nix build
+
+      - name: Lint Rust Crate
+        run: nix develop -c cargo fmt --check && nix develop -c cargo clippy --all-features -- -D clippy::all
+
+      - name: Test Rust Crate
+        run: nix develop -c cargo test --all-features
 
       - name: Build Wasm And JS Bindings
         run: nix develop -c npm run build
