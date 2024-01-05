@@ -19,15 +19,15 @@
 
       rust-version = "1.75.0";
 
-      rust = pkgs.rust-bin.stable.${rust-version}.default.override {
+      rust-toolchain = pkgs.rust-bin.stable.${rust-version}.default.override {
         targets = [ "wasm32-unknown-unknown" ];
       };
 
     in rec {
       # # For `nix build` & `nix run`:
       defaultPackage = (pkgs.makeRustPlatform{
-        rustc = rust;
-        cargo = rust;
+        rustc = rust-toolchain;
+        cargo = rust-toolchain;
       }).buildRustPackage {
         src = ./.;
         doCheck = false;
@@ -42,7 +42,9 @@
           mkdir -p $out/bin
           cp target/release/dotrain $out/bin/
         '';
-        buildInputs = pkgs.openssl;
+        buildInputs = with pkgs; [ 
+          openssl 
+        ];
         nativeBuildInputs = with pkgs; [ 
           pkg-config
         ] ++ lib.optionals stdenv.isDarwin [
@@ -58,7 +60,7 @@
       # For `nix develop`:
       devShell = pkgs.mkShell {
         nativeBuildInputs = [
-          rust
+          rust-toolchain
         ] ++ (with pkgs; [ 
           openssl
           pkg-config
