@@ -48,6 +48,7 @@
         # ];
         nativeBuildInputs = with pkgs; [ 
           gmp
+          iconv
           openssl 
           pkg-config
         ] ++ lib.optionals stdenv.isDarwin [
