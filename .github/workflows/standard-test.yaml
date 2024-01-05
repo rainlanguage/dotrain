@@ -14,14 +14,17 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
-      - name: Build
+      - name: Build Binary
         run: nix build
 
+      - name: Build Wasm And JS Bindings
+        run: nix develop -c build
+
       - name: Lint
-        run: nix run ./#lint
+        run: nix develop -c lint
 
       - name: Test
-        run: nix run ./#local-test
+        run: nix develop -c local-test
 
       - name: Test Docs Generation
-        run: nix run ./#docgen
+        run: nix develop -c docgen

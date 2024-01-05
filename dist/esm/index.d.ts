@@ -280,6 +280,42 @@ export interface IRainDocument {
     deployer: INPE2Deployer;
 }
 
+export type IAuthoringMeta = {
+    word: string;
+    description: string;
+    operandParserOffset: number;
+}[];
+
+export interface INPE2Deployer {
+    metaHash: string;
+    metaBytes: Uint8Array;
+    bytecode: Uint8Array;
+    parser: Uint8Array;
+    store: Uint8Array;
+    interpreter: Uint8Array;
+    authoringMeta: IAuthoringMeta | undefined;
+}
+
+export interface DeployerQueryResponse {
+    txHash: string;
+    bytecodeMetaHash: string;
+    metaHash: string;
+    metaBytes: Uint8Array;
+    bytecode: Uint8Array;
+    parser: Uint8Array;
+    store: Uint8Array;
+    interpreter: Uint8Array;
+}
+
+export interface IRainlangDocument {
+    text: string;
+    ast: RainlangSource[];
+    problems: Problem[];
+    comments: Comment[];
+    error: string | undefined;
+    ignoreUndefinedAuthoringMeta: boolean;
+}
+
 export interface ExpressionConfig {
     bytecode: string;
     constants: string[];
@@ -292,15 +328,6 @@ export type RainDocumentCompileError =
     | { Halt: any };
 
 export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
-
-export interface IRainlangDocument {
-    text: string;
-    ast: RainlangSource[];
-    problems: Problem[];
-    comments: Comment[];
-    error: string | undefined;
-    ignoreUndefinedAuthoringMeta: boolean;
-}
 
 export type Offsets = [number, number];
 
@@ -597,33 +624,6 @@ export class RainLanguageServices {
         semantic_token_types_index: number,
         semantic_token_modifiers_len: number,
     ): SemanticTokensPartialResult;
-}
-
-export type IAuthoringMeta = {
-    word: string;
-    description: string;
-    operandParserOffset: number;
-}[];
-
-export interface INPE2Deployer {
-    metaHash: string;
-    metaBytes: Uint8Array;
-    bytecode: Uint8Array;
-    parser: Uint8Array;
-    store: Uint8Array;
-    interpreter: Uint8Array;
-    authoringMeta: IAuthoringMeta | undefined;
-}
-
-export interface DeployerQueryResponse {
-    txHash: string;
-    bytecodeMetaHash: string;
-    metaHash: string;
-    metaBytes: Uint8Array;
-    bytecode: Uint8Array;
-    parser: Uint8Array;
-    store: Uint8Array;
-    interpreter: Uint8Array;
 }
 
 /**
