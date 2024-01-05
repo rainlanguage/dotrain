@@ -1,21 +1,18 @@
-use std::convert::Infallible;
-use revm::primitives::EVMError;
-
-/// Covers all errors variants of Rain Metadat lib functionalities
+/// Covers all errors variants of this library
 #[derive(Debug)]
 pub enum Error {
-    REVMHasNoDB,
     FailedToParse,
     OutOfCharBoundry,
     StateUpdateFailed,
+    NoDatabaseAttached,
     InvalidRainlangNumber,
     DuplicateContextAliases,
     InvalidExpressionDeployerData,
-    EVMError(EVMError<Infallible>),
     SerdeJsonError(serde_json::Error),
     AbiCoderError(alloy_sol_types::Error),
     ParseIntError(std::num::ParseIntError),
     UintParseError(alloy_primitives::ruint::ParseError),
+    EVMError(revm::primitives::EVMError<std::convert::Infallible>),
 }
 
 impl std::fmt::Display for Error {
@@ -26,7 +23,7 @@ impl std::fmt::Display for Error {
             Error::FailedToParse => f.write_str("failed to parse, something went wrong"),
             Error::DuplicateContextAliases => f.write_str("includes duplicate context aliases"),
             Error::InvalidRainlangNumber => f.write_str("not a vlaid rainlang numeric value"),
-            Error::REVMHasNoDB => f.write_str("evm instance has no database"),
+            Error::NoDatabaseAttached => f.write_str("evm instance has no database attached"),
             Error::InvalidExpressionDeployerData => {
                 f.write_str("cannot reproduce the ExpressionDeployer from the given data")
             }
@@ -65,8 +62,8 @@ impl From<std::num::ParseIntError> for Error {
     }
 }
 
-impl From<EVMError<Infallible>> for Error {
-    fn from(value: EVMError<Infallible>) -> Self {
+impl From<revm::primitives::EVMError<std::convert::Infallible>> for Error {
+    fn from(value: revm::primitives::EVMError<std::convert::Infallible>) -> Self {
         Error::EVMError(value)
     }
 }

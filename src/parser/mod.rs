@@ -14,12 +14,12 @@ pub(crate) mod raindocument;
 pub use self::rainlang::*;
 pub use self::raindocument::*;
 
-/// Trait for converting offset to lsp position (implemented for &str and String)
+/// Trait for converting offset to lsp position (implemented for `&str` and `String`)
 pub trait PositionAt {
     fn position_at(&self, offset: usize) -> Position;
 }
 
-/// Trait for converting lsp position to offset (implemented for &str and String)
+/// Trait for converting lsp position to offset (implemented for `&str` and `String`)
 pub trait OffsetAt {
     fn offset_at(&self, position: &Position) -> usize;
 }
@@ -313,33 +313,3 @@ pub(crate) fn is_consumable(items: &Vec<RainMetaDocumentV1Item>) -> bool {
         false
     }
 }
-
-// /// converts utf16 offset to utf8 encoded equivelant offset
-// pub(crate) fn str_utf16_to_utf8(s: &str, pos: usize) -> Result<usize> {
-//     let b: Vec<u16> = s.encode_utf16().take(pos).collect();
-//     Ok(String::from_utf16(&b).map_err(anyhow::Error::from)?.len())
-// }
-
-// /// Finds illegal chars as utf16 encoded
-// pub(crate) fn illegal_char_utf16(text: &str) -> Vec<ParsedItem> {
-//     let mut utf16_offset = 0;
-//     ILLEGAL_CHAR
-//         .find_iter(text)
-//         .map(|m| {
-//             let c = m.as_str().to_owned();
-//             let utf16_len = c.encode_utf16().count();
-//             let start = m.start() - utf16_offset;
-//             utf16_offset += c.len() - utf16_len;
-//             ParsedItem(c, [start, start + utf16_len])
-//         })
-//         .collect()
-// }
-
-// pub(crate) fn binary_to_int(value: &str) -> Result<String> {
-//     Ok(binary_to_u256(value)?.to_string())
-// }
-
-// pub(crate) fn e_to_int(value: &str) -> Result<String> {
-//     let slices = value.split_once('e').unwrap();
-//     Ok(slices.0.to_owned() + &"0".repeat(slices.1.parse().map_err(anyhow::Error::from)?))
-// }

@@ -155,7 +155,7 @@ pub fn exec_bytecode(
 
     let bcode = Bytecode::new_raw(Bytes::copy_from_slice(deployed_bytecode));
     if revm.db().is_none() {
-        return Err(Error::REVMHasNoDB);
+        return Err(Error::NoDatabaseAttached);
     }
     revm.db().unwrap().insert_account_info(
         address,
@@ -214,7 +214,7 @@ pub fn insert_acount(
         db.insert_account_info(address, account_info);
         Ok(())
     } else {
-        Err(Error::REVMHasNoDB)
+        Err(Error::NoDatabaseAttached)
     }
 }
 

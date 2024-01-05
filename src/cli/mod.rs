@@ -2,7 +2,7 @@
 //!
 //! Gets enabled by `cli` feature
 //! struct, enums that use `clap` derive macro to produce CLI commands, argument
-//! and options with underlying functions to handle each scenario
+//! and options while underlying functions handle each scenario
 
 use std::path::PathBuf;
 use clap::{Parser, Subcommand, command};

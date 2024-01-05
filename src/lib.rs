@@ -18,12 +18,12 @@
 //! this is by definition centralisation.
 //! Fast and easy queue abstraction.
 //!
-//! ### Features
+//! ## Features
 //!
 //! Includes 3 features:
-//! - `cli`: A [mod@clap] based module (CLI app) for functionalities of this library, this features is required for building/installing the **binary**
-//! - `lsp`: includes all [LSP](https://microsoft.github.io/language-server-protocol/) (language services) related implementation.
-//! - `js-api`: includes wrappers around main structs and functionalities to provide an API through wasm-bindgen (this feature is always enabled when building for wasm family targets)
+//! - `cli`  A [mod@clap] based module (CLI app) for functionalities of this library, this features is required for building/installing the **binary**
+//! - `lsp`  includes all [LSP](https://microsoft.github.io/language-server-protocol/) (language services) related implementation.
+//! - `js-api`  includes wrappers around main structs and functionalities to provide an API through [mod@wasm_bindgen] (this feature is always enabled when building for wasm family targets)
 
 pub mod types;
 pub(crate) mod error;

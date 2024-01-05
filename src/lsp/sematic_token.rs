@@ -12,7 +12,7 @@ struct OrdRange {
 }
 
 /// Provides semantic tokens for RainDocument's elided fragments
-/// token_modifiers bit are set with provided token_modifiers_len such as a length of 3 equals to 00000111
+/// token_modifiers bit are set with provided token_modifiers_len ((2 ^ len) - 1) such as a length of 3 equals to 00000111
 pub fn get_semantic_token(
     rain_document: &RainDocument,
     token_types_index: u32,

@@ -62,6 +62,15 @@ pub struct ExpressionConfig {
     pub constants: Vec<alloy_primitives::U256>,
 }
 
+impl From<parseReturn> for ExpressionConfig {
+    fn from(value: parseReturn) -> Self {
+        ExpressionConfig {
+            bytecode: value._0,
+            constants: value._1,
+        }
+    }
+}
+
 fn serialize_bytecode<S: Serializer>(bytes: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error> {
     let hex_string = alloy_primitives::hex::encode_prefixed(bytes);
     serializer.serialize_str(&hex_string)
@@ -636,10 +645,6 @@ fn build_sourcemap(
                                 Ok(_g) => {}
                                 Err(_g) => Err("could not build sourcemap".to_owned())?,
                             }
-                            // generator.append_left(
-                            //     (o.opcode.position[1] + 1) as u32,
-                            //     &s
-                            // ).or(Err("could not build sourcemap".to_owned()))?;
                         }
                     } else if let Some(row) = row_opt {
                         let mut s = "<".to_owned();
@@ -649,17 +654,6 @@ fn build_sourcemap(
                             .or(Err("could not build sourcemap".to_owned()))?;
                     }
                 }
-                // else if o.opcode.name.contains('.') {
-                //     let last_segement = o.opcode.name.split('.').last().unwrap();
-                //     println!("bad8");
-                //     generator.overwrite(
-                //         o.opcode.position[0] as i64,
-                //         o.opcode.position[1] as i64,
-                //         last_segement,
-                //         OverwriteOptions::default()
-                //     ).or(Err("could not build sourcemap".to_owned()))?;
-                // }
-
                 if !quotes.is_empty() {
                     if deps_indexes.is_empty() {
                         return Err("cannot resolve dependecies".to_owned());
@@ -687,13 +681,4 @@ fn build_sourcemap(
         }
     }
     Ok(())
-}
-
-impl From<parseReturn> for ExpressionConfig {
-    fn from(value: parseReturn) -> Self {
-        ExpressionConfig {
-            bytecode: value._0,
-            constants: value._1,
-        }
-    }
 }
