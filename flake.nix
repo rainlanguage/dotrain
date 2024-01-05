@@ -17,7 +17,7 @@
         inherit system overlays;
       };
 
-      rust-version = "latest";
+      rust-version = "1.75.0";
 
       rust = pkgs.rust-bin.stable.${rust-version}.default.override {
         targets = [ "wasm32-unknown-unknown" ];
@@ -42,12 +42,8 @@
           mkdir -p $out/bin
           cp target/release/dotrain $out/bin/
         '';
-        buildInputs = with pkgs; [ 
-          openssl 
-          # pkg-config
-        ];
+        buildInputs = pkgs.openssl;
         nativeBuildInputs = with pkgs; [ 
-          # openssl 
           pkg-config
         ] ++ lib.optionals stdenv.isDarwin [
           darwin.apple_sdk.frameworks.SystemConfiguration
@@ -64,11 +60,8 @@
         nativeBuildInputs = [
           rust
         ] ++ (with pkgs; [ 
-          # iconv 
-          # gmp
           openssl
           pkg-config
-          # emscripten
           nodejs-18_x
           wasm-bindgen-cli
           (writeShellScriptBin "flush" ''
@@ -89,10 +82,6 @@
             npm run build
           '')
         ] ++ lib.optionals stdenv.isDarwin [
-          # libiconv
-          # darwin.apple_sdk.frameworks.Security
-          # darwin.apple_sdk.frameworks.CoreServices
-          # darwin.apple_sdk.frameworks.CoreFoundation
           darwin.apple_sdk.frameworks.SystemConfiguration
         ]);
         shellHook = '' npm install '';

@@ -17,23 +17,26 @@ jobs:
       - name: Build Nix Default Package
         run: nix build
 
-      - name: Test Rust Crate
+      - name: Build Rust Crate
         run: nix develop -c cargo build --all-features
 
       - name: Lint Rust Crate
-        run: nix develop -c cargo fmt --check && nix develop -c cargo clippy --all-features -- -D clippy::all
+        run: nix develop -c cargo fmt --check
+
+      - name: Clippy Rust Crate
+        run: nix develop -c cargo clippy --all-features -- -D clippy::all
 
       - name: Test Rust Crate
         run: nix develop -c cargo test --all-features
 
-      - name: Build Wasm And JS Bindings
+      - name: Build Wasm Target And JS/TS Bindings
         run: nix develop -c npm run build
 
-      - name: Lint
+      - name: Lint JS/TS Bindings
         run: nix develop -c npm run lint
 
-      - name: Test
+      - name: Test JS/TS Bindings
         run: nix develop -c npm test
 
-      - name: Test Docs Generation
+      - name: Test JS/TS Docs Generation
         run: nix develop -c npm run docgen
