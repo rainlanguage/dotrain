@@ -42,7 +42,10 @@
           mkdir -p $out/bin
           cp target/release/dotrain $out/bin/
         '';
-        # buildInputs = 
+        buildInputs = with pkgs; [ 
+          openssl 
+          pkg-config
+        ];
         nativeBuildInputs = with pkgs; [ 
           openssl 
           pkg-config
