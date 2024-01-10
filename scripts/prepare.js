@@ -27,6 +27,8 @@ import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentIt
 dts =
     `import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
 import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentItem } from "vscode-languageserver-types";
+export * from "vscode-languageserver-types";
+export * from "vscode-languageserver-protocol";
 
 /**
  * Method to be used as Tagged Templates to activate embedded rainlang in
@@ -58,6 +60,12 @@ function rainlang(stringChunks, ...vars) {
 }
 module.exports.rainlang = rainlang;
 
+module.exports = {
+    ...module.exports,
+    ...require("vscode-languageserver-types"),
+    ...require("vscode-languageserver-protocol"),
+};
+
 const { Buffer } = require('buffer');
 const wasmB64 = require('../wasm.json');
 const bytes = Buffer.from(wasmB64.wasm, 'base64');`,
@@ -88,6 +96,9 @@ export function rainlang(stringChunks, ...vars) {
 }
 
 imports = __wbg_get_imports();
+
+export * from "vscode-languageserver-types";
+export * from "vscode-languageserver-protocol";
 
 import { Buffer } from 'buffer';
 import wasmB64 from '../wasm.json';

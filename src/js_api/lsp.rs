@@ -105,7 +105,7 @@ export class RainLanguageServices {
    * @param {boolean} related_information
    * @returns {Promise<any>}
    */
-  doValidateAsync(text_document: TextDocumentItem): Promise<Diagnostic[]>;
+  doValidateAsync(text_document: TextDocumentItem, related_information: boolean): Promise<Diagnostic[]>;
   /**
    * Provides completion items at the given position
    * @param {TextDocumentItem} text_document

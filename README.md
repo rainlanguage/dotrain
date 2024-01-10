@@ -114,30 +114,20 @@ The CLI app can be built form the source (read next section) or be installed wit
 cargo install dotrain
 ```
 this will install the dotrain binary in your path which then can be used to compile .rain files and generate outputs.
-<br>
 
-    Rain compiler CLI to compiler .rain files
-
-    Usage: dotrain [OPTIONS] [COMMAND]
-
-    Commands:
-      target      Command for targeting a single .rain file to compile with options
-      rainconfig  Prints 'rainconfig' info and description
-      help        Print this message or the help of the given subcommand(s)
-
-    Options:
-      -c, --config <CONFIG>
-              Path to the rainconfig json file that contains configurations, see './example.rainconfig.json' for more details. default is './rainconfig.json' if not specified
-      -f, --force <FORCE>
-              Force compile by ignoring all erroneous paths/contents specified in rainconfig [possible values: true, false]
-      -l, --local-data-only <LOCAL_DATA_ONLY>
-              Only use local meta and deployers specified in rainconfig and dont search for them in subgraphs [possible values: true, false]
-      -h, --help
-              Print help
-      -V, --version
-              Print version
-
-<br>
+### Examples
+compiles all files specified in `src` of the `rainconfig.json` in the root dir:
+```bash
+dotrain
+```
+optionally, path to `rainconfig.json` can be provided:
+```bash
+dotrain -c path/to/rainconfig.json
+```
+compile only a specific .rain:
+```bash
+dotrain target -i path/to/file.rain -o path/to/output.json --entrypoints main
+```
 
 ## **rainconfig**
 Configuration details for .rain compiler (source files, meta store configurations, etc).
@@ -158,7 +148,7 @@ Here is an example of a `rainconfig.json`:
     {
       "input": "./path/to/file2.rain",
       "output": "./path/to/compiled-file2.json",
-      "entrypoints": ["entrypoint1", "entrypoint2"]
+      "entrypoints": ["entrypoint1"]
     }
   ],
   "subgraphs": [
@@ -172,18 +162,6 @@ Here is an example of a `rainconfig.json`:
     },
     {
       "binary": "./path/to/binary-meta"
-    },
-    {
-      "binary": {
-        "path": "./path/to/another-binary-meta",
-        "hash": "0x7a89034fd7a33df88ca474ff2e413d8a2f425ed29f09866344ac6d6070a30d12"
-      }
-    },
-    {
-      "hex": {
-        "path": "./path/to/another-hex-meta",
-        "hash": "0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c"
-      }
     }
   ],
   "deployers": {

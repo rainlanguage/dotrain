@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { callerMeta, deployer } from "../utils";
+import { callerMeta, deployer, deployerHash } from "../utils";
 import {
     rainlang,
     MetaStore,
@@ -76,7 +76,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
             kind: CompletionItemKind.Class,
         });
         await testCompletion(
-            rainlang`@${deployer.bytecodeMetaHash} #expression _: `,
+            rainlang`@${deployerHash} #expression _: `,
             Position.create(0, 82),
             _allCompletions,
             services,
@@ -90,7 +90,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
             kind: CompletionItemKind.Class,
         });
         await testCompletion(
-            rainlang`@${deployer.bytecodeMetaHash} #exp _: int-ad`,
+            rainlang`@${deployerHash} #exp _: int-ad`,
             Position.create(0, 82),
             _allCompletions,
             services,
@@ -99,7 +99,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
 
     it("should provide no suggestions if cursor is in middle of a word", async () => {
         await testCompletion(
-            rainlang`@${deployer.bytecodeMetaHash} #exp _: add`,
+            rainlang`@${deployerHash} #exp _: add`,
             Position.create(0, 10),
             null,
             services,
@@ -113,7 +113,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
             kind: CompletionItemKind.Class,
         });
         await testCompletion(
-            rainlang`@${deployer.bytecodeMetaHash} #exp _: add(1 2)`,
+            rainlang`@${deployerHash} #exp _: add(1 2)`,
             Position.create(0, 79),
             _allCompletions,
             services,
@@ -123,7 +123,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
     it("should include lhs alias in suggestions", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
         await testCompletion(
-            rainlang`@${deployer.bytecodeMetaHash} #exp name: n`,
+            rainlang`@${deployerHash} #exp name: n`,
             Position.create(0, 80),
             [
                 // {
@@ -173,7 +173,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
     //         }),
     //     );
     //     await testCompletion(
-    //         rainlang`@${deployer.bytecodeMetaHash} @${callerMeta.hash}
+    //         rainlang`@${deployerHash} @${callerMeta.hash}
     //         #exp
     //         _: counterpa`,
     //         Position.create(2, 24),
@@ -188,7 +188,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
     //     );
     // });
     it("should include root namespaces items in suggestions", async () => {
-        const _expression = rainlang`@${deployer.bytecodeMetaHash}
+        const _expression = rainlang`@${deployerHash}
 #row
 1
 
@@ -198,7 +198,7 @@ _: .`;
         const _ns = _dotrain.namespace;
         const items: CompletionItem[] = [];
         _ns.forEach((v, k) => {
-            items.push({
+            items.unshift({
                 label: k,
                 kind: !("element" in v)
                     ? CompletionItemKind.Field
@@ -216,7 +216,7 @@ _: .`;
     });
 
     it("should include correct namespaces items in suggestions", async () => {
-        const _expression = rainlang`@${deployer.bytecodeMetaHash}
+        const _expression = rainlang`@${deployerHash}
 #row
 1
 

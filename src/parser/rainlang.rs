@@ -288,12 +288,17 @@ impl RainlangDocument {
 
         // begin parsing expression sources and cache them
         let mut parsed_sources = exclusive_parse(&document, &SOURCE_PATTERN, 0, true);
-        if parsed_sources.last().is_some()
-            && parsed_sources[parsed_sources.len() - 1].0.trim().is_empty()
-        {
+        if parsed_sources[parsed_sources.len() - 1].0.trim().is_empty() {
             parsed_sources.pop();
+        } else {
+            let p = parsed_sources[parsed_sources.len() - 1].1[1];
+            self.problems.push(Problem {
+                msg: "expected to end with semi".to_owned(),
+                position: [p, p + 1],
+                code: ErrorCode::ExpectedSemi,
+            });  
         }
-        for v in parsed_sources.iter() {
+        for v in parsed_sources {
             let trimmed = tracked_trim(&v.0);
             if trimmed.0.is_empty() {
                 self.problems.push(Problem {

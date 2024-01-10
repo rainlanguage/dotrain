@@ -1,5 +1,6 @@
 use lsp_types::Url;
 use wasm_bindgen::prelude::*;
+use futures::executor::block_on;
 use super::{
     store::MetaStore,
     Namespace, IRainDocument, IAuthoringMeta, INPE2Deployer,
@@ -198,13 +199,13 @@ impl RainDocument {
     /// Parses this instance's text with remote meta search enabled
     #[wasm_bindgen(js_name = "parseAsync")]
     pub async fn js_parse_async(&mut self) {
-        self.parse_async().await;
+        self.parse(true).await;
     }
 
     /// Parses this instance's text with remote meta search disabled (cached metas only)
     #[wasm_bindgen(js_name = "parse")]
     pub fn js_parse(&mut self) {
-        self.parse();
+        block_on(self.parse(false));
     }
 
     /// Compiles this instance

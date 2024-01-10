@@ -1,7 +1,7 @@
 import * as chai from "chai";
 import * as assert from "assert";
 import * as chaiAsPromised from "chai-as-promised";
-import { assertError, deployer } from "../utils";
+import { assertError, deployer, deployerHash } from "../utils";
 import { MetaStore, RainDocument, ExpressionConfig, rainlang } from "../../dist/cjs";
 
 chai.use(chaiAsPromised);
@@ -34,7 +34,7 @@ describe("RainDocument Compiler Tests", async function () {
     it("should accept valid rainlang fragment `:;`", async () => {
         return expect(
             RainDocument.compileText(
-                rainlang`@${deployer.bytecodeMetaHash} #expression :;`,
+                rainlang`@${deployerHash} #expression :;`,
                 ["expression"],
                 metaStore,
             ),
@@ -47,7 +47,7 @@ describe("RainDocument Compiler Tests", async function () {
     // it("should not accept rainlang fragment `_:;`", async () => {
     //     return expect(
     //         RainDocument.compileText(
-    //             rainlang`@${deployer.bytecodeMetaHash} #expression _:;`,
+    //             rainlang`@${deployerHash} #expression _:;`,
     //             ["expression"],
     //             metaStore,
     //         ),
@@ -63,7 +63,7 @@ describe("RainDocument Compiler Tests", async function () {
     //     await assertError(
     //         async () =>
     //             await RainDocument.compileText(
-    //                 rainlang`@${deployer.bytecodeMetaHash} #expression _ _:;`,
+    //                 rainlang`@${deployerHash} #expression _ _:;`,
     //                 ["expression"],
     //                 metaStore,
     //             ),
@@ -76,7 +76,7 @@ describe("RainDocument Compiler Tests", async function () {
     //     await assertError(
     //         async () =>
     //             await RainDocument.compileText(
-    //                 rainlang`@${deployer.bytecodeMetaHash} #expression _:, _:;`,
+    //                 rainlang`@${deployerHash} #expression _:, _:;`,
     //                 ["expression"],
     //                 metaStore,
     //             ),
@@ -89,7 +89,7 @@ describe("RainDocument Compiler Tests", async function () {
     //     await assertError(
     //         async () =>
     //             await RainDocument.compileText(
-    //                 rainlang`@${deployer.bytecodeMetaHash} #expression _:, _:, _:, _:, _:, _:;`,
+    //                 rainlang`@${deployerHash} #expression _:, _:, _:, _:, _:, _:;`,
     //                 ["expression"],
     //                 metaStore,
     //             ),
@@ -101,7 +101,7 @@ describe("RainDocument Compiler Tests", async function () {
     it("should accept valid rainlang fragment `/* this is a comment */ :;`", async () => {
         return expect(
             RainDocument.compileText(
-                rainlang`@${deployer.bytecodeMetaHash}
+                rainlang`@${deployerHash}
         /* this is a comment */
         #expression
         :;`,
@@ -117,7 +117,7 @@ describe("RainDocument Compiler Tests", async function () {
     it("should accept valid rainlang fragment `#exp1 :; #exp2 :;`", async () => {
         return expect(
             RainDocument.compileText(
-                rainlang`@${deployer.bytecodeMetaHash}
+                rainlang`@${deployerHash}
         #exp1
         :;
         #exp2
@@ -134,7 +134,7 @@ describe("RainDocument Compiler Tests", async function () {
     it("should accept valid rainlang fragment `#expression _:int-add(10 20);`", async () => {
         return expect(
             RainDocument.compileText(
-                rainlang`@${deployer.bytecodeMetaHash} #expression _:int-add(10 20);`,
+                rainlang`@${deployerHash} #expression _:int-add(10 20);`,
                 ["expression"],
                 metaStore,
             ),
@@ -148,7 +148,7 @@ describe("RainDocument Compiler Tests", async function () {
     it("should accept valid rainlang fragment `_: int-add(10 20), _: block-timestamp();`", async () => {
         return expect(
             RainDocument.compileText(
-                rainlang`@${deployer.bytecodeMetaHash} #expression _: int-add(10 20), _: block-timestamp();`,
+                rainlang`@${deployerHash} #expression _: int-add(10 20), _: block-timestamp();`,
                 ["expression"],
                 metaStore,
             ),
@@ -162,7 +162,7 @@ describe("RainDocument Compiler Tests", async function () {
     it("should accept valid rainlang fragment `#expression _ _: int-add(10 20) block-timestamp();`", async () => {
         return expect(
             RainDocument.compileText(
-                rainlang`@${deployer.bytecodeMetaHash} #expression _ _: int-add(10 20) block-timestamp();`,
+                rainlang`@${deployerHash} #expression _ _: int-add(10 20) block-timestamp();`,
                 ["expression"],
                 metaStore,
             ),
@@ -176,7 +176,7 @@ describe("RainDocument Compiler Tests", async function () {
     it("should accept valid rainlang fragment for multiline comment", async () => {
         return expect(
             RainDocument.compileText(
-                rainlang`@${deployer.bytecodeMetaHash}
+                rainlang`@${deployerHash}
                 #expression
                 _: block-timestamp();
             `,
@@ -190,7 +190,7 @@ describe("RainDocument Compiler Tests", async function () {
     });
 
     it("should compile an expression referencing top stack items", async () => {
-        const expression = rainlang`@${deployer.bytecodeMetaHash}
+        const expression = rainlang`@${deployerHash}
             #expression
             sentinel: infinity,
             sentinel20: infinity,
@@ -220,7 +220,7 @@ describe("RainDocument Compiler Tests", async function () {
     });
 
     it("should successfully compile an expression having multiple outputs", async () => {
-        const expression = rainlang`@${deployer.bytecodeMetaHash}
+        const expression = rainlang`@${deployerHash}
             #exp1
             c0: 1,
             c1: 2,
@@ -250,7 +250,7 @@ describe("RainDocument Compiler Tests", async function () {
     });
 
     it("should successfully compile an expression having multiple outputs", async () => {
-        const expression = rainlang`@${deployer.bytecodeMetaHash}
+        const expression = rainlang`@${deployerHash}
             #exp2
             s0 s1 s2: 1 2 3 ,
             increment: int-add(s0 5),
@@ -276,7 +276,7 @@ describe("RainDocument Compiler Tests", async function () {
     });
 
     it("should successfully compile a decompiled expression", async () => {
-        const expression = rainlang`@${deployer.bytecodeMetaHash}
+        const expression = rainlang`@${deployerHash}
         #exp1
         _ _ _ _: 0x01 0x02 0x01 int-add(constant<0>() constant<1>() constant<2>());
 
@@ -295,7 +295,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression :int-add(10 20);`,
+                    rainlang`@${deployerHash} #expression :int-add(10 20);`,
                     ["expression"],
                     metaStore,
                 ),
@@ -308,7 +308,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression ,`,
+                    rainlang`@${deployerHash} #expression ,`,
                     ["expression"],
                     metaStore,
                 ),
@@ -321,7 +321,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression  `,
+                    rainlang`@${deployerHash} #expression  `,
                     ["expression"],
                     metaStore,
                 ),
@@ -334,7 +334,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _`,
+                    rainlang`@${deployerHash} #expression _`,
                     ["expression"],
                     metaStore,
                 ),
@@ -347,7 +347,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: int-add(10 20), _:;`,
+                    rainlang`@${deployerHash} #expression _: int-add(10 20), _:;`,
                     ["expression"],
                     metaStore,
                 ),
@@ -360,7 +360,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash}
+                    rainlang`@${deployerHash}
                 #expression
                 // This is an invalid comment.
                 _: int-add(10 20), _:;
@@ -377,7 +377,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: int-add(10 20) block-timestamp();`,
+                    rainlang`@${deployerHash} #expression _: int-add(10 20) block-timestamp();`,
                     ["expression"],
                     metaStore,
                 ),
@@ -390,7 +390,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: int-add(-10 20);`,
+                    rainlang`@${deployerHash} #expression _: int-add(-10 20);`,
                     ["expression"],
                     metaStore,
                 ),
@@ -401,7 +401,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: sub(123941 -123941);`,
+                    rainlang`@${deployerHash} #expression _: sub(123941 -123941);`,
                     ["expression"],
                     metaStore,
                 ),
@@ -414,7 +414,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: int-add(10𐐀 20);`,
+                    rainlang`@${deployerHash} #expression _: int-add(10𐐀 20);`,
                     ["expression"],
                     metaStore,
                 ),
@@ -427,7 +427,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: read-memory<10 1();`,
+                    rainlang`@${deployerHash} #expression _: read-memory<10 1();`,
                     ["expression"],
                     metaStore,
                 ),
@@ -440,7 +440,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: read-memory<10 1>;`,
+                    rainlang`@${deployerHash} #expression _: read-memory<10 1>;`,
                     ["expression"],
                     metaStore,
                 ),
@@ -450,7 +450,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: read-memory<10 1>(;`,
+                    rainlang`@${deployerHash} #expression _: read-memory<10 1>(;`,
                     ["expression"],
                     metaStore,
                 ),
@@ -463,7 +463,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: <10 1>();`,
+                    rainlang`@${deployerHash} #expression _: <10 1>();`,
                     ["expression"],
                     metaStore,
                 ),
@@ -476,7 +476,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: readmemory<10 1>();`,
+                    rainlang`@${deployerHash} #expression _: readmemory<10 1>();`,
                     ["expression"],
                     metaStore,
                 ),
@@ -489,7 +489,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: constant();`,
+                    rainlang`@${deployerHash} #expression _: constant();`,
                     ["expression"],
                     metaStore,
                 ),
@@ -500,7 +500,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: constant<>();`,
+                    rainlang`@${deployerHash} #expression _: constant<>();`,
                     ["expression"],
                     metaStore,
                 ),
@@ -513,7 +513,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: constant<1 2>();`,
+                    rainlang`@${deployerHash} #expression _: constant<1 2>();`,
                     ["expression"],
                     metaStore,
                 ),
@@ -526,7 +526,7 @@ describe("RainDocument Compiler Tests", async function () {
         await assertError(
             async () =>
                 await RainDocument.compileText(
-                    rainlang`@${deployer.bytecodeMetaHash} #expression _: int-add(ans 1);`,
+                    rainlang`@${deployerHash} #expression _: int-add(ans 1);`,
                     ["expression"],
                     metaStore,
                 ),

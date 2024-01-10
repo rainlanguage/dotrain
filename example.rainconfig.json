@@ -10,7 +10,7 @@
     {
       "input": "./path/to/file2.rain",
       "output": "./path/to/compiled-file2.json",
-      "entrypoints": ["entrypoint1", "entrypoint2"]
+      "entrypoints": ["entrypoint1"]
     }
   ],
   "subgraphs": [
@@ -24,18 +24,6 @@
     },
     {
       "binary": "./path/to/binary-meta"
-    },
-    {
-      "binary": {
-        "path": "./path/to/another-binary-meta",
-        "hash": "0x7a89034fd7a33df88ca474ff2e413d8a2f425ed29f09866344ac6d6070a30d12"
-      }
-    },
-    {
-      "hex": {
-        "path": "./path/to/another-hex-meta",
-        "hash": "0x56ffc3fc82109c33f1e1544157a70144fc15e7c6e9ae9c65a636fd165b1bc51c"
-      }
     }
   ],
   "deployers": {

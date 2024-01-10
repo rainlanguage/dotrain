@@ -7,6 +7,8 @@ import {
     CompletionItem,
     TextDocumentItem,
 } from "vscode-languageserver-types";
+export * from "vscode-languageserver-types";
+export * from "vscode-languageserver-protocol";
 
 /**
  * Method to be used as Tagged Templates to activate embedded rainlang in
@@ -29,6 +31,37 @@ export function searchMeta(hash: string, subgraphs: string[]): Promise<Uint8Arra
  * @returns {Promise<DeployerQueryResponse>}
  */
 export function searchDeployer(hash: string, subgraphs: string[]): Promise<DeployerQueryResponse>;
+/**
+ * Calculates solidity keccak256 hash from the given data
+ * @param {Uint8Array} data
+ * @returns {Uint8Array}
+ */
+export function keccak256(data: Uint8Array): Uint8Array;
+/**
+ * Checks equality of 2 Uint8Arrays
+ * @param {Uint8Array} data1
+ * @param {Uint8Array} data2
+ * @returns {boolean}
+ */
+export function eqBytes(data1: Uint8Array, data2: Uint8Array): boolean;
+/**
+ * Converts a hex string to Uint8Array
+ * @param {string} hex
+ * @returns {Uint8Array}
+ */
+export function arrayify(hex: string): Uint8Array;
+/**
+ * Converts an Uint8Array into a hex string
+ * @param {Uint8Array} data
+ * @returns {string}
+ */
+export function hexlify(data: Uint8Array): string;
+/**
+ * Calculates kccak256 hash of a DeployerBytecodeMeta constructed from the given deployedBytecode underlying data
+ * @param {Uint8Array} deployed_bytecode
+ * @returns {Uint8Array}
+ */
+export function getDeployedBytecodeMetaHash(deployed_bytecode: Uint8Array): Uint8Array;
 /**
  * Error codes of Rainlang/RainDocument problem and LSP Diagnostics
  */
@@ -95,172 +128,172 @@ export enum ErrorCode {
     DuplicateImportStatement = 1795,
     DuplicateImport = 1796,
 }
-/**
- * In-memory CAS (content addressed storage) for all metadata required for parsing
- * a RainDocument which basically stores k/v pairs of meta hash, meta bytes and
- * ExpressionDeployer reproducible data as well as providing functionalities to easliy
- * read them from the CAS.
- *
- * Hashes are 32 bytes (in hex string format) and will be stored as lower case and
- * meta bytes are valid cbor encoded as Uint8Array. ExpressionDeployers data are in
- * form of js object mapped to deployedBytecode meta hash and deploy transaction hash.
- *
- * @example
- * ```typescript
- * // to instantiate with including default subgraphs
- * // pass 'false' to not include default rain subgraph endpoints
- * const store = new MetaStore();
- *
- * // or to instantiate with initial arguments
- * const store = MetaStore.create(options);
- *
- * // add a new subgraph endpoint URLs
- * store.addSubgraphs(["sg-url-1", "sg-url-2", ...])
- *
- * // merge another MetaStore instance to this instance
- * store.merge(anotherMetaStore)
- *
- * // updates the meta store with a new meta by searching through subgraphs
- * await store.update(hash)
- *
- * // to get a meta bytes of a corresponding hash from store
- * const meta = store.getMeta(hash);
- * ```
- */
-export class MetaStore {
-    free(): void;
-
-    /**
-     * Creates new instance of Store with given initial values,
-     * it checks the validity of each item and only stores those that are valid
-     * @param {MetaStoreOptions} options - initial values
-     * @returns {MetaStore}
-     */
-    static create(options: MetaStoreOptions): MetaStore;
-
-    /**
-     * Constructs a new instance
-     * @param include_rain_subgraphs - (optional) if default Rain subgraphs should be included
-     */
-    constructor(include_rain_subgraphs?: boolean);
-
-    /**
-     * All subgraph endpoint URLs of this instance
-     */
-    readonly subgraphs: string[];
-    /**
-     * All the cached meta hash/bytes pairs
-     */
-    readonly cache: Record<string, Uint8Array>;
-    /**
-     * All the cached dotrain uri/meta hash pairs
-     */
-    readonly dotrainCache: Record<string, string>;
-    /**
-     * All the cached NPE2 deployers
-     */
-    readonly deployerCache: Record<string, INPE2Deployer>;
-
-    /**
-     * Merges another instance of MetaStore to this instance lazily, avoids duplicates
-     * @param {MetaStore} other
-     */
-    merge(other: MetaStore): void;
-    /**
-     * Adds new subgraph endpoints
-     * @param {string[]} subgraphs
-     */
-    addSubgraphs(subgraphs: string[]): void;
-    /**
-     * Get the corresponding meta bytes of the given hash if it is cached
-     * @param {string} hash
-     * @returns {Uint8Array | undefined}
-     */
-    getMeta(hash: string): Uint8Array | undefined;
-    /**
-     * Get the corresponding dotrain hash of the given dotrain uri if it is cached
-     * @param {string} uri
-     * @returns {string | undefined}
-     */
-    getDotrainHash(uri: string): string | undefined;
-    /**
-     * Get the corresponding uri of the given dotrain hash if it is cached
-     * @param {string} hash
-     * @returns {string | undefined}
-     */
-    getDotrainUri(hash: string): string | undefined;
-    /**
-     * Get the corresponding meta bytes of the given dotrain uri if it is cached
-     * @param {string} uri
-     * @returns {Uint8Array | undefined}
-     */
-    getDotrainMeta(uri: string): Uint8Array | undefined;
-    /**
-     * Deletes a dotrain record given its uri
-     * @param {string} uri
-     */
-    deleteDotrain(uri: string, keep_meta: boolean): void;
-    /**
-     * Get the NPE2 deployer details of the given deployer bytecode hash if it is cached
-     * @param {string} hash
-     * @returns {INPE2Deployer | undefined}
-     */
-    getDeployer(hash: string): INPE2Deployer | undefined;
-    /**
-     * Stores (or updates in case the URI already exists) the given dotrain text as meta into the store cache
-     * and maps it to the given uri (path), it should be noted that reading the content of the dotrain is not in
-     * the scope of MetaStore and handling and passing on a correct URI for the given text must be handled
-     * externally by the implementer
-     * @param {string} text
-     * @param {string} uri
-     * @param {boolean} keep_old - keeps the old dotrain meta in the cache
-     * @returns {string[]} new hash and old hash if the given uri was already cached
-     */
-    setDotrain(text: string, uri: string, keep_old: boolean): string[];
-    /**
-     * Sets deployer record
-     * @param {string} deployer_bytecode_hash
-     * @param {DeployerQueryResponse} deployer_response
-     */
-    setDeployer(deployer_response: DeployerQueryResponse): INPE2Deployer;
-    /**
-     * Updates the meta cache by the given hash and meta bytes, checks the hash to bytes validity
-     * @param {string} hash
-     * @param {Uint8Array} bytes
-     */
-    updateWith(hash: string, bytes: Uint8Array): void;
-    /**
-     * Updates the meta cache by searching through all subgraphs for the given hash
-     * @param {string} hash
-     * @returns {Promise<Uint8Array | undefined>}
-     */
-    update(hash: string): Promise<Uint8Array | undefined>;
-    /**
-     * First checks if the meta is stored and returns it if so, else will perform update()
-     * @param {string} hash
-     * @returns {Promise<Uint8Array | undefined>}
-     */
-    updateCheck(hash: string): Promise<Uint8Array | undefined>;
-    /**
-     * Searches for NPE2 deployer details in the subgraphs given the deployer hash
-     * @param {string} hash
-     * @returns {Promise<INPE2Deployer | undefined>}
-     */
-    searchDeployer(hash: string): Promise<INPE2Deployer | undefined>;
-    /**
-     * If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
-     * @param {string} hash
-     * @returns {Promise<INPE2Deployer | undefined>}
-     */
-    searchDeployerCheck(hash: string): Promise<INPE2Deployer | undefined>;
+export interface ExpressionConfig {
+    bytecode: string;
+    constants: string[];
 }
 
-export interface MetaStoreOptions {
-    subgraphs?: string[];
-    cache?: Record<string, Uint8Array>;
-    deployerCache?: Record<string, INPE2Deployer>;
-    dotrainCache?: Record<string, string>;
-    includeRainSubgraphs?: boolean;
+export type RainDocumentCompileError =
+    | { Reject: string }
+    | { Problems: Problem[] }
+    | { Revert: any }
+    | { Halt: any };
+
+export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
+
+/**
+ * Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)
+ *
+ * Provides methods for getting language services (such as diagnostics, completion, etc)
+ * for a given TextDocumentItem or a RainDocument. Each instance is linked to a shared locked
+ * MetaStore instance that holds all the required metadata/functionalities that are required during
+ * parsing a text.
+ *
+ * Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
+ * only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
+ * position encodings will result in the same LSP provided Position value which is 1 for each char.
+ *
+ * @example
+ * ```javascript
+ * // create new MetaStore instance
+ * let metaStore = new MetaStore();
+ *
+ * // crate new instance
+ * let langServices = new RainLanguageServices(metaStore);
+ *
+ * let textDocument = {
+ *   text: "some .rain text",
+ *   uri:  "file:///name.rain",
+ *   version: 0,
+ *   languageId: "rainlang"
+ * };
+ *
+ * // creat new RainDocument
+ * let rainDocument = langServices.newRainDocument(textdocument);
+ *
+ * // get LSP Diagnostics
+ * let diagnosticsRelatedInformation = true;
+ * let diagnostics = langServices.doValidate(textDocument, diagnosticsRelatedInformation);
+ * ```
+ */
+export class RainLanguageServices {
+    free(): void;
+    /**
+     * The meta Store associated with this RainLanguageServices instance
+     */
+    readonly metaStore: MetaStore;
+    /**
+     * Instantiates with the given MetaStore
+     * @param {MetaStore} meta_store
+     */
+    constructor(meta_store: MetaStore);
+    /**
+     * Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
+     * @param {TextDocumentItem} text_document
+     * @returns {RainDocument}
+     */
+    newRainDocument(text_document: TextDocumentItem): RainDocument;
+    /**
+     * Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
+     * @param {TextDocumentItem} text_document
+     * @returns {Promise<RainDocument>}
+     */
+    newRainDocumentAsync(text_document: TextDocumentItem): Promise<RainDocument>;
+    /**
+     * Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
+     * @param {TextDocumentItem} text_document
+     * @returns {(Diagnostic)[]}
+     */
+    doValidate(text_document: TextDocumentItem, related_information: boolean): Diagnostic[];
+    /**
+     * Reports LSP diagnostics from RainDocument's all problems
+     * @param {RainDocument} rain_document
+     * @param {boolean} related_information
+     * @returns {(Diagnostic)[]}
+     */
+    doValidateRainDocument(rain_document: RainDocument, related_information: boolean): Diagnostic[];
+    /**
+     * Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
+     * @param {TextDocumentItem} text_document
+     * @param {boolean} related_information
+     * @returns {Promise<any>}
+     */
+    doValidateAsync(
+        text_document: TextDocumentItem,
+        related_information: boolean,
+    ): Promise<Diagnostic[]>;
+    /**
+     * Provides completion items at the given position
+     * @param {TextDocumentItem} text_document
+     * @param {Position} position
+     * @param {MarkupKind} documentation_format
+     * @returns {(CompletionItem)[] | undefined}
+     */
+    doComplete(
+        text_document: TextDocumentItem,
+        position: Position,
+        documentation_format?: MarkupKind,
+    ): CompletionItem[] | null;
+    /**
+     * Provides completion items at the given position
+     * @param {RainDocument} rain_document
+     * @param {Position} position
+     * @param {MarkupKind} documentation_format
+     * @returns {(CompletionItem)[] | undefined}
+     */
+    doCompleteRainDocument(
+        rain_document: RainDocument,
+        position: Position,
+        documentation_format?: MarkupKind,
+    ): CompletionItem[] | null;
+    /**
+     * Provides hover for a fragment at the given position
+     * @param {TextDocumentItem} text_document
+     * @param {Position} position
+     * @param {MarkupKind} content_format
+     * @returns {Hover | undefined}
+     */
+    doHover(
+        text_document: TextDocumentItem,
+        position: Position,
+        content_format?: MarkupKind,
+    ): Hover | null;
+    /**
+     * Provides hover for a RainDocument fragment at the given position
+     * @param {RainDocument} rain_document
+     * @param {Position} position
+     * @param {MarkupKind} content_format
+     * @returns {Hover | undefined}
+     */
+    doHoverRainDocument(
+        rain_document: RainDocument,
+        position: Position,
+        content_format?: MarkupKind,
+    ): Hover | null;
+    /**
+     * Provides semantic tokens for elided fragments
+     * @param {TextDocumentItem} text_document
+     * @param {number} semantic_token_types_index
+     * @param {number} semantic_token_modifiers_len
+     * @returns {SemanticTokensPartialResult}
+     */
+    semanticTokens(
+        text_document: TextDocumentItem,
+        semantic_token_types_index: number,
+        semantic_token_modifiers_len: number,
+    ): SemanticTokensPartialResult;
+    /**
+     * Provides semantic tokens for RainDocument's elided fragments
+     * @param {RainDocument} rain_document
+     * @param {number} semantic_token_types_index
+     * @param {number} semantic_token_modifiers_len
+     * @returns {SemanticTokensPartialResult}
+     */
+    rainDocumentSemanticTokens(
+        rain_document: RainDocument,
+        semantic_token_types_index: number,
+        semantic_token_modifiers_len: number,
+    ): SemanticTokensPartialResult;
 }
 
 export interface IRainDocument {
@@ -279,55 +312,6 @@ export interface IRainDocument {
     authoringMeta: IAuthoringMeta | undefined;
     deployer: INPE2Deployer;
 }
-
-export type IAuthoringMeta = {
-    word: string;
-    description: string;
-    operandParserOffset: number;
-}[];
-
-export interface INPE2Deployer {
-    metaHash: string;
-    metaBytes: Uint8Array;
-    bytecode: Uint8Array;
-    parser: Uint8Array;
-    store: Uint8Array;
-    interpreter: Uint8Array;
-    authoringMeta: IAuthoringMeta | undefined;
-}
-
-export interface DeployerQueryResponse {
-    txHash: string;
-    bytecodeMetaHash: string;
-    metaHash: string;
-    metaBytes: Uint8Array;
-    bytecode: Uint8Array;
-    parser: Uint8Array;
-    store: Uint8Array;
-    interpreter: Uint8Array;
-}
-
-export interface IRainlangDocument {
-    text: string;
-    ast: RainlangSource[];
-    problems: Problem[];
-    comments: Comment[];
-    error: string | undefined;
-    ignoreUndefinedAuthoringMeta: boolean;
-}
-
-export interface ExpressionConfig {
-    bytecode: string;
-    constants: string[];
-}
-
-export type RainDocumentCompileError =
-    | { Reject: string }
-    | { Problems: Problem[] }
-    | { Revert: any }
-    | { Halt: any };
-
-export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
 
 export type Offsets = [number, number];
 
@@ -388,7 +372,7 @@ export interface Comment {
 }
 
 export interface DispairImportItem {
-    constructorMetaHash: string;
+    constructorMetaHash: Uint8Array;
     constructorMetaBytes: Uint8Array;
     parser: Uint8Array;
     store: Uint8Array;
@@ -474,156 +458,207 @@ export interface ContextAlias {
     row: number | undefined;
 }
 
+export interface IRainlangDocument {
+    text: string;
+    ast: RainlangSource[];
+    problems: Problem[];
+    comments: Comment[];
+    error: string | undefined;
+    ignoreUndefinedAuthoringMeta: boolean;
+}
+
 /**
- * Provides LSP services which are methods that return LSP based results (Diagnostics, Hover, etc)
+ * In-memory CAS (content addressed storage) for all metadata required for parsing
+ * a RainDocument which basically stores k/v pairs of meta hash, meta bytes and
+ * ExpressionDeployer reproducible data as well as providing functionalities to easliy
+ * read them from the CAS.
  *
- * Provides methods for getting language services (such as diagnostics, completion, etc)
- * for a given TextDocumentItem or a RainDocument. Each instance is linked to a shared locked
- * MetaStore instance that holds all the required metadata/functionalities that are required during
- * parsing a text.
- *
- * Position encodings provided by the client are irrevelant as RainDocument/Rainlang supports
- * only ASCII characters (parsing will stop at very first encountered non-ASCII character), so any
- * position encodings will result in the same LSP provided Position value which is 1 for each char.
+ * Hashes are stored as bytes of the underlying value and meta bytes are valid cbor
+ * encoded as Uint8Array. ExpressionDeployers data are in form of js object mapped to
+ * deployedBytecode meta hash and deploy transaction hash.
  *
  * @example
- * ```javascript
- * // create new MetaStore instance
- * let metaStore = new MetaStore();
+ * ```typescript
+ * // to instantiate with including default subgraphs
+ * // pass 'false' to not include default rain subgraph endpoints
+ * const store = new MetaStore();
  *
- * // crate new instance
- * let langServices = new RainLanguageServices(metaStore);
+ * // or to instantiate with initial arguments
+ * const store = MetaStore.create(options);
  *
- * let textDocument = {
- *   text: "some .rain text",
- *   uri:  "file:///name.rain",
- *   version: 0,
- *   languageId: "rainlang"
- * };
+ * // add a new subgraph endpoint URLs
+ * store.addSubgraphs(["sg-url-1", "sg-url-2", ...])
  *
- * // creat new RainDocument
- * let rainDocument = langServices.newRainDocument(textdocument);
+ * // merge another MetaStore instance to this instance
+ * store.merge(anotherMetaStore)
  *
- * // get LSP Diagnostics
- * let diagnosticsRelatedInformation = true;
- * let diagnostics = langServices.doValidate(textDocument, diagnosticsRelatedInformation);
+ * // updates the meta store with a new meta by searching through subgraphs
+ * await store.update(hash)
+ *
+ * // to get a meta bytes of a corresponding hash from store
+ * const meta = store.getMeta(hash);
  * ```
  */
-export class RainLanguageServices {
+export class MetaStore {
     free(): void;
+
     /**
-     * The meta Store associated with this RainLanguageServices instance
+     * Creates new instance of Store with given initial values,
+     * it checks the validity of each item and only stores those that are valid
+     * @param {MetaStoreOptions} options - initial values
+     * @returns {MetaStore}
      */
-    readonly metaStore: MetaStore;
+    static create(options: MetaStoreOptions): MetaStore;
+
     /**
-     * Instantiates with the given MetaStore
-     * @param {MetaStore} meta_store
+     * Constructs a new instance
+     * @param include_rain_subgraphs - (optional) if default Rain subgraphs should be included
      */
-    constructor(meta_store: MetaStore);
+    constructor(include_rain_subgraphs?: boolean);
+
     /**
-     * Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
-     * @param {TextDocumentItem} text_document
-     * @returns {RainDocument}
+     * All subgraph endpoint URLs of this instance
      */
-    newRainDocument(text_document: TextDocumentItem): RainDocument;
+    readonly subgraphs: string[];
     /**
-     * Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
-     * @param {TextDocumentItem} text_document
-     * @returns {Promise<RainDocument>}
+     * All the cached meta hash/bytes pairs
      */
-    newRainDocumentAsync(text_document: TextDocumentItem): Promise<RainDocument>;
+    readonly cache: Map<Uint8Array, Uint8Array>;
     /**
-     * Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
-     * @param {TextDocumentItem} text_document
-     * @returns {(Diagnostic)[]}
+     * All the cached dotrain uri/meta hash pairs
      */
-    doValidate(text_document: TextDocumentItem, related_information: boolean): Diagnostic[];
+    readonly dotrainCache: Map<string, Uint8Array>;
     /**
-     * Reports LSP diagnostics from RainDocument's all problems
-     * @param {RainDocument} rain_document
-     * @param {boolean} related_information
-     * @returns {(Diagnostic)[]}
+     * All the cached NPE2 deployers
      */
-    doValidateRainDocument(rain_document: RainDocument, related_information: boolean): Diagnostic[];
+    readonly deployerCache: Map<Uint8Array, INPE2Deployer>;
+
     /**
-     * Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
-     * @param {TextDocumentItem} text_document
-     * @param {boolean} related_information
-     * @returns {Promise<any>}
+     * Merges another instance of MetaStore to this instance lazily, avoids duplicates
+     * @param {MetaStore} other
      */
-    doValidateAsync(text_document: TextDocumentItem): Promise<Diagnostic[]>;
+    merge(other: MetaStore): void;
     /**
-     * Provides completion items at the given position
-     * @param {TextDocumentItem} text_document
-     * @param {Position} position
-     * @param {MarkupKind} documentation_format
-     * @returns {(CompletionItem)[] | undefined}
+     * Adds new subgraph endpoints
+     * @param {string[]} subgraphs
      */
-    doComplete(
-        text_document: TextDocumentItem,
-        position: Position,
-        documentation_format?: MarkupKind,
-    ): CompletionItem[] | null;
+    addSubgraphs(subgraphs: string[]): void;
     /**
-     * Provides completion items at the given position
-     * @param {RainDocument} rain_document
-     * @param {Position} position
-     * @param {MarkupKind} documentation_format
-     * @returns {(CompletionItem)[] | undefined}
+     * Get the corresponding meta bytes of the given hash if it is cached
+     * @param {Uint8Array} hash
+     * @returns {Uint8Array | undefined}
      */
-    doCompleteRainDocument(
-        rain_document: RainDocument,
-        position: Position,
-        documentation_format?: MarkupKind,
-    ): CompletionItem[] | null;
+    getMeta(hash: Uint8Array): Uint8Array | undefined;
     /**
-     * Provides hover for a fragment at the given position
-     * @param {TextDocumentItem} text_document
-     * @param {Position} position
-     * @param {MarkupKind} content_format
-     * @returns {Hover | undefined}
+     * Get the corresponding dotrain hash of the given dotrain uri if it is cached
+     * @param {string} uri
+     * @returns {Uint8Array | undefined}
      */
-    doHover(
-        text_document: TextDocumentItem,
-        position: Position,
-        content_format?: MarkupKind,
-    ): Hover | null;
+    getDotrainHash(uri: string): Uint8Array | undefined;
     /**
-     * Provides hover for a RainDocument fragment at the given position
-     * @param {RainDocument} rain_document
-     * @param {Position} position
-     * @param {MarkupKind} content_format
-     * @returns {Hover | undefined}
+     * Get the corresponding uri of the given dotrain hash if it is cached
+     * @param {Uint8Array} hash
+     * @returns {string | undefined}
      */
-    doHoverRainDocument(
-        rain_document: RainDocument,
-        position: Position,
-        content_format?: MarkupKind,
-    ): Hover | null;
+    getDotrainUri(hash: Uint8Array): string | undefined;
     /**
-     * Provides semantic tokens for elided fragments
-     * @param {TextDocumentItem} text_document
-     * @param {number} semantic_token_types_index
-     * @param {number} semantic_token_modifiers_len
-     * @returns {SemanticTokensPartialResult}
+     * Get the corresponding meta bytes of the given dotrain uri if it is cached
+     * @param {string} uri
+     * @returns {Uint8Array | undefined}
      */
-    semanticTokens(
-        text_document: TextDocumentItem,
-        semantic_token_types_index: number,
-        semantic_token_modifiers_len: number,
-    ): SemanticTokensPartialResult;
+    getDotrainMeta(uri: string): Uint8Array | undefined;
     /**
-     * Provides semantic tokens for RainDocument's elided fragments
-     * @param {RainDocument} rain_document
-     * @param {number} semantic_token_types_index
-     * @param {number} semantic_token_modifiers_len
-     * @returns {SemanticTokensPartialResult}
+     * Deletes a dotrain record given its uri
+     * @param {string} uri
      */
-    rainDocumentSemanticTokens(
-        rain_document: RainDocument,
-        semantic_token_types_index: number,
-        semantic_token_modifiers_len: number,
-    ): SemanticTokensPartialResult;
+    deleteDotrain(uri: string, keep_meta: boolean): void;
+    /**
+     * Get the NPE2 deployer details of the given deployer bytecode hash if it is cached
+     * @param {Uint8Array} hash
+     * @returns {INPE2Deployer | undefined}
+     */
+    getDeployer(hash: Uint8Array): INPE2Deployer | undefined;
+    /**
+     * Stores (or updates in case the URI already exists) the given dotrain text as meta into the store cache
+     * and maps it to the given uri (path), it should be noted that reading the content of the dotrain is not in
+     * the scope of MetaStore and handling and passing on a correct URI for the given text must be handled
+     * externally by the implementer
+     * @param {string} text
+     * @param {string} uri
+     * @param {boolean} keep_old - keeps the old dotrain meta in the cache
+     * @returns {Uint8Array[]} new hash and old hash if the given uri was already cached
+     */
+    setDotrain(text: string, uri: string, keep_old: boolean): Uint8Array[];
+    /**
+     * Sets deployer record
+     * @param {DeployerQueryResponse} deployer_response
+     */
+    setDeployer(deployer_response: DeployerQueryResponse): INPE2Deployer;
+    /**
+     * Updates the meta cache by the given hash and meta bytes, checks the hash to bytes validity
+     * @param {Uint8Array} hash
+     * @param {Uint8Array} bytes
+     */
+    updateWith(hash: Uint8Array, bytes: Uint8Array): void;
+    /**
+     * Updates the meta cache by searching through all subgraphs for the given hash
+     * @param {Uint8Array} hash
+     * @returns {Promise<Uint8Array | undefined>}
+     */
+    update(hash: Uint8Array): Promise<Uint8Array | undefined>;
+    /**
+     * First checks if the meta is stored and returns it if so, else will perform update()
+     * @param {Uint8Array} hash
+     * @returns {Promise<Uint8Array | undefined>}
+     */
+    updateCheck(hash: Uint8Array): Promise<Uint8Array | undefined>;
+    /**
+     * Searches for NPE2 deployer details in the subgraphs given the deployer hash
+     * @param {Uint8Array} hash
+     * @returns {Promise<INPE2Deployer | undefined>}
+     */
+    searchDeployer(hash: Uint8Array): Promise<INPE2Deployer | undefined>;
+    /**
+     * If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
+     * @param {Uint8Array} hash
+     * @returns {Promise<INPE2Deployer | undefined>}
+     */
+    searchDeployerCheck(hash: Uint8Array): Promise<INPE2Deployer | undefined>;
+}
+
+export interface MetaStoreOptions {
+    subgraphs?: string[];
+    cache?: Map<Uint8Array, Uint8Array>;
+    deployerCache?: Map<Uint8Array, INPE2Deployer>;
+    dotrainCache?: Map<string, Uint8Array>;
+    includeRainSubgraphs?: boolean;
+}
+
+export type IAuthoringMeta = {
+    word: string;
+    description: string;
+    operandParserOffset: number;
+}[];
+
+export interface INPE2Deployer {
+    metaHash: Uint8Array;
+    metaBytes: Uint8Array;
+    bytecode: Uint8Array;
+    parser: Uint8Array;
+    store: Uint8Array;
+    interpreter: Uint8Array;
+    authoringMeta: IAuthoringMeta | undefined;
+}
+
+export interface DeployerQueryResponse {
+    txHash: Uint8Array;
+    bytecodeMetaHash: Uint8Array;
+    metaHash: Uint8Array;
+    metaBytes: Uint8Array;
+    bytecode: Uint8Array;
+    parser: Uint8Array;
+    store: Uint8Array;
+    interpreter: Uint8Array;
 }
 
 /**

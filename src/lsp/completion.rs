@@ -1,5 +1,6 @@
 use regex::Regex;
 use once_cell::sync::Lazy;
+use alloy_primitives::hex;
 use std::collections::VecDeque;
 use lsp_types::{
     Range, TextEdit, CompletionItem, Position, MarkupKind, Documentation, MarkupContent,
@@ -318,20 +319,20 @@ pub fn get_completion(
                                     }),
                                     kind: Some(CompletionItemKind::FILE),
                                     detail: Some(format!("rain document at: {}", v.0,)),
-                                    insert_text: Some(v.1.clone()),
+                                    insert_text: Some(hex::encode_prefixed(v.1)),
                                     documentation: Some(Documentation::MarkupContent(
                                         MarkupContent {
                                             kind: documentation_format.clone(),
-                                            value: v.1.clone(),
+                                            value: hex::encode_prefixed(v.1),
                                         },
                                     )),
                                     text_edit: Some(lsp_types::CompletionTextEdit::Edit(
                                         TextEdit {
-                                            new_text: v.1.clone(),
+                                            new_text: hex::encode_prefixed(v.1),
                                             range: Range::new(
                                                 Position {
                                                     line: position.line,
-                                                    character: position.character,
+                                                    character: position.character - _prefix.len() as u32,
                                                 },
                                                 position,
                                             ),
@@ -360,31 +361,29 @@ pub fn get_completion(
                         .cache()
                         .iter()
                         .for_each(|v| {
-                            if rain_document.uri.to_string() != *v.0 {
-                                result.push_front(CompletionItem {
-                                    label: v.0.split_at(1).1.to_string(),
-                                    label_details: Some(CompletionItemLabelDetails {
-                                        description: Some("meta".to_owned()),
-                                        detail: None,
-                                    }),
-                                    kind: Some(CompletionItemKind::MODULE),
-                                    detail: Some(format!("meta hash: {}", v.0)),
-                                    insert_text: Some(v.0.clone()),
-                                    documentation: None,
-                                    text_edit: None,
-                                    deprecated: None,
-                                    preselect: None,
-                                    sort_text: None,
-                                    filter_text: None,
-                                    insert_text_format: None,
-                                    insert_text_mode: None,
-                                    additional_text_edits: None,
-                                    command: None,
-                                    commit_characters: None,
-                                    data: None,
-                                    tags: None,
-                                })
-                            }
+                            result.push_front(CompletionItem {
+                                label: "x".to_owned() + &hex::encode(v.0),
+                                label_details: Some(CompletionItemLabelDetails {
+                                    description: Some("meta".to_owned()),
+                                    detail: None,
+                                }),
+                                kind: Some(CompletionItemKind::MODULE),
+                                detail: Some(format!("meta hash: {}", hex::encode_prefixed(v.0))),
+                                insert_text: Some(hex::encode_prefixed(v.0)),
+                                documentation: None,
+                                text_edit: None,
+                                deprecated: None,
+                                preselect: None,
+                                sort_text: None,
+                                filter_text: None,
+                                insert_text_format: None,
+                                insert_text_mode: None,
+                                additional_text_edits: None,
+                                command: None,
+                                commit_characters: None,
+                                data: None,
+                                tags: None,
+                            })
                         })
                 }
             }

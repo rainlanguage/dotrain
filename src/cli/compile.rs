@@ -36,9 +36,9 @@ pub async fn rainconfig_compile(
                 0,
             );
             if local_data_only {
-                rd.parse();
+                rd.parse(false).await;
             } else {
-                rd.parse_async().await;
+                rd.parse(true).await;
             }
             match rd.compile(&cmap.entrypoints, None) {
                 Ok(v) => compilation_results.push_back(serde_json::to_string_pretty(&v)?),
@@ -89,9 +89,9 @@ pub async fn target_compile(
         0,
     );
     if local_data_only {
-        rd.parse();
+        rd.parse(false).await;
     } else {
-        rd.parse_async().await;
+        rd.parse(true).await;
     }
     let result = match rd.compile(&opts.entrypoints, None) {
         Ok(v) => serde_json::to_string_pretty(&v)?,

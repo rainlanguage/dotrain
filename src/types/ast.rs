@@ -252,9 +252,10 @@ pub struct Comment {
 pub struct DispairImportItem {
     #[cfg_attr(
         any(feature = "js-api", target_family = "wasm"),
-        tsify(type = "string")
+        tsify(type = "Uint8Array")
     )]
-    pub constructor_meta_hash: String,
+    #[serde(with = "serde_bytes")]
+    pub constructor_meta_hash: Vec<u8>,
     #[cfg_attr(
         any(feature = "js-api", target_family = "wasm"),
         tsify(type = "Uint8Array")

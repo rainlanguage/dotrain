@@ -5,7 +5,7 @@ use super::super::{
     parser::{OffsetAt, PositionAt, raindocument::RainDocument},
 };
 
-#[derive(Eq, PartialEq, Copy, Clone, PartialOrd, Ord)]
+#[derive(Eq, PartialEq, Copy, Clone, PartialOrd, Ord, Debug)]
 struct OrdRange {
     start: Position,
     end: Position,
@@ -20,21 +20,16 @@ pub fn get_semantic_token(
 ) -> SemanticTokensPartialResult {
     let mut ranges: BTreeSet<OrdRange> = BTreeSet::new();
     for b in &rain_document.bindings {
-        if let BindingItem::Exp(e) = &b.item {
-            e.problems
+        if let BindingItem::Exp(_) = &b.item {
+            b.problems
                 .iter()
-                .filter_map(|p| {
+                .for_each(|p| {
                     if p.code == ErrorCode::ElidedBinding {
-                        Some(OrdRange {
+                        ranges.insert(OrdRange {
                             start: rain_document.text.position_at(p.position[0]),
                             end: rain_document.text.position_at(p.position[1]),
-                        })
-                    } else {
-                        None
+                        }); 
                     }
-                })
-                .for_each(|p| {
-                    ranges.insert(p);
                 });
         }
         if let BindingItem::Elided(_) = &b.item {
@@ -73,10 +68,11 @@ pub fn get_semantic_token(
 
     let mut last_char = 0u32;
     let mut last_line = 0u32;
-    let token_modifiers_bitset = (2 ^ token_modifiers_len as u32) - 1;
+    let token_modifiers_bitset = 2u32.pow(8u32.min(token_modifiers_len as u32)) - 1;
     let data = ranges
         .iter()
         .map(|r| {
+            crate::js_api::log(&format!("{:?}", r));
             let delta_line = r.start.line - last_line;
             let result = SemanticToken {
                 delta_line,

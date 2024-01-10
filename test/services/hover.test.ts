@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { callerMeta, deployer, toRange } from "../utils";
+import { callerMeta, deployer, deployerHash, toRange } from "../utils";
 import { MetaStore, RainLanguageServices, rainlang } from "../../dist/cjs";
 import { Hover, Position, TextDocumentItem } from "vscode-languageserver-types";
 
@@ -23,7 +23,7 @@ describe("LSP Hover Language Service Tests", async function () {
     });
 
     const services = new RainLanguageServices(store);
-    const expression = rainlang`@${deployer.bytecodeMetaHash} @${callerMeta.hash}
+    const expression = rainlang`@${deployerHash} @${callerMeta.hash}
 #exp1
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,

@@ -50,40 +50,6 @@ pub const RAIN_DOCUMENT_CONSTANTS: [(&str, &str); 9] = [
     ("max-uint32", "0xffffffff"),
 ];
 
-#[derive(Debug)]
-pub enum RainDocumentParseError {}
-
-impl std::fmt::Display for RainDocumentParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("corrupt meta")
-        // match self {
-        //     Error::CorruptMeta => f.write_str("corrupt meta"),
-        //     Error::UnknownMeta => f.write_str("unknown meta"),
-        //     Error::UnknownMagic => f.write_str("unknown magic"),
-        //     Error::UnsupportedMeta => f.write_str("unsupported meta"),
-        //     Error::InvalidHash => f.write_str("invalid keccak256 hash"),
-        //     Error::NoRecordFound => f.write_str("found no matching record"),
-        //     Error::UnsupportedNetwork => {
-        //         f.write_str("no rain subgraph is deployed for this network")
-        //     }
-        //     Error::BiggerThan32Bytes => {
-        //         f.write_str("unexpected input size, must be 32 bytes or less")
-        //     }
-        //     Error::ReqwestError(v) => write!(f, "{}", v),
-        //     Error::InflateError(v) => write!(f, "{}", v),
-        //     Error::Utf8Error(v) => write!(f, "{}", v),
-        //     Error::AbiCoderError(v) => write!(f, "{}", v),
-        //     Error::SerdeCborError(v) => write!(f, "{}", v),
-        //     Error::SerdeJsonError(v) => write!(f, "{}", v),
-        //     Error::FromUtf8Error(v) => write!(f, "{}", v),
-        //     Error::DecodeHexStringError(v) => write!(f, "{}", v),
-        //     Error::ValidationErrors(v) => write!(f, "{}", v),
-        // }
-    }
-}
-
-impl std::error::Error for RainDocumentParseError {}
-
 /// Data structure of a parsed .rain text
 ///
 /// RainDocument is the main implementation block that enables parsing of a .rain file contents
@@ -191,14 +157,14 @@ impl RainDocument {
         meta_store: Option<Arc<RwLock<Store>>>,
     ) -> RainDocument {
         let mut rd = RainDocument::_new(text, uri, 0, meta_store, 0);
-        rd.parse_async().await;
+        rd.parse(true).await;
         rd
     }
 
     /// Creates an instance and parses with remote meta search disabled (cached metas only)
     pub fn create(text: String, uri: Url, meta_store: Option<Arc<RwLock<Store>>>) -> RainDocument {
         let mut rd = RainDocument::_new(text, uri, 0, meta_store, 0);
-        rd.parse();
+        block_on(rd.parse(false));
         rd
     }
 
@@ -206,7 +172,7 @@ impl RainDocument {
     pub fn update_text(&mut self, new_text: String) {
         self.text = new_text;
         self.version += 1;
-        self.parse();
+        block_on(self.parse(false));
     }
 
     /// Updates the text, uri, version and parses right away with remote meta search disabled (cached metas only)
@@ -214,14 +180,14 @@ impl RainDocument {
         self.text = new_text;
         self.uri = uri;
         self.version = version;
-        self.parse();
+        block_on(self.parse(false));
     }
 
     /// Updates the text and parses right away with remote meta search enabled
     pub async fn update_text_async(&mut self, new_text: String) {
         self.text = new_text;
         self.version += 1;
-        self.parse_async().await;
+        self.parse(true).await;
     }
 
     /// Updates the text, uri, version and parses right away with remote meta search enabled
@@ -229,7 +195,7 @@ impl RainDocument {
         self.text = new_text;
         self.uri = uri;
         self.version = version;
-        self.parse_async().await;
+        self.parse(true).await;
     }
 
     /// This instance's current text
@@ -316,37 +282,9 @@ impl RainDocument {
 
     /// Parses this instance's text with remote meta search enabled
     #[async_recursion(?Send)]
-    pub async fn parse_async(&mut self) {
+    pub async fn parse(&mut self, enable_remote: bool) {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
-            match self._parse(true).await {
-                Ok(()) => {}
-                Err(e) => {
-                    self.error = Some(e.to_string());
-                    self.problems.push(Problem {
-                        msg: e.to_string(),
-                        position: [0, 0],
-                        code: ErrorCode::RuntimeError,
-                    })
-                }
-            }
-        } else {
-            self.error = None;
-            self.imports.clear();
-            self.problems.clear();
-            self.comments.clear();
-            self.bindings.clear();
-            self.namespace.clear();
-            self.authoring_meta = None;
-            self.deployer = NPE2Deployer::default();
-            self.ignore_words = false;
-            self.ignore_undefined_words = false;
-        }
-    }
-
-    /// Parses this instance's text with remote meta search disabled (cached metas only)
-    pub fn parse(&mut self) {
-        if NON_EMPTY_PATTERN.is_match(&self.text) {
-            match block_on(self._parse(false)) {
+            match self._parse(enable_remote).await {
                 Ok(()) => {}
                 Err(e) => {
                     self.error = Some(e.to_string());
@@ -478,7 +416,6 @@ impl RainDocument {
 
     /// processes an import statement
     #[async_recursion(?Send)]
-    #[allow(clippy::await_holding_lock)]
     async fn process_import(&self, statement: &ParsedItem, should_search: bool) -> Import {
         let mut start_range;
         let at_pos: Offsets = [statement.1[0] - 1, statement.1[0] - 1];
@@ -689,18 +626,18 @@ impl RainDocument {
                 code: ErrorCode::InvalidImport,
             });
         }
-
+        let hash_bytes = alloy_primitives::hex::decode(&result.hash).unwrap();
         let mut npe2_deployer = None;
         let meta_seq = {
             let mut did_find = false;
             let seq = {
-                if let Some(d) = self.meta_store.read().unwrap().get_deployer(&result.hash) {
+                if let Some(d) = self.meta_store.read().unwrap().get_deployer(&hash_bytes) {
                     npe2_deployer = Some(d.clone());
                     did_find = true;
                     None
-                } else if let Some(r) = self.meta_store.read().unwrap().get_meta(&result.hash) {
+                } else if let Some(r) = self.meta_store.read().unwrap().get_meta(&hash_bytes) {
                     did_find = true;
-                    Some(RainMetaDocumentV1Item::cbor_decode(r))
+                    Some(RainMetaDocumentV1Item::cbor_decode(&r.clone()))
                 } else {
                     None
                 }
@@ -721,7 +658,7 @@ impl RainDocument {
                     self.meta_store
                         .write()
                         .unwrap()
-                        .update_with(&result.hash, &meta.bytes);
+                        .update_with(&hash_bytes, &meta.bytes);
                     Some(RainMetaDocumentV1Item::cbor_decode(&meta.bytes))
                 } else {
                     None
@@ -772,7 +709,7 @@ impl RainDocument {
                                             .meta_store
                                             .read()
                                             .unwrap()
-                                            .get_deployer(&result.hash)
+                                            .get_deployer(&hash_bytes)
                                         {
                                             if deployer.is_corrupt() {
                                                 result.sequence = None;
@@ -887,9 +824,9 @@ impl RainDocument {
                                             self.import_depth + 1,
                                         );
                                         if should_search {
-                                            dotrain.parse_async().await;
+                                            dotrain.parse(true).await;
                                         } else {
-                                            dotrain.parse();
+                                            dotrain.parse(false).await;
                                         }
                                         if !dotrain.problems.is_empty() {
                                             result.problems.push(Problem {
@@ -962,7 +899,7 @@ impl RainDocument {
         self.deployer = NPE2Deployer::default();
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
-
+        
         // check for illegal characters
         let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
         if !illegal_chars.is_empty() {

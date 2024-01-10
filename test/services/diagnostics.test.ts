@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { toRange, callerMeta, deployer } from "../utils";
+import { toRange, callerMeta, deployer, deployerHash } from "../utils";
 import { MetaStore, ErrorCode, RainLanguageServices, rainlang } from "../../dist/cjs";
 import { Diagnostic, TextDocumentItem, DiagnosticSeverity } from "vscode-languageserver-types";
 
@@ -36,7 +36,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     const services = new RainLanguageServices(store);
 
     it('should error: found illegal character: "\\u00a2"', async () => {
-        await testDiagnostics(rainlang`@${deployer.bytecodeMetaHash} #exn _: add(¢ 2);`, services, [
+        await testDiagnostics(rainlang`@${deployerHash} #exn _: add(¢ 2);`, services, [
             {
                 message: "illegal character: \u00a2",
                 range: toRange(0, 80, 0, 80),
@@ -61,7 +61,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     it("should error: unexpected comment", async () => {
         await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn _ _: add(10 20) /* invalid comment */ mul(1 2);`,
+            rainlang`@${deployerHash} #exn _ _: add(10 20) /* invalid comment */ mul(1 2);`,
             services,
             [
                 {
@@ -76,23 +76,19 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it("should error: invalid LHS alias: 123add123", async () => {
-        await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn 123add123: add(10 20);`,
-            services,
-            [
-                {
-                    message: "invalid LHS alias: 123add123",
-                    range: toRange(0, 73, 0, 82),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.InvalidWordPattern,
-                    source: "rainlang",
-                },
-            ],
-        );
+        await testDiagnostics(rainlang`@${deployerHash} #exn 123add123: add(10 20);`, services, [
+            {
+                message: "invalid LHS alias: 123add123",
+                range: toRange(0, 73, 0, 82),
+                severity: DiagnosticSeverity.Error,
+                code: ErrorCode.InvalidWordPattern,
+                source: "rainlang",
+            },
+        ]);
     });
 
     it("should error: parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis", async () => {
-        await testDiagnostics(rainlang`@${deployer.bytecodeMetaHash} #exn x: ();`, services, [
+        await testDiagnostics(rainlang`@${deployerHash} #exn x: ();`, services, [
             {
                 message:
                     "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
@@ -105,7 +101,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it('should error: unexpected ")"', async () => {
-        await testDiagnostics(rainlang`@${deployer.bytecodeMetaHash} #exn x: );`, services, [
+        await testDiagnostics(rainlang`@${deployerHash} #exn x: );`, services, [
             {
                 message: 'unexpected ")"',
                 range: toRange(0, 76, 0, 77),
@@ -118,7 +114,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     it("should error: expected to be separated by space", async () => {
         await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn x: int-sub(int-add(10 20)int-add(1 2));`,
+            rainlang`@${deployerHash} #exn x: int-sub(int-add(10 20)int-add(1 2));`,
             services,
             [
                 {
@@ -134,7 +130,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: no RHS item exists to match this LHS item: z", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn x: int-add(10 20), z: ;`,
+    //         rainlang`@${deployerHash} #exn x: int-add(10 20), z: ;`,
     //         services,
     //         [{
     //             message: "no RHS item exists to match this LHS item: z",
@@ -148,7 +144,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: no LHS item exists to match this RHS item", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn : int-add(10 20);`,
+    //         rainlang`@${deployerHash} #exn : int-add(10 20);`,
     //         services,
     //         [{
     //             message: "no LHS item exists to match this RHS item",
@@ -162,7 +158,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     it("should error: undefined word", async () => {
         await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn _: this-is-an-invalid-rain-expression;`,
+            rainlang`@${deployerHash} #exn _: this-is-an-invalid-rain-expression;`,
             services,
             [
                 {
@@ -178,7 +174,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     it("should error: invalid argument pattern", async () => {
         await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn x: int-add<error-argument>();`,
+            rainlang`@${deployerHash} #exn x: int-add<error-argument>();`,
             services,
             [
                 // {
@@ -201,7 +197,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: opcode mul doesn't have argumented operand", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn x: int-mul<10>(10 20);`,
+    //         rainlang`@${deployerHash} #exn x: int-mul<10>(10 20);`,
     //         services,
     //         [{
     //             message: "opcode mul doesn't have argumented operand",
@@ -215,7 +211,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: unexpected operand argument for opcode", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn x: read-memory<1 2 3>(1);`,
+    //         rainlang`@${deployerHash} #exn x: read-memory<1 2 3>(1);`,
     //         services,
     //         [{
     //             message: "unexpected operand argument for read-memory",
@@ -229,7 +225,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: expected more operand args for opcode", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn x: read-memory<>();`,
+    //         rainlang`@${deployerHash} #exn x: read-memory<>();`,
     //         services,
     //         [{
     //             message: "expected 2 operand arguments for read-memory",
@@ -243,7 +239,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: out-of-range inputs", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn x: read-memory<0 1>(1);`,
+    //         rainlang`@${deployerHash} #exn x: read-memory<0 1>(1);`,
     //         services,
     //         [{
     //             message: "out-of-range inputs",
@@ -257,7 +253,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: out-of-range inputs", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn x: read-memory<0 1>(1);`,
+    //         rainlang`@${deployerHash} #exn x: read-memory<0 1>(1);`,
     //         services,
     //         [{
     //             message: "out-of-range inputs",
@@ -271,7 +267,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: out-of-range inputs", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn x: erc-20-balance-of(10 20 30);`,
+    //         rainlang`@${deployerHash} #exn x: erc-20-balance-of(10 20 30);`,
     //         services,
     //         [{
     //             message: "out-of-range inputs",
@@ -285,7 +281,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: out-of-range operand argument", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn _ _ _ _: do-while<1233>(1 2 3 1 3 );`,
+    //         rainlang`@${deployerHash} #exn _ _ _ _: do-while<1233>(1 2 3 1 3 );`,
     //         services,
     //         [{
     //             message: "out-of-range operand argument",
@@ -299,7 +295,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: zero output opcodes cannot be nested", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn _: int-add(ensure(2) int-add(10 20));`,
+    //         rainlang`@${deployerHash} #exn _: int-add(ensure(2) int-add(10 20));`,
     //         services,
     //         [{
     //             message: "zero output opcodes cannot be nested",
@@ -313,7 +309,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     // it("should error: multi output opcodes cannot be nested", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn _: int-add(do-while<1>(1 2 3 1 3 ) int-add(10 20));`,
+    //         rainlang`@${deployerHash} #exn _: int-add(do-while<1>(1 2 3 1 3 ) int-add(10 20));`,
     //         services,
     //         [{
     //             message: "multi output opcodes cannot be nested",
@@ -326,24 +322,20 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     // });
 
     it("should error: invalid word pattern and unknown opcode", async () => {
-        await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn _: read-mem_ory<1 1>();`,
-            services,
-            [
-                {
-                    message: "invalid word pattern: read-mem_ory",
-                    range: toRange(0, 76, 0, 88),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.InvalidWordPattern,
-                    source: "rainlang",
-                },
-            ],
-        );
+        await testDiagnostics(rainlang`@${deployerHash} #exn _: read-mem_ory<1 1>();`, services, [
+            {
+                message: "invalid word pattern: read-mem_ory",
+                range: toRange(0, 76, 0, 88),
+                severity: DiagnosticSeverity.Error,
+                code: ErrorCode.InvalidWordPattern,
+                source: "rainlang",
+            },
+        ]);
     });
 
     // it("should error: expected operand arguments for opcode loop-n", async () => {
     //     await testDiagnostics(
-    //         rainlang`@${deployer.bytecodeMetaHash} #exn _: loop-n();`,
+    //         rainlang`@${deployerHash} #exn _: loop-n();`,
     //         services,
     //         [{
     //             message: "expected operand arguments for opcode loop-n",
@@ -356,40 +348,32 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     // });
 
     it('should error: expected "("', async () => {
-        await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn _ _: int-add<1 2 2>;`,
-            services,
-            [
-                {
-                    message: 'expected "("',
-                    range: toRange(0, 78, 0, 85),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.ExpectedOpeningParen,
-                    source: "rainlang",
-                },
-            ],
-        );
+        await testDiagnostics(rainlang`@${deployerHash} #exn _ _: int-add<1 2 2>;`, services, [
+            {
+                message: 'expected "("',
+                range: toRange(0, 78, 0, 85),
+                severity: DiagnosticSeverity.Error,
+                code: ErrorCode.ExpectedOpeningParen,
+                source: "rainlang",
+            },
+        ]);
     });
 
     it('should error: expected ")"', async () => {
-        await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn _ _: int-add<1 2 2>(;`,
-            services,
-            [
-                {
-                    message: 'expected ")"',
-                    range: toRange(0, 78, 0, 93),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.ExpectedClosingParen,
-                    source: "rainlang",
-                },
-            ],
-        );
+        await testDiagnostics(rainlang`@${deployerHash} #exn _ _: int-add<1 2 2>(;`, services, [
+            {
+                message: 'expected ")"',
+                range: toRange(0, 78, 0, 93),
+                severity: DiagnosticSeverity.Error,
+                code: ErrorCode.ExpectedClosingParen,
+                source: "rainlang",
+            },
+        ]);
     });
 
     it("should error: invalid LHS alias: addval_as", async () => {
         await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn addval_as: int-add(1 20), x: addval_as;`,
+            rainlang`@${deployerHash} #exn addval_as: int-add(1 20), x: addval_as;`,
             services,
             [
                 {
@@ -404,24 +388,20 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it("should error: cannot reference self", async () => {
-        await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn x: int-add(1 x);`,
-            services,
-            [
-                {
-                    message: "cannot reference self",
-                    range: toRange(0, 86, 0, 87),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.InvalidSelfReference,
-                    source: "rainlang",
-                },
-            ],
-        );
+        await testDiagnostics(rainlang`@${deployerHash} #exn x: int-add(1 x);`, services, [
+            {
+                message: "cannot reference self",
+                range: toRange(0, 86, 0, 87),
+                severity: DiagnosticSeverity.Error,
+                code: ErrorCode.InvalidSelfReference,
+                source: "rainlang",
+            },
+        ]);
     });
 
     it("should error: value greater than 32 bytes in size", async () => {
         await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn _: int-add(1 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);`,
+            rainlang`@${deployerHash} #exn _: int-add(1 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);`,
             services,
             [
                 {
@@ -436,24 +416,20 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it("should error: undefined word: max-uint266", async () => {
-        await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn x: max-uint266;`,
-            services,
-            [
-                {
-                    message: "undefined word: max-uint266",
-                    range: toRange(0, 76, 0, 87),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.UndefinedWord,
-                    source: "rainlang",
-                },
-            ],
-        );
+        await testDiagnostics(rainlang`@${deployerHash} #exn x: max-uint266;`, services, [
+            {
+                message: "undefined word: max-uint266",
+                range: toRange(0, 76, 0, 87),
+                severity: DiagnosticSeverity.Error,
+                code: ErrorCode.UndefinedWord,
+                source: "rainlang",
+            },
+        ]);
     });
 
     it('should error: "_notdefined" is not a valid rainlang word', async () => {
         await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn _: int-add(10 20); #exp1 x: _notdefined;`,
+            rainlang`@${deployerHash} #exn _: int-add(10 20); #exp1 x: _notdefined;`,
             services,
             [
                 {
@@ -468,31 +444,27 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it("should error: expected > and (", async () => {
-        await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn _: int-add<1 2();`,
-            services,
-            [
-                {
-                    message: 'expected ">"',
-                    range: toRange(0, 83, 0, 89),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.ExpectedClosingAngleBracket,
-                    source: "rainlang",
-                },
-                {
-                    message: 'expected "("',
-                    range: toRange(0, 76, 0, 83),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.ExpectedOpeningParen,
-                    source: "rainlang",
-                },
-            ],
-        );
+        await testDiagnostics(rainlang`@${deployerHash} #exn _: int-add<1 2();`, services, [
+            {
+                message: 'expected ">"',
+                range: toRange(0, 83, 0, 89),
+                severity: DiagnosticSeverity.Error,
+                code: ErrorCode.ExpectedClosingAngleBracket,
+                source: "rainlang",
+            },
+            {
+                message: 'expected "("',
+                range: toRange(0, 76, 0, 83),
+                severity: DiagnosticSeverity.Error,
+                code: ErrorCode.ExpectedOpeningParen,
+                source: "rainlang",
+            },
+        ]);
     });
 
     it("should error: invalid LHS alias: invalid_alias", async () => {
         await testDiagnostics(
-            rainlang`@${deployer.bytecodeMetaHash} #exn invalid_alias: int-add(1 20);`,
+            rainlang`@${deployerHash} #exn invalid_alias: int-add(1 20);`,
             services,
             [
                 {
@@ -507,7 +479,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     // it("multiple diagnostics", async () => {
-    //     const expression0 = rainlang`@${deployer.bytecodeMetaHash}
+    //     const expression0 = rainlang`@${deployerHash}
     //         #exn
     //         allowed-counterparty: 23,
     //         : ensure(eq(allowed-counterparty context<1 2>())),
@@ -559,7 +531,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     //         ]
     //     );
 
-    //     const expression1 = rainlang`@${deployer.bytecodeMetaHash}
+    //     const expression1 = rainlang`@${deployerHash}
     //         #exp1
     //         c0: 1,
     //         c1: 2,

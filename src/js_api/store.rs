@@ -1,5 +1,6 @@
 use tsify::Tsify;
 use js_sys::Uint8Array;
+use alloy_primitives::hex;
 use wasm_bindgen::prelude::*;
 use super::DeployerQueryResponse;
 use serde::{Serialize, Deserialize};
@@ -11,6 +12,7 @@ use rain_meta::{Store, search, search_deployer, NPE2Deployer, DeployerResponse};
 use serde_wasm_bindgen::{to_value as to_js_value, from_value as from_js_value, Serializer};
 
 // a wrapper struct for &[u8] to be serialized as Uint8Array from rust -> wasm -> js
+#[derive(Hash, Eq, PartialEq)]
 struct ToUint8ArraySerializer<'a>(&'a [u8]);
 impl<'a> Serialize for ToUint8ArraySerializer<'a> {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
@@ -26,9 +28,9 @@ const META_STORE_TYPESCRIPT_DEFINITIONS: &'static str = r#"/**
 * ExpressionDeployer reproducible data as well as providing functionalities to easliy 
 * read them from the CAS.
 * 
-* Hashes are 32 bytes (in hex string format) and will be stored as lower case and
-* meta bytes are valid cbor encoded as Uint8Array. ExpressionDeployers data are in
-* form of js object mapped to deployedBytecode meta hash and deploy transaction hash.
+* Hashes are stored as bytes of the underlying value and meta bytes are valid cbor 
+* encoded as Uint8Array. ExpressionDeployers data are in form of js object mapped to 
+* deployedBytecode meta hash and deploy transaction hash.
 * 
 * @example
 * ```typescript
@@ -76,15 +78,15 @@ export class MetaStore {
   /**
    * All the cached meta hash/bytes pairs
    */
-  readonly cache: Record<string, Uint8Array>;
+  readonly cache: Map<Uint8Array, Uint8Array>;
   /**
    * All the cached dotrain uri/meta hash pairs
    */
-  readonly dotrainCache: Record<string, string>;
+  readonly dotrainCache: Map<string, Uint8Array>;
   /**
    * All the cached NPE2 deployers
    */
-  readonly deployerCache: Record<string, INPE2Deployer>;
+  readonly deployerCache: Map<Uint8Array, INPE2Deployer>;
 
   /**
    * Merges another instance of MetaStore to this instance lazily, avoids duplicates
@@ -98,22 +100,22 @@ export class MetaStore {
   addSubgraphs(subgraphs: string[]): void;
   /**
    * Get the corresponding meta bytes of the given hash if it is cached
-   * @param {string} hash
+   * @param {Uint8Array} hash
    * @returns {Uint8Array | undefined}
    */
-  getMeta(hash: string): Uint8Array | undefined;
+  getMeta(hash: Uint8Array): Uint8Array | undefined;
   /**
    * Get the corresponding dotrain hash of the given dotrain uri if it is cached
    * @param {string} uri
-   * @returns {string | undefined}
+   * @returns {Uint8Array | undefined}
    */
-  getDotrainHash(uri: string): string | undefined;
+  getDotrainHash(uri: string): Uint8Array | undefined;
   /**
    * Get the corresponding uri of the given dotrain hash if it is cached
-   * @param {string} hash
+   * @param {Uint8Array} hash
    * @returns {string | undefined}
    */
-  getDotrainUri(hash: string): string | undefined;
+  getDotrainUri(hash: Uint8Array): string | undefined;
   /**
    * Get the corresponding meta bytes of the given dotrain uri if it is cached
    * @param {string} uri
@@ -127,10 +129,10 @@ export class MetaStore {
   deleteDotrain(uri: string, keep_meta: boolean): void;
   /**
    * Get the NPE2 deployer details of the given deployer bytecode hash if it is cached
-   * @param {string} hash
+   * @param {Uint8Array} hash
    * @returns {INPE2Deployer | undefined}
    */
-  getDeployer(hash: string): INPE2Deployer | undefined;
+  getDeployer(hash: Uint8Array): INPE2Deployer | undefined;
   /**
    * Stores (or updates in case the URI already exists) the given dotrain text as meta into the store cache
    * and maps it to the given uri (path), it should be noted that reading the content of the dotrain is not in
@@ -139,45 +141,44 @@ export class MetaStore {
    * @param {string} text
    * @param {string} uri
    * @param {boolean} keep_old - keeps the old dotrain meta in the cache
-   * @returns {string[]} new hash and old hash if the given uri was already cached
+   * @returns {Uint8Array[]} new hash and old hash if the given uri was already cached
    */
-  setDotrain(text: string, uri: string, keep_old: boolean): string[];
+  setDotrain(text: string, uri: string, keep_old: boolean): Uint8Array[];
   /**
    * Sets deployer record
-   * @param {string} deployer_bytecode_hash
    * @param {DeployerQueryResponse} deployer_response
    */
   setDeployer(deployer_response: DeployerQueryResponse): INPE2Deployer;
   /**
    * Updates the meta cache by the given hash and meta bytes, checks the hash to bytes validity
-   * @param {string} hash
+   * @param {Uint8Array} hash
    * @param {Uint8Array} bytes
    */
-  updateWith(hash: string, bytes: Uint8Array): void;
+  updateWith(hash: Uint8Array, bytes: Uint8Array): void;
   /**
    * Updates the meta cache by searching through all subgraphs for the given hash
-   * @param {string} hash
+   * @param {Uint8Array} hash
    * @returns {Promise<Uint8Array | undefined>}
    */
-  update(hash: string): Promise<Uint8Array | undefined>;
+  update(hash: Uint8Array): Promise<Uint8Array | undefined>;
   /**
    * First checks if the meta is stored and returns it if so, else will perform update()
-   * @param {string} hash
+   * @param {Uint8Array} hash
    * @returns {Promise<Uint8Array | undefined>}
    */
-  updateCheck(hash: string): Promise<Uint8Array | undefined>;
+  updateCheck(hash: Uint8Array): Promise<Uint8Array | undefined>;
   /**
    * Searches for NPE2 deployer details in the subgraphs given the deployer hash
-   * @param {string} hash
+   * @param {Uint8Array} hash
    * @returns {Promise<INPE2Deployer | undefined>}
    */
-  searchDeployer(hash: string): Promise<INPE2Deployer | undefined>;
+  searchDeployer(hash: Uint8Array): Promise<INPE2Deployer | undefined>;
   /**
    * If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
-   * @param {string} hash
+   * @param {Uint8Array} hash
    * @returns {Promise<INPE2Deployer | undefined>}
    */
-  searchDeployerCheck(hash: string): Promise<INPE2Deployer | undefined>;
+  searchDeployerCheck(hash: Uint8Array): Promise<INPE2Deployer | undefined>;
 }"#;
 
 /// Options for instantiating MetaStore with initial values
@@ -189,14 +190,14 @@ pub struct MetaStoreOptions {
     #[tsify(optional)]
     pub subgraphs: Vec<String>,
     #[serde(default)]
-    #[tsify(optional, type = "Record<string, Uint8Array>")]
-    pub cache: HashMap<String, Vec<u8>>,
+    #[tsify(optional, type = "Map<Uint8Array, Uint8Array>")]
+    pub cache: HashMap<Vec<u8>, Vec<u8>>,
     #[serde(default)]
-    #[tsify(optional, type = "Record<string, INPE2Deployer>")]
-    pub deployer_cache: HashMap<String, NPE2Deployer>,
+    #[tsify(optional, type = "Map<Uint8Array, INPE2Deployer>")]
+    pub deployer_cache: HashMap<Vec<u8>, NPE2Deployer>,
     #[serde(default)]
-    #[tsify(optional, type = "Record<string, string>")]
-    pub dotrain_cache: HashMap<String, String>,
+    #[tsify(optional, type = "Map<string, Uint8Array>")]
+    pub dotrain_cache: HashMap<String, Vec<u8>>,
     #[serde(default = "_true")]
     #[tsify(optional)]
     pub include_rain_subgraphs: bool,
@@ -223,9 +224,9 @@ Typescript/Javascript while Rust side keep handling the read/write locks"#
  ExpressionDeployer reproducible data as well as providing functionalities to easliy 
  read them from the CAS.
  
- Hashes are 32 bytes (in hex string format) and will be stored as lower case and
- meta bytes are valid cbor encoded as Uint8Array. ExpressionDeployers data are in
- form of js object mapped to deployedBytecode meta hash and deploy transaction hash.
+ Hashes are stored as bytes of the underlying value and meta bytes are valid cbor 
+ encoded as Uint8Array. ExpressionDeployers data are in form of js object mapped to 
+ deployedBytecode meta hash and deploy transaction hash.
  
  @example
  ```javascript
@@ -252,6 +253,7 @@ Typescript/Javascript while Rust side keep handling the read/write locks"#
 )]
 #[derive(Debug, Clone)]
 #[wasm_bindgen(skip_typescript)]
+#[repr(transparent)]
 pub struct MetaStore(pub(crate) Arc<RwLock<Store>>);
 
 #[wasm_bindgen]
@@ -292,14 +294,14 @@ impl MetaStore {
     /// All the cached meta hash/bytes pairs
     #[wasm_bindgen(skip_typescript, getter)]
     pub fn cache(&self) -> JsValue {
-        let serializer = Serializer::new().serialize_maps_as_objects(true);
+        let serializer = Serializer::new();
         self.0
             .read()
             .unwrap()
             .cache()
             .iter()
-            .map(|(key, value)| (key, ToUint8ArraySerializer(value)))
-            .collect::<HashMap<&String, ToUint8ArraySerializer>>()
+            .map(|(key, value)| (ToUint8ArraySerializer(key), ToUint8ArraySerializer(value)))
+            .collect::<HashMap<ToUint8ArraySerializer, ToUint8ArraySerializer>>()
             .serialize(&serializer)
             .unwrap_throw()
     }
@@ -307,11 +309,14 @@ impl MetaStore {
     /// All the cached NPE2 deployers
     #[wasm_bindgen(skip_typescript, js_name = "deployerCache", getter)]
     pub fn deployer_cache(&self) -> JsValue {
-        let serializer = Serializer::new().serialize_maps_as_objects(true);
+        let serializer = Serializer::new();
         self.0
             .read()
             .unwrap()
             .deployer_cache()
+            .iter()
+            .map(|(key, value)| (ToUint8ArraySerializer(key), value))
+            .collect::<HashMap<ToUint8ArraySerializer, &NPE2Deployer>>()
             .serialize(&serializer)
             .unwrap_throw()
     }
@@ -319,11 +324,14 @@ impl MetaStore {
     /// All the cached dotrain uri/meta hash pairs
     #[wasm_bindgen(skip_typescript, js_name = "dotrainCache", getter)]
     pub fn dotrain_cache(&self) -> JsValue {
-        let serializer = Serializer::new().serialize_maps_as_objects(true);
+        let serializer = Serializer::new();
         self.0
             .read()
             .unwrap()
             .dotrain_cache()
+            .iter()
+            .map(|(key, value)| (key, ToUint8ArraySerializer(value)))
+            .collect::<HashMap<&String, ToUint8ArraySerializer>>()
             .serialize(&serializer)
             .unwrap_throw()
     }
@@ -339,7 +347,7 @@ impl MetaStore {
 
     /// Get the corresponding meta bytes of the given hash if it is cached
     #[wasm_bindgen(skip_typescript, js_name = "getMeta")]
-    pub fn get_meta(&self, hash: &str) -> JsValue {
+    pub fn get_meta(&self, hash: &[u8]) -> JsValue {
         match self.0.read().unwrap().get_meta(hash) {
             Some(v) => to_js_value(&ToUint8ArraySerializer(v)).unwrap_or(JsValue::UNDEFINED),
             None => JsValue::UNDEFINED,
@@ -348,19 +356,28 @@ impl MetaStore {
 
     /// Get the NPE2 deployer details of the given deployer bytecode hash if it is cached
     #[wasm_bindgen(skip_typescript, js_name = "getDeployer")]
-    pub fn get_deployer(&self, hash: &str) -> JsValue {
+    pub fn get_deployer(&self, hash: &[u8]) -> JsValue {
         to_js_value(&self.0.read().unwrap().get_deployer(hash)).unwrap_or(JsValue::UNDEFINED)
     }
 
     /// Get the corresponding dotrain hash of the given dotrain uri if it is cached
     #[wasm_bindgen(skip_typescript, js_name = "getDotrainHash")]
     pub fn get_dotrain_hash(&self, uri: &str) -> JsValue {
-        to_js_value(&self.0.read().unwrap().get_dotrain_hash(uri)).unwrap_or(JsValue::UNDEFINED)
+        // to_js_value(&ToUint8ArraySerializer(&self.0.read().unwrap().get_dotrain_hash(uri))).unwrap_or(JsValue::UNDEFINED)
+        to_js_value(
+            &self
+                .0
+                .read()
+                .unwrap()
+                .get_dotrain_hash(uri)
+                .map(|v| ToUint8ArraySerializer(v)),
+        )
+        .unwrap_or(JsValue::UNDEFINED)
     }
 
     /// Get the corresponding uri of the given dotrain hash if it is cached
     #[wasm_bindgen(skip_typescript, js_name = "getDotrainUri")]
-    pub fn get_dotrain_uri(&self, hash: &str) -> JsValue {
+    pub fn get_dotrain_uri(&self, hash: &[u8]) -> JsValue {
         to_js_value(&self.0.read().unwrap().get_dotrain_uri(hash)).unwrap_or(JsValue::UNDEFINED)
     }
 
@@ -375,9 +392,9 @@ impl MetaStore {
 
     /// Searches for NPE2 deployer details in the subgraphs given the deployer hash
     #[wasm_bindgen(skip_typescript, js_name = "searchDeployer")]
-    pub async fn search_deployer(&mut self, hash: &str) -> JsValue {
+    pub async fn search_deployer(&mut self, hash: &[u8]) -> JsValue {
         let subgraphs = self.0.read().unwrap().subgraphs().clone();
-        match search_deployer(hash, &subgraphs).await {
+        match search_deployer(&hex::encode_prefixed(hash), &subgraphs).await {
             Ok(deployer_query_response) => {
                 let deployer = self
                     .0
@@ -393,12 +410,12 @@ impl MetaStore {
     /// If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
     #[wasm_bindgen(skip_typescript, js_name = "searchDeployerCheck")]
     #[allow(clippy::await_holding_lock)]
-    pub async fn search_deployer_check(&mut self, hash: &str) -> JsValue {
+    pub async fn search_deployer_check(&mut self, hash: &[u8]) -> JsValue {
         if let Some(v) = self.0.read().unwrap().get_deployer(hash) {
             to_js_value(v).unwrap_or(JsValue::UNDEFINED)
         } else {
             let subgraphs = self.0.read().unwrap().subgraphs().clone();
-            match search_deployer(hash, &subgraphs).await {
+            match search_deployer(&hex::encode_prefixed(hash), &subgraphs).await {
                 Ok(deployer_query_response) => {
                     let deployer = self
                         .0
@@ -429,12 +446,12 @@ impl MetaStore {
 
     /// Updates the meta cache by searching through all subgraphs for the given hash
     #[wasm_bindgen(skip_typescript)]
-    pub async fn update(&mut self, hash: &str) -> JsValue {
+    pub async fn update(&mut self, hash: &[u8]) -> JsValue {
         let subgraphs = self.0.read().unwrap().subgraphs().clone();
-        match search(hash, &subgraphs).await {
+        match search(&hex::encode_prefixed(hash), &subgraphs).await {
             Ok(res) => {
                 self.0.write().unwrap().update_with(hash, &res.bytes);
-                to_js_value(&res.bytes).unwrap_or(JsValue::UNDEFINED)
+                to_js_value(&ToUint8ArraySerializer(&res.bytes)).unwrap_or(JsValue::UNDEFINED)
             }
             Err(_e) => JsValue::UNDEFINED,
         }
@@ -443,15 +460,15 @@ impl MetaStore {
     /// First checks if the meta is stored and returns it if so, else will perform update()
     #[wasm_bindgen(skip_typescript, js_name = "updateCheck")]
     #[allow(clippy::await_holding_lock)]
-    pub async fn update_check(&mut self, hash: &str) -> JsValue {
+    pub async fn update_check(&mut self, hash: &[u8]) -> JsValue {
         if let Some(v) = self.0.read().unwrap().get_meta(hash) {
             to_js_value(&ToUint8ArraySerializer(v)).unwrap_or(JsValue::UNDEFINED)
         } else {
             let subgraphs = self.0.read().unwrap().subgraphs().clone();
-            match search(hash, &subgraphs).await {
+            match search(&hex::encode_prefixed(hash), &subgraphs).await {
                 Ok(res) => {
                     self.0.write().unwrap().update_with(hash, &res.bytes);
-                    to_js_value(&res.bytes).unwrap_or(JsValue::UNDEFINED)
+                    to_js_value(&ToUint8ArraySerializer(&res.bytes)).unwrap_or(JsValue::UNDEFINED)
                 }
                 Err(_e) => JsValue::UNDEFINED,
             }
@@ -461,7 +478,7 @@ impl MetaStore {
     /// Updates the meta cache by the given hash and meta bytes, checks the hash to bytes
     /// validity
     #[wasm_bindgen(skip_typescript, js_name = "updateWith")]
-    pub fn update_with(&mut self, hash: &str, bytes: &[u8]) {
+    pub fn update_with(&mut self, hash: &[u8], bytes: &[u8]) {
         self.0.write().unwrap().update_with(hash, bytes);
     }
 
@@ -483,10 +500,16 @@ impl MetaStore {
         keep_old: bool,
     ) -> Result<JsValue, JsError> {
         match self.0.write().unwrap().set_dotrain(text, uri, keep_old) {
-            Ok(v) => match to_js_value(&v) {
-                Ok(e) => Ok(e),
-                Err(e) => Err(JsError::new(&e.to_string())),
-            },
+            Ok(v) => {
+                if v.1.is_empty() {
+                    Ok(to_js_value(&[ToUint8ArraySerializer(&v.0)]).unwrap_throw())
+                } else {
+                    Ok(
+                        to_js_value(&[ToUint8ArraySerializer(&v.0), ToUint8ArraySerializer(&v.1)])
+                            .unwrap_throw(),
+                    )
+                }
+            }
             Err(e) => Err(JsError::new(&e.to_string())),
         }
     }
