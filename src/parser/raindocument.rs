@@ -704,7 +704,7 @@ impl RainDocument {
                         match meta.unpack() {
                             Ok(d) => match meta.magic {
                                 KnownMagic::ExpressionDeployerV2BytecodeV1 => {
-                                    result.sequence.as_mut().unwrap().dispair =
+                                    let deployer = {
                                         if let Some(deployer) = self
                                             .meta_store
                                             .read()
@@ -733,49 +733,46 @@ impl RainDocument {
                                                 };
                                                 Some(deployer.clone().into())
                                             }
-                                        } else if should_search {
-                                            let subgraphs = {
-                                                self.meta_store.read().unwrap().subgraphs().clone()
-                                            };
-                                            if let Ok(deployer_res) =
-                                                search_deployer(&result.hash, &subgraphs).await
-                                            {
-                                                let deployer = self
-                                                    .meta_store
-                                                    .write()
-                                                    .unwrap()
-                                                    .set_deployer_from_query_response(deployer_res);
-                                                if deployer.is_corrupt() {
-                                                    result.sequence = None;
+                                        } else {
+                                            None
+                                        }
+                                    };
+                                    result.sequence.as_mut().unwrap().dispair = if deployer
+                                        .is_some()
+                                    {
+                                        deployer
+                                    } else if should_search {
+                                        let subgraphs =
+                                            { self.meta_store.read().unwrap().subgraphs().clone() };
+                                        if let Ok(deployer_res) =
+                                            search_deployer(&result.hash, &subgraphs).await
+                                        {
+                                            let deployer = self
+                                                .meta_store
+                                                .write()
+                                                .unwrap()
+                                                .set_deployer_from_query_response(deployer_res);
+                                            if deployer.is_corrupt() {
+                                                result.sequence = None;
+                                                result.problems.push(Problem {
+                                                    msg: "corrupt meta".to_owned(),
+                                                    position: result.hash_position,
+                                                    code: ErrorCode::CorruptMeta,
+                                                });
+                                                break;
+                                            } else {
+                                                if deployer.authoring_meta.is_none()
+                                                    && !self.ignore_undefined_words
+                                                {
                                                     result.problems.push(Problem {
-                                                        msg: "corrupt meta".to_owned(),
-                                                        position: result.hash_position,
-                                                        code: ErrorCode::CorruptMeta,
-                                                    });
-                                                    break;
-                                                } else {
-                                                    if deployer.authoring_meta.is_none()
-                                                        && !self.ignore_undefined_words
-                                                    {
-                                                        result.problems.push(Problem {
                                                         msg:
                                                             "deployer's authroing meta is undefined"
                                                                 .to_owned(),
                                                         position: result.hash_position,
                                                         code: ErrorCode::UndefinedAuthoringMeta,
                                                     });
-                                                    };
-                                                    Some(deployer.into())
-                                                }
-                                            } else {
-                                                result.problems.push(Problem {
-                                                msg:
-                                                    "cannot find deployer details of specified hash"
-                                                        .to_owned(),
-                                                position: result.hash_position,
-                                                code: ErrorCode::UndefinedDeployer,
-                                            });
-                                                None
+                                                };
+                                                Some(deployer.into())
                                             }
                                         } else {
                                             result.problems.push(Problem {
@@ -786,7 +783,16 @@ impl RainDocument {
                                                 code: ErrorCode::UndefinedDeployer,
                                             });
                                             None
-                                        };
+                                        }
+                                    } else {
+                                        result.problems.push(Problem {
+                                            msg: "cannot find deployer details of specified hash"
+                                                .to_owned(),
+                                            position: result.hash_position,
+                                            code: ErrorCode::UndefinedDeployer,
+                                        });
+                                        None
+                                    };
                                 }
                                 KnownMagic::InterpreterCallerMetaV1 => {
                                     if let Ok(cmeta) = InterpreterCallerMeta::try_from(d.as_slice())
@@ -899,7 +905,7 @@ impl RainDocument {
         self.deployer = NPE2Deployer::default();
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
-        
+
         // check for illegal characters
         let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
         if !illegal_chars.is_empty() {

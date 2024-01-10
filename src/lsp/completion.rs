@@ -332,7 +332,8 @@ pub fn get_completion(
                                             range: Range::new(
                                                 Position {
                                                     line: position.line,
-                                                    character: position.character - _prefix.len() as u32,
+                                                    character: position.character
+                                                        - _prefix.len() as u32,
                                                 },
                                                 position,
                                             ),

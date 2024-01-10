@@ -296,7 +296,7 @@ impl RainlangDocument {
                 msg: "expected to end with semi".to_owned(),
                 position: [p, p + 1],
                 code: ErrorCode::ExpectedSemi,
-            });  
+            });
         }
         for v in parsed_sources {
             let trimmed = tracked_trim(&v.0);

@@ -21,16 +21,14 @@ pub fn get_semantic_token(
     let mut ranges: BTreeSet<OrdRange> = BTreeSet::new();
     for b in &rain_document.bindings {
         if let BindingItem::Exp(_) = &b.item {
-            b.problems
-                .iter()
-                .for_each(|p| {
-                    if p.code == ErrorCode::ElidedBinding {
-                        ranges.insert(OrdRange {
-                            start: rain_document.text.position_at(p.position[0]),
-                            end: rain_document.text.position_at(p.position[1]),
-                        }); 
-                    }
-                });
+            b.problems.iter().for_each(|p| {
+                if p.code == ErrorCode::ElidedBinding {
+                    ranges.insert(OrdRange {
+                        start: rain_document.text.position_at(p.position[0]),
+                        end: rain_document.text.position_at(p.position[1]),
+                    });
+                }
+            });
         }
         if let BindingItem::Elided(_) = &b.item {
             let start = rain_document.text.position_at(b.content_position[0] + 1);
@@ -72,7 +70,6 @@ pub fn get_semantic_token(
     let data = ranges
         .iter()
         .map(|r| {
-            crate::js_api::log(&format!("{:?}", r));
             let delta_line = r.start.line - last_line;
             let result = SemanticToken {
                 delta_line,
