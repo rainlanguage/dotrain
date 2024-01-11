@@ -1,22 +1,18 @@
 {
+  description = "Flake for development workflows.";
+
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    naersk.url = "github:nix-community/naersk";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    rust-overlay.url = "github:oxalica/rust-overlay";
+    rainix.url = "github:rainprotocol/rainix/55d54c541913cd36aa14f8ec454e5ca80fc00389";
   };
 
-  outputs = { self, flake-utils, naersk, nixpkgs, rust-overlay }:
+  outputs = { self, flake-utils, rainix }:
 
   flake-utils.lib.eachDefaultSystem (system:
     let
 
-      overlays = [ (import rust-overlay) ];
-
-      pkgs = (import nixpkgs) {
-        inherit system overlays;
-      };
-
+      pkgs = rainix.pkgs.${system};
+    
       rust-version = "1.75.0";
 
       rust-toolchain = pkgs.rust-bin.stable.${rust-version}.default.override {
@@ -24,6 +20,9 @@
       };
 
     in rec {
+
+      packages = rainix.packages.${system};
+      
       # # For `nix build` & `nix run`:
       defaultPackage = (pkgs.makeRustPlatform{
         rustc = rust-toolchain;
