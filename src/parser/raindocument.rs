@@ -1471,7 +1471,6 @@ impl RainDocument {
         if cns.is_empty() {
             None
         } else {
-            // let dup_words;
             if let Some(c_dis) = cns.get("Dispair") {
                 if let Some(n_dis) = nns.get("Dispair") {
                     if let NamespaceItem::Node(cn) = c_dis {
@@ -1481,9 +1480,6 @@ impl RainDocument {
                                     "namespace already contains a set of words".to_owned(),
                                 );
                             }
-                            //  else {
-                            //     dup_words = true;
-                            // }
                         }
                     }
                 }
@@ -1503,7 +1499,6 @@ impl RainDocument {
                                 }
                             }
                         } else if nnode && cnode {
-                            // if !nitem.is_word() && !citem.is_word() {
                             if (nitem.is_binding() && citem.is_binding())
                                 || (nitem.is_context_alias() && citem.is_context_alias())
                             {
