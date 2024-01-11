@@ -13,7 +13,7 @@ use rain_meta::{
     },
 };
 use super::{
-    rainlang::RainlangDocument,
+    rainlangdocument::RainlangDocument,
     super::{
         error::Error,
         types::{ast::*, patterns::*},

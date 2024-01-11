@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use super::super::error::Error;
 use serde::{Serialize, Deserialize};
 use serde_repr::{Serialize_repr, Deserialize_repr};
-use super::super::parser::{rainlang::RainlangDocument, raindocument::RainDocument};
+use super::super::parser::{rainlangdocument::RainlangDocument, raindocument::RainDocument};
 use rain_meta::{
     NPE2Deployer,
     types::{authoring::v1::AuthoringMeta, interpreter_caller::v1::InterpreterCallerMeta},
