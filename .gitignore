@@ -12,13 +12,19 @@ node_modules
 .env
 
 # Generate output
-dist
+target
+cache
+temp
 ./rainlang.api.json
+./dotrain.api.json
 
 .DS_Store
 src/.DS_Store
 release-note.txt
 *.rain
-*.rl
-*.rainlang
+*rain.json
 *.tgz
+rainconfig.json
+/old
+result
+docs
