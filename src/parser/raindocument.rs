@@ -83,7 +83,7 @@ let entrypoints = vec![
    "entrypoint2".to_string()
 ];
 
-// compile this instance to get ExpressionConfig
+// compile this instance to get rainlang string
 let result = rain_document.compile(&entrypoints);
 ```
 "#
@@ -102,8 +102,8 @@ let result = rain_document.compile(&entrypoints);
  // get all problems
  const problems = rainDocument.allProblems;
 
- // compile this instance to get ExpressionConfig
- const expConfig = rainDocument.compile([\"entrypoint1\", \"entrypoint2\"]);
+ // compile this instance to get srainlang string
+ const rainlang = rainDocument.compile([\"entrypoint1\", \"entrypoint2\"]);
  ```
 "
 )]
