@@ -33,7 +33,6 @@ pub(crate) mod compiler;
 pub use lsp_types::Url;
 pub use rain_meta::Store;
 pub use parser::*;
-pub use compiler::*;
 pub use error::Error;
 /// Provides all types and functionalities of Rain metadata
 pub use rain_meta;

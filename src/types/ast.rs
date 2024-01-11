@@ -524,19 +524,6 @@ pub struct NamespaceNode {
 }
 
 impl NamespaceNode {
-    // pub fn is_word(&self) -> bool {
-    //     match self.element {
-    //         NamespaceNodeElement::Word(_) => true,
-    //         _ => false
-    //     }
-    // }
-
-    // pub fn unwrap_word(&self) -> &AuthoringMetaItem {
-    //     match &self.element {
-    //         NamespaceNodeElement::Word(w) => w,
-    //         _ => panic!("not a word")
-    //     }
-    // }
 
     pub fn is_binding(&self) -> bool {
         matches!(self.element, NamespaceNodeElement::Binding(_))
@@ -672,28 +659,6 @@ impl NamespaceItem {
             NamespaceItem::Namespace(ns) => ns,
         }
     }
-
-    // pub fn is_word(&self) -> bool {
-    //     if let NamespaceItem::Node(n) = self {
-    //         match n.element {
-    //             NamespaceNodeElement::Word(_) => true,
-    //             _ => false
-    //         }
-    //     } else {
-    //         false
-    //     }
-    // }
-
-    // pub fn unwrap_word(&self) -> &AuthoringMetaItem {
-    //     if let NamespaceItem::Node(n) = self {
-    //         match &n.element {
-    //             NamespaceNodeElement::Word(w) => w,
-    //             _ => panic!("not a word")
-    //         }
-    //     } else {
-    //         panic!("not a word")
-    //     }
-    // }
 
     pub fn is_binding(&self) -> bool {
         if let NamespaceItem::Node(n) = self {

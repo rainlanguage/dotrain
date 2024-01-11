@@ -763,7 +763,7 @@ impl RainDocument {
                                                 {
                                                     result.problems.push(Problem {
                                                         msg:
-                                                            "deployer's authroing meta is undefined"
+                                                            "deployer's authoring meta is undefined"
                                                                 .to_owned(),
                                                         position: result.hash_position,
                                                         code: ErrorCode::UndefinedAuthoringMeta,
@@ -1142,13 +1142,6 @@ impl RainDocument {
                                             }
                                         };
                                         if ns.contains_key(key) {
-                                            // if _ns.get(key).unwrap().is_word() {
-                                            //     self.problems.push(Problem {
-                                            //         msg: format!("cannot rename or rebind single word: {}", key),
-                                            //         position: [c.0.1[0], new.1[1]],
-                                            //         code: ErrorCode::SingleWordModify
-                                            //     });
-                                            // } else {
                                             if conf.0 .0.starts_with('\'') {
                                                 if ns.contains_key(&new_conf.0) {
                                                     self.problems.push(Problem {
@@ -1526,11 +1519,6 @@ impl RainDocument {
                             } else {
                                 return Some("duplicate identifier".to_owned());
                             }
-                            // } else {
-                            //     if !dup_words {
-                            //         return Some("namespace already contains a set of words".to_owned());
-                            //     }
-                            // }
                         } else {
                             return Some("cannot import into an occupied namespace".to_owned());
                         }
@@ -1584,7 +1572,7 @@ impl RainDocument {
         }
     }
 
-    /// recursivly merges 2 namespaces
+    /// recursively merges 2 namespaces
     fn _merge(nns: &Namespace, cns: &mut Namespace) {
         if cns.is_empty() {
             cns.extend(nns.clone())
@@ -1601,7 +1589,7 @@ impl RainDocument {
         }
     }
 
-    /// processes the expressions dependencies and checks for any possible dependecy issues
+    /// processes the expressions dependencies and checks for any possible dependency issues
     fn process_dependencies(&mut self) {
         let mut topo_sort: TopoSort<&str> = TopoSort::new();
         let deps_map: Vec<&mut Binding> = self
@@ -1704,9 +1692,6 @@ impl RainDocument {
         } else if let Some(n) = node {
             if n.is_dispair() {
                 let dis = n.unwrap_dispair();
-                // if let Some(am) = &dis.authoring_meta {
-                //     self.authoring_meta = Some(am.clone())
-                // };
                 self.deployer = dis.clone().into();
                 self.authoring_meta = self.deployer.authoring_meta.clone();
             } else {

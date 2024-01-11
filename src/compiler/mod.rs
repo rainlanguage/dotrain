@@ -531,3 +531,166 @@ fn build_sourcemap(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{
+        fs,
+        sync::{Arc, RwLock},
+    };
+    use alloy_primitives::hex;
+    use crate::{RainDocument, Store, Url, rain_meta::DeployerResponse};
+
+    #[test]
+    fn test_dotrain_to_rainlang() -> anyhow::Result<()> {
+        let deployer_query_response = DeployerResponse {
+            meta_hash: hex::decode(
+                "0x7a89034fd7a33df88ca474ff2e413d8a2f425ed29f09866344ac6d6070a30d12",
+            )?,
+            meta_bytes: fs::read("./test/fixtures/RainterpreterExpressionDeployerNPE2.rain.meta")?,
+            tx_hash: hex::decode(
+                "0x78fd1edb0bdb928db6015990fecafbb964b44692e2d435693062dd4efc6254dd",
+            )?,
+            bytecode_meta_hash: hex::decode(
+                "0xa60a26b92501195b72f34dad09dc163ff65d3a86109e76b8c80110904f574dbb",
+            )?,
+            bytecode: hex::decode(fs::read_to_string("./test/fixtures/deployer-bytecode.txt")?)?,
+            parser: hex::decode(fs::read_to_string("./test/fixtures/parser.txt")?)?,
+            store: hex::decode(fs::read_to_string("./test/fixtures/store.txt")?)?,
+            interpreter: hex::decode(fs::read_to_string("./test/fixtures/interpreter.txt")?)?,
+        };
+
+        let meta_store = Arc::new(RwLock::new(Store::default()));
+        meta_store
+            .write()
+            .unwrap()
+            .set_deployer_from_query_response(deployer_query_response);
+
+        let dotrain1 = r#"
+@0xa60a26b92501195b72f34dad09dc163ff65d3a86109e76b8c80110904f574dbb
+
+#expression
+sentinel: infinity,
+sentinel20: infinity,
+you: context<0 0>(),
+mintamount: 10,
+burnamount: 20,
+transfererc1155slist: sentinel,
+transfererc721slist: sentinel,
+transfererc20slist: sentinel,
+transfernativeslist: sentinel,
+burnslist: sentinel20,
+burn-account burn-amount: you burnamount,
+mintslist: sentinel20,
+mint-account mint-amount: you mintamount;"#
+            .to_owned();
+        let rd1 = RainDocument::create(
+            dotrain1,
+            Url::parse("file:///test1.rain").unwrap(),
+            Some(meta_store.clone()),
+        );
+        let result1 = rd1
+            .compile(&["expression".to_owned()])
+            .map_err(|_| anyhow::anyhow!("could not parse .rain"))?;
+        let expected1 = r#"sentinel: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,
+sentinel20: 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,
+you: context<0 0>(),
+mintamount: 10,
+burnamount: 20,
+transfererc1155slist: sentinel,
+transfererc721slist: sentinel,
+transfererc20slist: sentinel,
+transfernativeslist: sentinel,
+burnslist: sentinel20,
+burn-account burn-amount: you burnamount,
+mintslist: sentinel20,
+mint-account mint-amount: you mintamount;
+"#;
+        assert_eq!(result1, expected1);
+
+        let dotrain2 = r#"
+@0xa60a26b92501195b72f34dad09dc163ff65d3a86109e76b8c80110904f574dbb
+
+#exp1
+c0: 1,
+c1: 2,
+condition: 1;
+
+#exp2
+s0 s1: 1 2,
+o0 o1: 1 2,
+condition: 3;
+
+#exp3
+s0: 1,
+_: less-than(s0 3);
+
+#exp4
+s0 s1: 1 2,
+_: int-add(s0 4),
+_: int-add(s1 5);"#
+            .to_owned();
+        let rd2 = RainDocument::create(
+            dotrain2,
+            Url::parse("file:///test2.rain").unwrap(),
+            Some(meta_store.clone()),
+        );
+        let result2 = rd2
+            .compile(&[
+                "exp1".to_owned(),
+                "exp2".to_owned(),
+                "exp3".to_owned(),
+                "exp4".to_owned(),
+            ])
+            .map_err(|_| anyhow::anyhow!("could not parse .rain"))?;
+        let expected2 = r#"c0: 1,
+c1: 2,
+condition: 1;
+s0 s1: 1 2,
+o0 o1: 1 2,
+condition: 3;
+s0: 1,
+_: less-than(s0 3);
+s0 s1: 1 2,
+_: int-add(s0 4),
+_: int-add(s1 5);
+"#;
+        assert_eq!(result2, expected2);
+
+        let dotrain3 = r#"
+@0xa60a26b92501195b72f34dad09dc163ff65d3a86109e76b8c80110904f574dbb
+
+#exp1
+s0 s1 s2: 1 2 3 ,
+increment: int-add(s0 5),
+lvldcr: int-sub(s2 1);
+
+#exp2
+s0 s1 s2: 1 2 3,
+levelmul: int-mul(6 s2),
+levelexp: int-exp(2 levelmul),
+finalmul: int-mul(levelexp s0),
+op: int-add(finalmul s1);"#
+            .to_owned();
+        let rd3 = RainDocument::create(
+            dotrain3,
+            Url::parse("file:///test3.rain").unwrap(),
+            Some(meta_store.clone()),
+        );
+        let result3 = rd3
+            .compile(&["exp1".to_owned(), "exp2".to_owned()])
+            .map_err(|_| anyhow::anyhow!("could not parse .rain"))?;
+        let expected3 = r#"s0 s1 s2: 1 2 3 ,
+increment: int-add(s0 5),
+lvldcr: int-sub(s2 1);
+s0 s1 s2: 1 2 3,
+levelmul: int-mul(6 s2),
+levelexp: int-exp(2 levelmul),
+finalmul: int-mul(levelexp s0),
+op: int-add(finalmul s1);
+"#;
+        assert_eq!(result3, expected3);
+
+        Ok(())
+    }
+}
