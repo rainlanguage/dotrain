@@ -85,7 +85,7 @@
         ] ++ lib.optionals stdenv.isDarwin [
           darwin.apple_sdk.frameworks.SystemConfiguration
         ]);
-        shellHook = '' npm install '';
+        # shellHook = '' npm install '';
       };
     }
   );

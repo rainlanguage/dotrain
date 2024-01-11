@@ -1,0 +1,24 @@
+name: Standard Test
+on: [push, pull_request]
+jobs:
+  build-lint-test:
+    name: Build, lint, test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+
+      - name: Build Rust Crate
+        run: nix develop -c cargo build --all-features
+
+      - name: Lint Rust Crate
+        run: nix develop -c cargo fmt --check
+
+      - name: Clippy Rust Crate
+        run: nix develop -c cargo clippy --all-features -- -D clippy::all
