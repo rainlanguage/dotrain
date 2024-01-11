@@ -1,8 +1,11 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
-  "mainEntryPointFilePath": "<projectFolder>/dist/types/index.d.ts",
+  "mainEntryPointFilePath": "<projectFolder>/dist/cjs/index.d.ts",
   "bundledPackages": [],
-  "compiler": {},
+  "compiler": {
+    "overrideTsconfig": {}
+  },
+  "projectFolder": ".",
   "apiReport": {
     "enabled": false
   },
@@ -82,7 +85,7 @@
          *
          * DEFAULT VALUE: "warning"
          */
-        "logLevel": "warning"
+        "logLevel": "none"
 
         /**
          * When addToApiReportFile is true:  If API Extractor is configured to write an API report file (.api.md),
@@ -114,7 +117,7 @@
         "logLevel": "none"
       },
       "default": {
-        "logLevel": "warning"
+        "logLevel": "none"
         // "addToApiReportFile": true
       }
 
@@ -135,7 +138,7 @@
      */
     "tsdocMessageReporting": {
       "default": {
-        "logLevel": "warning"
+        "logLevel": "none"
         // "addToApiReportFile": true
       }
     }
