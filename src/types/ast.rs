@@ -524,7 +524,6 @@ pub struct NamespaceNode {
 }
 
 impl NamespaceNode {
-
     pub fn is_binding(&self) -> bool {
         matches!(self.element, NamespaceNodeElement::Binding(_))
     }
