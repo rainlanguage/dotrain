@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use super::super::error::Error;
 use serde::{Serialize, Deserialize};
 use serde_repr::{Serialize_repr, Deserialize_repr};
-use super::super::parser::{rainlangdocument::RainlangDocument, raindocument::RainDocument};
+use super::super::parser::rainlangdocument::RainlangDocument;
 use rain_meta::{
     NPE2Deployer,
     types::{authoring::v1::AuthoringMeta, interpreter_caller::v1::InterpreterCallerMeta},
@@ -319,27 +319,27 @@ impl From<DispairImportItem> for NPE2Deployer {
     }
 }
 
-/// Type of an import meta sequence
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
-pub struct ImportSequence {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
-    pub dispair: Option<DispairImportItem>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
-    pub ctxmeta: Option<Vec<ContextAlias>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(
-        any(feature = "js-api", target_family = "wasm"),
-        tsify(type = "IRainDocument", optional)
-    )]
-    pub dotrain: Option<RainDocument>,
-}
+// /// Type of an import meta sequence
+// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+// #[cfg_attr(
+//     any(feature = "js-api", target_family = "wasm"),
+//     derive(Tsify),
+//     tsify(into_wasm_abi, from_wasm_abi)
+// )]
+// pub struct ImportSequence {
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+//     pub dispair: Option<DispairImportItem>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+//     pub ctxmeta: Option<Vec<ContextAlias>>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     #[cfg_attr(
+//         any(feature = "js-api", target_family = "wasm"),
+//         tsify(type = "IRainDocument", optional)
+//     )]
+//     pub dotrain: Option<RainDocument>,
+// }
 
 /// Type of an import configurations (renames/rebindings)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -353,28 +353,28 @@ pub struct ImportConfiguration {
     pub pairs: Vec<(ParsedItem, Option<ParsedItem>)>,
 }
 
-/// Type of import statements specified in a RainDocument
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
-pub struct Import {
-    pub name: String,
-    pub name_position: Offsets,
-    pub hash: String,
-    pub hash_position: Offsets,
-    pub position: Offsets,
-    pub problems: Vec<Problem>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
-    pub configuration: Option<ImportConfiguration>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
-    pub sequence: Option<ImportSequence>,
-}
+// /// Type of import statements specified in a RainDocument
+// #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+// #[serde(rename_all = "camelCase")]
+// #[cfg_attr(
+//     any(feature = "js-api", target_family = "wasm"),
+//     derive(Tsify),
+//     tsify(into_wasm_abi, from_wasm_abi)
+// )]
+// pub struct Import {
+//     pub name: String,
+//     pub name_position: Offsets,
+//     pub hash: String,
+//     pub hash_position: Offsets,
+//     pub position: Offsets,
+//     pub problems: Vec<Problem>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+//     pub configuration: Option<ImportConfiguration>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+//     pub sequence: Option<ImportSequence>,
+// }
 
 /// Type of an AST node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

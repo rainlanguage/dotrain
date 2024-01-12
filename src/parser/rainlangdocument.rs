@@ -1,5 +1,3 @@
-// #![allow(non_snake_case)]
-
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use rain_meta::types::authoring::v1::AuthoringMeta;
@@ -492,120 +490,55 @@ impl RainlangDocument {
                     let is_quote = v.0.starts_with('\'');
                     if is_quote {
                         let quote = &v.0[1..];
-                        if quote.contains('.') {
-                            if let Some(ns) = self.search_name(quote, v.1[0], true, namespace) {
-                                match ns {
-                                    NamespaceSearchResult::Binding(b) => {
-                                        match &b.item {
-                                            BindingItem::Elided(e) => {
-                                                let msg = e.msg.to_owned();
+                        if let Some(ns) = self.search_name(quote, v.1[0], true, namespace) {
+                            match ns {
+                                NamespaceSearchResult::Binding(b) => {
+                                    match &b.item {
+                                        BindingItem::Elided(e) => {
+                                            let msg = e.msg.to_owned();
+                                            self.problems.push(Problem {
+                                                msg,
+                                                position: v.1,
+                                                code: ErrorCode::ElidedBinding,
+                                            });
+                                        }
+                                        BindingItem::Constant(_c) => {
+                                            self.problems.push(Problem {
+                                                msg: format!(
+                                                    "invalid quote: {}, cannot quote constants",
+                                                    quote
+                                                ),
+                                                position: v.1,
+                                                code: ErrorCode::InvalidQuote,
+                                            });
+                                        }
+                                        _ => {
+                                            if let Some(_p) = b
+                                                .problems
+                                                .iter()
+                                                .find(|v| v.code == ErrorCode::CircularDependency)
+                                            {
                                                 self.problems.push(Problem {
-                                                    msg,
+                                                    msg: "quoted binding has circular dependency"
+                                                        .to_owned(),
                                                     position: v.1,
-                                                    code: ErrorCode::ElidedBinding,
+                                                    code: ErrorCode::CircularDependency,
                                                 });
                                             }
-                                            BindingItem::Constant(_c) => {
-                                                self.problems.push(Problem {
-                                                    msg: format!(
-                                                        "invalid quote: {}, cannot quote constants",
-                                                        quote
-                                                    ),
-                                                    position: v.1,
-                                                    code: ErrorCode::InvalidQuote,
-                                                });
-                                            }
-                                            _ => {
-                                                if let Some(_p) = b.problems.iter().find(|v| {
-                                                    v.code == ErrorCode::CircularDependency
-                                                }) {
-                                                    self.problems.push(Problem {
-                                                        msg:
-                                                            "quoted binding has circular dependency"
-                                                                .to_owned(),
-                                                        position: v.1,
-                                                        code: ErrorCode::CircularDependency,
-                                                    });
-                                                }
-                                            }
-                                        };
-                                    }
-                                    _ => {
-                                        self.problems.push(Problem {
-                                            msg: format!(
-                                                "invalid quote: {}, only bindings can be quoted",
-                                                quote
-                                            ),
-                                            position: v.1,
-                                            code: ErrorCode::InvalidQuote,
-                                        });
-                                    }
-                                };
-                            } else {
-                                self.problems.push(Problem {
-                                    msg: format!("undefined quote: {}", quote),
-                                    position: v.1,
-                                    code: ErrorCode::UndefinedQuote,
-                                });
-                            }
-                        } else if let Some(namespace_item) = namespace.get(quote) {
-                            if let NamespaceItem::Node(node) = namespace_item {
-                                match &node.element {
-                                    NamespaceNodeElement::Binding(b) => {
-                                        match &b.item {
-                                            BindingItem::Elided(e) => {
-                                                self.problems.push(Problem {
-                                                    msg: e.msg.to_owned(),
-                                                    position: v.1,
-                                                    code: ErrorCode::ElidedBinding,
-                                                });
-                                            }
-                                            BindingItem::Constant(_c) => {
-                                                self.problems.push(Problem {
-                                                    msg: format!(
-                                                        "invalid quote: {}, cannot quote constants",
-                                                        quote
-                                                    ),
-                                                    position: v.1,
-                                                    code: ErrorCode::InvalidQuote,
-                                                });
-                                            }
-                                            _ => {
-                                                if let Some(_p) = b.problems.iter().find(|&v| {
-                                                    v.code == ErrorCode::CircularDependency
-                                                }) {
-                                                    self.problems.push(Problem {
-                                                        msg:
-                                                            "quoted binding has circular dependency"
-                                                                .to_owned(),
-                                                        position: v.1,
-                                                        code: ErrorCode::CircularDependency,
-                                                    });
-                                                }
-                                            }
-                                        };
-                                    }
-                                    _ => {
-                                        self.problems.push(Problem {
-                                            msg: format!(
-                                                "invalid quote: {}, only bindings can be quoted",
-                                                quote
-                                            ),
-                                            position: v.1,
-                                            code: ErrorCode::InvalidQuote,
-                                        });
-                                    }
-                                };
-                            } else {
-                                self.problems.push(Problem {
-                                    msg: format!(
-                                        "invalid quote: {}, only bindings can be quoted",
-                                        quote
-                                    ),
-                                    position: v.1,
-                                    code: ErrorCode::InvalidQuote,
-                                });
-                            }
+                                        }
+                                    };
+                                }
+                                _ => {
+                                    self.problems.push(Problem {
+                                        msg: format!(
+                                            "invalid quote: {}, only bindings can be quoted",
+                                            quote
+                                        ),
+                                        position: v.1,
+                                        code: ErrorCode::InvalidQuote,
+                                    });
+                                }
+                            };
                         } else {
                             self.problems.push(Problem {
                                 msg: format!("undefined quote: {}", quote),
@@ -688,32 +621,7 @@ impl RainlangDocument {
                     code: ErrorCode::ExpectedOpcode
                 });
             }
-            if next.contains('.') {
-                if let Some(ns_item) = self.search_name(next, entry, true, namespace) {
-                    match ns_item {
-                        NamespaceSearchResult::ContextAlias(c) => {
-                            op.opcode.description = c.description.clone();
-                            op.is_ctx = Some((c.column, c.row));
-                        }
-                        NamespaceSearchResult::Binding(b) => {
-                            let n = b.name.clone();
-                            self.problems.push(Problem {
-                                msg: format!("{} is not an opcode", n),
-                                position: next_pos,
-                                code: ErrorCode::ExpectedOpcode,
-                            });
-                        }
-                    }
-                } else if !self.ignore_undefined_authoring_meta {
-                    self.problems.push(Problem {
-                        msg: format!("unknown opcode: {}", next),
-                        position: next_pos,
-                        code: ErrorCode::UndefinedOpcode,
-                    });
-                }
-            } else if next.is_empty() {
-                // @TODO - improve problems
-            } else if !WORD_PATTERN.is_match(next) {
+            if !WORD_PATTERN.is_match(next) {
                 self.problems.push(Problem {
                     msg: format!("invalid word pattern: {}", next),
                     position: next_pos,
@@ -798,13 +706,8 @@ impl RainlangDocument {
                             }))?;
                         }
                     },
-                    other => {
-                        let msg = match other {
-                            NamespaceSearchResult::ContextAlias(_c) => {
-                                format!("invalid reference to context alias: {}", next)
-                            }
-                            NamespaceSearchResult::Binding(_b) => String::new(),
-                        };
+                    NamespaceSearchResult::ContextAlias(_) => {
+                        let msg = format!("invalid reference to context alias: {}", next);
                         self.problems.push(Problem {
                             msg,
                             position: next_pos,
@@ -965,7 +868,6 @@ impl RainlangDocument {
     }
 
     /// Search in namespaces for a name
-    #[allow(clippy::while_let_on_iterator)]
     fn search_name<'a>(
         &'a mut self,
         query: &str,
@@ -1012,8 +914,8 @@ impl RainlangDocument {
 
         if let Some(namespace_item) = namespace.get(&names[0].0) {
             let mut result = namespace_item;
-            let mut iter = names[1..].iter();
-            while let Some(segment) = iter.next() {
+            let iter = names[1..].iter();
+            for segment in iter {
                 match result {
                     NamespaceItem::Namespace(ns) => {
                         if let Some(namespace_item) = ns.get(&segment.0) {
@@ -1067,15 +969,192 @@ impl RainlangDocument {
             }
         } else {
             if report_problems {
-                // if !is_opcode || !self.ignore_uam {
                 self.problems.push(Problem {
                     msg: format!("namespace has no member {}", names[0].0),
                     position: names[0].1,
                     code: ErrorCode::UndefinedNamespaceMember,
                 });
-                // }
             }
             None
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rain_meta::types::authoring::v1::AuthoringMetaItem;
+
+    use super::*;
+
+    #[test]
+    fn test_process_opcode_method() -> anyhow::Result<()> {
+        let mut rl = RainlangDocument::default();
+        rl.state.depth = 1;
+        rl.state.parens.close = vec![13];
+        let value_node = Node::Value(Value {
+            value: "12".to_owned(),
+            position: [3, 4],
+            lhs_alias: None,
+            id: None,
+        });
+        let op_node = Node::Opcode(Opcode {
+            opcode: OpcodeDetails {
+                name: "add".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [8, 0],
+            parameters: vec![
+                Node::Value(Value {
+                    value: "1".to_owned(),
+                    position: [9, 10],
+                    lhs_alias: None,
+                    id: None,
+                }),
+                Node::Value(Value {
+                    value: "2".to_owned(),
+                    position: [11, 12],
+                    lhs_alias: None,
+                    id: None,
+                }),
+            ],
+            is_ctx: None,
+            lhs_alias: None,
+            operand_args: None,
+        });
+        rl.state.nodes = vec![value_node.clone(), op_node];
+        rl.process_opcode()?;
+
+        let expected_op_node = Node::Opcode(Opcode {
+            opcode: OpcodeDetails {
+                name: "add".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 14],
+            parens: [8, 13],
+            parameters: vec![
+                Node::Value(Value {
+                    value: "1".to_owned(),
+                    position: [9, 10],
+                    lhs_alias: None,
+                    id: None,
+                }),
+                Node::Value(Value {
+                    value: "2".to_owned(),
+                    position: [11, 12],
+                    lhs_alias: None,
+                    id: None,
+                }),
+            ],
+            is_ctx: None,
+            lhs_alias: None,
+            operand_args: None,
+        });
+        let expected_state = RainlangState {
+            nodes: vec![value_node, expected_op_node],
+            depth: 1,
+            ..Default::default()
+        };
+        assert_eq!(rl.state, expected_state);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_operand_method() -> anyhow::Result<()> {
+        let mut rl = RainlangDocument::default();
+        let namespace = HashMap::new();
+        let exp = "<12 56>";
+        let mut op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opc".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            parameters: vec![],
+            is_ctx: None,
+            lhs_alias: None,
+            operand_args: None,
+        };
+
+        let consumed_count = rl.process_operand(exp, 8, &mut op, &namespace);
+        let expected_op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opc".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            parameters: vec![],
+            is_ctx: None,
+            lhs_alias: None,
+            operand_args: Some(OperandArg {
+                position: [8, 15],
+                args: vec![
+                    OperandArgItem {
+                        value: "12".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [9, 11],
+                        description: String::new(),
+                    },
+                    OperandArgItem {
+                        value: "56".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [12, 14],
+                        description: String::new(),
+                    },
+                ],
+            }),
+        };
+        assert_eq!(consumed_count, exp.len());
+        assert_eq!(op, expected_op);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_next_method() -> anyhow::Result<()> {
+        let mut rl = RainlangDocument::default();
+        let namespace = HashMap::new();
+        let authoring_meta = AuthoringMeta(vec![AuthoringMetaItem {
+            word: "opcode".to_owned(),
+            operand_parser_offset: 0,
+            description: String::new(),
+        }]);
+        let text = "opcode(12 12) 0x123 some-other-opcode(";
+
+        let consumed_count = rl.process_next(text, 10, &namespace, &authoring_meta)?;
+        let expected_op = Node::Opcode(Opcode {
+            opcode: OpcodeDetails {
+                name: "opcode".to_owned(),
+                description: String::new(),
+                position: [10, 16],
+            },
+            operand: None,
+            output: None,
+            position: [10, 0],
+            parens: [16, 0],
+            parameters: vec![],
+            is_ctx: None,
+            lhs_alias: None,
+            operand_args: None,
+        });
+        assert_eq!(consumed_count, 7);
+        assert_eq!(rl.state.nodes[0], expected_op);
+
+        Ok(())
     }
 }

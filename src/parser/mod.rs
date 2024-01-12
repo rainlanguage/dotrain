@@ -179,7 +179,7 @@ pub fn exclusive_parse(
                 result.push(ParsedItem(
                     s.to_owned(),
                     [
-                        matches[matches.len() - 1].start() + 1 + offset,
+                        matches[matches.len() - 1].end() + offset,
                         text.len() + offset,
                     ],
                 ))
@@ -244,7 +244,7 @@ pub fn tracked_trim(s: &str) -> (&str, usize, usize) {
 pub(crate) fn line_number(text: &str, pos: usize) -> usize {
     let lines: Vec<_> = text.split_inclusive('\n').collect();
     let lines_count = lines.len();
-    if pos >= lines_count {
+    if pos >= text.len() {
         lines_count
     } else {
         let mut _c = 0;
@@ -311,5 +311,166 @@ pub(crate) fn is_consumable(items: &Vec<RainMetaDocumentV1Item>) -> bool {
         !(dispairs > 1 || callers > 1 || dotrains > 1 || dispairs + callers + dotrains == 0)
     } else {
         false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::parser::*;
+
+    #[test]
+    fn test_position_at() -> anyhow::Result<()> {
+        let text = r"abcd
+        efgh
+        ijkl";
+
+        let pos1 = text.position_at(14);
+        let pos1_expected = Position {
+            line: 1,
+            character: 9,
+        };
+        assert_eq!(pos1, pos1_expected);
+
+        let pos2 = text.position_at(28);
+        let pos2_expected = Position {
+            line: 2,
+            character: 10,
+        };
+        assert_eq!(pos2, pos2_expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_offset_at() -> anyhow::Result<()> {
+        let text = r"abcd
+        efgh
+        ijkl";
+
+        let offset1 = text.offset_at(&Position {
+            line: 1,
+            character: 9,
+        });
+        let expected_offset1 = 14;
+        assert_eq!(offset1, expected_offset1);
+
+        let offset2 = text.offset_at(&Position {
+            line: 2,
+            character: 10,
+        });
+        let expected_offset2 = 28;
+        assert_eq!(offset2, expected_offset2);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_inclusive_parse() -> anyhow::Result<()> {
+        let text = r"abcd eb
+        qkbjh (aoib 124b)";
+        let pattern = Regex::new(r"b\s").unwrap();
+
+        let parsed_items = inclusive_parse(text, &pattern, 0);
+        let expected = vec![
+            ParsedItem("b\n".to_owned(), [6, 8]),
+            ParsedItem("b ".to_owned(), [26, 28]),
+        ];
+
+        assert_eq!(parsed_items, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_exclusive_parse() -> anyhow::Result<()> {
+        let text = r"abcd eb
+        qkbjh (aoib 124b)";
+        let pattern = Regex::new(r"b\s").unwrap();
+
+        let parsed_items = exclusive_parse(text, &pattern, 0, true);
+        let expected = vec![
+            ParsedItem("abcd e".to_owned(), [0, 6]),
+            ParsedItem("        qkbjh (aoi".to_owned(), [8, 26]),
+            ParsedItem("124b)".to_owned(), [28, 33]),
+        ];
+
+        assert_eq!(parsed_items, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_fill_in() -> anyhow::Result<()> {
+        let mut text = r"abcd eb
+        qkbjh (aoib 124b)"
+            .to_string();
+
+        fill_in(&mut text, [23, 27])?;
+        let expected = r"abcd eb
+        qkbjh (     124b)";
+
+        assert_eq!(text, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_fill_out() -> anyhow::Result<()> {
+        let mut text = r"abcd eb
+        qkbjh (aoib 124b)"
+            .to_string();
+
+        fill_out(&mut text, [23, 27])?;
+        let expected = r"       
+               aoib      ";
+
+        assert_eq!(text, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_tracked_trim() -> anyhow::Result<()> {
+        let text = " \n  abcd   \n\t";
+
+        let result = tracked_trim(text);
+        let expected = ("abcd", 4, 5);
+
+        assert_eq!(result, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn test_line_number() -> anyhow::Result<()> {
+        let text = r"abcd
+        efgh (123 876)
+
+        zxcb;
+        ";
+        let result = line_number(text, 38);
+        assert_eq!(result, 3);
+        Ok(())
+    }
+
+    #[test]
+    fn test_to_u256() -> anyhow::Result<()> {
+        let binary = "0b101";
+        let hex = "0xabcd123";
+        let int = "876123";
+        let e = "5e13";
+
+        let result = to_u256(binary)?;
+        let expected = U256::from_str_radix("5", 10)?;
+        assert_eq!(result, expected);
+
+        let result = to_u256(hex)?;
+        let expected = U256::from_str_radix("abcd123", 16)?;
+        assert_eq!(result, expected);
+
+        let result = to_u256(int)?;
+        let expected = U256::from_str_radix("876123", 10)?;
+        assert_eq!(result, expected);
+
+        let result = to_u256(e)?;
+        let expected = U256::from_str_radix("50000000000000", 10)?;
+        assert_eq!(result, expected);
+
+        Ok(())
     }
 }
