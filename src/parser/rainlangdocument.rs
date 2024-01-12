@@ -1150,7 +1150,7 @@ mod tests {
             parameters: vec![],
             is_ctx: None,
             lhs_alias: None,
-            operand_args:  Some(OperandArg {
+            operand_args: Some(OperandArg {
                 position: [16, 23],
                 args: vec![
                     OperandArgItem {
