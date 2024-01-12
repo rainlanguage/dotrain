@@ -8,12 +8,6 @@ use super::types::{
     patterns::{HEX_PATTERN, BINARY_PATTERN, E_PATTERN, INT_PATTERN},
 };
 
-pub(crate) mod rainlangdocument;
-pub(crate) mod raindocument;
-
-pub use self::rainlangdocument::*;
-pub use self::raindocument::*;
-
 /// Trait for converting offset to lsp position (implemented for `&str` and `String`)
 pub trait PositionAt {
     fn position_at(&self, offset: usize) -> Position;
