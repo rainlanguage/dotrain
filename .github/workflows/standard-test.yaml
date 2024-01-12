@@ -22,3 +22,6 @@ jobs:
 
       - name: Clippy Rust Crate
         run: nix develop -c cargo clippy --all-features -- -D clippy::all
+
+      - name: Test Rust Crate
+        run: nix develop -c cargo test --all-features
