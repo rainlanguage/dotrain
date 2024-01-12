@@ -620,8 +620,7 @@ impl RainlangDocument {
                     position: next_pos,
                     code: ErrorCode::ExpectedOpcode
                 });
-            }
-            if !WORD_PATTERN.is_match(next) {
+            } else if !WORD_PATTERN.is_match(next) {
                 self.problems.push(Problem {
                     msg: format!("invalid word pattern: {}", next),
                     position: next_pos,
