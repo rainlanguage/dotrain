@@ -1134,10 +1134,10 @@ mod tests {
             operand_parser_offset: 0,
             description: String::new(),
         }]);
-        let text = "opcode(12 12) 0x123 some-other-opcode(";
+        let text = "opcode<12 56>(";
 
         let consumed_count = rl.process_next(text, 10, &namespace, &authoring_meta)?;
-        let expected_op = Node::Opcode(Opcode {
+        let expected_state_nodes = vec![Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "opcode".to_owned(),
                 description: String::new(),
@@ -1146,14 +1146,30 @@ mod tests {
             operand: None,
             output: None,
             position: [10, 0],
-            parens: [16, 0],
+            parens: [23, 0],
             parameters: vec![],
             is_ctx: None,
             lhs_alias: None,
-            operand_args: None,
-        });
-        assert_eq!(consumed_count, 7);
-        assert_eq!(rl.state.nodes[0], expected_op);
+            operand_args:  Some(OperandArg {
+                position: [16, 23],
+                args: vec![
+                    OperandArgItem {
+                        value: "12".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [17, 19],
+                        description: String::new(),
+                    },
+                    OperandArgItem {
+                        value: "56".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [20, 22],
+                        description: String::new(),
+                    },
+                ],
+            }),
+        })];
+        assert_eq!(consumed_count, text.len());
+        assert_eq!(rl.state.nodes, expected_state_nodes);
 
         Ok(())
     }
