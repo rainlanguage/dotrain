@@ -25,6 +25,15 @@ function takeObject(idx) {
     return ret;
 }
 
+function addHeapObject(obj) {
+    if (heap_next === heap.length) heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
+
+    heap[idx] = obj;
+    return idx;
+}
+
 let WASM_VECTOR_LEN = 0;
 
 let cachedUint8Memory0 = null;
@@ -104,24 +113,6 @@ function getInt32Memory0() {
     return cachedInt32Memory0;
 }
 
-let cachedTextDecoder = new TextDecoder("utf-8", { ignoreBOM: true, fatal: true });
-
-cachedTextDecoder.decode();
-
-function getStringFromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
-}
-
-function addHeapObject(obj) {
-    if (heap_next === heap.length) heap.push(heap.length + 1);
-    const idx = heap_next;
-    heap_next = heap[idx];
-
-    heap[idx] = obj;
-    return idx;
-}
-
 let cachedFloat64Memory0 = null;
 
 function getFloat64Memory0() {
@@ -129,6 +120,15 @@ function getFloat64Memory0() {
         cachedFloat64Memory0 = new Float64Array(wasm.memory.buffer);
     }
     return cachedFloat64Memory0;
+}
+
+let cachedTextDecoder = new TextDecoder("utf-8", { ignoreBOM: true, fatal: true });
+
+cachedTextDecoder.decode();
+
+function getStringFromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
 
 let cachedBigInt64Memory0 = null;
@@ -287,35 +287,6 @@ function passArray8ToWasm0(arg, malloc) {
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
-/**
- * seraches for a meta for a given hash in the given subgraphs
- * @param {string} hash
- * @param {(string)[]} subgraphs
- * @returns {Promise<Uint8Array>}
- */
-module.exports.searchMeta = function (hash, subgraphs) {
-    const ptr0 = passStringToWasm0(hash, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passArrayJsValueToWasm0(subgraphs, wasm.__wbindgen_malloc);
-    const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.searchMeta(ptr0, len0, ptr1, len1);
-    return takeObject(ret);
-};
-
-/**
- * seraches for a ExpressionDeployer reproducible data for a given hash in the given subgraphs
- * @param {string} hash
- * @param {(string)[]} subgraphs
- * @returns {Promise<DeployerQueryResponse>}
- */
-module.exports.searchDeployer = function (hash, subgraphs) {
-    const ptr0 = passStringToWasm0(hash, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passArrayJsValueToWasm0(subgraphs, wasm.__wbindgen_malloc);
-    const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.searchDeployer(ptr0, len0, ptr1, len1);
-    return takeObject(ret);
-};
 
 function getArrayU8FromWasm0(ptr, len) {
     ptr = ptr >>> 0;
@@ -423,6 +394,36 @@ module.exports.getDeployedBytecodeMetaHash = function (deployed_bytecode) {
     }
 };
 
+/**
+ * seraches for a meta for a given hash in the given subgraphs
+ * @param {string} hash
+ * @param {(string)[]} subgraphs
+ * @returns {Promise<Uint8Array>}
+ */
+module.exports.searchMeta = function (hash, subgraphs) {
+    const ptr0 = passStringToWasm0(hash, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passArrayJsValueToWasm0(subgraphs, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.searchMeta(ptr0, len0, ptr1, len1);
+    return takeObject(ret);
+};
+
+/**
+ * seraches for a ExpressionDeployer reproducible data for a given hash in the given subgraphs
+ * @param {string} hash
+ * @param {(string)[]} subgraphs
+ * @returns {Promise<DeployerQueryResponse>}
+ */
+module.exports.searchDeployer = function (hash, subgraphs) {
+    const ptr0 = passStringToWasm0(hash, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passArrayJsValueToWasm0(subgraphs, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.searchDeployer(ptr0, len0, ptr1, len1);
+    return takeObject(ret);
+};
+
 function handleError(f, args) {
     try {
         return f.apply(this, args);
@@ -469,6 +470,8 @@ module.exports.ErrorCode = Object.freeze({
     11: "InconsumableMeta",
     NamespaceOccupied: 12,
     12: "NamespaceOccupied",
+    NativeParserError: 13,
+    13: "NativeParserError",
     UndefinedWord: 257,
     257: "UndefinedWord",
     UndefinedAuthoringMeta: 258,
@@ -1760,6 +1763,11 @@ module.exports.__wbindgen_object_drop_ref = function (arg0) {
     takeObject(arg0);
 };
 
+module.exports.__wbindgen_number_new = function (arg0) {
+    const ret = arg0;
+    return addHeapObject(ret);
+};
+
 module.exports.__wbindgen_string_get = function (arg0, arg1) {
     const obj = getObject(arg1);
     const ret = typeof obj === "string" ? obj : undefined;
@@ -1769,11 +1777,6 @@ module.exports.__wbindgen_string_get = function (arg0, arg1) {
     var len1 = WASM_VECTOR_LEN;
     getInt32Memory0()[arg0 / 4 + 1] = len1;
     getInt32Memory0()[arg0 / 4 + 0] = ptr1;
-};
-
-module.exports.__wbindgen_error_new = function (arg0, arg1) {
-    const ret = new Error(getStringFromWasm0(arg0, arg1));
-    return addHeapObject(ret);
 };
 
 module.exports.__wbindgen_is_string = function (arg0) {
@@ -1791,21 +1794,6 @@ module.exports.__wbindgen_cb_drop = function (arg0) {
     return ret;
 };
 
-module.exports.__wbindgen_number_new = function (arg0) {
-    const ret = arg0;
-    return addHeapObject(ret);
-};
-
-module.exports.__wbg_raindocument_new = function (arg0) {
-    const ret = RainDocument.__wrap(arg0);
-    return addHeapObject(ret);
-};
-
-module.exports.__wbindgen_object_clone_ref = function (arg0) {
-    const ret = getObject(arg0);
-    return addHeapObject(ret);
-};
-
 module.exports.__wbindgen_number_get = function (arg0, arg1) {
     const obj = getObject(arg1);
     const ret = typeof obj === "number" ? obj : undefined;
@@ -1813,9 +1801,14 @@ module.exports.__wbindgen_number_get = function (arg0, arg1) {
     getInt32Memory0()[arg0 / 4 + 0] = !isLikeNone(ret);
 };
 
-module.exports.__wbindgen_as_number = function (arg0) {
-    const ret = +getObject(arg0);
-    return ret;
+module.exports.__wbindgen_error_new = function (arg0, arg1) {
+    const ret = new Error(getStringFromWasm0(arg0, arg1));
+    return addHeapObject(ret);
+};
+
+module.exports.__wbg_raindocument_new = function (arg0) {
+    const ret = RainDocument.__wrap(arg0);
+    return addHeapObject(ret);
 };
 
 module.exports.__wbindgen_string_new = function (arg0, arg1) {
@@ -1863,6 +1856,16 @@ module.exports.__wbindgen_in = function (arg0, arg1) {
 module.exports.__wbindgen_is_undefined = function (arg0) {
     const ret = getObject(arg0) === undefined;
     return ret;
+};
+
+module.exports.__wbindgen_as_number = function (arg0) {
+    const ret = +getObject(arg0);
+    return ret;
+};
+
+module.exports.__wbindgen_object_clone_ref = function (arg0) {
+    const ret = getObject(arg0);
+    return addHeapObject(ret);
 };
 
 module.exports.__wbindgen_jsval_loose_eq = function (arg0, arg1) {
@@ -2252,8 +2255,8 @@ module.exports.__wbindgen_memory = function () {
     return addHeapObject(ret);
 };
 
-module.exports.__wbindgen_closure_wrapper4775 = function (arg0, arg1, arg2) {
-    const ret = makeMutClosure(arg0, arg1, 1762, __wbg_adapter_50);
+module.exports.__wbindgen_closure_wrapper4920 = function (arg0, arg1, arg2) {
+    const ret = makeMutClosure(arg0, arg1, 1776, __wbg_adapter_50);
     return addHeapObject(ret);
 };
 

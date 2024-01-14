@@ -1,7 +1,9 @@
 // #![allow(non_snake_case)]
 
 use regex::Regex;
-use lsp_types::Url;
+use lsp_types::{Url, Position};
+use crate::types::ast::ErrorCode;
+
 use self::evm_helpers::*;
 use alloy_sol_types::{SolCall, SolInterface};
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
@@ -26,7 +28,10 @@ use super::{
             NamespaceNodeElement,
         },
     },
-    parser::{RainlangDocument, RainDocument, exclusive_parse, binary_to_u256},
+    parser::{
+        RainlangDocument, RainDocument, exclusive_parse, binary_to_u256, to_u256, PositionAt,
+        OffsetAt,
+    },
 };
 
 pub mod evm_helpers;
@@ -453,7 +458,7 @@ impl RainDocument {
                     n,
                     &n.element.content,
                     generator.to_string(),
-                    generator.generate_decoded_map(opts).or(Err(
+                    generator.generate_decoded_map(opts.clone()).or(Err(
                         RainDocumentCompileError::Reject("cannot build sourcemap".to_owned()),
                     ))?,
                     offset,
@@ -485,6 +490,54 @@ impl RainDocument {
             },
             None,
         );
+
+        let error = match generated_rainlang.compile(&self.deployer, None) {
+            Err(e) => Some((format!("Compiler panicked with : {}", e), -1i64)),
+            Ok(v) => match v {
+                ParseResult::Success(_) => None,
+                ParseResult::Halt(h) => Some((format!("Compiler panicked with : {:?}", h), -1i64)),
+                ParseResult::Revert(r) => Some(r.to_rd_format()),
+            },
+        };
+
+        let _x = if let Some((msg, offset)) = error {
+            if offset == -1 {
+                Problem {
+                    msg,
+                    position: [0, 0],
+                    code: ErrorCode::NativeParserError,
+                }
+            } else {
+                let smp = sourcemaps
+                    .iter()
+                    .find(|v| v.4 <= offset as usize && v.4 + v.2.len() > offset as usize)
+                    .unwrap();
+                if smp.0.import_index != -1 {
+                    Problem {
+                        msg,
+                        position: [0, 0],
+                        code: ErrorCode::NativeParserError,
+                    }
+                } else {
+                    let raw_offset = offset as usize - smp.4;
+                    let raw_pos = smp.2.position_at(raw_offset);
+                    let org_raw_pos = find_original_pos(&smp.3, raw_pos.line, raw_pos.character);
+                    let org_offset =
+                        smp.1.offset_at(&org_raw_pos) + smp.0.element.content_position[0];
+                    Problem {
+                        msg,
+                        position: [org_offset, org_offset],
+                        code: ErrorCode::NativeParserError,
+                    }
+                }
+            }
+        } else {
+            Problem {
+                msg: "none none!".to_owned(),
+                position: [0, 0],
+                code: ErrorCode::NativeParserError,
+            }
+        };
 
         match generated_rainlang.compile(&self.deployer, evm) {
             Err(e) => Err(RainDocumentCompileError::Reject(e.to_string())),
@@ -681,4 +734,26 @@ fn build_sourcemap(
         }
     }
     Ok(())
+}
+
+fn find_original_pos(decoded_map: &DecodedMap, line: u32, column: u32) -> Position {
+    let mut acc = 0;
+    let mut character = 0;
+    let map = &decoded_map.mappings[line as usize];
+    for m in &map[1..] {
+        match acc.cmp(&column.into()) {
+            std::cmp::Ordering::Less => {
+                character += m[3] as u32;
+                acc += m[0];
+            }
+            std::cmp::Ordering::Equal => {
+                return Position {
+                    line,
+                    character: character + m[3] as u32,
+                }
+            }
+            std::cmp::Ordering::Greater => return Position { line, character },
+        };
+    }
+    Position { line, character }
 }

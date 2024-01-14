@@ -35,6 +35,7 @@ pub enum ErrorCode {
     SingleWordModify = 10,
     InconsumableMeta = 11,
     NamespaceOccupied = 12,
+    NativeParserError = 13,
 
     UndefinedWord = 0x101,
     UndefinedAuthoringMeta = 0x102,

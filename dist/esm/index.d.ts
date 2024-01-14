@@ -18,20 +18,6 @@ export * from "vscode-languageserver-protocol";
 export declare function rainlang(stringChunks: TemplateStringsArray, ...vars: any[]): string;
 
 /**
- * seraches for a meta for a given hash in the given subgraphs
- * @param {string} hash
- * @param {(string)[]} subgraphs
- * @returns {Promise<Uint8Array>}
- */
-export function searchMeta(hash: string, subgraphs: string[]): Promise<Uint8Array>;
-/**
- * seraches for a ExpressionDeployer reproducible data for a given hash in the given subgraphs
- * @param {string} hash
- * @param {(string)[]} subgraphs
- * @returns {Promise<DeployerQueryResponse>}
- */
-export function searchDeployer(hash: string, subgraphs: string[]): Promise<DeployerQueryResponse>;
-/**
  * Calculates solidity keccak256 hash from the given data
  * @param {Uint8Array} data
  * @returns {Uint8Array}
@@ -63,6 +49,20 @@ export function hexlify(data: Uint8Array): string;
  */
 export function getDeployedBytecodeMetaHash(deployed_bytecode: Uint8Array): Uint8Array;
 /**
+ * seraches for a meta for a given hash in the given subgraphs
+ * @param {string} hash
+ * @param {(string)[]} subgraphs
+ * @returns {Promise<Uint8Array>}
+ */
+export function searchMeta(hash: string, subgraphs: string[]): Promise<Uint8Array>;
+/**
+ * seraches for a ExpressionDeployer reproducible data for a given hash in the given subgraphs
+ * @param {string} hash
+ * @param {(string)[]} subgraphs
+ * @returns {Promise<DeployerQueryResponse>}
+ */
+export function searchDeployer(hash: string, subgraphs: string[]): Promise<DeployerQueryResponse>;
+/**
  * Error codes of Rainlang/RainDocument problem and LSP Diagnostics
  */
 export enum ErrorCode {
@@ -79,6 +79,7 @@ export enum ErrorCode {
     SingleWordModify = 10,
     InconsumableMeta = 11,
     NamespaceOccupied = 12,
+    NativeParserError = 13,
     UndefinedWord = 257,
     UndefinedAuthoringMeta = 258,
     UndefinedMeta = 259,
@@ -128,19 +129,6 @@ export enum ErrorCode {
     DuplicateImportStatement = 1795,
     DuplicateImport = 1796,
 }
-export interface ExpressionConfig {
-    bytecode: string;
-    constants: string[];
-}
-
-export type RainDocumentCompileError =
-    | { Reject: string }
-    | { Problems: Problem[] }
-    | { Revert: any }
-    | { Halt: any };
-
-export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
-
 export type Offsets = [number, number];
 
 export type ParsedItem = [string, Offsets];
@@ -284,190 +272,6 @@ export interface ContextAlias {
     description: string;
     column: number;
     row: number | undefined;
-}
-
-export interface IRainDocument {
-    version: number;
-    uri: string;
-    text: string;
-    error: string | undefined;
-    bindings: Binding[];
-    imports: Import[];
-    comments: Comment[];
-    problems: Problem[];
-    importDepth: number;
-    ignoreWords: boolean;
-    ignoreUndefinedWords: boolean;
-    namespace: Namespace;
-    authoringMeta: IAuthoringMeta | undefined;
-    deployer: INPE2Deployer;
-}
-
-/**
- * In-memory CAS (content addressed storage) for all metadata required for parsing
- * a RainDocument which basically stores k/v pairs of meta hash, meta bytes and
- * ExpressionDeployer reproducible data as well as providing functionalities to easliy
- * read them from the CAS.
- *
- * Hashes are stored as bytes of the underlying value and meta bytes are valid cbor
- * encoded as Uint8Array. ExpressionDeployers data are in form of js object mapped to
- * deployedBytecode meta hash and deploy transaction hash.
- *
- * @example
- * ```typescript
- * // to instantiate with including default subgraphs
- * // pass 'false' to not include default rain subgraph endpoints
- * const store = new MetaStore();
- *
- * // or to instantiate with initial arguments
- * const store = MetaStore.create(options);
- *
- * // add a new subgraph endpoint URLs
- * store.addSubgraphs(["sg-url-1", "sg-url-2", ...])
- *
- * // merge another MetaStore instance to this instance
- * store.merge(anotherMetaStore)
- *
- * // updates the meta store with a new meta by searching through subgraphs
- * await store.update(hash)
- *
- * // to get a meta bytes of a corresponding hash from store
- * const meta = store.getMeta(hash);
- * ```
- */
-export class MetaStore {
-    free(): void;
-
-    /**
-     * Creates new instance of Store with given initial values,
-     * it checks the validity of each item and only stores those that are valid
-     * @param {MetaStoreOptions} options - initial values
-     * @returns {MetaStore}
-     */
-    static create(options: MetaStoreOptions): MetaStore;
-
-    /**
-     * Constructs a new instance
-     * @param include_rain_subgraphs - (optional) if default Rain subgraphs should be included
-     */
-    constructor(include_rain_subgraphs?: boolean);
-
-    /**
-     * All subgraph endpoint URLs of this instance
-     */
-    readonly subgraphs: string[];
-    /**
-     * All the cached meta hash/bytes pairs
-     */
-    readonly cache: Map<Uint8Array, Uint8Array>;
-    /**
-     * All the cached dotrain uri/meta hash pairs
-     */
-    readonly dotrainCache: Map<string, Uint8Array>;
-    /**
-     * All the cached NPE2 deployers
-     */
-    readonly deployerCache: Map<Uint8Array, INPE2Deployer>;
-
-    /**
-     * Merges another instance of MetaStore to this instance lazily, avoids duplicates
-     * @param {MetaStore} other
-     */
-    merge(other: MetaStore): void;
-    /**
-     * Adds new subgraph endpoints
-     * @param {string[]} subgraphs
-     */
-    addSubgraphs(subgraphs: string[]): void;
-    /**
-     * Get the corresponding meta bytes of the given hash if it is cached
-     * @param {Uint8Array} hash
-     * @returns {Uint8Array | undefined}
-     */
-    getMeta(hash: Uint8Array): Uint8Array | undefined;
-    /**
-     * Get the corresponding dotrain hash of the given dotrain uri if it is cached
-     * @param {string} uri
-     * @returns {Uint8Array | undefined}
-     */
-    getDotrainHash(uri: string): Uint8Array | undefined;
-    /**
-     * Get the corresponding uri of the given dotrain hash if it is cached
-     * @param {Uint8Array} hash
-     * @returns {string | undefined}
-     */
-    getDotrainUri(hash: Uint8Array): string | undefined;
-    /**
-     * Get the corresponding meta bytes of the given dotrain uri if it is cached
-     * @param {string} uri
-     * @returns {Uint8Array | undefined}
-     */
-    getDotrainMeta(uri: string): Uint8Array | undefined;
-    /**
-     * Deletes a dotrain record given its uri
-     * @param {string} uri
-     */
-    deleteDotrain(uri: string, keep_meta: boolean): void;
-    /**
-     * Get the NPE2 deployer details of the given deployer bytecode hash if it is cached
-     * @param {Uint8Array} hash
-     * @returns {INPE2Deployer | undefined}
-     */
-    getDeployer(hash: Uint8Array): INPE2Deployer | undefined;
-    /**
-     * Stores (or updates in case the URI already exists) the given dotrain text as meta into the store cache
-     * and maps it to the given uri (path), it should be noted that reading the content of the dotrain is not in
-     * the scope of MetaStore and handling and passing on a correct URI for the given text must be handled
-     * externally by the implementer
-     * @param {string} text
-     * @param {string} uri
-     * @param {boolean} keep_old - keeps the old dotrain meta in the cache
-     * @returns {Uint8Array[]} new hash and old hash if the given uri was already cached
-     */
-    setDotrain(text: string, uri: string, keep_old: boolean): Uint8Array[];
-    /**
-     * Sets deployer record
-     * @param {DeployerQueryResponse} deployer_response
-     */
-    setDeployer(deployer_response: DeployerQueryResponse): INPE2Deployer;
-    /**
-     * Updates the meta cache by the given hash and meta bytes, checks the hash to bytes validity
-     * @param {Uint8Array} hash
-     * @param {Uint8Array} bytes
-     */
-    updateWith(hash: Uint8Array, bytes: Uint8Array): void;
-    /**
-     * Updates the meta cache by searching through all subgraphs for the given hash
-     * @param {Uint8Array} hash
-     * @returns {Promise<Uint8Array | undefined>}
-     */
-    update(hash: Uint8Array): Promise<Uint8Array | undefined>;
-    /**
-     * First checks if the meta is stored and returns it if so, else will perform update()
-     * @param {Uint8Array} hash
-     * @returns {Promise<Uint8Array | undefined>}
-     */
-    updateCheck(hash: Uint8Array): Promise<Uint8Array | undefined>;
-    /**
-     * Searches for NPE2 deployer details in the subgraphs given the deployer hash
-     * @param {Uint8Array} hash
-     * @returns {Promise<INPE2Deployer | undefined>}
-     */
-    searchDeployer(hash: Uint8Array): Promise<INPE2Deployer | undefined>;
-    /**
-     * If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
-     * @param {Uint8Array} hash
-     * @returns {Promise<INPE2Deployer | undefined>}
-     */
-    searchDeployerCheck(hash: Uint8Array): Promise<INPE2Deployer | undefined>;
-}
-
-export interface MetaStoreOptions {
-    subgraphs?: string[];
-    cache?: Map<Uint8Array, Uint8Array>;
-    deployerCache?: Map<Uint8Array, INPE2Deployer>;
-    dotrainCache?: Map<string, Uint8Array>;
-    includeRainSubgraphs?: boolean;
 }
 
 /**
@@ -660,6 +464,203 @@ export interface IRainlangDocument {
     error: string | undefined;
     ignoreUndefinedAuthoringMeta: boolean;
 }
+
+/**
+ * In-memory CAS (content addressed storage) for all metadata required for parsing
+ * a RainDocument which basically stores k/v pairs of meta hash, meta bytes and
+ * ExpressionDeployer reproducible data as well as providing functionalities to easliy
+ * read them from the CAS.
+ *
+ * Hashes are stored as bytes of the underlying value and meta bytes are valid cbor
+ * encoded as Uint8Array. ExpressionDeployers data are in form of js object mapped to
+ * deployedBytecode meta hash and deploy transaction hash.
+ *
+ * @example
+ * ```typescript
+ * // to instantiate with including default subgraphs
+ * // pass 'false' to not include default rain subgraph endpoints
+ * const store = new MetaStore();
+ *
+ * // or to instantiate with initial arguments
+ * const store = MetaStore.create(options);
+ *
+ * // add a new subgraph endpoint URLs
+ * store.addSubgraphs(["sg-url-1", "sg-url-2", ...])
+ *
+ * // merge another MetaStore instance to this instance
+ * store.merge(anotherMetaStore)
+ *
+ * // updates the meta store with a new meta by searching through subgraphs
+ * await store.update(hash)
+ *
+ * // to get a meta bytes of a corresponding hash from store
+ * const meta = store.getMeta(hash);
+ * ```
+ */
+export class MetaStore {
+    free(): void;
+
+    /**
+     * Creates new instance of Store with given initial values,
+     * it checks the validity of each item and only stores those that are valid
+     * @param {MetaStoreOptions} options - initial values
+     * @returns {MetaStore}
+     */
+    static create(options: MetaStoreOptions): MetaStore;
+
+    /**
+     * Constructs a new instance
+     * @param include_rain_subgraphs - (optional) if default Rain subgraphs should be included
+     */
+    constructor(include_rain_subgraphs?: boolean);
+
+    /**
+     * All subgraph endpoint URLs of this instance
+     */
+    readonly subgraphs: string[];
+    /**
+     * All the cached meta hash/bytes pairs
+     */
+    readonly cache: Map<Uint8Array, Uint8Array>;
+    /**
+     * All the cached dotrain uri/meta hash pairs
+     */
+    readonly dotrainCache: Map<string, Uint8Array>;
+    /**
+     * All the cached NPE2 deployers
+     */
+    readonly deployerCache: Map<Uint8Array, INPE2Deployer>;
+
+    /**
+     * Merges another instance of MetaStore to this instance lazily, avoids duplicates
+     * @param {MetaStore} other
+     */
+    merge(other: MetaStore): void;
+    /**
+     * Adds new subgraph endpoints
+     * @param {string[]} subgraphs
+     */
+    addSubgraphs(subgraphs: string[]): void;
+    /**
+     * Get the corresponding meta bytes of the given hash if it is cached
+     * @param {Uint8Array} hash
+     * @returns {Uint8Array | undefined}
+     */
+    getMeta(hash: Uint8Array): Uint8Array | undefined;
+    /**
+     * Get the corresponding dotrain hash of the given dotrain uri if it is cached
+     * @param {string} uri
+     * @returns {Uint8Array | undefined}
+     */
+    getDotrainHash(uri: string): Uint8Array | undefined;
+    /**
+     * Get the corresponding uri of the given dotrain hash if it is cached
+     * @param {Uint8Array} hash
+     * @returns {string | undefined}
+     */
+    getDotrainUri(hash: Uint8Array): string | undefined;
+    /**
+     * Get the corresponding meta bytes of the given dotrain uri if it is cached
+     * @param {string} uri
+     * @returns {Uint8Array | undefined}
+     */
+    getDotrainMeta(uri: string): Uint8Array | undefined;
+    /**
+     * Deletes a dotrain record given its uri
+     * @param {string} uri
+     */
+    deleteDotrain(uri: string, keep_meta: boolean): void;
+    /**
+     * Get the NPE2 deployer details of the given deployer bytecode hash if it is cached
+     * @param {Uint8Array} hash
+     * @returns {INPE2Deployer | undefined}
+     */
+    getDeployer(hash: Uint8Array): INPE2Deployer | undefined;
+    /**
+     * Stores (or updates in case the URI already exists) the given dotrain text as meta into the store cache
+     * and maps it to the given uri (path), it should be noted that reading the content of the dotrain is not in
+     * the scope of MetaStore and handling and passing on a correct URI for the given text must be handled
+     * externally by the implementer
+     * @param {string} text
+     * @param {string} uri
+     * @param {boolean} keep_old - keeps the old dotrain meta in the cache
+     * @returns {Uint8Array[]} new hash and old hash if the given uri was already cached
+     */
+    setDotrain(text: string, uri: string, keep_old: boolean): Uint8Array[];
+    /**
+     * Sets deployer record
+     * @param {DeployerQueryResponse} deployer_response
+     */
+    setDeployer(deployer_response: DeployerQueryResponse): INPE2Deployer;
+    /**
+     * Updates the meta cache by the given hash and meta bytes, checks the hash to bytes validity
+     * @param {Uint8Array} hash
+     * @param {Uint8Array} bytes
+     */
+    updateWith(hash: Uint8Array, bytes: Uint8Array): void;
+    /**
+     * Updates the meta cache by searching through all subgraphs for the given hash
+     * @param {Uint8Array} hash
+     * @returns {Promise<Uint8Array | undefined>}
+     */
+    update(hash: Uint8Array): Promise<Uint8Array | undefined>;
+    /**
+     * First checks if the meta is stored and returns it if so, else will perform update()
+     * @param {Uint8Array} hash
+     * @returns {Promise<Uint8Array | undefined>}
+     */
+    updateCheck(hash: Uint8Array): Promise<Uint8Array | undefined>;
+    /**
+     * Searches for NPE2 deployer details in the subgraphs given the deployer hash
+     * @param {Uint8Array} hash
+     * @returns {Promise<INPE2Deployer | undefined>}
+     */
+    searchDeployer(hash: Uint8Array): Promise<INPE2Deployer | undefined>;
+    /**
+     * If the NPE2 deployer is already cached it returns it immediately else performs searchDeployer()
+     * @param {Uint8Array} hash
+     * @returns {Promise<INPE2Deployer | undefined>}
+     */
+    searchDeployerCheck(hash: Uint8Array): Promise<INPE2Deployer | undefined>;
+}
+
+export interface MetaStoreOptions {
+    subgraphs?: string[];
+    cache?: Map<Uint8Array, Uint8Array>;
+    deployerCache?: Map<Uint8Array, INPE2Deployer>;
+    dotrainCache?: Map<string, Uint8Array>;
+    includeRainSubgraphs?: boolean;
+}
+
+export interface IRainDocument {
+    version: number;
+    uri: string;
+    text: string;
+    error: string | undefined;
+    bindings: Binding[];
+    imports: Import[];
+    comments: Comment[];
+    problems: Problem[];
+    importDepth: number;
+    ignoreWords: boolean;
+    ignoreUndefinedWords: boolean;
+    namespace: Namespace;
+    authoringMeta: IAuthoringMeta | undefined;
+    deployer: INPE2Deployer;
+}
+
+export interface ExpressionConfig {
+    bytecode: string;
+    constants: string[];
+}
+
+export type RainDocumentCompileError =
+    | { Reject: string }
+    | { Problems: Problem[] }
+    | { Revert: any }
+    | { Halt: any };
+
+export type ParseResult = { Success: ExpressionConfig } | { Revert: any } | { Halt: any };
 
 /**
  * Data structure of a parsed .rain text

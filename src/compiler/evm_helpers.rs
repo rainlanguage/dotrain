@@ -365,3 +365,31 @@ sol! {
         function eval2(address store, uint256 namespace, uint256 dispatch, uint256[][] context, uint256[] inputs) view returns (uint256[], uint256[]);
     }
 }
+
+impl INativeParserErrors {
+    pub fn to_rd_format(&self) -> (String, i64) {
+        let default = serde_json::Value::default();
+        let json_err = serde_json::to_value(self).unwrap_or(default);
+        let mut v: i64 = -1;
+        if let serde_json::Value::Object(obj) = json_err {
+            let mut msg = "Compiler panicked with: ".to_owned();
+            if let Some((key, value)) = obj.into_iter().next() {
+                if value["offset"].is_string() {
+                    v = crate::parser::to_u256(value["offset"].as_str().unwrap())
+                        .unwrap_or(alloy_primitives::U256::ZERO)
+                        .to::<i64>();
+                } else if value["offset"].is_number() {
+                    v = value["offset"].as_number().unwrap().as_i64().unwrap();
+                } else if value["offset"].is_i64() {
+                    v = value["offset"].as_i64().unwrap();
+                };
+                msg += &key;
+                msg += "\n";
+                msg += &value.to_string();
+            }
+            (msg, v)
+        } else {
+            ("Compiler panicked without any msg".to_owned(), v)
+        }
+    }
+}
