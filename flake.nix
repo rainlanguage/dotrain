@@ -1,28 +1,18 @@
 {
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    rust-overlay.url = "github:oxalica/rust-overlay";
-    rainix.url = "github:rainprotocol/rainix/0e292a0f56308bb35d4a51f6c3653aa65a926d35";
+    rainix.url = "github:rainprotocol/rainix/dc51d8875334c47256082363184b8e7d74ec456e";
   };
 
-  outputs = { self, flake-utils, rainix, rust-overlay }:
+  outputs = { self, flake-utils, rainix }:
 
   flake-utils.lib.eachDefaultSystem (system:
     let
-
-      overlays = [ (import rust-overlay) ];
-
-      rust-version = "1.75.0";
-
-      rust-toolchain = rainix.pkgs.rust-bin.stable.${rust-version}.default.override {
-        targets = [ "wasm32-unknown-unknown" ];
-      };
-
     in rec {
       # # For `nix build` & `nix run`:
       defaultPackage = (rainix.pkgs.makeRustPlatform{
-        rustc = rust-toolchain;
-        cargo = rust-toolchain;
+        rustc = rainix.rust-toolchain;
+        cargo = rainix.rust-toolchain;
       }).buildRustPackage {
         src = ./.;
         doCheck = false;
