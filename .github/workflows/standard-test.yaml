@@ -9,10 +9,11 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Install Nix
+      - name: Install Nix 1/2
         uses: DeterminateSystems/nix-installer-action@v4
 
-      - uses: DeterminateSystems/magic-nix-cache-action@v2
+      - name: Install Nix 2/2
+        uses: DeterminateSystems/magic-nix-cache-action@v2
 
       - name: Build Rust Crate
         run: nix develop -c cargo build --all-features

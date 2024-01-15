@@ -49,11 +49,6 @@
         ] ++ lib.optionals stdenv.isDarwin [
           darwin.apple_sdk.frameworks.SystemConfiguration
         ];
-        # pname = "dotrain";
-        # version = "0.0.0";
-        # cargoBuildType = "release";
-        # cargoBuildFlags = [];
-        # cargoBuildFeatures = ["cli"];
       };
 
       # For `nix develop`:
