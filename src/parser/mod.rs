@@ -5,7 +5,7 @@ use revm::primitives::U256;
 use rain_meta::{RainMetaDocumentV1Item, KnownMagic};
 use super::types::{
     ast::{ParsedItem, Offsets},
-    patterns::{HEX_PATTERN, BINARY_PATTERN, E_PATTERN, INT_PATTERN},
+    patterns::{HEX_PATTERN, E_PATTERN, INT_PATTERN},
 };
 
 /// Trait for converting offset to lsp position (implemented for `&str` and `String`)
@@ -261,15 +261,6 @@ pub(crate) fn hex_to_u256(val: &str) -> Result<U256, Error> {
     Ok(U256::from_str_radix(hex, 16)?)
 }
 
-#[allow(clippy::manual_strip)]
-pub(crate) fn binary_to_u256(value: &str) -> Result<U256, Error> {
-    let mut binary = value;
-    if value.starts_with("0b") {
-        binary = &value[2..];
-    }
-    Ok(U256::from_str_radix(binary, 2)?)
-}
-
 pub(crate) fn e_to_u256(value: &str) -> Result<U256, Error> {
     let slices = value.split_once('e').unwrap();
     let int = slices.0.to_owned() + &"0".repeat(slices.1.parse()?);
@@ -277,16 +268,14 @@ pub(crate) fn e_to_u256(value: &str) -> Result<U256, Error> {
 }
 
 pub(crate) fn to_u256(value: &str) -> Result<U256, Error> {
-    if BINARY_PATTERN.is_match(value) {
-        Ok(binary_to_u256(value)?)
-    } else if E_PATTERN.is_match(value) {
+    if E_PATTERN.is_match(value) {
         Ok(e_to_u256(value)?)
     } else if INT_PATTERN.is_match(value) {
         Ok(U256::from_str_radix(value, 10)?)
     } else if HEX_PATTERN.is_match(value) {
         Ok(hex_to_u256(value)?)
     } else {
-        Err(Error::InvalidRainlangNumber)
+        Err(Error::InvalidNumbericValue)
     }
 }
 

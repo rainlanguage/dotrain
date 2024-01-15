@@ -6,21 +6,18 @@ use once_cell::sync::Lazy;
 /// Illegal character pattern
 pub static ILLEGAL_CHAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^ -~\s]+").unwrap());
 
-/// Rainlang word pattern
+/// word pattern
 pub static WORD_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][0-9a-z-]*$").unwrap());
 
 /// Import hash pattern
 pub static HASH_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]{64}$").unwrap());
 
-/// Rainlang numeric pattern
+/// numeric pattern
 pub static NUMERIC_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$|^0b[0-1]+$|^\d+$|^[1-9]\d*e\d+$").unwrap());
+    Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$").unwrap());
 
 /// Hex pattern
 pub static HEX_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$").unwrap());
-
-/// Binary pattern
-pub static BINARY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0b[0-1]+$").unwrap());
 
 /// e numberic pattern
 pub static E_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[1-9]\d*e\d+$").unwrap());
@@ -75,21 +72,27 @@ pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*
 /// the default elided binding msg
 pub static DEFAULT_ELISION: &str = "elided binding, requires rebinding";
 
-/// Lint patterns for RainDocument/RainlangDocument
+/// Lint patterns for RainDocument/RainlangDocument,
+/// these patterns should be wrapped in a [COMMENT_PATTERN](super::COMMENT_PATTERN) when used
 pub mod lint_patterns {
     use regex::Regex;
     use once_cell::sync::Lazy;
 
-    /// ignore next line
+    /// ignores next line diagnostics
     pub static IGNORE_NEXT_LINE: Lazy<Regex> =
         Lazy::new(|| Regex::new(r"\bignore-next-line\b").unwrap());
 
-    /// ignore words
-    pub static IGNORE_WORDS: Lazy<Regex> = Lazy::new(|| Regex::new(r"\bignore-words\b").unwrap());
-
-    /// ignore undefined words
+    /// ignores undefined words (ignores word sourced diagnostics if words are undefined)
+    /// undefined words happens when AuthoringMeta is not available for teh specified dispair
+    /// so without having AuthoringMeta, all opcodes are flagged as "unknown opcode" diagnostic
+    /// this linting option can be used to ignore and shut off those diagnostics
     pub static IGNORE_UNDEFINED_WORDS: Lazy<Regex> =
         Lazy::new(|| Regex::new(r"\bignore-undefined-words\b").unwrap());
+
+    /// ignores words related diagnostics
+    /// this is like [IGNORE_UNDEFINED_WORDS], except that it will ignore the AuthoringMeta related 
+    /// diagnostics completely, no matter if it is available or not
+    pub static IGNORE_WORDS: Lazy<Regex> = Lazy::new(|| Regex::new(r"\bignore-words\b").unwrap());
 }
 
 #[cfg(test)]
@@ -171,23 +174,6 @@ mod tests {
         for i in ["0x123abcd", "0x1234567890abcdef", "0x123AbcDeF"] {
             assert!(
                 HEX_PATTERN.is_match(i),
-                "String '{}' considered invalid.",
-                i
-            );
-        }
-
-        // invalids
-        for i in ["b101", "0b102", "123", "0x123abcd", "4e19"] {
-            assert!(
-                !BINARY_PATTERN.is_match(i),
-                "String '{}' considered valid.",
-                i
-            );
-        }
-        // valids
-        for i in ["0b101011100001011111010", "0b111111", "0b00000101"] {
-            assert!(
-                BINARY_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
                 i
             );
