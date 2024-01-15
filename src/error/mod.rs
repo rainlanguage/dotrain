@@ -22,7 +22,9 @@ impl std::fmt::Display for Error {
             Error::StateUpdateFailed => f.write_str("failed to update parse state"),
             Error::FailedToParse => f.write_str("failed to parse, something went wrong"),
             Error::DuplicateContextAliases => f.write_str("includes duplicate context aliases"),
-            Error::InvalidNumbericValue => f.write_str("does not follow rain numeric pattern and range"),
+            Error::InvalidNumbericValue => {
+                f.write_str("does not follow rain numeric pattern and range")
+            }
             Error::NoDatabaseAttached => f.write_str("evm instance has no database attached"),
             Error::InvalidExpressionDeployerData => {
                 f.write_str("cannot reproduce the ExpressionDeployer from the given data")

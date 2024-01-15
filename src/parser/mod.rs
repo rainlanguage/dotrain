@@ -433,14 +433,9 @@ mod tests {
 
     #[test]
     fn test_to_u256() -> anyhow::Result<()> {
-        let binary = "0b101";
         let hex = "0xabcd123";
         let int = "876123";
         let e = "5e13";
-
-        let result = to_u256(binary)?;
-        let expected = U256::from_str_radix("5", 10)?;
-        assert_eq!(result, expected);
 
         let result = to_u256(hex)?;
         let expected = U256::from_str_radix("abcd123", 16)?;

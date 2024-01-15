@@ -16,6 +16,10 @@ pub static HASH_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]{
 pub static NUMERIC_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$").unwrap());
 
+/// string literal pattern
+pub static STRING_LITERAL_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"^\"[\s\S]*?(?:\"|$)"#).unwrap());
+
 /// Hex pattern
 pub static HEX_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$").unwrap());
 
@@ -69,6 +73,13 @@ pub static ANY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\S+").unwrap());
 /// rainlang lhs pattern
 pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*$|^_$").unwrap());
 
+/// sub parser pattern
+pub static SUB_PARSER_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"^\[[\s\S]*?(?:\]|$)"#).unwrap());
+
+/// pragma pattern
+pub static PRAGMA_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new("using-words-from").unwrap());
+
 /// the default elided binding msg
 pub static DEFAULT_ELISION: &str = "elided binding, requires rebinding";
 
@@ -90,7 +101,7 @@ pub mod lint_patterns {
         Lazy::new(|| Regex::new(r"\bignore-undefined-words\b").unwrap());
 
     /// ignores words related diagnostics
-    /// this is like [IGNORE_UNDEFINED_WORDS], except that it will ignore the AuthoringMeta related 
+    /// this is like [IGNORE_UNDEFINED_WORDS], except that it will ignore the AuthoringMeta related
     /// diagnostics completely, no matter if it is available or not
     pub static IGNORE_WORDS: Lazy<Regex> = Lazy::new(|| Regex::new(r"\bignore-words\b").unwrap());
 }
@@ -306,6 +317,44 @@ mod tests {
         for i in ["abced67", "_", "as12-iuy-", "a12-456-678-"] {
             assert!(
                 LHS_PATTERN.is_match(i),
+                "String '{}' considered invalid.",
+                i
+            );
+        }
+
+        // invalids
+        for i in [r#"'ksdf iydsf'"#, r#"`ksdf iydsf`"#, r#"'ksdf iydsf""#] {
+            assert!(
+                !STRING_LITERAL_PATTERN.is_match(i),
+                "String '{}' considered valid.",
+                i
+            );
+        }
+        // valids
+        for i in [r#""ksdf iydsf""#, r#""ksdf iydsf"#] {
+            assert!(
+                STRING_LITERAL_PATTERN.is_match(i),
+                "String '{}' considered invalid.",
+                i
+            );
+        }
+
+        // invalids
+        for i in ["{123 jhgsdf}", "jkshdfksd kjshdfi ]", "(khku dtdyt 654)"] {
+            assert!(
+                !SUB_PARSER_PATTERN.is_match(i),
+                "String '{}' considered valid.",
+                i
+            );
+        }
+        // valids
+        for i in [
+            "[asd wer 123 34 fgh ]",
+            "[sdfjkh iuysf idsf 1231- -",
+            "[kjsdf 89435 #$^&$ )_)_}{}]",
+        ] {
+            assert!(
+                SUB_PARSER_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
                 i
             );
