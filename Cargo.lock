@@ -801,6 +801,7 @@ dependencies = [
  "lsp-types",
  "magic_string",
  "once_cell",
+ "proptest",
  "rain-meta",
  "regex",
  "revm",
