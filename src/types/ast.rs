@@ -41,6 +41,7 @@ pub enum ErrorCode {
     UndefinedOpcode = 0x105,
     UndefinedIdentifier = 0x106,
     UndefinedDeployer = 0x107,
+    UndefinedNamespaceMember = 0x108,
 
     InvalidWordPattern = 0x201,
     InvalidExpression = 0x202,
@@ -62,7 +63,7 @@ pub enum ErrorCode {
     UnexpectedClosingAngleParen = 0x305,
     UnexpectedEndOfComment = 0x306,
     UnexpectedComment = 0x307,
-    UndefinedNamespaceMember = 0x308,
+    UnexpectedPragma = 0x308,
 
     ExpectedOpcode = 0x401,
     ExpectedSpace = 0x402,
@@ -72,7 +73,7 @@ pub enum ErrorCode {
     ExpectedClosingAngleBracket = 0x406,
     ExpectedName = 0x407,
     ExpectedSemi = 0x408,
-    ExpectedHash = 0x409,
+    ExpectedHexLiteral = 0x409,
     ExpectedOperandArgs = 0x410,
     ExpectedRename = 0x411,
 
@@ -137,7 +138,7 @@ pub struct Problem {
     derive(Tsify),
     tsify(into_wasm_abi, from_wasm_abi)
 )]
-pub struct Value {
+pub struct Literal {
     pub value: String,
     pub position: Offsets,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -340,7 +341,7 @@ pub struct ImportConfiguration {
     tsify(into_wasm_abi, from_wasm_abi)
 )]
 pub enum Node {
-    Value(Value),
+    Value(Literal),
     Opcode(Opcode),
     Alias(Alias),
 }

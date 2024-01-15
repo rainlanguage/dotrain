@@ -3,6 +3,12 @@
 use regex::Regex;
 use once_cell::sync::Lazy;
 
+/// pragma keyword in rainlang
+pub const PRAGMA_KEYWORD: &str = "using-words-from";
+
+/// reserved keywords in rainlang
+pub const KEYWORDS: [&str; 1] = [PRAGMA_KEYWORD];
+
 /// Illegal character pattern
 pub static ILLEGAL_CHAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^ -~\s]+").unwrap());
 
@@ -76,8 +82,9 @@ pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*
 /// sub parser pattern
 pub static SUB_PARSER_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[\s\S]*?\]$"#).unwrap());
 
-/// pragma pattern
-pub static PRAGMA_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new("using-words-from").unwrap());
+/// pragma pattern (keyword + ws + hex)
+pub static PRAGMA_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\busing-words-from(\s+0x[0-9a-fA-F]*)?\b").unwrap());
 
 /// the default elided binding msg
 pub static DEFAULT_ELISION: &str = "elided binding, requires rebinding";
@@ -354,6 +361,31 @@ mod tests {
         ] {
             assert!(
                 SUB_PARSER_PATTERN.is_match(i),
+                "String '{}' considered invalid.",
+                i
+            );
+        }
+
+        // invalids
+        for i in [
+            "using-words-from \n\t 123",
+            "using-word-from 0x123",
+            "using-words-from \n\n 12e12",
+            "using-words-from \n\t 0x123abcedf09835356abcdef8476593gh",
+        ] {
+            assert!(
+                !PRAGMA_PATTERN.is_match(i),
+                "String '{}' considered valid.",
+                i
+            );
+        }
+        // valids
+        for i in [
+            "using-words-from \n\t 0x123abcedf",
+            "using-words-from \n\t 0x09835356abcdef84765932342efabcd72305471",
+        ] {
+            assert!(
+                PRAGMA_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
                 i
             );

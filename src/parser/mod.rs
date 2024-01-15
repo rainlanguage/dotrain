@@ -9,10 +9,8 @@ use super::types::{
 };
 
 pub(crate) mod rainlangdocument;
-pub(crate) mod raindocument;
 
 pub use self::rainlangdocument::*;
-pub use self::raindocument::*;
 
 /// Trait for converting offset to lsp position (implemented for `&str` and `String`)
 pub trait PositionAt {

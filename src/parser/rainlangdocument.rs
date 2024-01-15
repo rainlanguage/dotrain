@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use rain_meta::types::authoring::v1::AuthoringMeta;
 use super::{
-    raindocument::RAIN_DOCUMENT_CONSTANTS,
     super::{
         error::Error,
         types::{ast::*, patterns::*},
@@ -189,7 +188,7 @@ impl RainlangDocument {
             });
             return Ok(());
         } else {
-            for v in inclusive_parse(&document, &COMMENT_PATTERN, 0).iter() {
+            for v in inclusive_parse(&document, &COMMENT_PATTERN, 0) {
                 if !v.0.ends_with("*/") {
                     self.problems.push(Problem {
                         msg: "unexpected end of comment".to_owned(),
@@ -203,6 +202,27 @@ impl RainlangDocument {
                 });
                 fill_in(&mut document, v.1)?;
             }
+        }
+
+        // parse and take out pragma definistions
+        // currently not part of ast
+        let end_pattern = regex::Regex::new(r"0x[0-9a-fA-F]*$").unwrap();
+        for v in inclusive_parse(&document, &PRAGMA_PATTERN, 0) {
+            if !end_pattern.is_match(&v.0) {
+                self.problems.push(Problem {
+                    msg: "expected to be followed by a hex literal".to_owned(),
+                    position: v.1,
+                    code: ErrorCode::ExpectedHexLiteral,
+                });
+            }
+            if document[..v.1[0]].contains(':') {
+                self.problems.push(Problem {
+                    msg: "unexpected pragma, must be at top".to_owned(),
+                    position: v.1,
+                    code: ErrorCode::UnexpectedPragma,
+                });
+            }
+            fill_in(&mut document, v.1)?;
         }
 
         let mut src_items: Vec<String> = vec![];
@@ -235,8 +255,10 @@ impl RainlangDocument {
         }
 
         let mut reserved_keys = vec![];
+        // reserved keywords
+        reserved_keys.extend(KEYWORDS.iter().map(|v| v.to_string()));
+        // authoring meta words
         reserved_keys.extend(authoring_meta.0.iter().map(|v| v.word.clone()));
-        reserved_keys.extend(RAIN_DOCUMENT_CONSTANTS.iter().map(|v| v.0.to_owned()));
 
         for (i, src) in src_items.iter().enumerate() {
             let mut occupied_keys = vec![];
@@ -289,7 +311,7 @@ impl RainlangDocument {
                     // begin parsing LHS
                     if !lhs.is_empty() {
                         let lhs_items = inclusive_parse(lhs, &ANY_PATTERN, cursor_offset);
-                        for item in lhs_items.iter() {
+                        for item in lhs_items {
                             self.state.aliases.push(Alias {
                                 name: item.0.clone(),
                                 position: item.1,
@@ -485,7 +507,7 @@ impl RainlangDocument {
                 position: [pos, pos + slices.0.len() + 2],
                 args: vec![],
             });
-            for v in operand_args.iter() {
+            for v in operand_args {
                 if OPERAND_ARG_PATTERN.is_match(&v.0) {
                     let is_quote = v.0.starts_with('\'');
                     if is_quote {
@@ -672,7 +694,7 @@ impl RainlangDocument {
                     NamespaceSearchResult::Binding(b) => match &b.item {
                         BindingItem::Constant(c) => {
                             let value = c.value.to_owned();
-                            self.update_state(Node::Value(Value {
+                            self.update_state(Node::Value(Literal {
                                 id: Some(next.to_owned()),
                                 value,
                                 position: next_pos,
@@ -734,21 +756,21 @@ impl RainlangDocument {
                     code: ErrorCode::OutOfRangeValue,
                 });
             }
-            self.update_state(Node::Value(Value {
+            self.update_state(Node::Value(Literal {
+                value: next.to_owned(),
+                position: next_pos,
+                lhs_alias: None,
+                id: None,
+            }))?;
+        } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_PATTERN.is_match(next) {
+            self.update_state(Node::Value(Literal {
                 value: next.to_owned(),
                 position: next_pos,
                 lhs_alias: None,
                 id: None,
             }))?;
         } else if WORD_PATTERN.is_match(next) {
-            if let Some(c) = RAIN_DOCUMENT_CONSTANTS.iter().find(|&&v| v.0 == next) {
-                self.update_state(Node::Value(Value {
-                    value: c.1.to_owned(),
-                    position: next_pos,
-                    lhs_alias: None,
-                    id: Some(next.to_owned()),
-                }))?;
-            } else if self.state.aliases.iter().any(|v| v.name == next) {
+            if self.state.aliases.iter().any(|v| v.name == next) {
                 self.problems.push(Problem {
                     msg: "cannot reference self".to_owned(),
                     position: next_pos,
@@ -774,7 +796,7 @@ impl RainlangDocument {
                     NamespaceItem::Node(node) => match &node.element {
                         NamespaceNodeElement::Binding(b) => match &b.item {
                             BindingItem::Constant(c) => {
-                                self.update_state(Node::Value(Value {
+                                self.update_state(Node::Value(Literal {
                                     value: c.value.clone(),
                                     position: next_pos,
                                     lhs_alias: None,
@@ -990,7 +1012,7 @@ mod tests {
         let mut rl = RainlangDocument::default();
         rl.state.depth = 1;
         rl.state.parens.close = vec![13];
-        let value_node = Node::Value(Value {
+        let value_node = Node::Value(Literal {
             value: "12".to_owned(),
             position: [3, 4],
             lhs_alias: None,
@@ -1007,13 +1029,13 @@ mod tests {
             position: [5, 0],
             parens: [8, 0],
             parameters: vec![
-                Node::Value(Value {
+                Node::Value(Literal {
                     value: "1".to_owned(),
                     position: [9, 10],
                     lhs_alias: None,
                     id: None,
                 }),
-                Node::Value(Value {
+                Node::Value(Literal {
                     value: "2".to_owned(),
                     position: [11, 12],
                     lhs_alias: None,
@@ -1038,13 +1060,13 @@ mod tests {
             position: [5, 14],
             parens: [8, 13],
             parameters: vec![
-                Node::Value(Value {
+                Node::Value(Literal {
                     value: "1".to_owned(),
                     position: [9, 10],
                     lhs_alias: None,
                     id: None,
                 }),
-                Node::Value(Value {
+                Node::Value(Literal {
                     value: "2".to_owned(),
                     position: [11, 12],
                     lhs_alias: None,
