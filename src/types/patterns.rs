@@ -74,8 +74,7 @@ pub static ANY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\S+").unwrap());
 pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*$|^_$").unwrap());
 
 /// sub parser pattern
-pub static SUB_PARSER_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"^\[[\s\S]*?\]$"#).unwrap());
+pub static SUB_PARSER_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[\s\S]*?\]$"#).unwrap());
 
 /// pragma pattern
 pub static PRAGMA_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new("using-words-from").unwrap());
