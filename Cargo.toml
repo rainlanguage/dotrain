@@ -17,12 +17,6 @@ name = "dotrain"
 crate-type = ["rlib", "cdylib"]
 
 
-[[bin]]
-name = "dotrain"
-path = "src/main.rs"
-required-features = ["cli"]
-
-
 [dependencies]
 serde = "1.0.192"
 serde_json = "1.0.108"
