@@ -107,7 +107,56 @@ pub mod lint_patterns {
 
 #[cfg(test)]
 mod tests {
+    use std::any::Any;
+
     use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_regex_match(input in ".*") {
+            for pattern in [
+                &WORD_PATTERN,
+                &HASH_PATTERN,
+                &NUMERIC_PATTERN,
+                &STRING_LITERAL_PATTERN,
+                &HEX_PATTERN,
+                &E_PATTERN,
+                &INT_PATTERN,
+                &NAMESPACE_PATTERN,
+                &COMMENT_PATTERN,
+                &DEP_PATTERN,
+                &OPERAND_ARG_PATTERN,
+                &LHS_PATTERN,
+                &SUB_PARSER_PATTERN
+            ] {
+                let is_match = pattern.is_match(&input);
+                assert!(is_match, "Regex {:?} failed to match input: {}", pattern.as_str(), input);
+            };
+        }
+
+        #[test]
+        fn test_regex_no_match(input in ".*") {
+            for pattern in [
+                &WORD_PATTERN,
+                &HASH_PATTERN,
+                &NUMERIC_PATTERN,
+                &STRING_LITERAL_PATTERN,
+                &HEX_PATTERN,
+                &E_PATTERN,
+                &INT_PATTERN,
+                &NAMESPACE_PATTERN,
+                &COMMENT_PATTERN,
+                &DEP_PATTERN,
+                &OPERAND_ARG_PATTERN,
+                &LHS_PATTERN,
+                &SUB_PARSER_PATTERN
+            ] {
+                let is_no_match = !pattern.is_match(&input);
+                assert!(is_no_match, "Regex {:?} incorrectly matched input: {}", pattern.as_str(), input);
+            };
+        }
+    }
 
     #[test]
     fn test_patterns() -> anyhow::Result<()> {
