@@ -18,7 +18,7 @@ pub static NUMERIC_PATTERN: Lazy<Regex> =
 
 /// string literal pattern
 pub static STRING_LITERAL_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"^\"[\s\S]*?(?:\"|$)"#).unwrap());
+    Lazy::new(|| Regex::new(r#"^\"[\s\S]*?\"$"#).unwrap());
 
 /// Hex pattern
 pub static HEX_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$").unwrap());
@@ -75,7 +75,7 @@ pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*
 
 /// sub parser pattern
 pub static SUB_PARSER_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"^\[[\s\S]*?(?:\]|$)"#).unwrap());
+    Lazy::new(|| Regex::new(r#"^\[[\s\S]*?\]$"#).unwrap());
 
 /// pragma pattern
 pub static PRAGMA_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new("using-words-from").unwrap());
@@ -331,7 +331,7 @@ mod tests {
             );
         }
         // valids
-        for i in [r#""ksdf iydsf""#, r#""ksdf iydsf"#] {
+        for i in [r#""ksdf iydsf""#, r#""ksdf #$%&$% ()( {} __!@ ksjdhf 487""#] {
             assert!(
                 STRING_LITERAL_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
@@ -350,7 +350,7 @@ mod tests {
         // valids
         for i in [
             "[asd wer 123 34 fgh ]",
-            "[sdfjkh iuysf idsf 1231- -",
+            "[sdfjkh iuysf idsf 1231- -]",
             "[kjsdf 89435 #$^&$ )_)_}{}]",
         ] {
             assert!(
