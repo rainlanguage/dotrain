@@ -1,30 +1,26 @@
 {
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     rust-overlay.url = "github:oxalica/rust-overlay";
+    rainix.url = "github:rainprotocol/rainix/0e292a0f56308bb35d4a51f6c3653aa65a926d35";
   };
 
-  outputs = { self, flake-utils, nixpkgs, rust-overlay }:
+  outputs = { self, flake-utils, rainix, rust-overlay }:
 
   flake-utils.lib.eachDefaultSystem (system:
     let
 
       overlays = [ (import rust-overlay) ];
 
-      pkgs = (import nixpkgs) {
-        inherit system overlays;
-      };
-
       rust-version = "1.75.0";
 
-      rust-toolchain = pkgs.rust-bin.stable.${rust-version}.default.override {
+      rust-toolchain = rainix.pkgs.rust-bin.stable.${rust-version}.default.override {
         targets = [ "wasm32-unknown-unknown" ];
       };
 
     in rec {
       # # For `nix build` & `nix run`:
-      defaultPackage = (pkgs.makeRustPlatform{
+      defaultPackage = (rainix.pkgs.makeRustPlatform{
         rustc = rust-toolchain;
         cargo = rust-toolchain;
       }).buildRustPackage {
@@ -41,10 +37,10 @@
           mkdir -p $out/bin
           cp target/release/dotrain $out/bin/
         '';
-        buildInputs = with pkgs; [ 
-          openssl 
+        buildInputs = with rainix.pkgs; [
+          openssl
         ];
-        nativeBuildInputs = with pkgs; [ 
+        nativeBuildInputs = with rainix.pkgs; [
           pkg-config
         ] ++ lib.optionals stdenv.isDarwin [
           darwin.apple_sdk.frameworks.SystemConfiguration
@@ -52,36 +48,7 @@
       };
 
       # For `nix develop`:
-      devShell = pkgs.mkShell {
-        nativeBuildInputs = [
-          rust-toolchain
-        ] ++ (with pkgs; [ 
-          openssl
-          pkg-config
-          nodejs-18_x
-          wasm-bindgen-cli
-          (writeShellScriptBin "flush" ''
-            rm -rf dist
-            rm -rf docs
-            rm -rf temp
-          '')
-          (writeShellScriptBin "hard-flush" ''
-            rm -rf dist
-            rm -rf docs
-            rm -rf temp
-            rm -rf target
-            rm -rf node_modules
-          '')
-          (writeShellScriptBin "hard-build" ''
-            hard-flush
-            npm install
-            npm run build
-          '')
-        ] ++ lib.optionals stdenv.isDarwin [
-          darwin.apple_sdk.frameworks.SystemConfiguration
-        ]);
-        # shellHook = '' npm install '';
-      };
+      devShells = rainix.devShells.${system};
     }
   );
 }
