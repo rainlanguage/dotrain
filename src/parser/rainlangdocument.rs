@@ -44,7 +44,6 @@ impl Default for RainlangState {
                 close: vec![],
             },
             depth: 0,
-            // error: None,
         }
     }
 }
@@ -179,6 +178,7 @@ impl RainlangDocument {
         let mut document = self.text.clone();
 
         // check for illegal characters
+        // ends the parsing if an illegal char is found
         let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
         if !illegal_chars.is_empty() {
             self.problems.push(Problem {
@@ -187,21 +187,22 @@ impl RainlangDocument {
                 code: ErrorCode::IllegalChar,
             });
             return Ok(());
-        } else {
-            for v in inclusive_parse(&document, &COMMENT_PATTERN, 0) {
-                if !v.0.ends_with("*/") {
-                    self.problems.push(Problem {
-                        msg: "unexpected end of comment".to_owned(),
-                        position: v.1,
-                        code: ErrorCode::UnexpectedEndOfComment,
-                    });
-                }
-                self.comments.push(Comment {
-                    comment: v.0.clone(),
+        };
+
+        // parse and take out comments
+        for v in inclusive_parse(&document, &COMMENT_PATTERN, 0) {
+            if !v.0.ends_with("*/") {
+                self.problems.push(Problem {
+                    msg: "unexpected end of comment".to_owned(),
                     position: v.1,
+                    code: ErrorCode::UnexpectedEndOfComment,
                 });
-                fill_in(&mut document, v.1)?;
             }
+            self.comments.push(Comment {
+                comment: v.0.clone(),
+                position: v.1,
+            });
+            fill_in(&mut document, v.1)?;
         }
 
         // parse and take out pragma definistions
@@ -261,6 +262,7 @@ impl RainlangDocument {
         reserved_keys.extend(authoring_meta.0.iter().map(|v| v.word.clone()));
 
         for (i, src) in src_items.iter().enumerate() {
+            // reserved keys + occupied namespace keys
             let mut occupied_keys = vec![];
             occupied_keys.extend(reserved_keys.iter().cloned());
             occupied_keys.extend(namespace.keys().cloned());
@@ -273,7 +275,7 @@ impl RainlangDocument {
                 position: src_items_pos[i],
             });
 
-            // parse and cache the sub-expressions
+            // parse and cache the sub-sources
             exclusive_parse(src, &SUB_SOURCE_PATTERN, src_items_pos[i][0], true)
                 .iter()
                 .for_each(|v| {
@@ -287,6 +289,7 @@ impl RainlangDocument {
                 self.reset_state();
                 let cursor_offset = sub_src_items_pos[j][0];
                 if !self.ast[i].lines.is_empty() {
+                    // add parsed lhs words to the occupied keys
                     occupied_keys.extend(self.ast[i].lines[j - 1].aliases.iter().filter_map(|v| {
                         if v.name != "_" {
                             Some(v.name.clone())
@@ -319,7 +322,7 @@ impl RainlangDocument {
                             });
                             if !LHS_PATTERN.is_match(&item.0) {
                                 self.problems.push(Problem {
-                                    msg: format!("invalid LHS alias: {}", item.0),
+                                    msg: format!("invalid word pattern: {}", item.0),
                                     position: item.1,
                                     code: ErrorCode::InvalidWordPattern,
                                 });
@@ -342,7 +345,7 @@ impl RainlangDocument {
                         authoring_meta, // resolveQuotes
                     )?;
                 } else {
-                    // error if sub expressions is empty
+                    // error if sub source is empty
                     if sub_src.is_empty() || sub_src.trim().is_empty() {
                         self.problems.push(Problem {
                             msg: "invalid empty expression line".to_owned(),
