@@ -206,7 +206,7 @@ impl RainlangDocument {
 
         // parse and take out pragma definistions
         // currently not part of ast
-        let end_pattern = regex::Regex::new(r"0x[0-9a-fA-F]*$").unwrap();
+        let end_pattern = regex::Regex::new(r"0x[0-9a-fA-F]*(\s|$)").unwrap();
         for v in inclusive_parse(&document, &PRAGMA_PATTERN, 0) {
             if !end_pattern.is_match(&v.0) {
                 self.problems.push(Problem {

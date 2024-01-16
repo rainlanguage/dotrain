@@ -84,7 +84,7 @@ pub static SUB_PARSER_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[\s\S
 
 /// pragma pattern (keyword + ws + hex)
 pub static PRAGMA_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\busing-words-from(\s+0x[0-9a-fA-F]*)?\b").unwrap());
+    Lazy::new(|| Regex::new(r"(:?^|\s)using-words-from(\s+0x[0-9a-fA-F]*)?(:?\s|$)").unwrap());
 
 /// the default elided binding msg
 pub static DEFAULT_ELISION: &str = "elided binding, requires rebinding";
@@ -368,10 +368,9 @@ mod tests {
 
         // invalids
         for i in [
-            "using-words-from \n\t 123",
+            "using-words-from123",
             "using-word-from 0x123",
-            "using-words-from \n\n 12e12",
-            "using-words-from \n\t 0x123abcedf09835356abcdef8476593gh",
+            "using-words-from-g",
         ] {
             assert!(
                 !PRAGMA_PATTERN.is_match(i),
@@ -382,7 +381,7 @@ mod tests {
         // valids
         for i in [
             "using-words-from \n\t 0x123abcedf",
-            "using-words-from \n\t 0x09835356abcdef84765932342efabcd72305471",
+            " using-words-from \n\n 0x09835356abcdef84765932342efabcd72305471 ",
         ] {
             assert!(
                 PRAGMA_PATTERN.is_match(i),
