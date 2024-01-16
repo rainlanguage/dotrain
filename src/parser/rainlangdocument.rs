@@ -129,7 +129,7 @@ impl RainlangDocument {
         rl
     }
 
-    pub(crate) fn default() -> Self {
+    pub(crate) fn new() -> Self {
         RainlangDocument {
             text: String::new(),
             ast: vec![],
@@ -137,15 +137,7 @@ impl RainlangDocument {
             comments: vec![],
             error: None,
             ignore_undefined_authoring_meta: false,
-            state: RainlangState {
-                nodes: vec![],
-                aliases: vec![],
-                parens: Parens {
-                    open: vec![],
-                    close: vec![],
-                },
-                depth: 0,
-            },
+            state: RainlangState::default(),
         }
     }
 
@@ -1012,7 +1004,7 @@ mod tests {
 
     #[test]
     fn test_process_opcode_method() -> anyhow::Result<()> {
-        let mut rl = RainlangDocument::default();
+        let mut rl = RainlangDocument::new();
         rl.state.depth = 1;
         rl.state.parens.close = vec![13];
         let value_node = Node::Value(Literal {
@@ -1092,7 +1084,7 @@ mod tests {
 
     #[test]
     fn test_process_operand_method() -> anyhow::Result<()> {
-        let mut rl = RainlangDocument::default();
+        let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
         let exp = "<12 56>";
         let mut op = Opcode {
@@ -1151,7 +1143,7 @@ mod tests {
 
     #[test]
     fn test_process_next_method() -> anyhow::Result<()> {
-        let mut rl = RainlangDocument::default();
+        let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
         let authoring_meta = AuthoringMeta(vec![AuthoringMetaItem {
             word: "opcode".to_owned(),
