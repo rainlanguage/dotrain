@@ -1136,9 +1136,13 @@ mod tests {
             "deep-namespace".to_string(),
             NamespaceItem::Namespace(deep_namespace),
         );
-        let result = rl.search_name(".deep-namespace.binding-name", 0, &main_namespace);
 
-        assert_eq!(Some(&binding), result);
+        let result1 = rl.search_name(".deep-namespace.binding-name", 0, &main_namespace);
+        assert_eq!(Some(&binding), result1);
+
+        let result2 = rl.search_name("deep-namespace.other-binding-name", 0, &main_namespace);
+        assert_eq!(None, result2);
+
         Ok(())
     }
 }
