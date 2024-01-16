@@ -248,7 +248,7 @@ impl RainlangDocument {
         reserved_keys.extend(authoring_meta.0.iter().map(|v| v.word.clone()));
 
         for (i, src) in src_items.iter().enumerate() {
-            // reserved keys + occupied namespace keys
+            // reserved keys + root namespace occupied keys
             let mut occupied_keys = vec![];
             occupied_keys.extend(reserved_keys.iter().cloned());
             occupied_keys.extend(namespace.keys().cloned());
@@ -729,18 +729,7 @@ impl RainlangDocument {
                 id: None,
             }))?;
         } else if WORD_PATTERN.is_match(next) {
-            if self.state.aliases.iter().any(|v| v.name == next) {
-                self.problems.push(Problem {
-                    msg: "cannot reference self".to_owned(),
-                    position: next_pos,
-                    code: ErrorCode::InvalidSelfReference,
-                });
-                self.update_state(Node::Alias(Alias {
-                    name: next.to_owned(),
-                    position: next_pos,
-                    lhs_alias: None,
-                }))?;
-            } else if self.ast[self.ast.len() - 1]
+            if self.ast[self.ast.len() - 1]
                 .lines
                 .iter()
                 .any(|v| v.aliases.iter().any(|e| e.name == next))
@@ -843,11 +832,11 @@ impl RainlangDocument {
         report_problems: bool,
         namespace: &'a Namespace,
     ) -> Option<&'a Binding> {
-        let mut names = exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, offset, true);
+        let mut segments: &[ParsedItem] = &exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, offset, true);
         if query.starts_with('.') {
-            names = names[1..].to_vec()
+            segments = &segments[1..];
         }
-        if names.len() > 32 {
+        if segments.len() > 32 {
             if report_problems {
                 self.problems.push(Problem {
                     msg: "namespace too depp".to_owned(),
@@ -857,18 +846,18 @@ impl RainlangDocument {
             }
             return None;
         }
-        if names[names.len() - 1].0.is_empty() {
+        if segments[segments.len() - 1].0.is_empty() {
             if report_problems {
                 self.problems.push(Problem {
                     msg: "expected to end with a node".to_owned(),
-                    position: names[names.len() - 1].1,
+                    position: segments[segments.len() - 1].1,
                     code: ErrorCode::UnexpectedNamespacePath,
                 });
             }
             return None;
         }
         let mut is_invalid = false;
-        for invalid_segment in names.iter().filter(|v| !WORD_PATTERN.is_match(&v.0)) {
+        for invalid_segment in segments.iter().filter(|v| !WORD_PATTERN.is_match(&v.0)) {
             self.problems.push(Problem {
                 msg: "invalid word pattern".to_owned(),
                 position: invalid_segment.1,
@@ -880,9 +869,9 @@ impl RainlangDocument {
             return None;
         }
 
-        if let Some(namespace_item) = namespace.get(&names[0].0) {
+        if let Some(namespace_item) = namespace.get(&segments[0].0) {
             let mut result = namespace_item;
-            let iter = names[1..].iter();
+            let iter = segments[1..].iter();
             for segment in iter {
                 match result {
                     NamespaceItem::Namespace(ns) => {
@@ -917,7 +906,7 @@ impl RainlangDocument {
                         self.problems.push(Problem {
                             msg: format!(
                                 "expected to end with a node, {} is a namespace",
-                                names[names.len() - 1].0
+                                segments[segments.len() - 1].0
                             ),
                             position: [offset, offset + query.len()],
                             code: ErrorCode::UnexpectedNamespacePath,
@@ -933,8 +922,8 @@ impl RainlangDocument {
         } else {
             if report_problems {
                 self.problems.push(Problem {
-                    msg: format!("namespace has no member {}", names[0].0),
-                    position: names[0].1,
+                    msg: format!("namespace has no member {}", segments[0].0),
+                    position: segments[0].1,
                     code: ErrorCode::UndefinedNamespaceMember,
                 });
             }
