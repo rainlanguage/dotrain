@@ -1108,4 +1108,37 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_search_namespace_method() -> anyhow::Result<()> {
+        let mut rl = RainlangDocument::new();
+        let mut main_namespace: Namespace = HashMap::new();
+        let mut deep_namespace: Namespace = HashMap::new();
+        let binding = Binding {
+            name: "binding-name".to_owned(),
+            name_position: [1, 1],
+            content: String::new(),
+            content_position: [1, 2],
+            position: [1, 2],
+            problems: vec![],
+            dependencies: vec![],
+            item: BindingItem::Constant(ConstantBindingItem {
+                value: "1234".to_owned(),
+            }),
+        };
+        let deep_node = NamespaceItem::Node(NamespaceNode {
+            hash: "some-hash".to_owned(),
+            import_index: 1,
+            element: NamespaceNodeElement::Binding(binding.clone()),
+        });
+        deep_namespace.insert("binding-name".to_string(), deep_node.clone());
+        main_namespace.insert(
+            "deep-namespace".to_string(),
+            NamespaceItem::Namespace(deep_namespace),
+        );
+        let result = rl.search_name(".deep-namespace.binding-name", 0, &main_namespace);
+
+        assert_eq!(Some(&binding), result);
+        Ok(())
+    }
 }
