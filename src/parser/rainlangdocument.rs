@@ -15,18 +15,12 @@ use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
-enum NamespaceSearchResult<'a> {
-    Binding(&'a Binding),
-    ContextAlias(&'a ContextAlias),
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 struct Parens {
     open: Vec<usize>,
     close: Vec<usize>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 struct RainlangState {
     nodes: Vec<Node>,
     aliases: Vec<Alias>,
@@ -437,15 +431,15 @@ impl RainlangDocument {
                         });
                     }
                     exp = exp.split_at(1).1;
-                    if let Some(c) = exp.chars().next() {
-                        if !c.is_whitespace() && c != ',' && c != ')' {
-                            self.problems.push(Problem {
-                                msg: "expected to be separated by space".to_owned(),
-                                position: [cursor, cursor + 1],
-                                code: ErrorCode::ExpectedSpace,
-                            });
-                        }
-                    }
+                    // if let Some(c) = exp.chars().next() {
+                    //     if !c.is_whitespace() && c != ',' && c != ')' {
+                    //         self.problems.push(Problem {
+                    //             msg: "expected to be separated by space".to_owned(),
+                    //             position: [cursor, cursor + 1],
+                    //             code: ErrorCode::ExpectedSpace,
+                    //         });
+                    //     }
+                    // }
                 }
                 _ => {
                     let consumed = self.process_next(exp, cursor, namespace, authoring_meta)?;
@@ -489,7 +483,7 @@ impl RainlangDocument {
     fn process_operand(
         &mut self,
         exp: &str,
-        pos: usize,
+        cursor: usize,
         op: &mut Opcode,
         namespace: &Namespace,
     ) -> usize {
@@ -497,9 +491,9 @@ impl RainlangDocument {
         if let Some(operand_close_index) = exp.find('>') {
             let slices = exp[1..].split_at(operand_close_index - 1);
             remaining = operand_close_index + 1;
-            let operand_args = inclusive_parse(slices.0, &ANY_PATTERN, pos + 1);
+            let operand_args = inclusive_parse(slices.0, &ANY_PATTERN, cursor + 1);
             op.operand_args = Some(OperandArg {
-                position: [pos, pos + slices.0.len() + 2],
+                position: [cursor, cursor + slices.0.len() + 2],
                 args: vec![],
             });
             for v in operand_args {
@@ -507,53 +501,39 @@ impl RainlangDocument {
                     let is_quote = v.0.starts_with('\'');
                     if is_quote {
                         let quote = &v.0[1..];
-                        if let Some(ns) = self.search_name(quote, v.1[0], true, namespace) {
-                            match ns {
-                                NamespaceSearchResult::Binding(b) => {
-                                    match &b.item {
-                                        BindingItem::Elided(e) => {
-                                            let msg = e.msg.to_owned();
-                                            self.problems.push(Problem {
-                                                msg,
-                                                position: v.1,
-                                                code: ErrorCode::ElidedBinding,
-                                            });
-                                        }
-                                        BindingItem::Constant(_c) => {
-                                            self.problems.push(Problem {
-                                                msg: format!(
-                                                    "invalid quote: {}, cannot quote constants",
-                                                    quote
-                                                ),
-                                                position: v.1,
-                                                code: ErrorCode::InvalidQuote,
-                                            });
-                                        }
-                                        _ => {
-                                            if let Some(_p) = b
-                                                .problems
-                                                .iter()
-                                                .find(|v| v.code == ErrorCode::CircularDependency)
-                                            {
-                                                self.problems.push(Problem {
-                                                    msg: "quoted binding has circular dependency"
-                                                        .to_owned(),
-                                                    position: v.1,
-                                                    code: ErrorCode::CircularDependency,
-                                                });
-                                            }
-                                        }
-                                    };
+                        if let Some(b) = self.search_name(quote, v.1[0], true, namespace) {
+                            match &b.item {
+                                BindingItem::Elided(e) => {
+                                    let msg = e.msg.to_owned();
+                                    self.problems.push(Problem {
+                                        msg,
+                                        position: v.1,
+                                        code: ErrorCode::ElidedBinding,
+                                    });
                                 }
-                                _ => {
+                                BindingItem::Constant(_c) => {
                                     self.problems.push(Problem {
                                         msg: format!(
-                                            "invalid quote: {}, only bindings can be quoted",
+                                            "invalid quote: {}, cannot quote constants",
                                             quote
                                         ),
                                         position: v.1,
                                         code: ErrorCode::InvalidQuote,
                                     });
+                                }
+                                _ => {
+                                    if let Some(_p) = b
+                                        .problems
+                                        .iter()
+                                        .find(|v| v.code == ErrorCode::CircularDependency)
+                                    {
+                                        self.problems.push(Problem {
+                                            msg: "quoted binding has circular dependency"
+                                                .to_owned(),
+                                            position: v.1,
+                                            code: ErrorCode::CircularDependency,
+                                        });
+                                    }
                                 }
                             };
                         } else {
@@ -585,11 +565,11 @@ impl RainlangDocument {
         } else {
             self.problems.push(Problem {
                 msg: "expected \">\"".to_owned(),
-                position: [pos, pos + exp.len()],
+                position: [cursor, cursor + exp.len()],
                 code: ErrorCode::ExpectedClosingAngleBracket,
             });
             op.operand_args = Some(OperandArg {
-                position: [pos, pos + exp.len()],
+                position: [cursor, cursor + exp.len()],
                 args: vec![],
             });
         }
@@ -600,7 +580,7 @@ impl RainlangDocument {
     fn process_next(
         &mut self,
         text: &str,
-        entry: usize,
+        cursor: usize,
         namespace: &Namespace,
         authoring_meta: &AuthoringMeta,
     ) -> Result<usize, Error> {
@@ -613,7 +593,7 @@ impl RainlangDocument {
                 }
                 None => (exp, "", exp.len()),
             };
-        let next_pos = [entry, entry + next.len()];
+        let next_pos = [cursor, cursor + next.len()];
 
         if remaining.starts_with(['(', '<']) {
             let mut op = Opcode {
@@ -627,7 +607,6 @@ impl RainlangDocument {
                 position: [next_pos[0], 0],
                 parens: [1, 0],
                 parameters: vec![],
-                is_ctx: None,
                 operand_args: None,
                 lhs_alias: None,
             };
@@ -654,7 +633,7 @@ impl RainlangDocument {
             }
             if remaining.starts_with('<') {
                 let consumed =
-                    self.process_operand(remaining, entry + next.len(), &mut op, namespace);
+                    self.process_operand(remaining, cursor + next.len(), &mut op, namespace);
                 offset += consumed;
                 remaining = &remaining[consumed..];
             }
@@ -684,50 +663,23 @@ impl RainlangDocument {
                 });
             }
         } else if next.contains('.') {
-            if let Some(namespace_item) = self.search_name(next, entry, true, namespace) {
-                match namespace_item {
-                    NamespaceSearchResult::Binding(b) => match &b.item {
-                        BindingItem::Constant(c) => {
-                            let value = c.value.to_owned();
-                            self.update_state(Node::Value(Literal {
-                                id: Some(next.to_owned()),
-                                value,
-                                position: next_pos,
-                                lhs_alias: None,
-                            }))?;
-                        }
-                        BindingItem::Elided(e) => {
-                            let msg = e.msg.to_owned();
-                            self.problems.push(Problem {
-                                msg,
-                                position: next_pos,
-                                code: ErrorCode::ElidedBinding,
-                            });
-                            self.update_state(Node::Alias(Alias {
-                                name: next.to_owned(),
-                                position: next_pos,
-                                lhs_alias: None,
-                            }))?;
-                        }
-                        BindingItem::Exp(_e) => {
-                            self.problems.push(Problem {
-                                    msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
-                                    position: next_pos,
-                                    code: ErrorCode::InvalidReference
-                                });
-                            self.update_state(Node::Alias(Alias {
-                                name: next.to_owned(),
-                                position: next_pos,
-                                lhs_alias: None,
-                            }))?;
-                        }
-                    },
-                    NamespaceSearchResult::ContextAlias(_) => {
-                        let msg = format!("invalid reference to context alias: {}", next);
+            if let Some(b) = self.search_name(next, cursor, true, namespace) {
+                match &b.item {
+                    BindingItem::Constant(c) => {
+                        let value = c.value.to_owned();
+                        self.update_state(Node::Literal(Literal {
+                            id: Some(next.to_owned()),
+                            value,
+                            position: next_pos,
+                            lhs_alias: None,
+                        }))?;
+                    }
+                    BindingItem::Elided(e) => {
+                        let msg = e.msg.to_owned();
                         self.problems.push(Problem {
                             msg,
                             position: next_pos,
-                            code: ErrorCode::InvalidReference,
+                            code: ErrorCode::ElidedBinding,
                         });
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
@@ -735,7 +687,19 @@ impl RainlangDocument {
                             lhs_alias: None,
                         }))?;
                     }
-                }
+                    BindingItem::Exp(_e) => {
+                        self.problems.push(Problem {
+                                msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
+                                position: next_pos,
+                                code: ErrorCode::InvalidReference
+                            });
+                        self.update_state(Node::Alias(Alias {
+                            name: next.to_owned(),
+                            position: next_pos,
+                            lhs_alias: None,
+                        }))?;
+                    }
+                };
             } else {
                 self.update_state(Node::Alias(Alias {
                     name: next.to_owned(),
@@ -751,14 +715,14 @@ impl RainlangDocument {
                     code: ErrorCode::OutOfRangeValue,
                 });
             }
-            self.update_state(Node::Value(Literal {
+            self.update_state(Node::Literal(Literal {
                 value: next.to_owned(),
                 position: next_pos,
                 lhs_alias: None,
                 id: None,
             }))?;
         } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_PATTERN.is_match(next) {
-            self.update_state(Node::Value(Literal {
+            self.update_state(Node::Literal(Literal {
                 value: next.to_owned(),
                 position: next_pos,
                 lhs_alias: None,
@@ -791,7 +755,7 @@ impl RainlangDocument {
                     NamespaceItem::Node(node) => match &node.element {
                         NamespaceNodeElement::Binding(b) => match &b.item {
                             BindingItem::Constant(c) => {
-                                self.update_state(Node::Value(Literal {
+                                self.update_state(Node::Literal(Literal {
                                     value: c.value.clone(),
                                     position: next_pos,
                                     lhs_alias: None,
@@ -823,18 +787,6 @@ impl RainlangDocument {
                                 }))?;
                             }
                         },
-                        NamespaceNodeElement::ContextAlias(_c) => {
-                            self.problems.push(Problem {
-                                msg: format!("invalid reference to context alias: {}", next),
-                                position: next_pos,
-                                code: ErrorCode::InvalidReference,
-                            });
-                            self.update_state(Node::Alias(Alias {
-                                name: next.to_owned(),
-                                position: next_pos,
-                                lhs_alias: None,
-                            }))?;
-                        }
                         NamespaceNodeElement::Dispair(_) => {
                             self.problems.push(Problem {
                                 msg: format!("invalid reference: {}", next),
@@ -890,7 +842,7 @@ impl RainlangDocument {
         offset: usize,
         report_problems: bool,
         namespace: &'a Namespace,
-    ) -> Option<NamespaceSearchResult> {
+    ) -> Option<&'a Binding> {
         let mut names = exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, offset, true);
         if query.starts_with('.') {
             names = names[1..].to_vec()
@@ -974,12 +926,7 @@ impl RainlangDocument {
                     None
                 }
                 NamespaceItem::Node(node) => match &node.element {
-                    NamespaceNodeElement::Binding(e) => {
-                        return Some(NamespaceSearchResult::Binding(e))
-                    }
-                    NamespaceNodeElement::ContextAlias(e) => {
-                        return Some(NamespaceSearchResult::ContextAlias(e))
-                    }
+                    NamespaceNodeElement::Binding(e) => Some(e),
                     NamespaceNodeElement::Dispair(_) => None,
                 },
             }
@@ -1007,7 +954,7 @@ mod tests {
         let mut rl = RainlangDocument::new();
         rl.state.depth = 1;
         rl.state.parens.close = vec![13];
-        let value_node = Node::Value(Literal {
+        let value_node = Node::Literal(Literal {
             value: "12".to_owned(),
             position: [3, 4],
             lhs_alias: None,
@@ -1024,20 +971,19 @@ mod tests {
             position: [5, 0],
             parens: [8, 0],
             parameters: vec![
-                Node::Value(Literal {
+                Node::Literal(Literal {
                     value: "1".to_owned(),
                     position: [9, 10],
                     lhs_alias: None,
                     id: None,
                 }),
-                Node::Value(Literal {
+                Node::Literal(Literal {
                     value: "2".to_owned(),
                     position: [11, 12],
                     lhs_alias: None,
                     id: None,
                 }),
             ],
-            is_ctx: None,
             lhs_alias: None,
             operand_args: None,
         });
@@ -1055,20 +1001,19 @@ mod tests {
             position: [5, 14],
             parens: [8, 13],
             parameters: vec![
-                Node::Value(Literal {
+                Node::Literal(Literal {
                     value: "1".to_owned(),
                     position: [9, 10],
                     lhs_alias: None,
                     id: None,
                 }),
-                Node::Value(Literal {
+                Node::Literal(Literal {
                     value: "2".to_owned(),
                     position: [11, 12],
                     lhs_alias: None,
                     id: None,
                 }),
             ],
-            is_ctx: None,
             lhs_alias: None,
             operand_args: None,
         });
@@ -1098,7 +1043,6 @@ mod tests {
             position: [5, 0],
             parens: [0, 0],
             parameters: vec![],
-            is_ctx: None,
             lhs_alias: None,
             operand_args: None,
         };
@@ -1115,7 +1059,6 @@ mod tests {
             position: [5, 0],
             parens: [0, 0],
             parameters: vec![],
-            is_ctx: None,
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [8, 15],
@@ -1164,7 +1107,6 @@ mod tests {
             position: [10, 0],
             parens: [23, 0],
             parameters: vec![],
-            is_ctx: None,
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [16, 23],

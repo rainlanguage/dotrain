@@ -5,10 +5,7 @@ use super::super::error::Error;
 use serde::{Serialize, Deserialize};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 use super::super::parser::rainlangdocument::RainlangDocument;
-use rain_meta::{
-    NPE2Deployer,
-    types::{authoring::v1::AuthoringMeta, interpreter_caller::v1::InterpreterCallerMeta},
-};
+use rain_meta::{NPE2Deployer, types::authoring::v1::AuthoringMeta};
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use tsify::Tsify;
@@ -203,7 +200,6 @@ pub struct Opcode {
     pub position: Offsets,
     pub parens: Offsets,
     pub parameters: Vec<Node>,
-    pub is_ctx: Option<(u8, Option<u8>)>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub lhs_alias: Option<Vec<Alias>>,
@@ -341,7 +337,7 @@ pub struct ImportConfiguration {
     tsify(into_wasm_abi, from_wasm_abi)
 )]
 pub enum Node {
-    Value(Literal),
+    Literal(Literal),
     Opcode(Opcode),
     Alias(Alias),
 }
@@ -349,7 +345,7 @@ pub enum Node {
 impl Node {
     pub fn position(&self) -> Offsets {
         match self {
-            Node::Value(v) => v.position,
+            Node::Literal(v) => v.position,
             Node::Opcode(op) => op.position,
             Node::Alias(a) => a.position,
         }
@@ -461,7 +457,6 @@ pub struct Binding {
 )]
 pub enum NamespaceNodeElement {
     Binding(Binding),
-    ContextAlias(ContextAlias),
     Dispair(DispairImportItem),
 }
 
@@ -488,17 +483,6 @@ impl NamespaceNode {
         match &self.element {
             NamespaceNodeElement::Binding(b) => b,
             _ => panic!("not a binding"),
-        }
-    }
-
-    pub fn is_context_alias(&self) -> bool {
-        matches!(self.element, NamespaceNodeElement::ContextAlias(_))
-    }
-
-    pub fn unwrap_context_alias(&self) -> &ContextAlias {
-        match &self.element {
-            NamespaceNodeElement::ContextAlias(c) => c,
-            _ => panic!("not a context alias"),
         }
     }
 
@@ -634,25 +618,6 @@ impl NamespaceItem {
         }
     }
 
-    pub fn is_context_alias(&self) -> bool {
-        if let NamespaceItem::Node(n) = self {
-            matches!(n.element, NamespaceNodeElement::ContextAlias(_))
-        } else {
-            false
-        }
-    }
-
-    pub fn unwrap_context_alias(&self) -> &ContextAlias {
-        if let NamespaceItem::Node(n) = self {
-            match &n.element {
-                NamespaceNodeElement::ContextAlias(c) => c,
-                _ => panic!("not a context alias"),
-            }
-        } else {
-            panic!("not a context alias")
-        }
-    }
-
     pub fn is_dispair(&self) -> bool {
         if let NamespaceItem::Node(n) = self {
             matches!(n.element, NamespaceNodeElement::Dispair(_))
@@ -751,72 +716,3 @@ impl NamespaceItem {
 /// Type for a namespace in dotrain
 #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify::declare)]
 pub type Namespace = HashMap<String, NamespaceItem>;
-
-/// Type for context aliases from a contract caller meta
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
-pub struct ContextAlias {
-    pub name: String,
-    pub description: String,
-    pub column: u8,
-    pub row: Option<u8>,
-}
-
-impl ContextAlias {
-    pub fn from_caller_meta(meta: InterpreterCallerMeta) -> Result<Vec<ContextAlias>, Error> {
-        let mut ctxs: Vec<ContextAlias> = vec![];
-        for method in meta.methods {
-            for exp in method.expressions {
-                for (i, col) in exp.context_columns.iter().enumerate() {
-                    let ctx_coll = ContextAlias {
-                        name: if let Some(a) = &col.alias {
-                            a.value.clone()
-                        } else {
-                            String::new()
-                        },
-                        description: col.desc.value.clone(),
-                        column: i as u8,
-                        row: None,
-                    };
-                    let mut ok = true;
-                    if !ctxs.iter().any(|v| *v == ctx_coll) {
-                        ok = true;
-                    }
-                    if ctxs.iter().any(|v| v.name == ctx_coll.name) {
-                        return Err(Error::DuplicateContextAliases);
-                    }
-                    if ok {
-                        ctxs.push(ctx_coll);
-                    }
-                    for (j, cell) in col.cells.iter().enumerate() {
-                        let ctx_cell = ContextAlias {
-                            name: if let Some(a) = &cell.alias {
-                                a.value.clone()
-                            } else {
-                                String::new()
-                            },
-                            column: i as u8,
-                            row: Some(j as u8),
-                            description: cell.desc.value.clone(),
-                        };
-                        let mut _ok = true;
-                        if !ctxs.iter().any(|v| *v == ctx_cell) {
-                            _ok = true;
-                        }
-                        if ctxs.iter().any(|v| v.name == ctx_cell.name) {
-                            return Err(Error::DuplicateContextAliases);
-                        }
-                        if _ok {
-                            ctxs.push(ctx_cell);
-                        }
-                    }
-                }
-            }
-        }
-        Ok(ctxs)
-    }
-}
