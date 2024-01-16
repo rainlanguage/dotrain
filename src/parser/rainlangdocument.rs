@@ -501,7 +501,7 @@ impl RainlangDocument {
                     let is_quote = v.0.starts_with('\'');
                     if is_quote {
                         let quote = &v.0[1..];
-                        if let Some(b) = self.search_name(quote, v.1[0], true, namespace) {
+                        if let Some(b) = self.search_name(quote, v.1[0], namespace) {
                             match &b.item {
                                 BindingItem::Elided(e) => {
                                     let msg = e.msg.to_owned();
@@ -663,7 +663,7 @@ impl RainlangDocument {
                 });
             }
         } else if next.contains('.') {
-            if let Some(b) = self.search_name(next, cursor, true, namespace) {
+            if let Some(b) = self.search_name(next, cursor, namespace) {
                 match &b.item {
                     BindingItem::Constant(c) => {
                         let value = c.value.to_owned();
@@ -829,7 +829,6 @@ impl RainlangDocument {
         &'a mut self,
         query: &str,
         offset: usize,
-        report_problems: bool,
         namespace: &'a Namespace,
     ) -> Option<&'a Binding> {
         let mut segments: &[ParsedItem] =
@@ -838,23 +837,19 @@ impl RainlangDocument {
             segments = &segments[1..];
         }
         if segments.len() > 32 {
-            if report_problems {
-                self.problems.push(Problem {
-                    msg: "namespace too depp".to_owned(),
-                    position: [offset, offset + query.len()],
-                    code: ErrorCode::DeepNamespace,
-                });
-            }
+            self.problems.push(Problem {
+                msg: "namespace too depp".to_owned(),
+                position: [offset, offset + query.len()],
+                code: ErrorCode::DeepNamespace,
+            });
             return None;
         }
         if segments[segments.len() - 1].0.is_empty() {
-            if report_problems {
-                self.problems.push(Problem {
-                    msg: "expected to end with a node".to_owned(),
-                    position: segments[segments.len() - 1].1,
-                    code: ErrorCode::UnexpectedNamespacePath,
-                });
-            }
+            self.problems.push(Problem {
+                msg: "expected to end with a node".to_owned(),
+                position: segments[segments.len() - 1].1,
+                code: ErrorCode::UnexpectedNamespacePath,
+            });
             return None;
         }
         let mut is_invalid = false;
@@ -879,40 +874,34 @@ impl RainlangDocument {
                         if let Some(namespace_item) = ns.get(&segment.0) {
                             result = namespace_item;
                         } else {
-                            if report_problems {
-                                self.problems.push(Problem {
-                                    msg: format!("namespace has no member {}", segment.0),
-                                    position: segment.1,
-                                    code: ErrorCode::UndefinedNamespaceMember,
-                                });
-                            }
-                            return None;
-                        }
-                    }
-                    _ => {
-                        if report_problems {
                             self.problems.push(Problem {
                                 msg: format!("namespace has no member {}", segment.0),
                                 position: segment.1,
                                 code: ErrorCode::UndefinedNamespaceMember,
                             });
+                            return None;
                         }
+                    }
+                    _ => {
+                        self.problems.push(Problem {
+                            msg: format!("namespace has no member {}", segment.0),
+                            position: segment.1,
+                            code: ErrorCode::UndefinedNamespaceMember,
+                        });
                         return None;
                     }
                 }
             }
             match result {
                 NamespaceItem::Namespace(_ns) => {
-                    if report_problems {
-                        self.problems.push(Problem {
-                            msg: format!(
-                                "expected to end with a node, {} is a namespace",
-                                segments[segments.len() - 1].0
-                            ),
-                            position: [offset, offset + query.len()],
-                            code: ErrorCode::UnexpectedNamespacePath,
-                        });
-                    }
+                    self.problems.push(Problem {
+                        msg: format!(
+                            "expected to end with a node, {} is a namespace",
+                            segments[segments.len() - 1].0
+                        ),
+                        position: [offset, offset + query.len()],
+                        code: ErrorCode::UnexpectedNamespacePath,
+                    });
                     None
                 }
                 NamespaceItem::Node(node) => match &node.element {
@@ -921,13 +910,11 @@ impl RainlangDocument {
                 },
             }
         } else {
-            if report_problems {
-                self.problems.push(Problem {
-                    msg: format!("namespace has no member {}", segments[0].0),
-                    position: segments[0].1,
-                    code: ErrorCode::UndefinedNamespaceMember,
-                });
-            }
+            self.problems.push(Problem {
+                msg: format!("namespace has no member {}", segments[0].0),
+                position: segments[0].1,
+                code: ErrorCode::UndefinedNamespaceMember,
+            });
             None
         }
     }
