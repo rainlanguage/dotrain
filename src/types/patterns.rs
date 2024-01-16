@@ -100,7 +100,7 @@ pub mod lint_patterns {
         Lazy::new(|| Regex::new(r"(:?*|\s)ignore-next-line(:?*|\s)").unwrap());
 
     /// ignores undefined words (ignores word sourced diagnostics if words are undefined)
-    /// undefined words happens when AuthoringMeta is not available for teh specified dispair
+    /// undefined words happens when AuthoringMeta is not available for the specified dispair
     /// so without having AuthoringMeta, all opcodes are flagged as "unknown opcode" diagnostic
     /// this linting option can be used to ignore and shut off those diagnostics
     pub static IGNORE_UNDEFINED_WORDS: Lazy<Regex> =
