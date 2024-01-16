@@ -147,8 +147,7 @@ impl RainlangDocument {
         };
     }
 
-    /// The main workhorse of Rainlang which parses the words used in an
-    /// expression and is responsible for building the parse tree and collect problems
+    /// The main workhorse that parses the text to build the parse tree and collect problems
     fn _parse(
         &mut self,
         namespace: &Namespace,
@@ -239,10 +238,9 @@ impl RainlangDocument {
             }
         }
 
+        // reserved keywords + authoring meta words
         let mut reserved_keys = vec![];
-        // reserved keywords
         reserved_keys.extend(KEYWORDS.iter().map(|v| v.to_string()));
-        // authoring meta words
         reserved_keys.extend(authoring_meta.0.iter().map(|v| v.word.clone()));
 
         for (i, src) in src_items.iter().enumerate() {
@@ -354,7 +352,7 @@ impl RainlangDocument {
             }
         }
 
-        // ignore next line problems
+        // ignore next line lint
         for v in self.comments.iter() {
             if lint_patterns::IGNORE_NEXT_LINE.is_match(&v.comment) {
                 if let Some(line) = self.ast.iter().flat_map(|e| &e.lines).find(|&e| {
@@ -393,7 +391,7 @@ impl RainlangDocument {
         Ok(())
     }
 
-    /// Consumes items (separated by defnied boundries) in an text
+    /// Consumes items (separated by defnied boundries) in the text
     fn consume(
         &mut self,
         text: &str,
@@ -439,7 +437,7 @@ impl RainlangDocument {
         Ok(())
     }
 
-    /// resolves the Opcode AST type once its respective closing paren has been consumed
+    /// resolves the Opcode AST type once its corresponding closing paren has been consumed
     fn process_opcode(&mut self) -> Result<(), Error> {
         self.state.parens.open.pop();
         let end_position = self.state.parens.close.pop().ok_or(Error::FailedToParse)?;
