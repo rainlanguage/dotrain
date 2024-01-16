@@ -832,7 +832,8 @@ impl RainlangDocument {
         report_problems: bool,
         namespace: &'a Namespace,
     ) -> Option<&'a Binding> {
-        let mut segments: &[ParsedItem] = &exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, offset, true);
+        let mut segments: &[ParsedItem] =
+            &exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, offset, true);
         if query.starts_with('.') {
             segments = &segments[1..];
         }
