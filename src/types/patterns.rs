@@ -97,19 +97,19 @@ pub mod lint_patterns {
 
     /// ignores next line diagnostics
     pub static IGNORE_NEXT_LINE: Lazy<Regex> =
-        Lazy::new(|| Regex::new(r"\bignore-next-line\b").unwrap());
+        Lazy::new(|| Regex::new(r"(:?*|\s)ignore-next-line(:?*|\s)").unwrap());
 
     /// ignores undefined words (ignores word sourced diagnostics if words are undefined)
     /// undefined words happens when AuthoringMeta is not available for teh specified dispair
     /// so without having AuthoringMeta, all opcodes are flagged as "unknown opcode" diagnostic
     /// this linting option can be used to ignore and shut off those diagnostics
     pub static IGNORE_UNDEFINED_WORDS: Lazy<Regex> =
-        Lazy::new(|| Regex::new(r"\bignore-undefined-words\b").unwrap());
+        Lazy::new(|| Regex::new(r"(:?*|\s)ignore-undefined-words(:?*|\s)").unwrap());
 
     /// ignores words related diagnostics
     /// this is like [IGNORE_UNDEFINED_WORDS], except that it will ignore the AuthoringMeta related
     /// diagnostics completely, no matter if it is available or not
-    pub static IGNORE_WORDS: Lazy<Regex> = Lazy::new(|| Regex::new(r"\bignore-words\b").unwrap());
+    pub static IGNORE_WORDS: Lazy<Regex> = Lazy::new(|| Regex::new(r"(:?*|\s)ignore-words(:?*|\s)").unwrap());
 }
 
 #[cfg(test)]
