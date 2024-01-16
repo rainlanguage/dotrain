@@ -11,8 +11,6 @@ use super::{
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use tsify::Tsify;
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
-use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
 struct Parens {
@@ -48,8 +46,8 @@ impl Default for RainlangState {
 /// RainDocument and for providing LSP services.
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
-    wasm_bindgen,
-    derive(Tsify)
+    derive(Tsify),
+    tsify(into_wasm_abi, from_wasm_abi)
 )]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -191,7 +189,7 @@ impl RainlangDocument {
             fill_in(&mut document, v.1)?;
         }
 
-        // parse and take out pragma definistions
+        // parse and take out pragma definitions
         // currently not part of ast
         let end_pattern = regex::Regex::new(r"0x[0-9a-fA-F]*(\s|$)").unwrap();
         for v in inclusive_parse(&document, &PRAGMA_PATTERN, 0) {
@@ -431,15 +429,6 @@ impl RainlangDocument {
                         });
                     }
                     exp = exp.split_at(1).1;
-                    // if let Some(c) = exp.chars().next() {
-                    //     if !c.is_whitespace() && c != ',' && c != ')' {
-                    //         self.problems.push(Problem {
-                    //             msg: "expected to be separated by space".to_owned(),
-                    //             position: [cursor, cursor + 1],
-                    //             code: ErrorCode::ExpectedSpace,
-                    //         });
-                    //     }
-                    // }
                 }
                 _ => {
                     let consumed = self.process_next(exp, cursor, namespace, authoring_meta)?;
