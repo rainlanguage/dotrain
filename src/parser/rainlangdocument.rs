@@ -678,10 +678,10 @@ impl RainlangDocument {
                     }
                     BindingItem::Exp(_e) => {
                         self.problems.push(Problem {
-                                msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
-                                position: next_pos,
-                                code: ErrorCode::InvalidReference
-                            });
+                            msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
+                            position: next_pos,
+                            code: ErrorCode::InvalidReference
+                        });
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
                             position: next_pos,
@@ -754,10 +754,10 @@ impl RainlangDocument {
                             }
                             BindingItem::Exp(_e) => {
                                 self.problems.push(Problem {
-                                            msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
-                                            position: next_pos,
-                                            code: ErrorCode::InvalidReference
-                                        });
+                                    msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
+                                    position: next_pos,
+                                    code: ErrorCode::InvalidReference
+                                });
                                 self.update_state(Node::Alias(Alias {
                                     name: next.to_owned(),
                                     position: next_pos,
