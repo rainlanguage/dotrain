@@ -109,7 +109,8 @@ pub mod lint_patterns {
     /// ignores words related diagnostics
     /// this is like [IGNORE_UNDEFINED_WORDS], except that it will ignore the AuthoringMeta related
     /// diagnostics completely, no matter if it is available or not
-    pub static IGNORE_WORDS: Lazy<Regex> = Lazy::new(|| Regex::new(r"(:?*|\s)ignore-words(:?*|\s)").unwrap());
+    pub static IGNORE_WORDS: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"(:?*|\s)ignore-words(:?*|\s)").unwrap());
 }
 
 #[cfg(test)]
