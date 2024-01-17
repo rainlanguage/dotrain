@@ -86,6 +86,10 @@ pub static SUB_PARSER_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[\s\S
 pub static PRAGMA_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"(:?^|\s)using-words-from(\s+0x[0-9a-fA-F]*)?(:?\s|$)").unwrap());
 
+/// pattern of end of a pragma definition
+pub static PRAGMA_END_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"0x[0-9a-fA-F]*(\s|$)").unwrap());
+
 /// the default elided binding msg
 pub static DEFAULT_ELISION: &str = "elided binding, requires rebinding";
 

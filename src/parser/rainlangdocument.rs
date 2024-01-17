@@ -94,20 +94,10 @@ impl RainlangDocument {
     /// Creates a new instance
     pub(crate) fn create(
         text: String,
-        authoring_meta: Option<&AuthoringMeta>,
-        namespace: Option<&Namespace>,
+        authoring_meta: &AuthoringMeta,
+        namespace: &Namespace,
+        ignore_undefined_authoring_meta: bool,
     ) -> RainlangDocument {
-        let mut ns = &HashMap::new();
-        if let Some(v) = namespace {
-            ns = v;
-        }
-        let mut am = &AuthoringMeta(vec![]);
-        let ignore_undefined_authoring_meta = if let Some(v) = authoring_meta {
-            am = v;
-            false
-        } else {
-            true
-        };
         let mut rl = RainlangDocument {
             text,
             ast: vec![],
@@ -117,7 +107,7 @@ impl RainlangDocument {
             ignore_undefined_authoring_meta,
             state: RainlangState::default(),
         };
-        rl.parse(ns, am);
+        rl.parse(namespace, authoring_meta);
         rl
     }
 
@@ -134,16 +124,10 @@ impl RainlangDocument {
     }
 
     fn parse(&mut self, namespace: &Namespace, authoring_meta: &AuthoringMeta) {
-        match self._parse(namespace, authoring_meta) {
-            Ok(()) => (),
-            Err(e) => {
-                self.error = Some(e.to_string());
-                self.problems.push(Problem {
-                    msg: e.to_string(),
-                    position: [0, 0],
-                    code: ErrorCode::RuntimeError,
-                })
-            }
+        if let Err(e) = self._parse(namespace, authoring_meta) {
+            self.error = Some(e.to_string());
+            self.problems
+                .push(ErrorCode::RuntimeError.to_problem(vec![&e.to_string()], [0, 0]));
         };
     }
 
@@ -164,22 +148,18 @@ impl RainlangDocument {
         // ends the parsing if an illegal char is found
         let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
         if !illegal_chars.is_empty() {
-            self.problems.push(Problem {
-                msg: format!("illegal character: {}", illegal_chars[0].0),
-                position: [illegal_chars[0].1[0], illegal_chars[0].1[0]],
-                code: ErrorCode::IllegalChar,
-            });
+            self.problems.push(ErrorCode::IllegalChar.to_problem(
+                vec![&illegal_chars[0].0],
+                [illegal_chars[0].1[0], illegal_chars[0].1[0]],
+            ));
             return Ok(());
         };
 
         // parse and take out comments
         for v in inclusive_parse(&document, &COMMENT_PATTERN, 0) {
             if !v.0.ends_with("*/") {
-                self.problems.push(Problem {
-                    msg: "unexpected end of comment".to_owned(),
-                    position: v.1,
-                    code: ErrorCode::UnexpectedEndOfComment,
-                });
+                self.problems
+                    .push(ErrorCode::UnexpectedEndOfComment.to_problem(vec![], v.1));
             }
             self.comments.push(Comment {
                 comment: v.0.clone(),
@@ -190,21 +170,14 @@ impl RainlangDocument {
 
         // parse and take out pragma definitions
         // currently not part of ast
-        let end_pattern = regex::Regex::new(r"0x[0-9a-fA-F]*(\s|$)").unwrap();
         for v in inclusive_parse(&document, &PRAGMA_PATTERN, 0) {
-            if !end_pattern.is_match(&v.0) {
-                self.problems.push(Problem {
-                    msg: "expected to be followed by a hex literal".to_owned(),
-                    position: v.1,
-                    code: ErrorCode::ExpectedHexLiteral,
-                });
+            if !PRAGMA_END_PATTERN.is_match(&v.0) {
+                self.problems
+                    .push(ErrorCode::ExpectedHexLiteral.to_problem(vec![], v.1));
             }
             if document[..v.1[0]].contains(':') {
-                self.problems.push(Problem {
-                    msg: "unexpected pragma, must be at top".to_owned(),
-                    position: v.1,
-                    code: ErrorCode::UnexpectedPragma,
-                });
+                self.problems
+                    .push(ErrorCode::UnexpectedPragma.to_problem(vec![], v.1));
             }
             fill_in(&mut document, v.1)?;
         }
@@ -218,20 +191,16 @@ impl RainlangDocument {
             parsed_sources.pop();
         } else {
             let p = parsed_sources[parsed_sources.len() - 1].1[1];
-            self.problems.push(Problem {
-                msg: "expected to end with semi".to_owned(),
-                position: [p, p + 1],
-                code: ErrorCode::ExpectedSemi,
-            });
+            self.problems
+                .push(ErrorCode::ExpectedSemi.to_problem(vec![], [p, p + 1]));
         }
         for v in parsed_sources {
             let trimmed = tracked_trim(&v.0);
             if trimmed.0.is_empty() {
-                self.problems.push(Problem {
-                    msg: "invalid empty expression".to_owned(),
-                    position: [v.1[1] - trimmed.2, v.1[1] - trimmed.2],
-                    code: ErrorCode::InvalidEmptyBinding,
-                });
+                self.problems.push(
+                    ErrorCode::InvalidEmptyBinding
+                        .to_problem(vec![], [v.1[1] - trimmed.2, v.1[1] - trimmed.2]),
+                );
             } else {
                 src_items.push(trimmed.0.to_owned());
                 src_items_pos.push([v.1[0] + trimmed.1, v.1[1] - trimmed.2]);
@@ -286,11 +255,8 @@ impl RainlangDocument {
                         if cm.position[0] > cursor_offset
                             && cm.position[0] < sub_src_items_pos[j][1] + ends_diff[j]
                         {
-                            self.problems.push(Problem {
-                                msg: "unexpected comment".to_owned(),
-                                position: cm.position,
-                                code: ErrorCode::UnexpectedComment,
-                            });
+                            self.problems
+                                .push(ErrorCode::UnexpectedComment.to_problem(vec![], cm.position));
                         }
                     }
                     // begin parsing LHS
@@ -303,18 +269,14 @@ impl RainlangDocument {
                                 lhs_alias: None,
                             });
                             if !LHS_PATTERN.is_match(&item.0) {
-                                self.problems.push(Problem {
-                                    msg: format!("invalid word pattern: {}", item.0),
-                                    position: item.1,
-                                    code: ErrorCode::InvalidWordPattern,
-                                });
+                                self.problems.push(
+                                    ErrorCode::InvalidWordPattern.to_problem(vec![&item.0], item.1),
+                                );
                             }
                             if occupied_keys.contains(&item.0) {
-                                self.problems.push(Problem {
-                                    msg: format!("duplicate alias: ${}", item.0),
-                                    position: item.1,
-                                    code: ErrorCode::DuplicateAlias,
-                                });
+                                self.problems.push(
+                                    ErrorCode::DuplicateAlias.to_problem(vec![&item.0], item.1),
+                                );
                             }
                         }
                     }
@@ -329,17 +291,13 @@ impl RainlangDocument {
                 } else {
                     // error if sub source is empty
                     if sub_src.is_empty() || sub_src.trim().is_empty() {
-                        self.problems.push(Problem {
-                            msg: "invalid empty expression line".to_owned(),
-                            position: sub_src_items_pos[j],
-                            code: ErrorCode::InvalidEmptyBinding,
-                        });
+                        self.problems.push(
+                            ErrorCode::InvalidEmptyLine.to_problem(vec![], sub_src_items_pos[j]),
+                        );
                     } else {
-                        self.problems.push(Problem {
-                            msg: "invalid expression line".to_owned(),
-                            position: sub_src_items_pos[j],
-                            code: ErrorCode::InvalidExpression,
-                        });
+                        self.problems.push(
+                            ErrorCode::InvalidExpression.to_problem(vec![], sub_src_items_pos[j]),
+                        );
                     }
                 };
 
@@ -407,11 +365,10 @@ impl RainlangDocument {
                     exp = exp.split_at(1).1;
                 }
                 '>' => {
-                    self.problems.push(Problem {
-                        msg: "unexpected \">\"".to_owned(),
-                        position: [cursor, cursor + 1],
-                        code: ErrorCode::UnexpectedClosingAngleParen,
-                    });
+                    self.problems.push(
+                        ErrorCode::UnexpectedClosingAngleParen
+                            .to_problem(vec![], [cursor, cursor + 1]),
+                    );
                     exp = exp.split_at(1).1;
                 }
                 ')' => {
@@ -420,11 +377,10 @@ impl RainlangDocument {
                         self.process_opcode()?;
                         self.state.depth -= 1;
                     } else {
-                        self.problems.push(Problem {
-                            msg: "unexpected \")\"".to_owned(),
-                            position: [cursor, cursor + 1],
-                            code: ErrorCode::UnexpectedClosingParen,
-                        });
+                        self.problems.push(
+                            ErrorCode::UnexpectedClosingParen
+                                .to_problem(vec![], [cursor, cursor + 1]),
+                        );
                     }
                     exp = exp.split_at(1).1;
                 }
@@ -491,44 +447,29 @@ impl RainlangDocument {
                         if let Some(b) = self.search_name(quote, v.1[0], namespace) {
                             match &b.item {
                                 BindingItem::Elided(e) => {
-                                    let msg = e.msg.to_owned();
-                                    self.problems.push(Problem {
-                                        msg,
-                                        position: v.1,
-                                        code: ErrorCode::ElidedBinding,
-                                    });
+                                    let msg = e.msg.clone();
+                                    self.problems
+                                        .push(ErrorCode::ElidedBinding.to_problem(vec![&msg], v.1));
                                 }
                                 BindingItem::Constant(_c) => {
-                                    self.problems.push(Problem {
-                                        msg: format!(
-                                            "invalid quote: {}, cannot quote constants",
-                                            quote
-                                        ),
-                                        position: v.1,
-                                        code: ErrorCode::InvalidQuote,
-                                    });
+                                    self.problems
+                                        .push(ErrorCode::InvalidQuote.to_problem(vec![quote], v.1));
                                 }
                                 _ => {
-                                    if let Some(_p) = b
-                                        .problems
+                                    if b.problems
                                         .iter()
-                                        .find(|v| v.code == ErrorCode::CircularDependency)
+                                        .any(|v| v.code == ErrorCode::CircularDependency)
                                     {
-                                        self.problems.push(Problem {
-                                            msg: "quoted binding has circular dependency"
-                                                .to_owned(),
-                                            position: v.1,
-                                            code: ErrorCode::CircularDependency,
-                                        });
+                                        self.problems.push(
+                                            ErrorCode::CircularDependencyQuote
+                                                .to_problem(vec![], v.1),
+                                        );
                                     }
                                 }
                             };
                         } else {
-                            self.problems.push(Problem {
-                                msg: format!("undefined quote: {}", quote),
-                                position: v.1,
-                                code: ErrorCode::UndefinedQuote,
-                            });
+                            self.problems
+                                .push(ErrorCode::UndefinedQuote.to_problem(vec![quote], v.1));
                         }
                     }
                     op.operand_args.as_mut().unwrap().args.push(OperandArgItem {
@@ -542,19 +483,15 @@ impl RainlangDocument {
                         description: String::new(),
                     });
                 } else {
-                    self.problems.push(Problem {
-                        msg: format!("invalid argument pattern: {}", v.0),
-                        position: v.1,
-                        code: ErrorCode::InvalidOperandArg,
-                    });
+                    self.problems
+                        .push(ErrorCode::InvalidOperandArg.to_problem(vec![&v.0], v.1));
                 }
             }
         } else {
-            self.problems.push(Problem {
-                msg: "expected \">\"".to_owned(),
-                position: [cursor, cursor + exp.len()],
-                code: ErrorCode::ExpectedClosingAngleBracket,
-            });
+            self.problems.push(
+                ErrorCode::ExpectedClosingAngleBracket
+                    .to_problem(vec![], [cursor, cursor + exp.len()]),
+            );
             op.operand_args = Some(OperandArg {
                 position: [cursor, cursor + exp.len()],
                 args: vec![],
@@ -598,25 +535,16 @@ impl RainlangDocument {
                 lhs_alias: None,
             };
             if next.is_empty() {
-                self.problems.push(Problem {
-                    msg: "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis".to_owned(),
-                    position: next_pos,
-                    code: ErrorCode::ExpectedOpcode
-                });
+                self.problems
+                    .push(ErrorCode::ExpectedOpcode.to_problem(vec![], next_pos));
             } else if !WORD_PATTERN.is_match(next) {
-                self.problems.push(Problem {
-                    msg: format!("invalid word pattern: {}", next),
-                    position: next_pos,
-                    code: ErrorCode::InvalidWordPattern,
-                });
+                self.problems
+                    .push(ErrorCode::InvalidWordPattern.to_problem(vec![next], next_pos));
             } else if let Some(word) = authoring_meta.0.iter().find(|&v| v.word.as_str() == next) {
                 op.opcode.description = word.description.clone();
             } else if !self.ignore_undefined_authoring_meta {
-                self.problems.push(Problem {
-                    msg: format!("unknown opcode: {}", next),
-                    position: next_pos,
-                    code: ErrorCode::UndefinedOpcode,
-                });
+                self.problems
+                    .push(ErrorCode::UndefinedOpcode.to_problem(vec![next], next_pos));
             }
             if remaining.starts_with('<') {
                 let consumed =
@@ -637,17 +565,12 @@ impl RainlangDocument {
                 op.parens[0] = pos;
                 self.update_state(Node::Opcode(op))?;
                 self.state.depth += 1;
-                self.problems.push(Problem {
-                    msg: "expected \")\"".to_owned(),
-                    position: [next_pos[0], pos + 1],
-                    code: ErrorCode::ExpectedClosingParen,
-                });
+                self.problems.push(
+                    ErrorCode::ExpectedClosingParen.to_problem(vec![], [next_pos[0], pos + 1]),
+                );
             } else {
-                self.problems.push(Problem {
-                    msg: "expected \"(\"".to_owned(),
-                    position: next_pos,
-                    code: ErrorCode::ExpectedOpeningParen,
-                });
+                self.problems
+                    .push(ErrorCode::ExpectedOpeningParen.to_problem(vec![], next_pos));
             }
         } else if next.contains('.') {
             if let Some(b) = self.search_name(next, cursor, namespace) {
@@ -662,12 +585,9 @@ impl RainlangDocument {
                         }))?;
                     }
                     BindingItem::Elided(e) => {
-                        let msg = e.msg.to_owned();
-                        self.problems.push(Problem {
-                            msg,
-                            position: next_pos,
-                            code: ErrorCode::ElidedBinding,
-                        });
+                        let msg = e.msg.clone();
+                        self.problems
+                            .push(ErrorCode::ElidedBinding.to_problem(vec![&msg], next_pos));
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
                             position: next_pos,
@@ -675,11 +595,8 @@ impl RainlangDocument {
                         }))?;
                     }
                     BindingItem::Exp(_e) => {
-                        self.problems.push(Problem {
-                            msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
-                            position: next_pos,
-                            code: ErrorCode::InvalidReference
-                        });
+                        self.problems
+                            .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
                             position: next_pos,
@@ -696,11 +613,8 @@ impl RainlangDocument {
             }
         } else if NUMERIC_PATTERN.is_match(next) {
             if to_u256(next).is_err() {
-                self.problems.push(Problem {
-                    msg: "value out of range".to_owned(),
-                    position: next_pos,
-                    code: ErrorCode::OutOfRangeValue,
-                });
+                self.problems
+                    .push(ErrorCode::OutOfRangeValue.to_problem(vec![], next_pos));
             }
             self.update_state(Node::Literal(Literal {
                 value: next.to_owned(),
@@ -739,11 +653,9 @@ impl RainlangDocument {
                                 }))?;
                             }
                             BindingItem::Elided(e) => {
-                                self.problems.push(Problem {
-                                    msg: e.msg.clone(),
-                                    position: next_pos,
-                                    code: ErrorCode::ElidedBinding,
-                                });
+                                self.problems.push(
+                                    ErrorCode::ElidedBinding.to_problem(vec![&e.msg], next_pos),
+                                );
                                 self.update_state(Node::Alias(Alias {
                                     name: next.to_owned(),
                                     position: next_pos,
@@ -751,11 +663,9 @@ impl RainlangDocument {
                                 }))?;
                             }
                             BindingItem::Exp(_e) => {
-                                self.problems.push(Problem {
-                                    msg: format!("invalid reference to binding: {}, only contant bindings can be referenced", next),
-                                    position: next_pos,
-                                    code: ErrorCode::InvalidReference
-                                });
+                                self.problems.push(
+                                    ErrorCode::InvalidReference.to_problem(vec![next], next_pos),
+                                );
                                 self.update_state(Node::Alias(Alias {
                                     name: next.to_owned(),
                                     position: next_pos,
@@ -764,19 +674,14 @@ impl RainlangDocument {
                             }
                         },
                         NamespaceNodeElement::Dispair(_) => {
-                            self.problems.push(Problem {
-                                msg: format!("invalid reference: {}", next),
-                                position: next_pos,
-                                code: ErrorCode::InvalidReference,
-                            });
+                            self.problems
+                                .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
                         }
                     },
                     NamespaceItem::Namespace(_ns) => {
-                        self.problems.push(Problem {
-                            msg: format!("invalid reference to namespace: {}", next),
-                            position: next_pos,
-                            code: ErrorCode::InvalidReference,
-                        });
+                        self.problems.push(
+                            ErrorCode::InvalidNamespaceReference.to_problem(vec![next], next_pos),
+                        );
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
                             position: next_pos,
@@ -785,11 +690,8 @@ impl RainlangDocument {
                     }
                 }
             } else {
-                self.problems.push(Problem {
-                    msg: format!("undefined word: {}", next),
-                    position: next_pos,
-                    code: ErrorCode::UndefinedWord,
-                });
+                self.problems
+                    .push(ErrorCode::UndefinedWord.to_problem(vec![next], next_pos));
                 self.update_state(Node::Alias(Alias {
                     name: next.to_owned(),
                     position: next_pos,
@@ -797,11 +699,8 @@ impl RainlangDocument {
                 }))?;
             }
         } else {
-            self.problems.push(Problem {
-                msg: format!("{} is not a valid rainlang word", next),
-                position: next_pos,
-                code: ErrorCode::InvalidWordPattern,
-            });
+            self.problems
+                .push(ErrorCode::InvalidWordPattern.to_problem(vec![next], next_pos));
             self.update_state(Node::Alias(Alias {
                 name: next.to_owned(),
                 position: next_pos,
@@ -824,28 +723,23 @@ impl RainlangDocument {
             segments = &segments[1..];
         }
         if segments.len() > 32 {
-            self.problems.push(Problem {
-                msg: "namespace too depp".to_owned(),
-                position: [offset, offset + query.len()],
-                code: ErrorCode::DeepNamespace,
-            });
+            self.problems
+                .push(ErrorCode::DeepNamespace.to_problem(vec![], [offset, offset + query.len()]));
             return None;
         }
         if segments[segments.len() - 1].0.is_empty() {
-            self.problems.push(Problem {
-                msg: "expected to end with a node".to_owned(),
-                position: segments[segments.len() - 1].1,
-                code: ErrorCode::UnexpectedNamespacePath,
-            });
+            self.problems.push(
+                ErrorCode::UnexpectedNamespacePath
+                    .to_problem(vec![], segments[segments.len() - 1].1),
+            );
             return None;
         }
         let mut is_invalid = false;
         for invalid_segment in segments.iter().filter(|v| !WORD_PATTERN.is_match(&v.0)) {
-            self.problems.push(Problem {
-                msg: "invalid word pattern".to_owned(),
-                position: invalid_segment.1,
-                code: ErrorCode::InvalidWordPattern,
-            });
+            self.problems.push(
+                ErrorCode::InvalidWordPattern
+                    .to_problem(vec![&invalid_segment.0], invalid_segment.1),
+            );
             is_invalid = true;
         }
         if is_invalid {
@@ -861,34 +755,29 @@ impl RainlangDocument {
                         if let Some(namespace_item) = ns.get(&segment.0) {
                             result = namespace_item;
                         } else {
-                            self.problems.push(Problem {
-                                msg: format!("namespace has no member {}", segment.0),
-                                position: segment.1,
-                                code: ErrorCode::UndefinedNamespaceMember,
-                            });
+                            self.problems.push(
+                                ErrorCode::UndefinedNamespaceMember
+                                    .to_problem(vec![&segment.0], segment.1),
+                            );
                             return None;
                         }
                     }
                     _ => {
-                        self.problems.push(Problem {
-                            msg: format!("namespace has no member {}", segment.0),
-                            position: segment.1,
-                            code: ErrorCode::UndefinedNamespaceMember,
-                        });
+                        self.problems.push(
+                            ErrorCode::UndefinedNamespaceMember
+                                .to_problem(vec![&segment.0], segment.1),
+                        );
                         return None;
                     }
                 }
             }
             match result {
                 NamespaceItem::Namespace(_ns) => {
-                    self.problems.push(Problem {
-                        msg: format!(
-                            "expected to end with a node, {} is a namespace",
-                            segments[segments.len() - 1].0
-                        ),
-                        position: [offset, offset + query.len()],
-                        code: ErrorCode::UnexpectedNamespacePath,
-                    });
+                    self.problems
+                        .push(ErrorCode::InvalidNamespaceReference.to_problem(
+                            vec![&segments[segments.len() - 1].0],
+                            [offset, offset + query.len()],
+                        ));
                     None
                 }
                 NamespaceItem::Node(node) => match &node.element {
@@ -897,11 +786,9 @@ impl RainlangDocument {
                 },
             }
         } else {
-            self.problems.push(Problem {
-                msg: format!("namespace has no member {}", segments[0].0),
-                position: segments[0].1,
-                code: ErrorCode::UndefinedNamespaceMember,
-            });
+            self.problems.push(
+                ErrorCode::UndefinedNamespaceMember.to_problem(vec![&segments[0].0], segments[0].1),
+            );
             None
         }
     }
