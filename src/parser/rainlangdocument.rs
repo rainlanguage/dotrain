@@ -51,7 +51,6 @@ impl Default for RainlangState {
 )]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[serde(rename(serialize = "IRainlangDocument"))]
 pub struct RainlangDocument {
     pub(crate) text: String,
     pub(crate) ast: Vec<RainlangSource>,
@@ -64,7 +63,7 @@ pub struct RainlangDocument {
 }
 
 impl RainlangDocument {
-    /// The error msg if parsing had resulted in an error
+    /// The error msg if parsing had resulted in an runtime error
     pub fn runtime_error(&self) -> Option<String> {
         self.error.clone()
     }
@@ -171,10 +170,12 @@ impl RainlangDocument {
         // parse and take out pragma definitions
         // currently not part of ast
         for v in inclusive_parse(&document, &PRAGMA_PATTERN, 0) {
+            // if not followed by a hex literal
             if !PRAGMA_END_PATTERN.is_match(&v.0) {
                 self.problems
                     .push(ErrorCode::ExpectedHexLiteral.to_problem(vec![], v.1));
             }
+            // if not at top, ie checking for a ":" before the pragma definition
             if document[..v.1[0]].contains(':') {
                 self.problems
                     .push(ErrorCode::UnexpectedPragma.to_problem(vec![], v.1));
@@ -207,16 +208,15 @@ impl RainlangDocument {
             }
         }
 
-        // reserved keywords + authoring meta words
+        // reserved keywords + authoring meta words + root namespace occupied keys
         let mut reserved_keys = vec![];
         reserved_keys.extend(KEYWORDS.iter().map(|v| v.to_string()));
         reserved_keys.extend(authoring_meta.0.iter().map(|v| v.word.clone()));
+        reserved_keys.extend(namespace.keys().cloned());
 
         for (i, src) in src_items.iter().enumerate() {
-            // reserved keys + root namespace occupied keys
-            let mut occupied_keys = vec![];
-            occupied_keys.extend(reserved_keys.iter().cloned());
-            occupied_keys.extend(namespace.keys().cloned());
+            // reserved keys + parsed lhs items of this srouce
+            let mut occupied_keys = reserved_keys.clone();
 
             let mut ends_diff: Vec<usize> = vec![];
             let mut sub_src_items: Vec<String> = vec![];

@@ -12,7 +12,7 @@ use tsify::Tsify;
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use wasm_bindgen::prelude::*;
 
-/// Error codes of Rainlang/RainDocument problem and LSP Diagnostics
+/// Error codes of RainlangDocument/RainDocument problem and LSP Diagnostics
 #[derive(Debug, Clone, PartialEq, Copy, Serialize_repr, Deserialize_repr)]
 #[repr(i32)]
 #[cfg_attr(any(feature = "js-api", target_family = "wasm"), wasm_bindgen)]
@@ -192,7 +192,7 @@ pub type Offsets = [usize; 2];
 /// Type for result of matches found in a String
 pub struct ParsedItem(pub String, pub Offsets);
 
-/// Type for Rainlang/RainDocument problem
+/// Type for encountered problem within the text
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
@@ -205,7 +205,7 @@ pub struct Problem {
     pub code: ErrorCode,
 }
 
-/// Type Rainlang AST Value node
+/// Type for AST Value node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(
@@ -263,7 +263,7 @@ pub struct OperandArg {
     pub args: Vec<OperandArgItem>,
 }
 
-/// Type for Rainlang AST Opcode node
+/// Type for AST Opcode node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(
@@ -286,7 +286,7 @@ pub struct Opcode {
     pub operand_args: Option<OperandArg>,
 }
 
-/// Type for Rainlang/RainDocument alias
+/// Type for AST Alias node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(
@@ -302,7 +302,7 @@ pub struct Alias {
     pub lhs_alias: Option<Vec<Alias>>,
 }
 
-/// Type for Rainlang/RainDocument comments
+/// Type of a parsed comment
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
@@ -497,13 +497,7 @@ pub struct ConstantBindingItem {
 pub enum BindingItem {
     Elided(ElidedBindingItem),
     Constant(ConstantBindingItem),
-    Exp(
-        #[cfg_attr(
-            any(feature = "js-api", target_family = "wasm"),
-            tsify(type = "IRainlangDocument")
-        )]
-        RainlangDocument,
-    ),
+    Exp(RainlangDocument),
 }
 
 /// Type for a binding (named expressions)
