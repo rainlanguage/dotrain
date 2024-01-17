@@ -99,10 +99,11 @@ impl ErrorCode {
             Self::DeepNamespace => "namespace path too depp".to_owned(),
             Self::CorruptMeta => "corrupt meta".to_owned(),
             Self::ElidedBinding => msg_items[0].to_owned(),
-            Self::SingletonWords => format!("words must be singleton, but namespace include {} sets of words", msg_items[0]),
+            Self::SingletonWords => format!("words must be singleton, but namespace includes {} sets of words", msg_items[0]),
             Self::MultipleWords => "import contains multiple sets of words in its namespace".to_owned(),
             Self::InconsumableMeta => "import contains inconsumable meta".to_owned(),
             Self::NamespaceOccupied => "cannot import into an occupied namespace".to_owned(),
+
             Self::UndefinedWord => format!("undefined word: {}", msg_items[0]),
             Self::UndefinedAuthoringMeta => "deployer's authroing meta is undefined".to_owned(),
             Self::UndefinedImport => format!("cannot find any settlement for import: {}", msg_items[0]),
@@ -111,6 +112,7 @@ impl ErrorCode {
             Self::UndefinedIdentifier => format!("undefined identifier {}", msg_items[0]),
             Self::UndefinedDeployer => "cannot find any set of words (undefined deployer)".to_owned(),
             Self::UndefinedNamespaceMember => format!("namespace has no member {}", msg_items[0]),
+
             Self::InvalidWordPattern => format!("invalid word pattern: {}", msg_items[0]),
             Self::InvalidExpression => "invalid expression line".to_owned(),
             Self::InvalidHash => "invalid hash, must be 32 bytes".to_owned(),
@@ -123,6 +125,7 @@ impl ErrorCode {
             Self::InvalidReference => format!("invalid reference to binding: {}, only constant bindings can be referenced", msg_items[0]),
             Self::InvalidRainDocument => "imported rain document contains top level errors".to_owned(),
             Self::InvalidNamespaceReference => format!("expected a node, {} is a namespace", msg_items[0]),
+
             Self::UnexpectedToken => "unexpected token".to_owned(),
             Self::UnexpectedClosingParen => "unexpected \")\"".to_owned(),
             Self::UnexpectedNamespacePath => "unexpected path, must end with a node".to_owned(),
@@ -131,6 +134,7 @@ impl ErrorCode {
             Self::UnexpectedEndOfComment => "unexpected end of comment".to_owned(),
             Self::UnexpectedComment => "unexpected comment".to_owned(),
             Self::UnexpectedPragma => "unexpected pragma, must be at top".to_owned(),
+
             Self::ExpectedOpcode => "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis".to_owned(),
             Self::ExpectedElisionOrRebinding => "expected rebinding or elision".to_owned(),
             Self::ExpectedClosingParen => "expected \")\"".to_owned(),
@@ -139,12 +143,15 @@ impl ErrorCode {
             Self::ExpectedSemi => "expected to end with semi".to_owned(),
             Self::ExpectedHexLiteral => "expected to be followed by a hex literal".to_owned(),
             Self::ExpectedRename => "expected to be renamed".to_owned(),
+
             Self::MismatchRHS => String::new(),
             Self::MismatchLHS => String::new(),
             Self::MismatchOperandArgs => String::new(),
+
             Self::OutOfRangeInputs => String::new(),
             Self::OutOfRangeOperandArgs => String::new(),
             Self::OutOfRangeValue => "value out of range".to_owned(),
+
             Self::DuplicateAlias => format!("duplicate alias: {}", msg_items[0]),
             Self::DuplicateIdentifier => "import contains items with duplicate identifiers".to_owned(),
             Self::DuplicateImportStatement => "duplicate import statement".to_owned(),
