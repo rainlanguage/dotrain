@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use rain_meta::types::authoring::v1::AuthoringMeta;
 use super::{
@@ -796,9 +795,9 @@ impl RainlangDocument {
 
 #[cfg(test)]
 mod tests {
-    use rain_meta::types::authoring::v1::AuthoringMetaItem;
-
     use super::*;
+    use std::collections::HashMap;
+    use rain_meta::types::authoring::v1::AuthoringMetaItem;
 
     #[test]
     fn test_process_opcode_method() -> anyhow::Result<()> {
