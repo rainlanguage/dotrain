@@ -932,6 +932,110 @@ mod tests {
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
 
+        let exp = "<0xa5>";
+        let mut op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opcode".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            parameters: vec![],
+            lhs_alias: None,
+            operand_args: None,
+        };
+
+        let consumed_count = rl.process_operand(exp, 8, &mut op, &namespace);
+        let expected_op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opcode".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            parameters: vec![],
+            lhs_alias: None,
+            operand_args: Some(OperandArg {
+                position: [8, 14],
+                args: vec![OperandArgItem {
+                    value: "0xa5".to_owned(),
+                    name: "operand arg".to_owned(),
+                    position: [9, 13],
+                    description: String::new(),
+                }],
+            }),
+        };
+        assert_eq!(consumed_count, exp.len());
+        assert_eq!(op, expected_op);
+
+        let exp = "<1\n0xf2\n69   32>";
+        let mut op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opc".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            parameters: vec![],
+            lhs_alias: None,
+            operand_args: None,
+        };
+
+        let consumed_count = rl.process_operand(exp, 15, &mut op, &namespace);
+        let expected_op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opc".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            parameters: vec![],
+            lhs_alias: None,
+            operand_args: Some(OperandArg {
+                position: [15, 31],
+                args: vec![
+                    OperandArgItem {
+                        value: "1".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [16, 17],
+                        description: String::new(),
+                    },
+                    OperandArgItem {
+                        value: "0xf2".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [18, 22],
+                        description: String::new(),
+                    },
+                    OperandArgItem {
+                        value: "69".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [23, 25],
+                        description: String::new(),
+                    },
+                    OperandArgItem {
+                        value: "32".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [28, 30],
+                        description: String::new(),
+                    },
+                ],
+            }),
+        };
+        assert_eq!(consumed_count, exp.len());
+        assert_eq!(op, expected_op);
+
         Ok(())
     }
 
@@ -939,15 +1043,27 @@ mod tests {
     fn test_process_next_method() -> anyhow::Result<()> {
         let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
-        let authoring_meta = AuthoringMeta(vec![AuthoringMetaItem {
-            word: "opcode".to_owned(),
-            operand_parser_offset: 0,
-            description: String::new(),
-        }]);
-        let text = "opcode<12 56>(";
+        let authoring_meta = AuthoringMeta(vec![
+            AuthoringMetaItem {
+                word: "opcode".to_owned(),
+                operand_parser_offset: 0,
+                description: String::new(),
+            },
+            AuthoringMetaItem {
+                word: "another-opcode".to_owned(),
+                operand_parser_offset: 0,
+                description: String::new(),
+            },
+            AuthoringMetaItem {
+                word: "another-opcode-2".to_owned(),
+                operand_parser_offset: 0,
+                description: String::new(),
+            },
+        ]);
 
+        let text = "opcode<12 56>(";
         let consumed_count = rl.process_next(text, 10, &namespace, &authoring_meta)?;
-        let expected_state_nodes = vec![Node::Opcode(Opcode {
+        let mut expected_state_nodes = vec![Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "opcode".to_owned(),
                 description: String::new(),
@@ -980,6 +1096,62 @@ mod tests {
         assert_eq!(consumed_count, text.len());
         assert_eq!(rl.state.nodes, expected_state_nodes);
 
+        let text = "another-opcode(12 0x123abced)";
+        rl.state.depth -= 1;
+        let consumed_count = rl.process_next(text, 24, &namespace, &authoring_meta)?;
+        expected_state_nodes.push(Node::Opcode(Opcode {
+            opcode: OpcodeDetails {
+                name: "another-opcode".to_owned(),
+                description: String::new(),
+                position: [24, 38],
+            },
+            operand: None,
+            output: None,
+            position: [24, 0],
+            parens: [38, 0],
+            parameters: vec![],
+            lhs_alias: None,
+            operand_args: None,
+        }));
+        assert_eq!(consumed_count, "another-opcode(".len());
+        assert_eq!(rl.state.nodes, expected_state_nodes);
+
+        let text = "another-opcode-2<\n  0x1f\n  87>(\n  0xabcef1234\n)";
+        rl.state.depth -= 1;
+        let consumed_count = rl.process_next(text, 77, &namespace, &authoring_meta)?;
+        expected_state_nodes.push(Node::Opcode(Opcode {
+            opcode: OpcodeDetails {
+                name: "another-opcode-2".to_owned(),
+                description: String::new(),
+                position: [77, 93],
+            },
+            operand: None,
+            output: None,
+            position: [77, 0],
+            parens: [107, 0],
+            parameters: vec![],
+            lhs_alias: None,
+            operand_args: Some(OperandArg {
+                position: [93, 107],
+                args: vec![
+                    OperandArgItem {
+                        value: "0x1f".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [97, 101],
+                        description: String::new(),
+                    },
+                    OperandArgItem {
+                        value: "87".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [104, 106],
+                        description: String::new(),
+                    },
+                ],
+            }),
+        }));
+        assert_eq!(consumed_count, "another-opcode-2<\n  0x1f\n  87>(".len());
+        assert_eq!(rl.state.nodes, expected_state_nodes);
+
         Ok(())
     }
 
@@ -988,6 +1160,26 @@ mod tests {
         let mut rl = RainlangDocument::new();
         let mut main_namespace: Namespace = HashMap::new();
         let mut deep_namespace: Namespace = HashMap::new();
+        let mut deeper_namespace: Namespace = HashMap::new();
+
+        let deeper_binding = Binding {
+            name: "deeper-binding-name".to_owned(),
+            name_position: [2, 2],
+            content: String::new(),
+            content_position: [4, 4],
+            position: [1, 2],
+            problems: vec![],
+            dependencies: vec![],
+            item: BindingItem::Elided(ElidedBindingItem {
+                msg: "elided binding".to_string(),
+            }),
+        };
+        let deeper_node = NamespaceItem::Node(NamespaceNode {
+            hash: "some-hash".to_owned(),
+            import_index: 2,
+            element: NamespaceNodeElement::Binding(deeper_binding.clone()),
+        });
+
         let binding = Binding {
             name: "binding-name".to_owned(),
             name_position: [1, 1],
@@ -1001,21 +1193,41 @@ mod tests {
             }),
         };
         let deep_node = NamespaceItem::Node(NamespaceNode {
-            hash: "some-hash".to_owned(),
+            hash: "some-other-hash".to_owned(),
             import_index: 1,
             element: NamespaceNodeElement::Binding(binding.clone()),
         });
+
+        deeper_namespace.insert("deeper-binding-name".to_string(), deeper_node.clone());
         deep_namespace.insert("binding-name".to_string(), deep_node.clone());
+        deep_namespace.insert(
+            "deeper-namespace".to_string(),
+            NamespaceItem::Namespace(deeper_namespace),
+        );
         main_namespace.insert(
             "deep-namespace".to_string(),
             NamespaceItem::Namespace(deep_namespace),
         );
 
-        let result1 = rl.search_name(".deep-namespace.binding-name", 0, &main_namespace);
-        assert_eq!(Some(&binding), result1);
+        let result = rl.search_name(
+            "deep-namespace.deeper-namespace.deeper-binding-name",
+            0,
+            &main_namespace,
+        );
+        assert_eq!(Some(&deeper_binding), result);
 
-        let result2 = rl.search_name("deep-namespace.other-binding-name", 0, &main_namespace);
-        assert_eq!(None, result2);
+        let result = rl.search_name(".deep-namespace.binding-name", 0, &main_namespace);
+        assert_eq!(Some(&binding), result);
+
+        let result = rl.search_name("deep-namespace.other-binding-name", 0, &main_namespace);
+        assert_eq!(None, result);
+
+        let result = rl.search_name(
+            "deep-namespace.deeper-namespace.other-binding-name",
+            0,
+            &main_namespace,
+        );
+        assert_eq!(None, result);
 
         Ok(())
     }
