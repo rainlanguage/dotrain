@@ -3,6 +3,12 @@
 use regex::Regex;
 use once_cell::sync::Lazy;
 
+/// pragma keyword in rainlang
+pub const PRAGMA_KEYWORD: &str = "using-words-from";
+
+/// reserved keywords in rainlang
+pub const KEYWORDS: [&str; 1] = [PRAGMA_KEYWORD];
+
 /// Illegal character pattern
 pub static ILLEGAL_CHAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^ -~\s]+").unwrap());
 
@@ -76,8 +82,13 @@ pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*
 /// sub parser pattern
 pub static SUB_PARSER_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[\s\S]*?\]$"#).unwrap());
 
-/// pragma pattern
-pub static PRAGMA_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new("using-words-from").unwrap());
+/// pragma pattern (keyword + ws + hex)
+pub static PRAGMA_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(:?^|\s)using-words-from(\s+0x[0-9a-fA-F]*)?(:?\s|$)").unwrap());
+
+/// pattern of end of a pragma definition
+pub static PRAGMA_END_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"0x[0-9a-fA-F]*(\s|$)").unwrap());
 
 /// the default elided binding msg
 pub static DEFAULT_ELISION: &str = "elided binding, requires rebinding";
@@ -90,19 +101,20 @@ pub mod lint_patterns {
 
     /// ignores next line diagnostics
     pub static IGNORE_NEXT_LINE: Lazy<Regex> =
-        Lazy::new(|| Regex::new(r"\bignore-next-line\b").unwrap());
+        Lazy::new(|| Regex::new(r"(:?*|\s)ignore-next-line(:?*|\s)").unwrap());
 
     /// ignores undefined words (ignores word sourced diagnostics if words are undefined)
-    /// undefined words happens when AuthoringMeta is not available for teh specified dispair
+    /// undefined words happens when AuthoringMeta is not available for the specified dispair
     /// so without having AuthoringMeta, all opcodes are flagged as "unknown opcode" diagnostic
     /// this linting option can be used to ignore and shut off those diagnostics
     pub static IGNORE_UNDEFINED_WORDS: Lazy<Regex> =
-        Lazy::new(|| Regex::new(r"\bignore-undefined-words\b").unwrap());
+        Lazy::new(|| Regex::new(r"(:?*|\s)ignore-undefined-words(:?*|\s)").unwrap());
 
     /// ignores words related diagnostics
     /// this is like [IGNORE_UNDEFINED_WORDS], except that it will ignore the AuthoringMeta related
     /// diagnostics completely, no matter if it is available or not
-    pub static IGNORE_WORDS: Lazy<Regex> = Lazy::new(|| Regex::new(r"\bignore-words\b").unwrap());
+    pub static IGNORE_WORDS: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"(:?*|\s)ignore-words(:?*|\s)").unwrap());
 }
 
 #[cfg(test)]
@@ -354,6 +366,30 @@ mod tests {
         ] {
             assert!(
                 SUB_PARSER_PATTERN.is_match(i),
+                "String '{}' considered invalid.",
+                i
+            );
+        }
+
+        // invalids
+        for i in [
+            "using-words-from123",
+            "using-word-from 0x123",
+            "using-words-from-g",
+        ] {
+            assert!(
+                !PRAGMA_PATTERN.is_match(i),
+                "String '{}' considered valid.",
+                i
+            );
+        }
+        // valids
+        for i in [
+            "using-words-from \n\t 0x123abcedf",
+            " using-words-from \n\n 0x09835356abcdef84765932342efabcd72305471 ",
+        ] {
+            assert!(
+                PRAGMA_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
                 i
             );
