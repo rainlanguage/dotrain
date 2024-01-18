@@ -92,10 +92,16 @@ impl RainlangDocument {
     /// Creates a new instance
     pub(crate) fn create(
         text: String,
-        authoring_meta: &AuthoringMeta,
         namespace: &Namespace,
-        ignore_undefined_authoring_meta: bool,
+        authoring_meta: Option<&AuthoringMeta>,
     ) -> RainlangDocument {
+        let mut am = &AuthoringMeta(vec![]);
+        let ignore_undefined_authoring_meta = if let Some(v) = authoring_meta {
+            am = v;
+            false
+        } else {
+            true
+        };
         let mut rl = RainlangDocument {
             text,
             ast: vec![],
@@ -105,7 +111,7 @@ impl RainlangDocument {
             ignore_undefined_authoring_meta,
             state: RainlangState::default(),
         };
-        rl.parse(namespace, authoring_meta);
+        rl.parse(namespace, am);
         rl
     }
 
