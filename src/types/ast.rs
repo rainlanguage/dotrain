@@ -29,6 +29,7 @@ pub enum ErrorCode {
     MultipleWords = 9,
     InconsumableMeta = 10,
     NamespaceOccupied = 11,
+    OddLenHex = 12,
 
     UndefinedWord = 0x101,
     UndefinedAuthoringMeta = 0x102,
@@ -96,13 +97,14 @@ impl ErrorCode {
             Self::CircularDependencyQuote => "quoted binding has circular dependency".to_owned(),
             Self::CircularDependency => "circular dependency".to_owned(),
             Self::DeepImport => "import too deep".to_owned(),
-            Self::DeepNamespace => "namespace path too depp".to_owned(),
+            Self::DeepNamespace => "namespace path too deep".to_owned(),
             Self::CorruptMeta => "corrupt meta".to_owned(),
             Self::ElidedBinding => msg_items[0].to_owned(),
             Self::SingletonWords => format!("words must be singleton, but namespace includes {} sets of words", msg_items[0]),
             Self::MultipleWords => "import contains multiple sets of words in its namespace".to_owned(),
             Self::InconsumableMeta => "import contains inconsumable meta".to_owned(),
             Self::NamespaceOccupied => "cannot import into an occupied namespace".to_owned(),
+            Self::OddLenHex => "odd length hex literal".to_owned(),
 
             Self::UndefinedWord => format!("undefined word: {}", msg_items[0]),
             Self::UndefinedAuthoringMeta => "deployer's authroing meta is undefined".to_owned(),

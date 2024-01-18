@@ -611,7 +611,10 @@ impl RainlangDocument {
                 }))?;
             }
         } else if NUMERIC_PATTERN.is_match(next) {
-            if to_u256(next).is_err() {
+            if HEX_PATTERN.is_match(next) && next.len() % 2 == 1 {
+                self.problems
+                    .push(ErrorCode::OddLenHex.to_problem(vec![], next_pos));
+            } else if to_u256(next).is_err() {
                 self.problems
                     .push(ErrorCode::OutOfRangeValue.to_problem(vec![], next_pos));
             }
