@@ -1479,7 +1479,6 @@ mod tests {
 
     #[test]
     fn test_is_constant_method() -> anyhow::Result<()> {
-        // let rain_document = RainDocument::_new(String::new(), None, 0);
         let text = " \n 1234 \n\t ";
         let result = RainDocument::is_constant(text);
         assert_eq!(result, Some(("1234".to_owned(), false)));
