@@ -1462,3 +1462,105 @@ impl PartialEq for RainDocument {
             && self.error == other.error
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_constant_method() -> anyhow::Result<()> {
+        // let rain_document = RainDocument::_new(String::new(), None, 0);
+        let text = " \n 1234 \n\t ";
+        let result = RainDocument::is_constant(text);
+        assert_eq!(result, Some(("1234".to_owned(), false)));
+
+        let text = " \n 14e6";
+        let result = RainDocument::is_constant(text);
+        assert_eq!(result, Some(("14e6".to_owned(), false)));
+
+        let text = " \t 0x1234abcdef ";
+        let result = RainDocument::is_constant(text);
+        assert_eq!(result, Some(("0x1234abcdef".to_owned(), false)));
+
+        let text = " \n 99999e99999 \n";
+        let result = RainDocument::is_constant(text);
+        assert_eq!(result, Some(("99999e99999".to_owned(), true)));
+
+        let text = " \n 999 234 \n";
+        let result = RainDocument::is_constant(text);
+        assert_eq!(result, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_elided_method() -> anyhow::Result<()> {
+        let text = " ! \n some msg \n msg continues \n\t";
+        let result = RainDocument::is_elided(text);
+        assert_eq!(result, Some(" \n some msg \n msg continues".to_owned()));
+
+        let text = " ! \n\t";
+        let result = RainDocument::is_elided(text);
+        assert_eq!(result, Some("".to_owned()));
+
+        let text = "some msg";
+        let result = RainDocument::is_elided(text);
+        assert_eq!(result, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_import_config_method() -> anyhow::Result<()> {
+        let text = " 'item1 renamed-item1 \n . ! \n\n\t item2 0x1234 \n";
+        let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
+        let result = RainDocument::process_import_config(&mut config_items.iter_mut());
+        let expected = ImportConfiguration {
+            pairs: vec![
+                (
+                    ParsedItem("'item1".to_owned(), [1, 7]),
+                    Some(ParsedItem("renamed-item1".to_owned(), [8, 21])),
+                ),
+                (
+                    ParsedItem(".".to_owned(), [24, 25]),
+                    Some(ParsedItem("!".to_owned(), [26, 27])),
+                ),
+                (
+                    ParsedItem("item2".to_owned(), [32, 37]),
+                    Some(ParsedItem("0x1234".to_owned(), [38, 44])),
+                ),
+            ],
+            problems: vec![],
+        };
+        assert_eq!(result, expected);
+
+        let text = "'item1 renamed-item1 . ";
+        let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
+        let result = RainDocument::process_import_config(&mut config_items.iter_mut());
+        let expected = ImportConfiguration {
+            pairs: vec![
+                (
+                    ParsedItem("'item1".to_owned(), [0, 6]),
+                    Some(ParsedItem("renamed-item1".to_owned(), [7, 20])),
+                ),
+                (ParsedItem(".".to_owned(), [21, 22]), None),
+            ],
+            problems: vec![ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], [21, 22])],
+        };
+        assert_eq!(result, expected);
+
+        let text = "Bad-name 0x1234";
+        let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
+        let result = RainDocument::process_import_config(&mut config_items.iter_mut());
+        let expected = ImportConfiguration {
+            pairs: vec![(
+                ParsedItem("Bad-name".to_owned(), [0, 8]),
+                Some(ParsedItem("0x1234".to_owned(), [9, 15])),
+            )],
+            problems: vec![ErrorCode::UnexpectedToken.to_problem(vec![], [0, 8])],
+        };
+        assert_eq!(result, expected);
+
+        Ok(())
+    }
+}
