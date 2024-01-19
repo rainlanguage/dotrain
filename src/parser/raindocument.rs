@@ -1,4 +1,3 @@
-use lsp_types::Url;
 use std::sync::{Arc, RwLock};
 use serde::{Serialize, Deserialize};
 use async_recursion::async_recursion;
@@ -40,15 +39,14 @@ use wasm_bindgen::prelude::wasm_bindgen;
 
 ```rust
 use std::sync::{Arc, RwLock};
-use dotrain::{RainDocument, Url, Store};
+use dotrain::{RainDocument, Store};
 
 let text = "some .rain text content".to_string();
-let uri = Url::parse("file:///example.rain").unwrap();
 
 let meta_store = Arc::new(RwLock::new(Store::default()));
 
 // create a new instance that gets parsed right away
-let rain_document = RainDocument::create(text, uri, Some(meta_store));
+let rain_document = RainDocument::create(text, Some(meta_store));
 
 // get all problems
 let problems = rain_document.all_problems();
@@ -69,11 +67,10 @@ let problems = rain_document.all_problems();
     doc = " @example
  ```javascript
  // create a new instane
- // uri must be a valid URL
- const rainDocument = RainDocument.create(text, uri, meta_store);
+ const rainDocument = RainDocument.create(text, meta_store);
 
  // alternatively instantiate with remote meta search enabled
- const rainDocument = await RainDocument.createAsync(text, uri, meta_store);
+ const rainDocument = await RainDocument.createAsync(text, meta_store);
 
  // get all problems
  const problems = rainDocument.allProblems;
@@ -92,12 +89,10 @@ let problems = rain_document.all_problems();
 #[serde(rename_all = "camelCase")]
 #[serde(rename(serialize = "IRainDocument"))]
 pub struct RainDocument {
-    pub(crate) version: usize,
     #[cfg_attr(
         any(feature = "js-api", target_family = "wasm"),
         tsify(type = "string")
     )]
-    pub(crate) uri: Url,
     pub(crate) text: String,
     pub(crate) front_matter: String,
     pub(crate) error: Option<String>,
@@ -127,48 +122,29 @@ impl RainDocument {
     /// Creates an instance and parses with remote meta search enabled
     pub async fn create_async(
         text: String,
-        uri: Url,
         meta_store: Option<Arc<RwLock<Store>>>,
     ) -> RainDocument {
-        let mut rd = RainDocument::_new(text, uri, 0, meta_store, 0);
+        let mut rd = RainDocument::_new(text, meta_store, 0);
         rd.parse(true).await;
         rd
     }
 
     /// Creates an instance and parses with remote meta search disabled (cached metas only)
-    pub fn create(text: String, uri: Url, meta_store: Option<Arc<RwLock<Store>>>) -> RainDocument {
-        let mut rd = RainDocument::_new(text, uri, 0, meta_store, 0);
+    pub fn create(text: String, meta_store: Option<Arc<RwLock<Store>>>) -> RainDocument {
+        let mut rd = RainDocument::_new(text, meta_store, 0);
         block_on(rd.parse(false));
         rd
     }
 
     /// Updates the text and parses right away with remote meta search disabled (cached metas only)
-    pub fn update_text(&mut self, new_text: String) {
+    pub fn update(&mut self, new_text: String) {
         self.text = new_text;
-        self.version += 1;
-        block_on(self.parse(false));
-    }
-
-    /// Updates the text, uri, version and parses right away with remote meta search disabled (cached metas only)
-    pub fn update(&mut self, new_text: String, uri: Url, version: usize) {
-        self.text = new_text;
-        self.uri = uri;
-        self.version = version;
         block_on(self.parse(false));
     }
 
     /// Updates the text and parses right away with remote meta search enabled
-    pub async fn update_text_async(&mut self, new_text: String) {
+    pub async fn update_async(&mut self, new_text: String) {
         self.text = new_text;
-        self.version += 1;
-        self.parse(true).await;
-    }
-
-    /// Updates the text, uri, version and parses right away with remote meta search enabled
-    pub async fn update_async(&mut self, new_text: String, uri: Url, version: usize) {
-        self.text = new_text;
-        self.uri = uri;
-        self.version = version;
         self.parse(true).await;
     }
 
@@ -180,16 +156,6 @@ impl RainDocument {
     /// This instance's front matter
     pub fn front_matter(&self) -> &String {
         &self.front_matter
-    }
-
-    /// This instance's current URI
-    pub fn uri(&self) -> &Url {
-        &self.uri
-    }
-
-    /// This instance's current version
-    pub fn version(&self) -> usize {
-        self.version
     }
 
     /// This instance's top problems
@@ -287,8 +253,6 @@ impl RainDocument {
 impl RainDocument {
     pub(crate) fn _new(
         text: String,
-        uri: Url,
-        version: usize,
         meta_store: Option<Arc<RwLock<Store>>>,
         import_depth: usize,
     ) -> RainDocument {
@@ -300,8 +264,6 @@ impl RainDocument {
         RainDocument {
             meta_store: ms,
             text,
-            uri,
-            version,
             front_matter: String::new(),
             error: None,
             bindings: vec![],
@@ -318,6 +280,10 @@ impl RainDocument {
     }
 
     /// Checks if an import is deeper than 32 levels
+    /// [ErrorCode::DeepImport] signifies a deep import problem and is passed on from
+    /// deeper import up to the most outter dotrain, so by checking for that among
+    /// import.problems, it is possible to check if an import statement goes deeper
+    /// than 32 levels
     fn is_deep_import(import: &Import) -> bool {
         if let Some(seq) = &import.sequence {
             if let Some(dotrain) = &seq.dotrain {
@@ -333,7 +299,7 @@ impl RainDocument {
         }
     }
 
-    /// Checks if a binding is elided
+    /// Checks if a binding is elided and returns the elision msg if it found any
     #[allow(clippy::manual_strip)]
     fn is_elided(text: &str) -> Option<String> {
         let msg = text.trim();
@@ -347,9 +313,7 @@ impl RainDocument {
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
     fn is_constant(text: &str) -> Option<(String, bool)> {
         let items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        if items.len() != 1 {
-            None
-        } else if NUMERIC_PATTERN.is_match(&items[0].0) {
+        if items.len() == 1 && NUMERIC_PATTERN.is_match(&items[0].0) {
             let is_out_of_range = to_u256(&items[0].0).is_err();
             Some((items[0].0.clone(), is_out_of_range))
         } else {
@@ -357,40 +321,117 @@ impl RainDocument {
         }
     }
 
-    /// copies a namespaces with given import index and hash
-    fn copy_namespace(namespace: &Namespace, index: isize, hash: &str) -> Namespace {
-        let mut new_namespace: Namespace = HashMap::new();
-        for (key, item) in namespace {
-            match item {
-                NamespaceItem::Node(node) => {
-                    new_namespace.insert(
-                        key.clone(),
-                        NamespaceItem::Node(NamespaceNode {
-                            hash: if node.hash.is_empty() {
-                                hash.to_owned()
+    // processes configurations of an import statement
+    fn process_import_config(
+        config_pieces: &mut std::slice::IterMut<'_, ParsedItem>,
+    ) -> ImportConfiguration {
+        let mut imp_conf = ImportConfiguration {
+            pairs: vec![],
+            problems: vec![],
+        };
+        while let Some(piece) = config_pieces.next() {
+            if piece.0 == "." {
+                if let Some(next) = config_pieces.next() {
+                    if next.0 == "!" {
+                        if imp_conf.pairs.iter().any(|v| {
+                            if let Some(e) = &v.1 {
+                                v.0 .0 == piece.0 && e.0 == next.0
                             } else {
-                                node.hash.clone()
-                            },
-                            import_index: index,
-                            element: node.element.clone(),
-                        }),
-                    );
+                                false
+                            }
+                        }) {
+                            imp_conf.problems.push(
+                                ErrorCode::DuplicateImportStatement
+                                    .to_problem(vec![], [piece.1[0], next.1[1]]),
+                            );
+                        }
+                    } else {
+                        imp_conf
+                            .problems
+                            .push(ErrorCode::UnexpectedToken.to_problem(vec![], next.1));
+                    }
+                    imp_conf.pairs.push((piece.clone(), Some(next.clone())));
+                } else {
+                    imp_conf
+                        .problems
+                        .push(ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], piece.1));
+                    imp_conf.pairs.push((piece.clone(), None));
                 }
-                NamespaceItem::Namespace(deep_namespace) => {
-                    new_namespace.insert(
-                        key.to_owned(),
-                        NamespaceItem::Namespace(Self::copy_namespace(deep_namespace, index, hash)),
-                    );
+            } else if WORD_PATTERN.is_match(&piece.0) {
+                if let Some(next) = config_pieces.next() {
+                    if NUMERIC_PATTERN.is_match(&next.0) || next.0 == "!" {
+                        if imp_conf.pairs.iter().any(|v| {
+                            if let Some(e) = &v.1 {
+                                v.0 .0 == piece.0 && e.0 == next.0
+                            } else {
+                                false
+                            }
+                        }) {
+                            imp_conf.problems.push(
+                                ErrorCode::DuplicateImportStatement
+                                    .to_problem(vec![], [piece.1[0], next.1[1]]),
+                            );
+                        }
+                    } else {
+                        imp_conf
+                            .problems
+                            .push(ErrorCode::UnexpectedToken.to_problem(vec![], next.1));
+                    }
+                    imp_conf.pairs.push((piece.clone(), Some(next.clone())));
+                } else {
+                    imp_conf
+                        .problems
+                        .push(ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], piece.1));
+                    imp_conf.pairs.push((piece.clone(), None));
                 }
+            } else if let Some(quote) = piece.0.strip_prefix('\'') {
+                if let Some(next) = config_pieces.next() {
+                    if WORD_PATTERN.is_match(quote) {
+                        if WORD_PATTERN.is_match(&next.0) {
+                            if imp_conf.pairs.iter().any(|v| {
+                                if let Some(e) = &v.1 {
+                                    v.0 .0 == piece.0 && e.0 == next.0
+                                } else {
+                                    false
+                                }
+                            }) {
+                                imp_conf.problems.push(
+                                    ErrorCode::DuplicateImportStatement
+                                        .to_problem(vec![], [piece.1[0], next.1[1]]),
+                                );
+                            }
+                        } else {
+                            imp_conf.problems.push(
+                                ErrorCode::InvalidWordPattern.to_problem(vec![&next.0], next.1),
+                            );
+                        }
+                    } else {
+                        imp_conf.problems.push(
+                            ErrorCode::InvalidWordPattern.to_problem(vec![&piece.0], piece.1),
+                        );
+                    }
+                    imp_conf.pairs.push((piece.clone(), Some(next.clone())));
+                } else {
+                    imp_conf
+                        .problems
+                        .push(ErrorCode::ExpectedRename.to_problem(vec![], piece.1));
+                    imp_conf.pairs.push((piece.clone(), None));
+                }
+            } else {
+                imp_conf
+                    .problems
+                    .push(ErrorCode::UnexpectedToken.to_problem(vec![], piece.1));
+                imp_conf
+                    .pairs
+                    .push((piece.clone(), { config_pieces.next().map(|n| n.clone()) }));
             }
         }
-        new_namespace
+        imp_conf
     }
 
     /// processes an import statement
     #[async_recursion(?Send)]
     async fn process_import(&self, statement: &ParsedItem, should_search: bool) -> Import {
-        let mut start_range;
         let at_pos: Offsets = [statement.1[0] - 1, statement.1[0] - 1];
         let mut result = Import {
             name: ".".to_owned(),
@@ -403,22 +444,23 @@ impl RainDocument {
             sequence: None,
         };
 
+        // parse all items delimited by whitespaces
+        let mut is_valid = false;
         let mut pieces = exclusive_parse(&statement.0, &WS_PATTERN, statement.1[0], false);
         if let Some(name_or_hash) = pieces.first() {
-            start_range = 1;
+            let mut config_pieces_start_index = 1;
             if HEX_PATTERN.is_match(&name_or_hash.0) {
                 result.name = ".".to_owned();
                 result.name_position = name_or_hash.1;
-                // if HASH_PATTERN.is_match(&name_or_hash.0) {
                 result.hash = name_or_hash.0.to_ascii_lowercase();
                 result.hash_position = name_or_hash.1;
-                // } else {
-                // result.problems.push(Problem {
-                //     msg: "invalid hash, must be 32 bytes".to_owned(),
-                //     position: name_or_hash.1,
-                //     code: ErrorCode::ExpectedHash,
-                // });
-                // }
+                if name_or_hash.0.len() % 2 == 1 {
+                    result
+                        .problems
+                        .push(ErrorCode::OddLenHex.to_problem(vec![], name_or_hash.1));
+                } else {
+                    is_valid = true;
+                }
             } else {
                 result.name = name_or_hash.0.clone();
                 result.name_position = name_or_hash.1;
@@ -431,18 +473,17 @@ impl RainDocument {
             }
             if result.name != "." {
                 if let Some(hash) = pieces[1..].first() {
-                    start_range = 2;
+                    config_pieces_start_index = 2;
                     if HEX_PATTERN.is_match(&hash.0) {
-                        // if HASH_PATTERN.is_match(&hash.0) {
                         result.hash = hash.0.to_ascii_lowercase();
                         result.hash_position = hash.1;
-                        // } else {
-                        //     result.problems.push(Problem {
-                        //         msg: "invalid hash, must be 32 bytes".to_owned(),
-                        //         position: hash.1,
-                        //         code: ErrorCode::InvalidHash,
-                        //     });
-                        // }
+                        if name_or_hash.0.len() % 2 == 1 {
+                            result
+                                .problems
+                                .push(ErrorCode::OddLenHex.to_problem(vec![], name_or_hash.1));
+                        } else {
+                            is_valid = true;
+                        }
                     } else {
                         result
                             .problems
@@ -454,170 +495,112 @@ impl RainDocument {
                         .push(ErrorCode::ExpectedHexLiteral.to_problem(vec![], at_pos));
                 }
             }
-            if !pieces[start_range..].is_empty() {
-                result.configuration = Some(ImportConfiguration {
-                    problems: vec![],
-                    pairs: vec![],
-                });
-            }
-            let mut imp_conf = ImportConfiguration {
-                pairs: vec![],
-                problems: vec![],
+
+            // handle import configurations, (renames, rebindings, elisions)
+            if !pieces[config_pieces_start_index..].is_empty() {
+                result.configuration = Some(Self::process_import_config(
+                    &mut pieces[config_pieces_start_index..].iter_mut(),
+                ));
             };
-            let mut has_conf = false;
-            let remainings = &mut pieces[start_range..].iter_mut();
-            while let Some(piece) = remainings.next() {
-                if !has_conf {
-                    has_conf = true;
-                }
-                if piece.0 == "." {
-                    if let Some(next) = remainings.next() {
-                        if next.0 == "!" {
-                            if imp_conf.pairs.iter().any(|v| {
-                                if let Some(e) = &v.1 {
-                                    v.0 .0 == piece.0 && e.0 == next.0
-                                } else {
-                                    false
-                                }
-                            }) {
-                                imp_conf.problems.push(
-                                    ErrorCode::DuplicateImportStatement
-                                        .to_problem(vec![], [piece.1[0], next.1[1]]),
-                                );
-                            }
-                        } else {
-                            imp_conf
-                                .problems
-                                .push(ErrorCode::UnexpectedToken.to_problem(vec![], next.1));
-                        }
-                        imp_conf.pairs.push((piece.clone(), Some(next.clone())));
-                    } else {
-                        imp_conf.problems.push(
-                            ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], piece.1),
-                        );
-                        imp_conf.pairs.push((piece.clone(), None));
-                    }
-                } else if WORD_PATTERN.is_match(&piece.0) {
-                    if let Some(next) = remainings.next() {
-                        if NUMERIC_PATTERN.is_match(&next.0) || next.0 == "!" {
-                            if imp_conf.pairs.iter().any(|v| {
-                                if let Some(e) = &v.1 {
-                                    v.0 .0 == piece.0 && e.0 == next.0
-                                } else {
-                                    false
-                                }
-                            }) {
-                                imp_conf.problems.push(
-                                    ErrorCode::DuplicateImportStatement
-                                        .to_problem(vec![], [piece.1[0], next.1[1]]),
-                                );
-                            }
-                        } else {
-                            imp_conf
-                                .problems
-                                .push(ErrorCode::UnexpectedToken.to_problem(vec![], next.1));
-                        }
-                        imp_conf.pairs.push((piece.clone(), Some(next.clone())));
-                    } else {
-                        imp_conf.problems.push(
-                            ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], piece.1),
-                        );
-                        imp_conf.pairs.push((piece.clone(), None));
-                    }
-                } else if piece.0.starts_with('\'') {
-                    if let Some(next) = remainings.next() {
-                        if WORD_PATTERN.is_match(&piece.0[1..]) {
-                            if WORD_PATTERN.is_match(&next.0) {
-                                if imp_conf.pairs.iter().any(|v| {
-                                    if let Some(e) = &v.1 {
-                                        v.0 .0 == piece.0 && e.0 == next.0
-                                    } else {
-                                        false
-                                    }
-                                }) {
-                                    imp_conf.problems.push(
-                                        ErrorCode::DuplicateImportStatement
-                                            .to_problem(vec![], [piece.1[0], next.1[1]]),
-                                    );
-                                }
-                            } else {
-                                imp_conf.problems.push(
-                                    ErrorCode::InvalidWordPattern.to_problem(vec![&next.0], next.1),
-                                );
-                            }
-                        } else {
-                            imp_conf.problems.push(
-                                ErrorCode::InvalidWordPattern.to_problem(vec![&piece.0], piece.1),
-                            );
-                        }
-                        imp_conf.pairs.push((piece.clone(), Some(next.clone())));
-                    } else {
-                        imp_conf
-                            .problems
-                            .push(ErrorCode::ExpectedRename.to_problem(vec![], piece.1));
-                        imp_conf.pairs.push((piece.clone(), None));
-                    }
-                } else {
-                    imp_conf
-                        .problems
-                        .push(ErrorCode::UnexpectedToken.to_problem(vec![], piece.1));
-                    imp_conf
-                        .pairs
-                        .push((piece.clone(), { remainings.next().map(|n| n.clone()) }));
-                }
-            }
-            if has_conf {
-                result.configuration = Some(imp_conf);
-            }
         } else {
             result
                 .problems
                 .push(ErrorCode::InvalidImport.to_problem(vec![], at_pos));
         }
+
+        // do not continue if import statement is not valid
+        if !is_valid {
+            return result;
+        }
+
         let hash_bytes = alloy_primitives::hex::decode(&result.hash).unwrap();
         let subgraphs = { self.meta_store.read().unwrap().subgraphs().clone() };
-        let mut npe2_deployer = None;
-        let meta_seq = {
-            let mut did_find = false;
+
+        // read the corresponding hash from CAS, the result is either a deployer or a meta or not found
+        // this should be done with care for the CAS read/write lock
+        let mut opt_deployer = None;
+        let opt_meta_seq = {
+            let mut is_cached = false;
             let seq = {
-                if let Some(d) = self.meta_store.read().unwrap().get_deployer(&hash_bytes) {
-                    npe2_deployer = Some(d.clone());
-                    did_find = true;
+                if let Some(cached_deployer) =
+                    self.meta_store.read().unwrap().get_deployer(&hash_bytes)
+                {
+                    opt_deployer = Some(cached_deployer.clone());
+                    is_cached = true;
                     None
-                } else if let Some(r) = self.meta_store.read().unwrap().get_meta(&hash_bytes) {
-                    did_find = true;
-                    Some(RainMetaDocumentV1Item::cbor_decode(&r.clone()))
+                } else if let Some(cached_meta) =
+                    self.meta_store.read().unwrap().get_meta(&hash_bytes)
+                {
+                    is_cached = true;
+                    match RainMetaDocumentV1Item::cbor_decode(&cached_meta.clone()) {
+                        Ok(v) => {
+                            if is_consumable(&v) {
+                                Some(v)
+                            } else {
+                                result.problems.push(
+                                    ErrorCode::InconsumableMeta
+                                        .to_problem(vec![], result.hash_position),
+                                );
+                                None
+                            }
+                        }
+                        Err(_) => {
+                            result.problems.push(
+                                ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position),
+                            );
+                            None
+                        }
+                    }
                 } else {
                     None
                 }
             };
-            if !did_find && should_search {
+            if !is_cached && should_search {
                 let deployer_search = search_deployer(&result.hash, &subgraphs);
                 let meta_search = search(&result.hash, &subgraphs);
                 if let Ok(deployer_res) = deployer_search.await {
-                    npe2_deployer = Some(
+                    opt_deployer = Some(
                         self.meta_store
                             .write()
                             .unwrap()
                             .set_deployer_from_query_response(deployer_res),
                     );
                     None
-                } else if let Ok(meta) = meta_search.await {
+                } else if let Ok(meta_res) = meta_search.await {
                     self.meta_store
                         .write()
                         .unwrap()
-                        .update_with(&hash_bytes, &meta.bytes);
-                    Some(RainMetaDocumentV1Item::cbor_decode(&meta.bytes))
+                        .update_with(&hash_bytes, &meta_res.bytes);
+
+                    match RainMetaDocumentV1Item::cbor_decode(&meta_res.bytes) {
+                        Ok(v) => {
+                            if is_consumable(&v) {
+                                Some(v)
+                            } else {
+                                result.problems.push(
+                                    ErrorCode::InconsumableMeta
+                                        .to_problem(vec![], result.hash_position),
+                                );
+                                None
+                            }
+                        }
+                        Err(_) => {
+                            result.problems.push(
+                                ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position),
+                            );
+                            None
+                        }
+                    }
                 } else {
                     None
                 }
-            } else if did_find {
-                seq
             } else {
-                None
+                seq
             }
         };
-        if let Some(deployer) = npe2_deployer {
+
+        // continue based on if the result was a deployer or a meta
+        if let Some(deployer) = opt_deployer {
             result.sequence = Some(ImportSequence {
                 dispair: None,
                 dotrain: None,
@@ -635,132 +618,105 @@ impl RainDocument {
                 };
                 result.sequence.as_mut().unwrap().dispair = Some(deployer.into());
             }
-        } else if let Some(seq) = meta_seq {
-            if let Ok(v) = seq {
-                if is_consumable(&v) {
-                    result.sequence = Some(ImportSequence {
-                        dispair: None,
-                        dotrain: None,
-                    });
-                    for meta in v {
-                        match meta.unpack() {
-                            Ok(d) => match meta.magic {
-                                KnownMagic::ExpressionDeployerV2BytecodeV1 => {
-                                    let deployer = {
-                                        if let Some(deployer) = self
-                                            .meta_store
-                                            .read()
-                                            .unwrap()
-                                            .get_deployer(&hash_bytes)
-                                        {
-                                            if deployer.is_corrupt() {
-                                                result.sequence = None;
-                                                result.problems.push(
-                                                    ErrorCode::CorruptMeta
-                                                        .to_problem(vec![], result.hash_position),
-                                                );
-                                                break;
-                                            } else {
-                                                if deployer.authoring_meta.is_none()
-                                                    && !self.ignore_undefined_words
-                                                {
-                                                    result.problems.push(
-                                                        ErrorCode::UndefinedAuthoringMeta
-                                                            .to_problem(
-                                                                vec![],
-                                                                result.hash_position,
-                                                            ),
-                                                    );
-                                                };
-                                                Some(deployer.clone().into())
-                                            }
-                                        } else {
-                                            None
-                                        }
-                                    };
-                                    result.sequence.as_mut().unwrap().dispair = if deployer
-                                        .is_some()
-                                    {
-                                        deployer
-                                    } else if should_search {
-                                        if let Ok(deployer_res) =
-                                            search_deployer(&result.hash, &subgraphs).await
-                                        {
-                                            let deployer = self
-                                                .meta_store
-                                                .write()
-                                                .unwrap()
-                                                .set_deployer_from_query_response(deployer_res);
-                                            if deployer.is_corrupt() {
-                                                result.sequence = None;
-                                                result.problems.push(
-                                                    ErrorCode::CorruptMeta
-                                                        .to_problem(vec![], result.hash_position),
-                                                );
-                                                break;
-                                            } else {
-                                                if deployer.authoring_meta.is_none()
-                                                    && !self.ignore_undefined_words
-                                                {
-                                                    result.problems.push(
-                                                        ErrorCode::UndefinedAuthoringMeta
-                                                            .to_problem(
-                                                                vec![],
-                                                                result.hash_position,
-                                                            ),
-                                                    );
-                                                };
-                                                Some(deployer.into())
-                                            }
-                                        } else {
-                                            result.problems.push(
-                                                ErrorCode::UndefinedDeployerDetails
-                                                    .to_problem(vec![], result.hash_position),
-                                            );
-                                            None
-                                        }
-                                    } else {
-                                        result.problems.push(
-                                            ErrorCode::UndefinedDeployerDetails
-                                                .to_problem(vec![], result.hash_position),
-                                        );
-                                        None
-                                    };
-                                }
-                                KnownMagic::DotrainV1 => {
-                                    if let Ok(dmeta) = DotrainMeta::from_utf8(d) {
-                                        let mut dotrain = RainDocument::_new(
-                                            dmeta,
-                                            Url::parse(&format!("import:///{}", result.hash))
-                                                .unwrap(),
-                                            0,
-                                            Some(self.meta_store.clone()),
-                                            self.import_depth + 1,
-                                        );
-                                        if should_search {
-                                            dotrain.parse(true).await;
-                                        } else {
-                                            dotrain.parse(false).await;
-                                        }
-                                        if !dotrain.problems.is_empty() {
-                                            result.problems.push(
-                                                ErrorCode::InvalidRainDocument
-                                                    .to_problem(vec![], result.hash_position),
-                                            );
-                                        }
-                                        result.sequence.as_mut().unwrap().dotrain = Some(dotrain);
-                                    } else {
+        } else if let Some(meta_items) = opt_meta_seq {
+            result.sequence = Some(ImportSequence {
+                dispair: None,
+                dotrain: None,
+            });
+            for meta in meta_items {
+                match meta.unpack() {
+                    Ok(meta_data) => match meta.magic {
+                        KnownMagic::ExpressionDeployerV2BytecodeV1 => {
+                            let deployer = {
+                                if let Some(deployer) =
+                                    self.meta_store.read().unwrap().get_deployer(&hash_bytes)
+                                {
+                                    if deployer.is_corrupt() {
                                         result.sequence = None;
                                         result.problems.push(
                                             ErrorCode::CorruptMeta
                                                 .to_problem(vec![], result.hash_position),
                                         );
                                         break;
+                                    } else {
+                                        if deployer.authoring_meta.is_none()
+                                            && !self.ignore_undefined_words
+                                        {
+                                            result.problems.push(
+                                                ErrorCode::UndefinedAuthoringMeta
+                                                    .to_problem(vec![], result.hash_position),
+                                            );
+                                        };
+                                        Some(deployer.clone().into())
                                     }
+                                } else {
+                                    None
                                 }
-                                _ => {}
-                            },
-                            Err(_e) => {
+                            };
+                            result.sequence.as_mut().unwrap().dispair = if deployer.is_some() {
+                                deployer
+                            } else if should_search {
+                                if let Ok(deployer_res) =
+                                    search_deployer(&result.hash, &subgraphs).await
+                                {
+                                    let deployer = self
+                                        .meta_store
+                                        .write()
+                                        .unwrap()
+                                        .set_deployer_from_query_response(deployer_res);
+                                    if deployer.is_corrupt() {
+                                        result.sequence = None;
+                                        result.problems.push(
+                                            ErrorCode::CorruptMeta
+                                                .to_problem(vec![], result.hash_position),
+                                        );
+                                        break;
+                                    } else {
+                                        if deployer.authoring_meta.is_none()
+                                            && !self.ignore_undefined_words
+                                        {
+                                            result.problems.push(
+                                                ErrorCode::UndefinedAuthoringMeta
+                                                    .to_problem(vec![], result.hash_position),
+                                            );
+                                        };
+                                        Some(deployer.into())
+                                    }
+                                } else {
+                                    result.problems.push(
+                                        ErrorCode::UndefinedDeployerDetails
+                                            .to_problem(vec![], result.hash_position),
+                                    );
+                                    None
+                                }
+                            } else {
+                                result.problems.push(
+                                    ErrorCode::UndefinedDeployerDetails
+                                        .to_problem(vec![], result.hash_position),
+                                );
+                                None
+                            };
+                        }
+                        KnownMagic::DotrainV1 => {
+                            if let Ok(dotrain_text) = DotrainMeta::from_utf8(meta_data) {
+                                let mut dotrain = RainDocument::_new(
+                                    dotrain_text,
+                                    Some(self.meta_store.clone()),
+                                    self.import_depth + 1,
+                                );
+                                if should_search {
+                                    dotrain.parse(true).await;
+                                } else {
+                                    dotrain.parse(false).await;
+                                }
+                                if !dotrain.problems.is_empty() {
+                                    result.problems.push(
+                                        ErrorCode::InvalidRainDocument
+                                            .to_problem(vec![], result.hash_position),
+                                    );
+                                }
+                                result.sequence.as_mut().unwrap().dotrain = Some(dotrain);
+                            } else {
                                 result.sequence = None;
                                 result.problems.push(
                                     ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position),
@@ -768,23 +724,23 @@ impl RainDocument {
                                 break;
                             }
                         }
+                        _ => {}
+                    },
+                    Err(_e) => {
+                        result.sequence = None;
+                        result
+                            .problems
+                            .push(ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position));
+                        break;
                     }
-                } else {
-                    result
-                        .problems
-                        .push(ErrorCode::InconsumableMeta.to_problem(vec![], result.hash_position));
                 }
-            } else {
-                result
-                    .problems
-                    .push(ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position));
             }
         } else {
             result.problems.push(
                 ErrorCode::UndefinedImport.to_problem(vec![&result.hash], result.hash_position),
             );
         }
-        return result;
+        result
     }
 
     /// the main method that takes out and processes each section of a RainDocument
@@ -850,13 +806,13 @@ impl RainDocument {
             self.ignore_undefined_words = true;
         }
 
-        // since exclusive_parse() is being used with 'including_empty_ends' arg set to true,
+        // since exclusive_parse() is being used with 'include_empty_ends' arg set to true,
         // the first item of the parsed items should be ignored since it only contains the
         // text before the first match
         // this will apply for parsing imports and bindings
         let mut ignore_first = false;
 
-        // take each import statement from the text
+        // parse and take out each import statement from the text
         let mut import_statements = exclusive_parse(&document, &IMPORTS_PATTERN, 0, true);
         for imp_statement in &mut import_statements {
             if !ignore_first {
@@ -874,8 +830,8 @@ impl RainDocument {
         // try to parse import statements if only the current instance isnt an import itself
         // and is not deeper than 32 levels
         // parsing each import is an async fn as each import might not be cached in the CAS
-        // and may need reading it from underlying subgraphs, so they are triggered and awaited
-        // alltogther with care for read/write lock on the CAS
+        // and may need reading from underlying subgraphs, so they are triggered and awaited
+        // alltogether with care for read/write lock on the CAS
         ignore_first = false;
         if self.import_depth < 32 {
             let mut futures = vec![];
@@ -888,14 +844,16 @@ impl RainDocument {
             }
             let mut parsed_imports = join_all(futures).await;
 
-            // since the parsing of all imports are async, it is need to check for
-            // duplicate imports after all imports have been done parsing and add their
-            // found problems to the top problems list
+            // since the parsing import statements is async, it is needed to check for
+            // duplicate imports after all imports have been done parsing and then add
+            // their found problems to the top problems list
             for imp in &mut parsed_imports {
+                // check for duplicate imports
                 if !imp.hash.is_empty() && self.imports.iter().any(|i| i.hash == imp.hash) {
                     self.problems
                         .push(ErrorCode::DuplicateImport.to_problem(vec![], imp.hash_position));
                 }
+                // add found problems of each import to top problems list
                 self.problems.extend(imp.problems.clone());
                 if let Some(config) = &imp.configuration {
                     self.problems.extend(config.problems.clone());
@@ -987,13 +945,8 @@ impl RainDocument {
                                             );
                                         }
                                     } else {
-                                        let key = {
-                                            if conf.0 .0.starts_with('\'') {
-                                                conf.0 .0.split_at(1).1
-                                            } else {
-                                                conf.0 .0.as_str()
-                                            }
-                                        };
+                                        let key =
+                                            conf.0 .0.strip_prefix('\'').unwrap_or(&conf.0 .0);
                                         if new_imp_namespace.contains_key(key) {
                                             if conf.0 .0.starts_with('\'') {
                                                 if new_imp_namespace.contains_key(&new_conf.0) {
@@ -1227,6 +1180,8 @@ impl RainDocument {
                         self.authoring_meta.as_ref(),
                         self.ignore_undefined_words,
                     );
+                    // add the rainlang problems to the binding problems by applying
+                    // the initial offset difference to their positions
                     binding
                         .problems
                         .extend(rainlang_doc.problems.iter().map(|p| Problem {
@@ -1237,6 +1192,7 @@ impl RainDocument {
                             ],
                             code: p.code,
                         }));
+                    // assign to the binding.item and namespace
                     binding.item = BindingItem::Exp(rainlang_doc);
                     self.namespace.insert(
                         binding.name.clone(),
@@ -1266,6 +1222,36 @@ impl RainDocument {
         }
 
         Ok(())
+    }
+
+    /// copies a namespaces with given import index and hash
+    fn copy_namespace(namespace: &Namespace, index: isize, hash: &str) -> Namespace {
+        let mut new_namespace: Namespace = HashMap::new();
+        for (key, item) in namespace {
+            match item {
+                NamespaceItem::Node(node) => {
+                    new_namespace.insert(
+                        key.clone(),
+                        NamespaceItem::Node(NamespaceNode {
+                            hash: if node.hash.is_empty() {
+                                hash.to_owned()
+                            } else {
+                                node.hash.clone()
+                            },
+                            import_index: index,
+                            element: node.element.clone(),
+                        }),
+                    );
+                }
+                NamespaceItem::Namespace(deep_namespace) => {
+                    new_namespace.insert(
+                        key.to_owned(),
+                        NamespaceItem::Namespace(Self::copy_namespace(deep_namespace, index, hash)),
+                    );
+                }
+            }
+        }
+        new_namespace
     }
 
     /// checks if a namespace can safely be merged into another namespace
@@ -1462,9 +1448,7 @@ impl RainDocument {
 
 impl PartialEq for RainDocument {
     fn eq(&self, other: &Self) -> bool {
-        self.version == other.version
-            && self.import_depth == other.import_depth
-            && self.uri == other.uri
+        self.import_depth == other.import_depth
             && self.text == other.text
             && self.comments == other.comments
             && self.bindings == other.bindings

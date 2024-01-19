@@ -420,9 +420,6 @@ pub struct ImportSequence {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub dispair: Option<DispairImportItem>,
-    // #[serde(skip_serializing_if = "Option::is_none")]
-    // #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
-    // pub ctxmeta: Option<Vec<ContextAlias>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[cfg_attr(
         any(feature = "js-api", target_family = "wasm"),
