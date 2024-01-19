@@ -281,8 +281,8 @@ impl RainDocument {
 
     /// Checks if an import is deeper than 32 levels
     /// [ErrorCode::DeepImport] signifies a deep import problem and is passed on from
-    /// deeper import up to the most outter dotrain at each level of processing imports, 
-    /// by running this fn, so by checking for that among import.problems, it is possible 
+    /// deeper import up to the most outter dotrain at each level of processing imports,
+    /// by running this fn, so by checking for that among import.problems, it is possible
     /// to check if an import statement goes deeper than 32 levels
     fn is_deep_import(import: &Import) -> bool {
         if let Some(seq) = &import.sequence {
