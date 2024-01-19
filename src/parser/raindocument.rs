@@ -1363,8 +1363,8 @@ impl RainDocument {
             .filter_map(|v| match v.item {
                 BindingItem::Exp(_) => {
                     for dep in DEP_PATTERN.find_iter(&v.content) {
-                        let s = dep.as_str().strip_prefix('\'').unwrap().to_owned();
-                        v.dependencies.push(s);
+                        let dep_as_string = dep.as_str().strip_prefix('\'').unwrap().to_owned();
+                        v.dependencies.push(dep_as_string);
                     }
                     Some(v)
                 }
