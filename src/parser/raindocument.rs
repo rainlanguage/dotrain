@@ -1360,13 +1360,13 @@ impl RainDocument {
         let deps_map: Vec<&mut Binding> = self
             .bindings
             .iter_mut()
-            .filter_map(|v| match v.item {
+            .filter_map(|binding| match binding.item {
                 BindingItem::Exp(_) => {
-                    for dep in DEP_PATTERN.find_iter(&v.content) {
+                    for dep in DEP_PATTERN.find_iter(&binding.content) {
                         let dep_as_string = dep.as_str().strip_prefix('\'').unwrap().to_owned();
-                        v.dependencies.push(dep_as_string);
+                        binding.dependencies.push(dep_as_string);
                     }
-                    Some(v)
+                    Some(binding)
                 }
                 _ => None,
             })
