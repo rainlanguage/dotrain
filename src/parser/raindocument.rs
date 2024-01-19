@@ -1474,6 +1474,9 @@ impl PartialEq for RainDocument {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::ast;
+    use super::super::rainlangdocument::RainlangDocument;
+    use rain_meta::types::authoring::v1::AuthoringMetaItem;
 
     #[test]
     fn test_is_constant_method() -> anyhow::Result<()> {
@@ -1877,6 +1880,180 @@ mod tests {
             rain_document.problems,
             vec![ErrorCode::CollidingNamespaceNodes.to_problem(vec![], [0, 10])]
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_method() -> anyhow::Result<()> {
+        let mut store = rain_meta::Store::new();
+        let authoring_meta = AuthoringMeta(vec![
+            AuthoringMetaItem {
+                word: "opcode-1".to_owned(),
+                operand_parser_offset: 0,
+                description: String::new(),
+            },
+            AuthoringMetaItem {
+                word: "opcode-2".to_owned(),
+                operand_parser_offset: 0,
+                description: String::new(),
+            },
+        ]);
+        let hash = "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184";
+        let hash_bytes = alloy_primitives::hex::decode(hash).unwrap();
+        let npe2_deployer_mock = NPE2Deployer {
+            meta_hash: "meta-hash".as_bytes().to_vec(),
+            meta_bytes: "meta-bytes".as_bytes().to_vec(),
+            bytecode: "bytecode".as_bytes().to_vec(),
+            parser: "parser".as_bytes().to_vec(),
+            store: "store".as_bytes().to_vec(),
+            interpreter: "interpreter".as_bytes().to_vec(),
+            authoring_meta: Some(authoring_meta.clone()),
+        };
+        store.set_deployer(&hash_bytes, &npe2_deployer_mock, None);
+        let meta_store = Arc::new(RwLock::new(store));
+
+        let text = r"/** this is test */
+@dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
+
+#const-binding 4e18
+#elided-binding ! this elided, rebind before use
+#exp-binding
+_: opcode-1(0xabcd 456);
+";
+        let rain_document = RainDocument::create(text.to_owned(), Some(meta_store.clone()));
+        let expected_bindings: Vec<Binding> = vec![
+            Binding {
+                name: "const-binding".to_owned(),
+                name_position: [98, 111],
+                content: "4e18".to_owned(),
+                content_position: [112, 116],
+                position: [98, 117],
+                problems: vec![],
+                dependencies: vec![],
+                item: BindingItem::Constant(ConstantBindingItem {
+                    value: "4e18".to_owned(),
+                }),
+            },
+            Binding {
+                name: "elided-binding".to_owned(),
+                name_position: [118, 132],
+                content: "! this elided, rebind before use".to_owned(),
+                content_position: [133, 165],
+                position: [118, 166],
+                problems: vec![],
+                dependencies: vec![],
+                item: BindingItem::Elided(ElidedBindingItem {
+                    msg: " this elided, rebind before use".to_owned(),
+                }),
+            },
+            Binding {
+                name: "exp-binding".to_owned(),
+                name_position: [167, 178],
+                content: "_: opcode-1(0xabcd 456);".to_owned(),
+                content_position: [179, 203],
+                position: [167, 204],
+                problems: vec![],
+                dependencies: vec![],
+                item: BindingItem::Exp(RainlangDocument::create(
+                    "_: opcode-1(0xabcd 456);".to_owned(),
+                    &HashMap::new(),
+                    Some(&authoring_meta),
+                    false,
+                )),
+            },
+        ];
+        let expected_imports: Vec<Import> = vec![Import {
+            name: "dispair".to_owned(),
+            name_position: [21, 28],
+            hash: hash.to_owned(),
+            hash_position: [29, 95],
+            position: [20, 97],
+            problems: vec![],
+            configuration: None,
+            sequence: Some(ImportSequence {
+                dispair: Some(DispairImportItem {
+                    constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
+                    constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
+                    parser: "parser".as_bytes().to_vec(),
+                    store: "store".as_bytes().to_vec(),
+                    interpreter: "interpreter".as_bytes().to_vec(),
+                    bytecode: "bytecode".as_bytes().to_vec(),
+                    authoring_meta: Some(authoring_meta.clone()),
+                }),
+                dotrain: None,
+            }),
+        }];
+        let mut expected_namespace: Namespace = HashMap::new();
+        let mut dispair_namespace: Namespace = HashMap::new();
+        dispair_namespace.insert(
+            "Dispair".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: hash.to_owned(),
+                import_index: 0,
+                element: NamespaceNodeElement::Dispair(npe2_deployer_mock.clone().into()),
+            }),
+        );
+        expected_namespace.insert(
+            "dispair".to_owned(),
+            NamespaceItem::Namespace(dispair_namespace),
+        );
+        expected_namespace.insert(
+            expected_bindings[0].name.to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: String::new(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(expected_bindings[0].clone()),
+            }),
+        );
+        expected_namespace.insert(
+            expected_bindings[1].name.to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: String::new(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(expected_bindings[1].clone()),
+            }),
+        );
+        expected_namespace.insert(
+            expected_bindings[2].name.to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: String::new(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(expected_bindings[2].clone()),
+            }),
+        );
+
+        let expected_rain_document = RainDocument {
+            text: text.to_owned(),
+            front_matter: String::new(),
+            error: None,
+            bindings: expected_bindings.clone(),
+            imports: expected_imports.clone(),
+            comments: vec![Comment {
+                comment: "/** this is test */".to_owned(),
+                position: [0, 19],
+            }],
+            problems: vec![],
+            import_depth: 0,
+            ignore_words: false,
+            ignore_undefined_words: false,
+            namespace: expected_namespace,
+            meta_store,
+            authoring_meta: Some(AuthoringMeta(vec![
+                AuthoringMetaItem {
+                    word: "opcode-1".to_owned(),
+                    operand_parser_offset: 0,
+                    description: String::new(),
+                },
+                AuthoringMetaItem {
+                    word: "opcode-2".to_owned(),
+                    operand_parser_offset: 0,
+                    description: String::new(),
+                },
+            ])),
+            deployer: npe2_deployer_mock.clone(),
+        };
+        assert_eq!(rain_document, expected_rain_document);
 
         Ok(())
     }
