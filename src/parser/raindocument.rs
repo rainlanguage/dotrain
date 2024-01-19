@@ -477,10 +477,10 @@ impl RainDocument {
                     if HEX_PATTERN.is_match(&hash.0) {
                         result.hash = hash.0.to_ascii_lowercase();
                         result.hash_position = hash.1;
-                        if name_or_hash.0.len() % 2 == 1 {
+                        if hash.0.len() % 2 == 1 {
                             result
                                 .problems
-                                .push(ErrorCode::OddLenHex.to_problem(vec![], name_or_hash.1));
+                                .push(ErrorCode::OddLenHex.to_problem(vec![], hash.1));
                         } else {
                             is_valid = true;
                         }
@@ -532,6 +532,7 @@ impl RainDocument {
                     self.meta_store.read().unwrap().get_meta(&hash_bytes)
                 {
                     is_cached = true;
+
                     match RainMetaDocumentV1Item::cbor_decode(&cached_meta.clone()) {
                         Ok(v) => {
                             if is_consumable(&v) {
@@ -1560,6 +1561,318 @@ mod tests {
             problems: vec![ErrorCode::UnexpectedToken.to_problem(vec![], [0, 8])],
         };
         assert_eq!(result, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_process_import_method() -> anyhow::Result<()> {
+        let mut meta_store = rain_meta::Store::new();
+        let hash1 = "0x1234";
+        let hash2 = "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184";
+        let hash1_bytes = alloy_primitives::hex::decode(hash1).unwrap();
+        let hash2_bytes = alloy_primitives::hex::decode(hash2).unwrap();
+        let npe2_deployer_mock = NPE2Deployer {
+            meta_hash: "meta-hash".as_bytes().to_vec(),
+            meta_bytes: "meta-bytes".as_bytes().to_vec(),
+            bytecode: "bytecode".as_bytes().to_vec(),
+            parser: "parser".as_bytes().to_vec(),
+            store: "store".as_bytes().to_vec(),
+            interpreter: "interpreter".as_bytes().to_vec(),
+            authoring_meta: None,
+        };
+        meta_store.set_deployer(&hash1_bytes, &npe2_deployer_mock, None);
+        meta_store.update_with(&hash2_bytes, "meta2-bytes".as_bytes());
+
+        let rain_document =
+            RainDocument::_new(String::new(), Some(Arc::new(RwLock::new(meta_store))), 0);
+        let statements = vec![
+            ParsedItem("dispair 0x1234".to_owned(), [1, 15]),
+            ParsedItem(
+                "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184".to_owned(),
+                [17, 83],
+            ),
+        ];
+
+        let result1 = block_on(rain_document.process_import(&statements[0], false));
+        let expected1 = Import {
+            name: "dispair".to_owned(),
+            name_position: [1, 8],
+            hash: hash1.to_owned(),
+            hash_position: [9, 15],
+            position: [0, 15],
+            problems: vec![ErrorCode::UndefinedAuthoringMeta.to_problem(vec![], [9, 15])],
+            configuration: None,
+            sequence: Some(ImportSequence {
+                dispair: Some(DispairImportItem {
+                    constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
+                    constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
+                    parser: "parser".as_bytes().to_vec(),
+                    store: "store".as_bytes().to_vec(),
+                    interpreter: "interpreter".as_bytes().to_vec(),
+                    bytecode: "bytecode".as_bytes().to_vec(),
+                    authoring_meta: None,
+                }),
+                dotrain: None,
+            }),
+        };
+        assert_eq!(result1, expected1);
+
+        let result2 = block_on(rain_document.process_import(&statements[1], false));
+        let expected2 = Import {
+            name: ".".to_owned(),
+            name_position: [17, 83],
+            hash: hash2.to_owned(),
+            hash_position: [17, 83],
+            position: [16, 83],
+            problems: vec![
+                ErrorCode::CorruptMeta.to_problem(vec![], [17, 83]),
+                ErrorCode::UndefinedImport.to_problem(vec![hash2], [17, 83]),
+            ],
+            configuration: None,
+            sequence: None,
+        };
+        assert_eq!(result2, expected2);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_check_namespace_method() -> anyhow::Result<()> {
+        let mut main_namespace: Namespace = HashMap::new();
+        let mut new_namespace: Namespace = HashMap::new();
+        main_namespace.insert(
+            "Dispair".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0x123".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Dispair(DispairImportItem {
+                    constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
+                    constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
+                    parser: "parser".as_bytes().to_vec(),
+                    store: "store".as_bytes().to_vec(),
+                    interpreter: "interpreter".as_bytes().to_vec(),
+                    bytecode: "bytecode".as_bytes().to_vec(),
+                    authoring_meta: None,
+                }),
+            }),
+        );
+        new_namespace.insert(
+            "Dispair".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0xabc".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Dispair(DispairImportItem {
+                    constructor_meta_hash: "meta-hash2".as_bytes().to_vec(),
+                    constructor_meta_bytes: "meta-bytes2".as_bytes().to_vec(),
+                    parser: "parser2".as_bytes().to_vec(),
+                    store: "store2".as_bytes().to_vec(),
+                    interpreter: "interpreter2".as_bytes().to_vec(),
+                    bytecode: "bytecode2".as_bytes().to_vec(),
+                    authoring_meta: None,
+                }),
+            }),
+        );
+
+        let mut main_namespace: Namespace = HashMap::new();
+        let mut new_namespace: Namespace = HashMap::new();
+        main_namespace.insert(
+            "binding-name".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0xabc".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(Binding {
+                    name: "binding-name".to_owned(),
+                    name_position: [0, 1],
+                    content: "some-content".to_owned(),
+                    content_position: [2, 10],
+                    position: [0, 10],
+                    problems: vec![],
+                    dependencies: vec![],
+                    item: BindingItem::Constant(ConstantBindingItem {
+                        value: "3e18".to_owned(),
+                    }),
+                }),
+            }),
+        );
+        new_namespace.insert(
+            "binding-name".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0xabc".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(Binding {
+                    name: "binding-name".to_owned(),
+                    name_position: [0, 1],
+                    content: "some-content".to_owned(),
+                    content_position: [2, 10],
+                    position: [0, 10],
+                    problems: vec![],
+                    dependencies: vec![],
+                    item: BindingItem::Constant(ConstantBindingItem {
+                        value: "3e18".to_owned(),
+                    }),
+                }),
+            }),
+        );
+        assert_eq!(
+            RainDocument::check_namespace(&new_namespace, &main_namespace),
+            Some(ErrorCode::CollidingNamespaceNodes)
+        );
+
+        let mut main_namespace: Namespace = HashMap::new();
+        let mut new_namespace: Namespace = HashMap::new();
+        main_namespace.insert(
+            "binding-name".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0xabc".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(Binding {
+                    name: "binding-name".to_owned(),
+                    name_position: [0, 1],
+                    content: "some-content".to_owned(),
+                    content_position: [2, 10],
+                    position: [0, 10],
+                    problems: vec![],
+                    dependencies: vec![],
+                    item: BindingItem::Constant(ConstantBindingItem {
+                        value: "3e18".to_owned(),
+                    }),
+                }),
+            }),
+        );
+        new_namespace.insert(
+            "binding-other-name".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0xabc".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(Binding {
+                    name: "binding-other-name".to_owned(),
+                    name_position: [0, 1],
+                    content: "some-other-content".to_owned(),
+                    content_position: [2, 10],
+                    position: [0, 10],
+                    problems: vec![],
+                    dependencies: vec![],
+                    item: BindingItem::Constant(ConstantBindingItem {
+                        value: "3e18".to_owned(),
+                    }),
+                }),
+            }),
+        );
+        assert_eq!(
+            RainDocument::check_namespace(&new_namespace, &main_namespace),
+            None
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_merge_namespace_method() -> anyhow::Result<()> {
+        let mut main_namespace: Namespace = HashMap::new();
+        let mut new_namespace: Namespace = HashMap::new();
+        main_namespace.insert(
+            "Dispair".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0x123".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Dispair(DispairImportItem {
+                    constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
+                    constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
+                    parser: "parser".as_bytes().to_vec(),
+                    store: "store".as_bytes().to_vec(),
+                    interpreter: "interpreter".as_bytes().to_vec(),
+                    bytecode: "bytecode".as_bytes().to_vec(),
+                    authoring_meta: None,
+                }),
+            }),
+        );
+        main_namespace.insert(
+            "binding-name".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0xabc".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(Binding {
+                    name: "binding-name".to_owned(),
+                    name_position: [0, 1],
+                    content: "some-content".to_owned(),
+                    content_position: [2, 10],
+                    position: [0, 10],
+                    problems: vec![],
+                    dependencies: vec![],
+                    item: BindingItem::Constant(ConstantBindingItem {
+                        value: "3e18".to_owned(),
+                    }),
+                }),
+            }),
+        );
+        new_namespace.insert(
+            "binding-other-name".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0xabc".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(Binding {
+                    name: "binding-other-name".to_owned(),
+                    name_position: [0, 1],
+                    content: "some-other-content".to_owned(),
+                    content_position: [2, 10],
+                    position: [0, 10],
+                    problems: vec![],
+                    dependencies: vec![],
+                    item: BindingItem::Constant(ConstantBindingItem {
+                        value: "3e18".to_owned(),
+                    }),
+                }),
+            }),
+        );
+        main_namespace.insert(
+            "deep-namespace".to_owned(),
+            NamespaceItem::Namespace(new_namespace.clone()),
+        );
+
+        let mut rain_document = RainDocument::_new(String::new(), None, 0);
+        rain_document.merge_namespace(
+            ".".to_owned(),
+            [0, 10],
+            new_namespace.clone(),
+            &mut main_namespace,
+        );
+        let mut expected = main_namespace.clone();
+        expected.insert(
+            "binding-other-name".to_owned(),
+            NamespaceItem::Node(NamespaceNode {
+                hash: "0xabc".to_owned(),
+                import_index: -1,
+                element: NamespaceNodeElement::Binding(Binding {
+                    name: "binding-other-name".to_owned(),
+                    name_position: [0, 1],
+                    content: "some-other-content".to_owned(),
+                    content_position: [2, 10],
+                    position: [0, 10],
+                    problems: vec![],
+                    dependencies: vec![],
+                    item: BindingItem::Constant(ConstantBindingItem {
+                        value: "3e18".to_owned(),
+                    }),
+                }),
+            }),
+        );
+        assert_eq!(main_namespace, expected);
+        assert!(rain_document.problems.is_empty());
+
+        let mut rain_document = RainDocument::_new(String::new(), None, 0);
+        rain_document.merge_namespace(
+            "deep-namespace".to_owned(),
+            [0, 10],
+            new_namespace,
+            &mut main_namespace,
+        );
+        let expected = main_namespace.clone();
+        assert_eq!(main_namespace, expected);
+        assert_eq!(
+            rain_document.problems,
+            vec![ErrorCode::CollidingNamespaceNodes.to_problem(vec![], [0, 10])]
+        );
 
         Ok(())
     }
