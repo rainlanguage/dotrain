@@ -124,14 +124,14 @@ impl RainDocument {
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
     ) -> RainDocument {
-        let mut rd = RainDocument::_new(text, meta_store, 0);
+        let mut rd = RainDocument::new(text, meta_store, 0);
         rd.parse(true).await;
         rd
     }
 
     /// Creates an instance and parses with remote meta search disabled (cached metas only)
     pub fn create(text: String, meta_store: Option<Arc<RwLock<Store>>>) -> RainDocument {
-        let mut rd = RainDocument::_new(text, meta_store, 0);
+        let mut rd = RainDocument::new(text, meta_store, 0);
         block_on(rd.parse(false));
         rd
     }
@@ -251,7 +251,7 @@ impl RainDocument {
 }
 
 impl RainDocument {
-    pub(crate) fn _new(
+    pub(crate) fn new(
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
         import_depth: usize,
@@ -700,7 +700,7 @@ impl RainDocument {
                         }
                         KnownMagic::DotrainV1 => {
                             if let Ok(dotrain_text) = DotrainMeta::from_utf8(meta_data) {
-                                let mut dotrain = RainDocument::_new(
+                                let mut dotrain = RainDocument::new(
                                     dotrain_text,
                                     Some(self.meta_store.clone()),
                                     self.import_depth + 1,
@@ -1589,7 +1589,7 @@ mod tests {
         meta_store.update_with(&hash2_bytes, "meta2-bytes".as_bytes());
 
         let rain_document =
-            RainDocument::_new(String::new(), Some(Arc::new(RwLock::new(meta_store))), 0);
+            RainDocument::new(String::new(), Some(Arc::new(RwLock::new(meta_store))), 0);
         let statements = vec![
             ParsedItem("dispair 0x1234".to_owned(), [1, 15]),
             ParsedItem(
@@ -1831,7 +1831,7 @@ mod tests {
             NamespaceItem::Namespace(new_namespace.clone()),
         );
 
-        let mut rain_document = RainDocument::_new(String::new(), None, 0);
+        let mut rain_document = RainDocument::new(String::new(), None, 0);
         rain_document.merge_namespace(
             ".".to_owned(),
             [0, 10],
@@ -1861,7 +1861,7 @@ mod tests {
         assert_eq!(main_namespace, expected);
         assert!(rain_document.problems.is_empty());
 
-        let mut rain_document = RainDocument::_new(String::new(), None, 0);
+        let mut rain_document = RainDocument::new(String::new(), None, 0);
         rain_document.merge_namespace(
             "deep-namespace".to_owned(),
             [0, 10],
