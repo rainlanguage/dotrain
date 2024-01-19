@@ -434,7 +434,7 @@ impl RainDocument {
 
     /// processes an import statement
     #[async_recursion(?Send)]
-    async fn process_import(&self, statement: &ParsedItem, should_search: bool) -> Import {
+    async fn process_import(&self, statement: &ParsedItem, remote_search: bool) -> Import {
         let at_pos: Offsets = [statement.1[0] - 1, statement.1[0] - 1];
         let mut result = Import {
             name: ".".to_owned(),
@@ -559,7 +559,7 @@ impl RainDocument {
                     None
                 }
             };
-            if !is_cached && should_search {
+            if !is_cached && remote_search {
                 let deployer_search = search_deployer(&result.hash, &subgraphs);
                 let meta_search = search(&result.hash, &subgraphs);
                 if let Ok(deployer_res) = deployer_search.await {
@@ -659,7 +659,7 @@ impl RainDocument {
                             };
                             result.sequence.as_mut().unwrap().dispair = if deployer.is_some() {
                                 deployer
-                            } else if should_search {
+                            } else if remote_search {
                                 if let Ok(deployer_res) =
                                     search_deployer(&result.hash, &subgraphs).await
                                 {
@@ -708,7 +708,7 @@ impl RainDocument {
                                     Some(self.meta_store.clone()),
                                     self.import_depth + 1,
                                 );
-                                if should_search {
+                                if remote_search {
                                     dotrain.parse(true).await;
                                 } else {
                                     dotrain.parse(false).await;
@@ -755,7 +755,7 @@ impl RainDocument {
     /// text (comments, imports, etc) one after the other, builds the parse tree, builds
     /// the namespace and checks for dependency issues and resolves the global words
     #[async_recursion(?Send)]
-    async fn _parse(&mut self, should_search: bool) -> Result<(), Error> {
+    async fn _parse(&mut self, remote_search: bool) -> Result<(), Error> {
         self.imports.clear();
         self.problems.clear();
         self.comments.clear();
@@ -848,7 +848,7 @@ impl RainDocument {
                     ignore_first = false;
                     continue;
                 }
-                futures.push(self.process_import(s, should_search));
+                futures.push(self.process_import(s, remote_search));
             }
             let mut parsed_imports = join_all(futures).await;
 
