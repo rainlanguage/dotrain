@@ -94,13 +94,11 @@ impl RainlangDocument {
         text: String,
         namespace: &Namespace,
         authoring_meta: Option<&AuthoringMeta>,
+        ignore_undefined_authoring_meta: bool,
     ) -> RainlangDocument {
         let mut am = &AuthoringMeta(vec![]);
-        let ignore_undefined_authoring_meta = if let Some(v) = authoring_meta {
+        if let Some(v) = authoring_meta {
             am = v;
-            false
-        } else {
-            true
         };
         let mut rl = RainlangDocument {
             text,

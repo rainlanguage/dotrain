@@ -8,8 +8,10 @@ use super::types::{
     patterns::{HEX_PATTERN, E_PATTERN, INT_PATTERN},
 };
 
+pub(crate) mod raindocument;
 pub(crate) mod rainlangdocument;
 
+pub use self::raindocument::*;
 pub use self::rainlangdocument::*;
 
 /// Trait for converting offset to lsp position (implemented for `&str` and `String`)

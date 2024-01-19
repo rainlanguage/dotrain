@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use super::super::error::Error;
 use serde::{Serialize, Deserialize};
 use serde_repr::{Serialize_repr, Deserialize_repr};
-use super::super::parser::rainlangdocument::RainlangDocument;
 use rain_meta::{NPE2Deployer, types::authoring::v1::AuthoringMeta};
+use super::super::parser::{rainlangdocument::RainlangDocument, raindocument::RainDocument};
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use tsify::Tsify;
@@ -26,10 +26,12 @@ pub enum ErrorCode {
     CorruptMeta = 6,
     ElidedBinding = 7,
     SingletonWords = 8,
-    MultipleWords = 9,
+    MultipleWordSets = 9,
     InconsumableMeta = 10,
-    NamespaceOccupied = 11,
+    OccupiedNamespace = 11,
     OddLenHex = 12,
+    CollidingNamespaceNodes = 13,
+    NoneTopLevelImport = 14,
 
     UndefinedWord = 0x101,
     UndefinedAuthoringMeta = 0x102,
@@ -37,8 +39,10 @@ pub enum ErrorCode {
     UndefinedQuote = 0x104,
     UndefinedOpcode = 0x105,
     UndefinedIdentifier = 0x106,
-    UndefinedDeployer = 0x107,
+    UndefinedGlobalWords = 0x107,
     UndefinedNamespaceMember = 0x108,
+    UndefinedDeployerDetails = 0x109,
+    UndefinedWordSet = 0x110,
 
     InvalidWordPattern = 0x201,
     InvalidExpression = 0x202,
@@ -49,9 +53,8 @@ pub enum ErrorCode {
     InvalidRainDocument = 0x207,
     InvalidImport = 0x208,
     InvalidEmptyBinding = 0x209,
-    InvalidBindingIdentifier = 0x210,
-    InvalidQuote = 0x211,
-    InvalidOperandArg = 0x212,
+    InvalidQuote = 0x210,
+    InvalidOperandArg = 0x211,
 
     UnexpectedToken = 0x301,
     UnexpectedClosingParen = 0x302,
@@ -61,6 +64,7 @@ pub enum ErrorCode {
     UnexpectedEndOfComment = 0x306,
     UnexpectedComment = 0x307,
     UnexpectedPragma = 0x308,
+    UnexpectedRename = 0x309,
 
     ExpectedOpcode = 0x401,
     ExpectedRename = 0x402,
@@ -101,19 +105,23 @@ impl ErrorCode {
             Self::CorruptMeta => "corrupt meta".to_owned(),
             Self::ElidedBinding => msg_items[0].to_owned(),
             Self::SingletonWords => format!("words must be singleton, but namespace includes {} sets of words", msg_items[0]),
-            Self::MultipleWords => "import contains multiple sets of words in its namespace".to_owned(),
+            Self::MultipleWordSets => "import contains multiple sets of words".to_owned(),
             Self::InconsumableMeta => "import contains inconsumable meta".to_owned(),
-            Self::NamespaceOccupied => "cannot import into an occupied namespace".to_owned(),
+            Self::OccupiedNamespace => "cannot import into an occupied namespace".to_owned(),
+            Self::CollidingNamespaceNodes => "namespace nodes colliding".to_owned(),
             Self::OddLenHex => "odd length hex literal".to_owned(),
+            Self::NoneTopLevelImport => "imports can only be stated at top level".to_owned(),
 
             Self::UndefinedWord => format!("undefined word: {}", msg_items[0]),
             Self::UndefinedAuthoringMeta => "deployer's authroing meta is undefined".to_owned(),
             Self::UndefinedImport => format!("cannot find any settlement for import: {}", msg_items[0]),
             Self::UndefinedQuote => format!("undefined quote: {}", msg_items[0]),
             Self::UndefinedOpcode => format!("unknown opcode: {}", msg_items[0]),
-            Self::UndefinedIdentifier => format!("undefined identifier {}", msg_items[0]),
-            Self::UndefinedDeployer => "cannot find any set of words (undefined deployer)".to_owned(),
+            Self::UndefinedIdentifier => format!("undefined identifier: {}", msg_items[0]),
+            Self::UndefinedGlobalWords => "cannot find any sets of words".to_owned(),
             Self::UndefinedNamespaceMember => format!("namespace has no member {}", msg_items[0]),
+            Self::UndefinedDeployerDetails => "cannot find deployer details".to_owned(),
+            Self::UndefinedWordSet => "cannot elide undefined words".to_owned(),
 
             Self::InvalidWordPattern => format!("invalid word pattern: {}", msg_items[0]),
             Self::InvalidExpression => "invalid expression line".to_owned(),
@@ -121,7 +129,6 @@ impl ErrorCode {
             Self::InvalidImport => "expected a valid name or hash".to_owned(),
             Self::InvalidEmptyBinding => "invalid empty expression".to_owned(),
             Self::InvalidEmptyLine => "invalid empty expression line".to_owned(),
-            Self::InvalidBindingIdentifier => "invalid binding name".to_owned(),
             Self::InvalidQuote => format!("invalid quote: {}, cannot quote constants", msg_items[0]),
             Self::InvalidOperandArg => format!("invalid argument pattern: {}", msg_items[0]),
             Self::InvalidReference => format!("invalid reference to binding: {}, only constant bindings can be referenced", msg_items[0]),
@@ -136,6 +143,7 @@ impl ErrorCode {
             Self::UnexpectedEndOfComment => "unexpected end of comment".to_owned(),
             Self::UnexpectedComment => "unexpected comment".to_owned(),
             Self::UnexpectedPragma => "unexpected pragma, must be at top".to_owned(),
+            Self::UnexpectedRename => format!("unexpected rename, name '{}' already taken", msg_items[0]),
 
             Self::ExpectedOpcode => "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis".to_owned(),
             Self::ExpectedElisionOrRebinding => "expected rebinding or elision".to_owned(),
@@ -155,7 +163,7 @@ impl ErrorCode {
             Self::OutOfRangeValue => "value out of range".to_owned(),
 
             Self::DuplicateAlias => format!("duplicate alias: {}", msg_items[0]),
-            Self::DuplicateIdentifier => "import contains items with duplicate identifiers".to_owned(),
+            Self::DuplicateIdentifier => "duplicate identifier".to_owned(),
             Self::DuplicateImportStatement => "duplicate import statement".to_owned(),
             Self::DuplicateImport => "duplicate import".to_owned(),
         };
@@ -399,6 +407,51 @@ impl From<DispairImportItem> for NPE2Deployer {
 pub struct ImportConfiguration {
     pub problems: Vec<Problem>,
     pub pairs: Vec<(ParsedItem, Option<ParsedItem>)>,
+}
+
+/// Type of an import meta sequence
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(
+    any(feature = "js-api", target_family = "wasm"),
+    derive(Tsify),
+    tsify(into_wasm_abi, from_wasm_abi)
+)]
+pub struct ImportSequence {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    pub dispair: Option<DispairImportItem>,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    // pub ctxmeta: Option<Vec<ContextAlias>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(
+        any(feature = "js-api", target_family = "wasm"),
+        tsify(type = "IRainDocument", optional)
+    )]
+    pub dotrain: Option<RainDocument>,
+}
+
+/// Type of import statements specified in a RainDocument
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(
+    any(feature = "js-api", target_family = "wasm"),
+    derive(Tsify),
+    tsify(into_wasm_abi, from_wasm_abi)
+)]
+pub struct Import {
+    pub name: String,
+    pub name_position: Offsets,
+    pub hash: String,
+    pub hash_position: Offsets,
+    pub position: Offsets,
+    pub problems: Vec<Problem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    pub configuration: Option<ImportConfiguration>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    pub sequence: Option<ImportSequence>,
 }
 
 /// Type of an AST node
