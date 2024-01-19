@@ -1911,7 +1911,9 @@ mod tests {
         store.set_deployer(&hash_bytes, &npe2_deployer_mock, None);
         let meta_store = Arc::new(RwLock::new(store));
 
-        let text = r"/** this is test */
+        let text = r"some front matter
+---
+/** this is test */
 @dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
 #const-binding 4e18
@@ -1923,10 +1925,10 @@ _: opcode-1(0xabcd 456);
         let expected_bindings: Vec<Binding> = vec![
             Binding {
                 name: "const-binding".to_owned(),
-                name_position: [98, 111],
+                name_position: [120, 133],
                 content: "4e18".to_owned(),
-                content_position: [112, 116],
-                position: [98, 117],
+                content_position: [134, 138],
+                position: [120, 139],
                 problems: vec![],
                 dependencies: vec![],
                 item: BindingItem::Constant(ConstantBindingItem {
@@ -1935,10 +1937,10 @@ _: opcode-1(0xabcd 456);
             },
             Binding {
                 name: "elided-binding".to_owned(),
-                name_position: [118, 132],
+                name_position: [140, 154],
                 content: "! this elided, rebind before use".to_owned(),
-                content_position: [133, 165],
-                position: [118, 166],
+                content_position: [155, 187],
+                position: [140, 188],
                 problems: vec![],
                 dependencies: vec![],
                 item: BindingItem::Elided(ElidedBindingItem {
@@ -1947,10 +1949,10 @@ _: opcode-1(0xabcd 456);
             },
             Binding {
                 name: "exp-binding".to_owned(),
-                name_position: [167, 178],
+                name_position: [189, 200],
                 content: "_: opcode-1(0xabcd 456);".to_owned(),
-                content_position: [179, 203],
-                position: [167, 204],
+                content_position: [201, 225],
+                position: [189, 226],
                 problems: vec![],
                 dependencies: vec![],
                 item: BindingItem::Exp(RainlangDocument::create(
@@ -1963,10 +1965,10 @@ _: opcode-1(0xabcd 456);
         ];
         let expected_imports: Vec<Import> = vec![Import {
             name: "dispair".to_owned(),
-            name_position: [21, 28],
+            name_position: [43, 50],
             hash: hash.to_owned(),
-            hash_position: [29, 95],
-            position: [20, 97],
+            hash_position: [51, 117],
+            position: [42, 119],
             problems: vec![],
             configuration: None,
             sequence: Some(ImportSequence {
@@ -2029,7 +2031,7 @@ _: opcode-1(0xabcd 456);
             imports: expected_imports.clone(),
             comments: vec![Comment {
                 comment: "/** this is test */".to_owned(),
-                position: [0, 19],
+                position: [22, 41],
             }],
             problems: vec![],
             import_depth: 0,
