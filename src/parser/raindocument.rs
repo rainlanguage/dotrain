@@ -330,79 +330,70 @@ impl RainDocument {
             problems: vec![],
         };
         while let Some(piece) = config_pieces.next() {
-            if piece.0 == "." {
-                if let Some(next) = config_pieces.next() {
-                    if next.0 == "!" {
+            if let Some(next_piece) = config_pieces.next() {
+                if piece.0 == "." {
+                    if next_piece.0 == "!" {
                         if imp_conf.pairs.iter().any(|v| {
                             if let Some(e) = &v.1 {
-                                v.0 .0 == piece.0 && e.0 == next.0
+                                v.0 .0 == piece.0 && e.0 == next_piece.0
                             } else {
                                 false
                             }
                         }) {
                             imp_conf.problems.push(
                                 ErrorCode::DuplicateImportStatement
-                                    .to_problem(vec![], [piece.1[0], next.1[1]]),
+                                    .to_problem(vec![], [piece.1[0], next_piece.1[1]]),
                             );
                         }
                     } else {
                         imp_conf
                             .problems
-                            .push(ErrorCode::UnexpectedToken.to_problem(vec![], next.1));
+                            .push(ErrorCode::UnexpectedToken.to_problem(vec![], next_piece.1));
                     }
-                    imp_conf.pairs.push((piece.clone(), Some(next.clone())));
-                } else {
                     imp_conf
-                        .problems
-                        .push(ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], piece.1));
-                    imp_conf.pairs.push((piece.clone(), None));
-                }
-            } else if WORD_PATTERN.is_match(&piece.0) {
-                if let Some(next) = config_pieces.next() {
-                    if NUMERIC_PATTERN.is_match(&next.0) || next.0 == "!" {
+                        .pairs
+                        .push((piece.clone(), Some(next_piece.clone())));
+                } else if WORD_PATTERN.is_match(&piece.0) {
+                    if NUMERIC_PATTERN.is_match(&next_piece.0) || next_piece.0 == "!" {
                         if imp_conf.pairs.iter().any(|v| {
                             if let Some(e) = &v.1 {
-                                v.0 .0 == piece.0 && e.0 == next.0
+                                v.0 .0 == piece.0 && e.0 == next_piece.0
                             } else {
                                 false
                             }
                         }) {
                             imp_conf.problems.push(
                                 ErrorCode::DuplicateImportStatement
-                                    .to_problem(vec![], [piece.1[0], next.1[1]]),
+                                    .to_problem(vec![], [piece.1[0], next_piece.1[1]]),
                             );
                         }
                     } else {
                         imp_conf
                             .problems
-                            .push(ErrorCode::UnexpectedToken.to_problem(vec![], next.1));
+                            .push(ErrorCode::UnexpectedToken.to_problem(vec![], next_piece.1));
                     }
-                    imp_conf.pairs.push((piece.clone(), Some(next.clone())));
-                } else {
                     imp_conf
-                        .problems
-                        .push(ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], piece.1));
-                    imp_conf.pairs.push((piece.clone(), None));
-                }
-            } else if let Some(quote) = piece.0.strip_prefix('\'') {
-                if let Some(next) = config_pieces.next() {
+                        .pairs
+                        .push((piece.clone(), Some(next_piece.clone())));
+                } else if let Some(quote) = piece.0.strip_prefix('\'') {
                     if WORD_PATTERN.is_match(quote) {
-                        if WORD_PATTERN.is_match(&next.0) {
+                        if WORD_PATTERN.is_match(&next_piece.0) {
                             if imp_conf.pairs.iter().any(|v| {
                                 if let Some(e) = &v.1 {
-                                    v.0 .0 == piece.0 && e.0 == next.0
+                                    v.0 .0 == piece.0 && e.0 == next_piece.0
                                 } else {
                                     false
                                 }
                             }) {
                                 imp_conf.problems.push(
                                     ErrorCode::DuplicateImportStatement
-                                        .to_problem(vec![], [piece.1[0], next.1[1]]),
+                                        .to_problem(vec![], [piece.1[0], next_piece.1[1]]),
                                 );
                             }
                         } else {
                             imp_conf.problems.push(
-                                ErrorCode::InvalidWordPattern.to_problem(vec![&next.0], next.1),
+                                ErrorCode::InvalidWordPattern
+                                    .to_problem(vec![&next_piece.0], next_piece.1),
                             );
                         }
                     } else {
@@ -410,20 +401,28 @@ impl RainDocument {
                             ErrorCode::InvalidWordPattern.to_problem(vec![&piece.0], piece.1),
                         );
                     }
-                    imp_conf.pairs.push((piece.clone(), Some(next.clone())));
+                    imp_conf
+                        .pairs
+                        .push((piece.clone(), Some(next_piece.clone())));
                 } else {
                     imp_conf
                         .problems
-                        .push(ErrorCode::ExpectedRename.to_problem(vec![], piece.1));
-                    imp_conf.pairs.push((piece.clone(), None));
+                        .push(ErrorCode::UnexpectedToken.to_problem(vec![], piece.1));
+                    imp_conf
+                        .pairs
+                        .push((piece.clone(), Some(next_piece.clone())));
                 }
             } else {
-                imp_conf
-                    .problems
-                    .push(ErrorCode::UnexpectedToken.to_problem(vec![], piece.1));
-                imp_conf
-                    .pairs
-                    .push((piece.clone(), { config_pieces.next().map(|n| n.clone()) }));
+                imp_conf.pairs.push((piece.clone(), None));
+                if piece.0.starts_with('\'') {
+                    imp_conf
+                        .problems
+                        .push(ErrorCode::ExpectedRename.to_problem(vec![], piece.1));
+                } else {
+                    imp_conf
+                        .problems
+                        .push(ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], piece.1));
+                }
             }
         }
         imp_conf
