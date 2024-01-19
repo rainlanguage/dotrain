@@ -818,13 +818,13 @@ impl RainDocument {
         // the first item of the parsed items should be ignored since it only contains the
         // text before the first match
         // this will apply for parsing imports and bindings
-        let mut ignore_first = false;
+        let mut ignore_first = true;
 
         // parse and take out each import statement from the text
         let mut import_statements = exclusive_parse(&document, &IMPORTS_PATTERN, 0, true);
         for imp_statement in &mut import_statements {
-            if !ignore_first {
-                ignore_first = true;
+            if ignore_first {
+                ignore_first = false;
                 continue;
             }
             if let Some(index) = imp_statement.0.find('#') {
@@ -840,12 +840,12 @@ impl RainDocument {
         // parsing each import is an async fn as each import might not be cached in the CAS
         // and may need reading from underlying subgraphs, so they are triggered and awaited
         // alltogether with care for read/write lock on the CAS
-        ignore_first = false;
+        ignore_first = true;
         if self.import_depth < 32 {
             let mut futures = vec![];
             for s in &import_statements {
-                if !ignore_first {
-                    ignore_first = true;
+                if ignore_first {
+                    ignore_first = false;
                     continue;
                 }
                 futures.push(self.process_import(s, should_search));
@@ -1021,10 +1021,10 @@ impl RainDocument {
 
         // parsing bindings
         let parsed_bindings = exclusive_parse(&document, &BINDING_PATTERN, 0, true);
-        ignore_first = false;
+        ignore_first = true;
         for parsed_binding in parsed_bindings {
-            if !ignore_first {
-                ignore_first = true;
+            if ignore_first {
+                ignore_first = false;
                 continue;
             }
             let position = parsed_binding.1;
