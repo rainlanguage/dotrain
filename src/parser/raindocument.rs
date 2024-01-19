@@ -359,11 +359,11 @@ impl RainDocument {
 
     /// copies a namespaces with given import index and hash
     fn copy_namespace(namespace: &Namespace, index: isize, hash: &str) -> Namespace {
-        let mut ns: Namespace = HashMap::new();
+        let mut new_namespace: Namespace = HashMap::new();
         for (key, item) in namespace {
             match item {
                 NamespaceItem::Node(node) => {
-                    ns.insert(
+                    new_namespace.insert(
                         key.clone(),
                         NamespaceItem::Node(NamespaceNode {
                             hash: if node.hash.is_empty() {
@@ -376,15 +376,15 @@ impl RainDocument {
                         }),
                     );
                 }
-                NamespaceItem::Namespace(n) => {
-                    ns.insert(
+                NamespaceItem::Namespace(deep_namespace) => {
+                    new_namespace.insert(
                         key.to_owned(),
-                        NamespaceItem::Namespace(Self::copy_namespace(n, index, hash)),
+                        NamespaceItem::Namespace(Self::copy_namespace(deep_namespace, index, hash)),
                     );
                 }
             }
         }
-        ns
+        new_namespace
     }
 
     /// processes an import statement
@@ -822,26 +822,26 @@ impl RainDocument {
         }
 
         // parse comments
-        for v in inclusive_parse(&document, &COMMENT_PATTERN, 0).iter() {
+        for parsed_comment in inclusive_parse(&document, &COMMENT_PATTERN, 0).iter() {
             // if a comment is not ended
-            if !v.0.ends_with("*/") {
+            if !parsed_comment.0.ends_with("*/") {
                 self.problems
-                    .push(ErrorCode::UnexpectedEndOfComment.to_problem(vec![], v.1));
+                    .push(ErrorCode::UnexpectedEndOfComment.to_problem(vec![], parsed_comment.1));
             }
             self.comments.push(Comment {
-                comment: v.0.clone(),
-                position: v.1,
+                comment: parsed_comment.0.clone(),
+                position: parsed_comment.1,
             });
 
             // check for lint comments
-            if lint_patterns::IGNORE_WORDS.is_match(&v.0) {
+            if lint_patterns::IGNORE_WORDS.is_match(&parsed_comment.0) {
                 self.ignore_words = true;
             }
-            if lint_patterns::IGNORE_UNDEFINED_WORDS.is_match(&v.0) {
+            if lint_patterns::IGNORE_UNDEFINED_WORDS.is_match(&parsed_comment.0) {
                 self.ignore_undefined_words = true;
             }
 
-            fill_in(&mut document, v.1)?;
+            fill_in(&mut document, parsed_comment.1)?;
         }
 
         // if a 'ignore words' lint was found, 'ignore undfeined words' should be
@@ -858,17 +858,17 @@ impl RainDocument {
 
         // take each import statement from the text
         let mut import_statements = exclusive_parse(&document, &IMPORTS_PATTERN, 0, true);
-        for v in &mut import_statements {
+        for imp_statement in &mut import_statements {
             if !ignore_first {
                 ignore_first = true;
                 continue;
             }
-            if let Some(index) = v.0.find('#') {
-                let slices = v.0.split_at(index);
-                v.0 = slices.0.to_owned();
-                v.1[1] = v.1[0] + index;
+            if let Some(index) = imp_statement.0.find('#') {
+                let slices = imp_statement.0.split_at(index);
+                imp_statement.0 = slices.0.to_owned();
+                imp_statement.1[1] = imp_statement.1[0] + index;
             };
-            fill_in(&mut document, [v.1[0] - 1, v.1[1]])?;
+            fill_in(&mut document, [imp_statement.1[0] - 1, imp_statement.1[1]])?;
         }
 
         // try to parse import statements if only the current instance isnt an import itself
@@ -928,10 +928,10 @@ impl RainDocument {
                     let mut has_dup_words = false;
                     let mut has_dup_keys = false;
                     let mut has_dispair = None;
-                    let mut ns: Namespace = HashMap::new();
+                    let mut new_imp_namespace: Namespace = HashMap::new();
                     if let Some(seq) = &imp.sequence {
                         if let Some(dispair) = &seq.dispair {
-                            ns.insert(
+                            new_imp_namespace.insert(
                                 "Dispair".to_owned(),
                                 NamespaceItem::Node(NamespaceNode {
                                     hash: imp.hash.clone(),
@@ -951,7 +951,7 @@ impl RainDocument {
                                     }
                                 }
                             } else {
-                                ns.extend(Self::copy_namespace(
+                                new_imp_namespace.extend(Self::copy_namespace(
                                     &dmeta.namespace,
                                     i as isize,
                                     &imp.hash,
@@ -972,7 +972,7 @@ impl RainDocument {
                                 if let Some(new_conf) = &conf.1 {
                                     if new_conf.0 == "!" {
                                         if conf.0 .0 == "." {
-                                            if ns.remove("Dispair").is_none() {
+                                            if new_imp_namespace.remove("Dispair").is_none() {
                                                 self.problems.push(
                                                     ErrorCode::UndefinedWordSet.to_problem(
                                                         vec![],
@@ -980,7 +980,7 @@ impl RainDocument {
                                                     ),
                                                 );
                                             };
-                                        } else if ns.remove(&conf.0 .0).is_none() {
+                                        } else if new_imp_namespace.remove(&conf.0 .0).is_none() {
                                             self.problems.push(
                                                 ErrorCode::UndefinedIdentifier
                                                     .to_problem(vec![&conf.0 .0], conf.0 .1),
@@ -994,9 +994,9 @@ impl RainDocument {
                                                 conf.0 .0.as_str()
                                             }
                                         };
-                                        if ns.contains_key(key) {
+                                        if new_imp_namespace.contains_key(key) {
                                             if conf.0 .0.starts_with('\'') {
-                                                if ns.contains_key(&new_conf.0) {
+                                                if new_imp_namespace.contains_key(&new_conf.0) {
                                                     self.problems.push(
                                                         ErrorCode::UnexpectedRename.to_problem(
                                                             vec![&new_conf.0],
@@ -1004,11 +1004,14 @@ impl RainDocument {
                                                         ),
                                                     );
                                                 } else {
-                                                    let ns_item = ns.remove(key).unwrap();
-                                                    ns.insert(new_conf.0.clone(), ns_item);
+                                                    let ns_item =
+                                                        new_imp_namespace.remove(key).unwrap();
+                                                    new_imp_namespace
+                                                        .insert(new_conf.0.clone(), ns_item);
                                                 }
                                             } else {
-                                                let ns_item = ns.get_mut(key).unwrap();
+                                                let ns_item =
+                                                    new_imp_namespace.get_mut(key).unwrap();
                                                 if ns_item.is_binding() {
                                                     if let NamespaceItem::Node(n) = ns_item {
                                                         if let NamespaceNodeElement::Binding(b) =
@@ -1040,7 +1043,11 @@ impl RainDocument {
                                 }
                             }
                         }
-                        imported_namespaces.push_back((imp.name.clone(), imp.hash_position, ns));
+                        imported_namespaces.push_back((
+                            imp.name.clone(),
+                            imp.hash_position,
+                            new_imp_namespace,
+                        ));
                     }
                 }
             }
@@ -1054,20 +1061,20 @@ impl RainDocument {
         // parsing bindings
         let parsed_bindings = exclusive_parse(&document, &BINDING_PATTERN, 0, true);
         ignore_first = false;
-        for b in parsed_bindings {
+        for parsed_binding in parsed_bindings {
             if !ignore_first {
                 ignore_first = true;
                 continue;
             }
-            let position = b.1;
+            let position = parsed_binding.1;
             let name: String;
             let name_position: Offsets;
             let mut content = String::new();
             let content_position: Offsets;
             let mut raw_content = ""; // without comments
 
-            if let Some(boundry_offset) = b.0.find([' ', '\t', '\r', '\n']) {
-                let slices = b.0.split_at(boundry_offset + 1);
+            if let Some(boundry_offset) = parsed_binding.0.find([' ', '\t', '\r', '\n']) {
+                let slices = parsed_binding.0.split_at(boundry_offset + 1);
                 let raw_trimmed = tracked_trim(slices.1);
                 raw_content = if raw_trimmed.0.is_empty() {
                     slices.1
@@ -1075,18 +1082,25 @@ impl RainDocument {
                     raw_trimmed.0
                 };
 
-                let content_text = self.text.get(b.1[0]..b.1[1]).unwrap().to_owned();
+                let content_text = self
+                    .text
+                    .get(parsed_binding.1[0]..parsed_binding.1[1])
+                    .unwrap()
+                    .to_owned();
                 name = slices.0[..slices.0.len() - 1].to_owned();
-                name_position = [b.1[0], b.1[0] + boundry_offset];
+                name_position = [parsed_binding.1[0], parsed_binding.1[0] + boundry_offset];
 
                 let slices = content_text.split_at(boundry_offset + 1);
                 let trimmed_content = tracked_trim(slices.1);
                 content_position = if trimmed_content.0.is_empty() {
-                    [b.1[0] + boundry_offset + 1, b.1[1]]
+                    [
+                        parsed_binding.1[0] + boundry_offset + 1,
+                        parsed_binding.1[1],
+                    ]
                 } else {
                     [
-                        b.1[0] + boundry_offset + 1 + trimmed_content.1,
-                        b.1[1] - trimmed_content.2,
+                        parsed_binding.1[0] + boundry_offset + 1 + trimmed_content.1,
+                        parsed_binding.1[1] - trimmed_content.2,
                     ]
                 };
                 content = if trimmed_content.0.is_empty() {
@@ -1095,9 +1109,9 @@ impl RainDocument {
                     trimmed_content.0.to_owned()
                 };
             } else {
-                name = b.0.clone();
-                name_position = b.1;
-                content_position = [b.1[1] + 1, b.1[1] + 1];
+                name = parsed_binding.0.clone();
+                name_position = parsed_binding.1;
+                content_position = [parsed_binding.1[1] + 1, parsed_binding.1[1] + 1];
             }
             let invalid_id = !WORD_PATTERN.is_match(&name);
             let dup_id = self.namespace.contains_key(&name);
@@ -1157,7 +1171,10 @@ impl RainDocument {
                     }),
                 );
             }
-            fill_in(&mut document, [b.1[0] - 1, b.1[1]])?;
+            fill_in(
+                &mut document,
+                [parsed_binding.1[0] - 1, parsed_binding.1[1]],
+            )?;
         }
 
         // find non-top level imports
@@ -1200,31 +1217,33 @@ impl RainDocument {
             // assign global words for this instance
             self.resolve_global_deployer();
 
-            for b in &mut self.bindings {
+            for binding in &mut self.bindings {
                 // parse the rainlang binding to ast and repopulate the
                 // binding.item and corresponding namespace with it
-                if matches!(b.item, BindingItem::Exp(_)) {
-                    let rl = RainlangDocument::create(
-                        b.content.clone(),
+                if matches!(binding.item, BindingItem::Exp(_)) {
+                    let rainlang_doc = RainlangDocument::create(
+                        binding.content.clone(),
                         &self.namespace,
                         self.authoring_meta.as_ref(),
                         self.ignore_undefined_words,
                     );
-                    b.problems.extend(rl.problems.iter().map(|p| Problem {
-                        msg: p.msg.clone(),
-                        position: [
-                            p.position[0] + b.content_position[0],
-                            p.position[1] + b.content_position[0],
-                        ],
-                        code: p.code,
-                    }));
-                    b.item = BindingItem::Exp(rl);
+                    binding
+                        .problems
+                        .extend(rainlang_doc.problems.iter().map(|p| Problem {
+                            msg: p.msg.clone(),
+                            position: [
+                                p.position[0] + binding.content_position[0],
+                                p.position[1] + binding.content_position[0],
+                            ],
+                            code: p.code,
+                        }));
+                    binding.item = BindingItem::Exp(rainlang_doc);
                     self.namespace.insert(
-                        b.name.clone(),
+                        binding.name.clone(),
                         NamespaceItem::Node(NamespaceNode {
                             hash: String::new(),
                             import_index: -1,
-                            element: NamespaceNodeElement::Binding(b.clone()),
+                            element: NamespaceNodeElement::Binding(binding.clone()),
                         }),
                     );
                 }
@@ -1254,31 +1273,31 @@ impl RainDocument {
         if main.is_empty() {
             None
         } else {
-            if let Some(m_dis) = main.get("Dispair") {
-                if let Some(n_dis) = new.get("Dispair") {
-                    if !m_dis
+            if let Some(main_ns_dispair) = main.get("Dispair") {
+                if let Some(new_ns_dispair) = new.get("Dispair") {
+                    if !main_ns_dispair
                         .unwrap_node()
                         .hash
-                        .eq_ignore_ascii_case(&n_dis.unwrap_node().hash)
+                        .eq_ignore_ascii_case(&new_ns_dispair.unwrap_node().hash)
                     {
                         return Some(ErrorCode::MultipleWordSets);
                     }
                 }
             }
-            for (n_key, n_item) in new {
-                for (m_key, m_item) in main {
-                    if n_key == m_key {
-                        let n_node = n_item.is_node();
-                        let m_node = m_item.is_node();
-                        if !n_node && !m_node {
+            for (new_ns_key, new_ns_item) in new {
+                for (main_ns_key, main_ns_item) in main {
+                    if new_ns_key == main_ns_key {
+                        let new_is_node = new_ns_item.is_node();
+                        let main_is_node = main_ns_item.is_node();
+                        if !new_is_node && !main_is_node {
                             let res = Self::check_namespace(
-                                n_item.unwrap_namespace(),
-                                m_item.unwrap_namespace(),
+                                new_ns_item.unwrap_namespace(),
+                                main_ns_item.unwrap_namespace(),
                             );
                             if res.is_some() {
                                 return res;
                             };
-                        } else if n_node && m_node {
+                        } else if new_is_node && main_is_node {
                             return Some(ErrorCode::CollidingNamespaceNodes);
                         } else {
                             return Some(ErrorCode::OccupiedNamespace);
@@ -1304,11 +1323,11 @@ impl RainDocument {
                     NamespaceItem::Node(_) => self
                         .problems
                         .push(ErrorCode::OccupiedNamespace.to_problem(vec![], hash_position)),
-                    NamespaceItem::Namespace(mns) => {
-                        if let Some(code) = Self::check_namespace(&new, mns) {
+                    NamespaceItem::Namespace(deep_namespace) => {
+                        if let Some(code) = Self::check_namespace(&new, deep_namespace) {
                             self.problems.push(code.to_problem(vec![], hash_position));
                         } else {
-                            Self::merge(&new, mns)
+                            Self::merge(&new, deep_namespace)
                         }
                     }
                 }
@@ -1388,12 +1407,12 @@ impl RainDocument {
         let mut count = 0usize;
         let mut node = None;
         if let Some(dis_item) = namespace.get("Dispair") {
-            let dis = dis_item.unwrap_node();
+            let dispair_node = dis_item.unwrap_node();
             if hash.is_empty() {
                 count += 1;
-                hash = &dis.hash;
-                node = Some(dis);
-            } else if !dis.hash.eq_ignore_ascii_case(hash) {
+                hash = &dispair_node.hash;
+                node = Some(dispair_node);
+            } else if !dispair_node.hash.eq_ignore_ascii_case(hash) {
                 return (count + 1, hash, None);
             }
         }
@@ -1425,10 +1444,10 @@ impl RainDocument {
         } else if words_set_count == 0 {
             self.problems
                 .push(ErrorCode::UndefinedGlobalWords.to_problem(vec![], [0, 0]));
-        } else if let Some(n) = node {
-            if n.is_dispair() {
-                let dis = n.unwrap_dispair();
-                self.deployer = dis.clone().into();
+        } else if let Some(namespace_node) = node {
+            if namespace_node.is_dispair() {
+                let dispair = namespace_node.unwrap_dispair();
+                self.deployer = dispair.clone().into();
                 self.authoring_meta = self.deployer.authoring_meta.clone();
             } else {
                 self.problems
