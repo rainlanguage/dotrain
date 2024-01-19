@@ -736,7 +736,11 @@ impl RainDocument {
                     }
                 }
             }
-        } else {
+        } else if result
+            .problems
+            .iter()
+            .all(|p| p.code != ErrorCode::CorruptMeta)
+        {
             result.problems.push(
                 ErrorCode::UndefinedImport.to_problem(vec![&result.hash], result.hash_position),
             );
@@ -1625,10 +1629,7 @@ mod tests {
             hash: hash2.to_owned(),
             hash_position: [17, 83],
             position: [16, 83],
-            problems: vec![
-                ErrorCode::CorruptMeta.to_problem(vec![], [17, 83]),
-                ErrorCode::UndefinedImport.to_problem(vec![hash2], [17, 83]),
-            ],
+            problems: vec![ErrorCode::CorruptMeta.to_problem(vec![], [17, 83])],
             configuration: None,
             sequence: None,
         };
