@@ -808,7 +808,7 @@ impl RainDocument {
         // split front matter and rest of the text
         if let Some(splitter) = document.find("---") {
             self.front_matter = document[..splitter].to_owned();
-            fill_in(&mut document, [0, splitter])?;
+            fill_in(&mut document, [0, splitter + 3])?;
         };
 
         // check for illegal characters, ends parsing right away if found any
