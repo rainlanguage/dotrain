@@ -1474,7 +1474,6 @@ impl PartialEq for RainDocument {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::ast;
     use super::super::rainlangdocument::RainlangDocument;
     use rain_meta::types::authoring::v1::AuthoringMetaItem;
 
