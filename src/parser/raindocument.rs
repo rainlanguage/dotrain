@@ -99,7 +99,7 @@ pub struct RainDocument {
     )]
     pub(crate) uri: Url,
     pub(crate) text: String,
-
+    pub(crate) front_matter: String,
     pub(crate) error: Option<String>,
     pub(crate) bindings: Vec<Binding>,
     pub(crate) imports: Vec<Import>,
@@ -175,6 +175,11 @@ impl RainDocument {
     /// This instance's current text
     pub fn text(&self) -> &String {
         &self.text
+    }
+
+    /// This instance's front matter
+    pub fn front_matter(&self) -> &String {
+        &self.front_matter
     }
 
     /// This instance's current URI
@@ -271,6 +276,7 @@ impl RainDocument {
             self.bindings.clear();
             self.namespace.clear();
             self.authoring_meta = None;
+            self.front_matter = String::new();
             self.deployer = NPE2Deployer::default();
             self.ignore_words = false;
             self.ignore_undefined_words = false;
@@ -296,6 +302,7 @@ impl RainDocument {
             text,
             uri,
             version,
+            front_matter: String::new(),
             error: None,
             bindings: vec![],
             namespace: HashMap::new(),
@@ -568,6 +575,7 @@ impl RainDocument {
                 .push(ErrorCode::InvalidImport.to_problem(vec![], at_pos));
         }
         let hash_bytes = alloy_primitives::hex::decode(&result.hash).unwrap();
+        let subgraphs = { self.meta_store.read().unwrap().subgraphs().clone() };
         let mut npe2_deployer = None;
         let meta_seq = {
             let mut did_find = false;
@@ -584,7 +592,6 @@ impl RainDocument {
                 }
             };
             if !did_find && should_search {
-                let subgraphs = { self.meta_store.read().unwrap().subgraphs().clone() };
                 let deployer_search = search_deployer(&result.hash, &subgraphs);
                 let meta_search = search(&result.hash, &subgraphs);
                 if let Ok(deployer_res) = deployer_search.await {
@@ -676,8 +683,6 @@ impl RainDocument {
                                     {
                                         deployer
                                     } else if should_search {
-                                        let subgraphs =
-                                            { self.meta_store.read().unwrap().subgraphs().clone() };
                                         if let Ok(deployer_res) =
                                             search_deployer(&result.hash, &subgraphs).await
                                         {
@@ -794,6 +799,7 @@ impl RainDocument {
         self.namespace.clear();
         self.authoring_meta = None;
         self.ignore_words = false;
+        self.front_matter = String::new();
         self.ignore_undefined_words = false;
         self.deployer = NPE2Deployer::default();
         let mut document = self.text.clone();
@@ -801,10 +807,11 @@ impl RainDocument {
 
         // split front matter and rest of the text
         if let Some(splitter) = document.find("---") {
+            self.front_matter = document[..splitter].to_owned();
             fill_in(&mut document, [0, splitter])?;
         };
 
-        // check for illegal characters
+        // check for illegal characters, ends parsing right away if found any
         let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
         if !illegal_chars.is_empty() {
             self.problems.push(ErrorCode::IllegalChar.to_problem(
@@ -838,14 +845,14 @@ impl RainDocument {
         }
 
         // if a 'ignore words' lint was found, 'ignore undfeined words' should be
-        // also set to true reason is that the former is a superset of the latter
+        // also set to true because the former is a superset of the latter
         if self.ignore_words {
             self.ignore_undefined_words = true;
         }
 
         // since exclusive_parse() is being used with 'including_empty_ends' arg set to true,
         // the first item of the parsed items should be ignored since it only contains the
-        // empty text before the first match
+        // text before the first match
         // this will apply for parsing imports and bindings
         let mut ignore_first = false;
 
@@ -868,7 +875,7 @@ impl RainDocument {
         // and is not deeper than 32 levels
         // parsing each import is an async fn as each import might not be cached in the CAS
         // and may need reading it from underlying subgraphs, so they are triggered and awaited
-        // alltogther
+        // alltogther with care for read/write lock on the CAS
         ignore_first = false;
         if self.import_depth < 32 {
             let mut futures = vec![];
@@ -965,27 +972,14 @@ impl RainDocument {
                                 if let Some(new_conf) = &conf.1 {
                                     if new_conf.0 == "!" {
                                         if conf.0 .0 == "." {
-                                            let dis = ns.remove("Dispair");
-                                            if let Some(words) = dis {
-                                                if let NamespaceItem::Node(n) = words {
-                                                    if let NamespaceNodeElement::Dispair(d) =
-                                                        n.element
-                                                    {
-                                                        if let Some(am) = d.authoring_meta {
-                                                            for word in am.0 {
-                                                                ns.remove(&word.word);
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            } else {
+                                            if ns.remove("Dispair").is_none() {
                                                 self.problems.push(
                                                     ErrorCode::UndefinedWordSet.to_problem(
                                                         vec![],
                                                         [conf.0 .1[0], new_conf.1[1]],
                                                     ),
                                                 );
-                                            }
+                                            };
                                         } else if ns.remove(&conf.0 .0).is_none() {
                                             self.problems.push(
                                                 ErrorCode::UndefinedIdentifier
@@ -1001,13 +995,6 @@ impl RainDocument {
                                             }
                                         };
                                         if ns.contains_key(key) {
-                                            // if _ns.get(key).unwrap().is_word() {
-                                            //     self.problems.push(Problem {
-                                            //         msg: format!("cannot rename or rebind single word: {}", key),
-                                            //         position: [c.0.1[0], new.1[1]],
-                                            //         code: ErrorCode::SingleWordModify
-                                            //     });
-                                            // } else {
                                             if conf.0 .0.starts_with('\'') {
                                                 if ns.contains_key(&new_conf.0) {
                                                     self.problems.push(
@@ -1043,7 +1030,6 @@ impl RainDocument {
                                                     );
                                                 }
                                             }
-                                            // }
                                         } else {
                                             self.problems.push(
                                                 ErrorCode::UndefinedIdentifier
@@ -1078,15 +1064,15 @@ impl RainDocument {
             let name_position: Offsets;
             let mut content = String::new();
             let content_position: Offsets;
-            let mut no_cm_content = "";
+            let mut raw_content = ""; // without comments
 
             if let Some(boundry_offset) = b.0.find([' ', '\t', '\r', '\n']) {
                 let slices = b.0.split_at(boundry_offset + 1);
-                let no_cm_trimmed = tracked_trim(slices.1);
-                no_cm_content = if no_cm_trimmed.0.is_empty() {
+                let raw_trimmed = tracked_trim(slices.1);
+                raw_content = if raw_trimmed.0.is_empty() {
                     slices.1
                 } else {
-                    no_cm_trimmed.0
+                    raw_trimmed.0
                 };
 
                 let content_text = self.text.get(b.1[0]..b.1[1]).unwrap().to_owned();
@@ -1124,88 +1110,52 @@ impl RainDocument {
                 self.problems
                     .push(ErrorCode::DuplicateIdentifier.to_problem(vec![&name], name_position));
             }
-            if no_cm_content.is_empty() || no_cm_content.chars().all(|c| c.is_whitespace()) {
+            if raw_content.is_empty() || raw_content.chars().all(|c| c.is_whitespace()) {
                 self.problems
                     .push(ErrorCode::InvalidEmptyBinding.to_problem(vec![&name], name_position));
             }
 
             if !invalid_id && !dup_id {
-                if let Some(mut msg) = Self::is_elided(no_cm_content) {
+                let item;
+                if let Some(mut msg) = Self::is_elided(raw_content) {
                     if msg.is_empty() {
                         msg = DEFAULT_ELISION.to_owned();
                     }
-                    let binding = Binding {
-                        name: name.clone(),
-                        name_position,
-                        content,
-                        content_position,
-                        position,
-                        problems: vec![],
-                        dependencies: vec![],
-                        item: BindingItem::Elided(ElidedBindingItem { msg }),
-                    };
-                    namespace.insert(
-                        name,
-                        NamespaceItem::Node(NamespaceNode {
-                            hash: String::new(),
-                            import_index: -1,
-                            element: NamespaceNodeElement::Binding(binding.clone()),
-                        }),
-                    );
-                    self.bindings.push(binding);
-                } else if let Some((value, is_out_of_range)) = Self::is_constant(no_cm_content) {
+                    item = BindingItem::Elided(ElidedBindingItem { msg });
+                } else if let Some((value, is_out_of_range)) = Self::is_constant(raw_content) {
                     if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
                         self.problems
                             .push(ErrorCode::OddLenHex.to_problem(vec![], content_position));
                     }
-                    let binding = Binding {
-                        name: name.clone(),
-                        name_position,
-                        content,
-                        content_position,
-                        position,
-                        problems: vec![],
-                        dependencies: vec![],
-                        item: BindingItem::Constant(ConstantBindingItem { value }),
-                    };
-                    namespace.insert(
-                        name,
-                        NamespaceItem::Node(NamespaceNode {
-                            hash: String::new(),
-                            import_index: -1,
-                            element: NamespaceNodeElement::Binding(binding.clone()),
-                        }),
-                    );
-                    self.bindings.push(binding);
+                    item = BindingItem::Constant(ConstantBindingItem { value });
                     if is_out_of_range {
                         self.problems
                             .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
                     }
                 } else {
-                    let binding = Binding {
-                        name: name.clone(),
-                        name_position,
-                        content,
-                        content_position,
-                        position,
-                        problems: vec![],
-                        dependencies: vec![],
-                        item: BindingItem::Exp(
-                            // occupy the key with empty rainlang ast, later on will
-                            // be replaced with parsed ast once global words are resolved
-                            RainlangDocument::new(),
-                        ),
-                    };
-                    namespace.insert(
-                        name,
-                        NamespaceItem::Node(NamespaceNode {
-                            hash: String::new(),
-                            import_index: -1,
-                            element: NamespaceNodeElement::Binding(binding.clone()),
-                        }),
-                    );
-                    self.bindings.push(binding);
+                    // occupy the key with empty rainlang ast, later on will
+                    // be replaced with parsed ast once global words are resolved
+                    item = BindingItem::Exp(RainlangDocument::new());
                 }
+                let binding = Binding {
+                    name: name.clone(),
+                    name_position,
+                    content,
+                    content_position,
+                    position,
+                    problems: vec![],
+                    dependencies: vec![],
+                    item,
+                };
+                self.bindings.push(binding.clone());
+                namespace.insert(
+                    name,
+                    NamespaceItem::Node(NamespaceNode {
+                        hash: String::new(),
+                        import_index: -1,
+                        element: NamespaceNodeElement::Binding(binding),
+                    }),
+                );
             }
             fill_in(&mut document, [b.1[0] - 1, b.1[1]])?;
         }
