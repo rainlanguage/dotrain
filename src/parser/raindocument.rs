@@ -404,7 +404,7 @@ impl RainDocument {
         }
 
         // merge all the built and ready imported items namespaces into the main namespace
-        let mut imports_namespaces = self.process_imports_namespaces(&namespace);
+        let mut imports_namespaces = self.build_imports_namespaces(&namespace);
         while let Some((name, hash_position, _ns)) = imports_namespaces.pop_front() {
             self.merge_namespace(name, hash_position, _ns, &mut namespace);
         }
@@ -1030,7 +1030,7 @@ impl RainDocument {
     /// processing imports' namespace and building a ready to merge namespace from each
     /// this requires checking each import's namespace for possible issues (duplicate keys, duplicate word sets, etc)
     /// as well as applying renames, rebindings and elidings
-    fn process_imports_namespaces(
+    fn build_imports_namespaces(
         &mut self,
         namespace: &Namespace,
     ) -> VecDeque<(String, Offsets, Namespace)> {
