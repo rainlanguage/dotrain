@@ -1091,6 +1091,8 @@ impl RainDocument {
                                 ErrorCode::MultipleWordSets.to_problem(vec![], imp.hash_position),
                             );
                         } else if let Some(configs) = &imp.configuration {
+                            // applies the configurations and reports back the found problems
+                            // to be pushed to main problems list
                             self.problems.extend(Self::apply_import_configs(
                                 configs,
                                 &mut new_imp_namespace,
@@ -1109,6 +1111,7 @@ impl RainDocument {
     }
 
     /// applies the import configurations to their corresponding ready to merge namespace
+    /// returns the found problems in the configurations
     fn apply_import_configs(
         configs: &ImportConfiguration,
         new_imp_namespace: &mut Namespace,
