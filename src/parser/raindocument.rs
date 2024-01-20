@@ -1027,115 +1027,6 @@ impl RainDocument {
         }
     }
 
-    /// processes a binding item
-    fn process_binding(&mut self, parsed_binding: &ParsedItem, namespace: &mut Namespace) {
-        let position = parsed_binding.1;
-        let name: String;
-        let name_position: Offsets;
-        let mut content = String::new();
-        let content_position: Offsets;
-        let mut raw_content = ""; // without comments
-
-        if let Some(boundry_offset) = parsed_binding.0.find([' ', '\t', '\r', '\n']) {
-            let slices = parsed_binding.0.split_at(boundry_offset + 1);
-            let raw_trimmed = tracked_trim(slices.1);
-            raw_content = if raw_trimmed.0.is_empty() {
-                slices.1
-            } else {
-                raw_trimmed.0
-            };
-
-            let content_text = self
-                .text
-                .get(parsed_binding.1[0]..parsed_binding.1[1])
-                .unwrap()
-                .to_owned();
-            name = slices.0[..slices.0.len() - 1].to_owned();
-            name_position = [parsed_binding.1[0], parsed_binding.1[0] + boundry_offset];
-
-            let slices = content_text.split_at(boundry_offset + 1);
-            let trimmed_content = tracked_trim(slices.1);
-            content_position = if trimmed_content.0.is_empty() {
-                [
-                    parsed_binding.1[0] + boundry_offset + 1,
-                    parsed_binding.1[1],
-                ]
-            } else {
-                [
-                    parsed_binding.1[0] + boundry_offset + 1 + trimmed_content.1,
-                    parsed_binding.1[1] - trimmed_content.2,
-                ]
-            };
-            content = if trimmed_content.0.is_empty() {
-                slices.1.to_owned()
-            } else {
-                trimmed_content.0.to_owned()
-            };
-        } else {
-            name = parsed_binding.0.clone();
-            name_position = parsed_binding.1;
-            content_position = [parsed_binding.1[1] + 1, parsed_binding.1[1] + 1];
-        }
-        let invalid_id = !WORD_PATTERN.is_match(&name);
-        let dup_id = self.namespace.contains_key(&name);
-
-        if invalid_id {
-            self.problems
-                .push(ErrorCode::InvalidWordPattern.to_problem(vec![&name], name_position));
-        }
-        if dup_id {
-            self.problems
-                .push(ErrorCode::DuplicateIdentifier.to_problem(vec![&name], name_position));
-        }
-        if raw_content.is_empty() || raw_content.chars().all(|c| c.is_whitespace()) {
-            self.problems
-                .push(ErrorCode::InvalidEmptyBinding.to_problem(vec![&name], name_position));
-        }
-
-        if !invalid_id && !dup_id {
-            let item;
-            if let Some(mut msg) = Self::is_elided(raw_content) {
-                if msg.is_empty() {
-                    msg = DEFAULT_ELISION.to_owned();
-                }
-                item = BindingItem::Elided(ElidedBindingItem { msg });
-            } else if let Some((value, is_out_of_range)) = Self::is_constant(raw_content) {
-                if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
-                    self.problems
-                        .push(ErrorCode::OddLenHex.to_problem(vec![], content_position));
-                }
-                item = BindingItem::Constant(ConstantBindingItem { value });
-                if is_out_of_range {
-                    self.problems
-                        .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
-                }
-            } else {
-                // occupy the key with empty rainlang ast, later on will
-                // be replaced with parsed ast once global words are resolved
-                item = BindingItem::Exp(RainlangDocument::new());
-            }
-            let binding = Binding {
-                name: name.clone(),
-                name_position,
-                content,
-                content_position,
-                position,
-                problems: vec![],
-                dependencies: vec![],
-                item,
-            };
-            self.bindings.push(binding.clone());
-            namespace.insert(
-                name,
-                NamespaceItem::Node(NamespaceNode {
-                    hash: String::new(),
-                    import_index: -1,
-                    element: NamespaceNodeElement::Binding(binding),
-                }),
-            );
-        }
-    }
-
     /// processing imports' namespace and building a ready to merge namespace from each
     /// this requires checking each import's namespace for possible issues (duplicate keys, duplicate word sets, etc)
     /// as well as applying renames, rebindings and elidings
@@ -1279,6 +1170,115 @@ impl RainDocument {
             }
         }
         imported_namespaces
+    }
+
+    /// processes a binding item
+    fn process_binding(&mut self, parsed_binding: &ParsedItem, namespace: &mut Namespace) {
+        let position = parsed_binding.1;
+        let name: String;
+        let name_position: Offsets;
+        let mut content = String::new();
+        let content_position: Offsets;
+        let mut raw_content = ""; // without comments
+
+        if let Some(boundry_offset) = parsed_binding.0.find([' ', '\t', '\r', '\n']) {
+            let slices = parsed_binding.0.split_at(boundry_offset + 1);
+            let raw_trimmed = tracked_trim(slices.1);
+            raw_content = if raw_trimmed.0.is_empty() {
+                slices.1
+            } else {
+                raw_trimmed.0
+            };
+
+            let content_text = self
+                .text
+                .get(parsed_binding.1[0]..parsed_binding.1[1])
+                .unwrap()
+                .to_owned();
+            name = slices.0[..slices.0.len() - 1].to_owned();
+            name_position = [parsed_binding.1[0], parsed_binding.1[0] + boundry_offset];
+
+            let slices = content_text.split_at(boundry_offset + 1);
+            let trimmed_content = tracked_trim(slices.1);
+            content_position = if trimmed_content.0.is_empty() {
+                [
+                    parsed_binding.1[0] + boundry_offset + 1,
+                    parsed_binding.1[1],
+                ]
+            } else {
+                [
+                    parsed_binding.1[0] + boundry_offset + 1 + trimmed_content.1,
+                    parsed_binding.1[1] - trimmed_content.2,
+                ]
+            };
+            content = if trimmed_content.0.is_empty() {
+                slices.1.to_owned()
+            } else {
+                trimmed_content.0.to_owned()
+            };
+        } else {
+            name = parsed_binding.0.clone();
+            name_position = parsed_binding.1;
+            content_position = [parsed_binding.1[1] + 1, parsed_binding.1[1] + 1];
+        }
+        let invalid_id = !WORD_PATTERN.is_match(&name);
+        let dup_id = self.namespace.contains_key(&name);
+
+        if invalid_id {
+            self.problems
+                .push(ErrorCode::InvalidWordPattern.to_problem(vec![&name], name_position));
+        }
+        if dup_id {
+            self.problems
+                .push(ErrorCode::DuplicateIdentifier.to_problem(vec![&name], name_position));
+        }
+        if raw_content.is_empty() || raw_content.chars().all(|c| c.is_whitespace()) {
+            self.problems
+                .push(ErrorCode::InvalidEmptyBinding.to_problem(vec![&name], name_position));
+        }
+
+        if !invalid_id && !dup_id {
+            let item;
+            if let Some(mut msg) = Self::is_elided(raw_content) {
+                if msg.is_empty() {
+                    msg = DEFAULT_ELISION.to_owned();
+                }
+                item = BindingItem::Elided(ElidedBindingItem { msg });
+            } else if let Some((value, is_out_of_range)) = Self::is_constant(raw_content) {
+                if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
+                    self.problems
+                        .push(ErrorCode::OddLenHex.to_problem(vec![], content_position));
+                }
+                item = BindingItem::Constant(ConstantBindingItem { value });
+                if is_out_of_range {
+                    self.problems
+                        .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
+                }
+            } else {
+                // occupy the key with empty rainlang ast, later on will
+                // be replaced with parsed ast once global words are resolved
+                item = BindingItem::Exp(RainlangDocument::new());
+            }
+            let binding = Binding {
+                name: name.clone(),
+                name_position,
+                content,
+                content_position,
+                position,
+                problems: vec![],
+                dependencies: vec![],
+                item,
+            };
+            self.bindings.push(binding.clone());
+            namespace.insert(
+                name,
+                NamespaceItem::Node(NamespaceNode {
+                    hash: String::new(),
+                    import_index: -1,
+                    element: NamespaceNodeElement::Binding(binding),
+                }),
+            );
+        }
     }
 
     /// copies a namespaces with given import index and hash
