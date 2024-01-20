@@ -565,23 +565,25 @@ impl RainDocument {
         config_pieces: &mut std::slice::IterMut<'_, ParsedItem>,
     ) -> ImportConfiguration {
         let mut imp_conf = ImportConfiguration {
-            pairs: vec![],
+            groups: vec![],
             problems: vec![],
         };
-        while let Some(piece) = config_pieces.next() {
+        while let Some(first_piece) = config_pieces.next() {
             if let Some(complementary_piece) = config_pieces.next() {
-                if piece.0 == "." {
+                if first_piece.0 == "." {
                     if complementary_piece.0 == "!" {
-                        if imp_conf.pairs.iter().any(|v| {
+                        if imp_conf.groups.iter().any(|v| {
                             if let Some(e) = &v.1 {
-                                v.0 .0 == piece.0 && e.0 == complementary_piece.0
+                                v.0 .0 == first_piece.0 && e.0 == complementary_piece.0
                             } else {
                                 false
                             }
                         }) {
                             imp_conf.problems.push(
-                                ErrorCode::DuplicateImportStatement
-                                    .to_problem(vec![], [piece.1[0], complementary_piece.1[1]]),
+                                ErrorCode::DuplicateImportStatement.to_problem(
+                                    vec![],
+                                    [first_piece.1[0], complementary_piece.1[1]],
+                                ),
                             );
                         }
                     } else {
@@ -590,22 +592,24 @@ impl RainDocument {
                         );
                     }
                     imp_conf
-                        .pairs
-                        .push((piece.clone(), Some(complementary_piece.clone())));
-                } else if WORD_PATTERN.is_match(&piece.0) {
+                        .groups
+                        .push((first_piece.clone(), Some(complementary_piece.clone())));
+                } else if WORD_PATTERN.is_match(&first_piece.0) {
                     if NUMERIC_PATTERN.is_match(&complementary_piece.0)
                         || complementary_piece.0 == "!"
                     {
-                        if imp_conf.pairs.iter().any(|v| {
+                        if imp_conf.groups.iter().any(|v| {
                             if let Some(e) = &v.1 {
-                                v.0 .0 == piece.0 && e.0 == complementary_piece.0
+                                v.0 .0 == first_piece.0 && e.0 == complementary_piece.0
                             } else {
                                 false
                             }
                         }) {
                             imp_conf.problems.push(
-                                ErrorCode::DuplicateImportStatement
-                                    .to_problem(vec![], [piece.1[0], complementary_piece.1[1]]),
+                                ErrorCode::DuplicateImportStatement.to_problem(
+                                    vec![],
+                                    [first_piece.1[0], complementary_piece.1[1]],
+                                ),
                             );
                         }
                     } else {
@@ -614,21 +618,23 @@ impl RainDocument {
                         );
                     }
                     imp_conf
-                        .pairs
-                        .push((piece.clone(), Some(complementary_piece.clone())));
-                } else if let Some(quote) = piece.0.strip_prefix('\'') {
+                        .groups
+                        .push((first_piece.clone(), Some(complementary_piece.clone())));
+                } else if let Some(quote) = first_piece.0.strip_prefix('\'') {
                     if WORD_PATTERN.is_match(quote) {
                         if WORD_PATTERN.is_match(&complementary_piece.0) {
-                            if imp_conf.pairs.iter().any(|v| {
+                            if imp_conf.groups.iter().any(|v| {
                                 if let Some(e) = &v.1 {
-                                    v.0 .0 == piece.0 && e.0 == complementary_piece.0
+                                    v.0 .0 == first_piece.0 && e.0 == complementary_piece.0
                                 } else {
                                     false
                                 }
                             }) {
                                 imp_conf.problems.push(
-                                    ErrorCode::DuplicateImportStatement
-                                        .to_problem(vec![], [piece.1[0], complementary_piece.1[1]]),
+                                    ErrorCode::DuplicateImportStatement.to_problem(
+                                        vec![],
+                                        [first_piece.1[0], complementary_piece.1[1]],
+                                    ),
                                 );
                             }
                         } else {
@@ -641,30 +647,31 @@ impl RainDocument {
                         }
                     } else {
                         imp_conf.problems.push(
-                            ErrorCode::InvalidWordPattern.to_problem(vec![&piece.0], piece.1),
+                            ErrorCode::InvalidWordPattern
+                                .to_problem(vec![&first_piece.0], first_piece.1),
                         );
                     }
                     imp_conf
-                        .pairs
-                        .push((piece.clone(), Some(complementary_piece.clone())));
+                        .groups
+                        .push((first_piece.clone(), Some(complementary_piece.clone())));
                 } else {
                     imp_conf
                         .problems
-                        .push(ErrorCode::UnexpectedToken.to_problem(vec![], piece.1));
+                        .push(ErrorCode::UnexpectedToken.to_problem(vec![], first_piece.1));
                     imp_conf
-                        .pairs
-                        .push((piece.clone(), Some(complementary_piece.clone())));
+                        .groups
+                        .push((first_piece.clone(), Some(complementary_piece.clone())));
                 }
             } else {
-                imp_conf.pairs.push((piece.clone(), None));
-                if piece.0.starts_with('\'') {
+                imp_conf.groups.push((first_piece.clone(), None));
+                if first_piece.0.starts_with('\'') {
                     imp_conf
                         .problems
-                        .push(ErrorCode::ExpectedRename.to_problem(vec![], piece.1));
+                        .push(ErrorCode::ExpectedRename.to_problem(vec![], first_piece.1));
                 } else {
-                    imp_conf
-                        .problems
-                        .push(ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], piece.1));
+                    imp_conf.problems.push(
+                        ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], first_piece.1),
+                    );
                 }
             }
         }
@@ -1117,7 +1124,7 @@ impl RainDocument {
         new_imp_namespace: &mut Namespace,
     ) -> Vec<Problem> {
         let mut problems = vec![];
-        for (old_conf, opt_new_conf) in &configs.pairs {
+        for (old_conf, opt_new_conf) in &configs.groups {
             if let Some(new_conf) = &opt_new_conf {
                 if new_conf.0 == "!" {
                     if old_conf.0 == "." {
@@ -1576,7 +1583,7 @@ mod tests {
         let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
         let result = RainDocument::process_import_config(&mut config_items.iter_mut());
         let expected = ImportConfiguration {
-            pairs: vec![
+            groups: vec![
                 (
                     ParsedItem("'item1".to_owned(), [1, 7]),
                     Some(ParsedItem("renamed-item1".to_owned(), [8, 21])),
@@ -1598,7 +1605,7 @@ mod tests {
         let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
         let result = RainDocument::process_import_config(&mut config_items.iter_mut());
         let expected = ImportConfiguration {
-            pairs: vec![
+            groups: vec![
                 (
                     ParsedItem("'item1".to_owned(), [0, 6]),
                     Some(ParsedItem("renamed-item1".to_owned(), [7, 20])),
@@ -1613,7 +1620,7 @@ mod tests {
         let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
         let result = RainDocument::process_import_config(&mut config_items.iter_mut());
         let expected = ImportConfiguration {
-            pairs: vec![(
+            groups: vec![(
                 ParsedItem("Bad-name".to_owned(), [0, 8]),
                 Some(ParsedItem("0x1234".to_owned(), [9, 15])),
             )],

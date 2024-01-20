@@ -406,7 +406,7 @@ impl From<DispairImportItem> for NPE2Deployer {
 )]
 pub struct ImportConfiguration {
     pub problems: Vec<Problem>,
-    pub pairs: Vec<(ParsedItem, Option<ParsedItem>)>,
+    pub groups: Vec<(ParsedItem, Option<ParsedItem>)>,
 }
 
 /// Type of an import meta sequence
