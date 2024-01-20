@@ -1156,8 +1156,8 @@ impl RainDocument {
                         } else {
                             let ns_item = new_imp_namespace.get_mut(key).unwrap();
                             if ns_item.is_binding() {
-                                if let NamespaceItem::Leaf(n) = ns_item {
-                                    if let NamespaceLeafElement::Binding(b) = &mut n.element {
+                                if let NamespaceItem::Leaf(leaf) = ns_item {
+                                    if let NamespaceLeafElement::Binding(b) = &mut leaf.element {
                                         b.item = BindingItem::Constant(ConstantBindingItem {
                                             value: new_conf.0.clone(),
                                         })
@@ -1294,24 +1294,24 @@ impl RainDocument {
         let mut new_namespace: Namespace = HashMap::new();
         for (key, item) in namespace {
             match item {
-                NamespaceItem::Leaf(node) => {
+                NamespaceItem::Leaf(leaf) => {
                     new_namespace.insert(
                         key.clone(),
                         NamespaceItem::Leaf(NamespaceLeaf {
-                            hash: if node.hash.is_empty() {
+                            hash: if leaf.hash.is_empty() {
                                 hash.to_owned()
                             } else {
-                                node.hash.clone()
+                                leaf.hash.clone()
                             },
                             import_index: index,
-                            element: node.element.clone(),
+                            element: leaf.element.clone(),
                         }),
                     );
                 }
-                NamespaceItem::Node(deep_namespace) => {
+                NamespaceItem::Node(node) => {
                     new_namespace.insert(
                         key.to_owned(),
-                        NamespaceItem::Node(Self::copy_namespace(deep_namespace, index, hash)),
+                        NamespaceItem::Node(Self::copy_namespace(node, index, hash)),
                     );
                 }
             }
@@ -1338,9 +1338,9 @@ impl RainDocument {
             for (new_ns_key, new_ns_item) in new {
                 for (main_ns_key, main_ns_item) in main {
                     if new_ns_key == main_ns_key {
-                        let new_is_node = new_ns_item.is_leaf();
-                        let main_is_node = main_ns_item.is_leaf();
-                        if !new_is_node && !main_is_node {
+                        let new_is_leaf = new_ns_item.is_leaf();
+                        let main_is_leaf = main_ns_item.is_leaf();
+                        if !new_is_leaf && !main_is_leaf {
                             let res = Self::check_namespace(
                                 new_ns_item.unwrap_node(),
                                 main_ns_item.unwrap_node(),
@@ -1348,7 +1348,7 @@ impl RainDocument {
                             if res.is_some() {
                                 return res;
                             };
-                        } else if new_is_node && main_is_node {
+                        } else if new_is_leaf && main_is_leaf {
                             return Some(ErrorCode::CollidingNamespaceNodes);
                         } else {
                             return Some(ErrorCode::OccupiedNamespace);
@@ -1374,11 +1374,11 @@ impl RainDocument {
                     NamespaceItem::Leaf(_) => self
                         .problems
                         .push(ErrorCode::OccupiedNamespace.to_problem(vec![], hash_position)),
-                    NamespaceItem::Node(deep_namespace) => {
-                        if let Some(code) = Self::check_namespace(&new, deep_namespace) {
+                    NamespaceItem::Node(node) => {
+                        if let Some(code) = Self::check_namespace(&new, node) {
                             self.problems.push(code.to_problem(vec![], hash_position));
                         } else {
-                            Self::merge(&new, deep_namespace)
+                            Self::merge(&new, node)
                         }
                     }
                 }
@@ -1458,12 +1458,12 @@ impl RainDocument {
         let mut count = 0usize;
         let mut node = None;
         if let Some(dis_item) = namespace.get("Dispair") {
-            let dispair_node = dis_item.unwrap_leaf();
+            let dispair_leaf = dis_item.unwrap_leaf();
             if hash.is_empty() {
                 count += 1;
-                hash = &dispair_node.hash;
-                node = Some(dispair_node);
-            } else if !dispair_node.hash.eq_ignore_ascii_case(hash) {
+                hash = &dispair_leaf.hash;
+                node = Some(dispair_leaf);
+            } else if !dispair_leaf.hash.eq_ignore_ascii_case(hash) {
                 return (count + 1, hash, None);
             }
         }
@@ -1487,7 +1487,8 @@ impl RainDocument {
     /// assigns working word set (deployer) for this RainDocument instance if
     /// only one is found in this instance's namespace
     fn resolve_global_deployer(&mut self) {
-        let (words_set_count, _hash, node) = Self::check_namespace_deployer(&self.namespace, "");
+        let (words_set_count, _hash, opt_leaf) =
+            Self::check_namespace_deployer(&self.namespace, "");
         if words_set_count > 1 {
             self.problems.push(
                 ErrorCode::SingletonWords.to_problem(vec![&words_set_count.to_string()], [0, 0]),
@@ -1495,9 +1496,9 @@ impl RainDocument {
         } else if words_set_count == 0 {
             self.problems
                 .push(ErrorCode::UndefinedGlobalWords.to_problem(vec![], [0, 0]));
-        } else if let Some(namespace_node) = node {
-            if namespace_node.is_dispair() {
-                let dispair = namespace_node.unwrap_dispair();
+        } else if let Some(leaf) = opt_leaf {
+            if leaf.is_dispair() {
+                let dispair = leaf.unwrap_dispair();
                 self.deployer = dispair.clone().into();
                 self.authoring_meta = self.deployer.authoring_meta.clone();
             } else {

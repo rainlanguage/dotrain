@@ -648,7 +648,7 @@ impl RainlangDocument {
                 }))?;
             } else if let Some(ns_type) = namespace.get(next) {
                 match ns_type {
-                    NamespaceItem::Leaf(node) => match &node.element {
+                    NamespaceItem::Leaf(leaf) => match &leaf.element {
                         NamespaceLeafElement::Binding(b) => match &b.item {
                             BindingItem::Constant(c) => {
                                 self.update_state(Node::Literal(Literal {
@@ -684,7 +684,7 @@ impl RainlangDocument {
                                 .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
                         }
                     },
-                    NamespaceItem::Node(_ns) => {
+                    NamespaceItem::Node(_node) => {
                         self.problems.push(
                             ErrorCode::InvalidNamespaceReference.to_problem(vec![next], next_pos),
                         );
@@ -757,8 +757,8 @@ impl RainlangDocument {
             let iter = segments[1..].iter();
             for segment in iter {
                 match result {
-                    NamespaceItem::Node(ns) => {
-                        if let Some(namespace_item) = ns.get(&segment.0) {
+                    NamespaceItem::Node(node) => {
+                        if let Some(namespace_item) = node.get(&segment.0) {
                             result = namespace_item;
                         } else {
                             self.problems.push(
@@ -778,7 +778,7 @@ impl RainlangDocument {
                 }
             }
             match result {
-                NamespaceItem::Node(_ns) => {
+                NamespaceItem::Node(_node) => {
                     self.problems
                         .push(ErrorCode::InvalidNamespaceReference.to_problem(
                             vec![&segments[segments.len() - 1].0],
@@ -786,7 +786,7 @@ impl RainlangDocument {
                         ));
                     None
                 }
-                NamespaceItem::Leaf(node) => match &node.element {
+                NamespaceItem::Leaf(leaf) => match &leaf.element {
                     NamespaceLeafElement::Binding(e) => Some(e),
                     NamespaceLeafElement::Dispair(_) => None,
                 },
@@ -1180,7 +1180,7 @@ mod tests {
                 msg: "elided binding".to_string(),
             }),
         };
-        let deeper_node = NamespaceItem::Leaf(NamespaceLeaf {
+        let deeper_leaf = NamespaceItem::Leaf(NamespaceLeaf {
             hash: "some-hash".to_owned(),
             import_index: 2,
             element: NamespaceLeafElement::Binding(deeper_binding.clone()),
@@ -1198,14 +1198,14 @@ mod tests {
                 value: "1234".to_owned(),
             }),
         };
-        let deep_node = NamespaceItem::Leaf(NamespaceLeaf {
+        let deep_leaf = NamespaceItem::Leaf(NamespaceLeaf {
             hash: "some-other-hash".to_owned(),
             import_index: 1,
             element: NamespaceLeafElement::Binding(binding.clone()),
         });
 
-        deeper_namespace.insert("deeper-binding-name".to_string(), deeper_node.clone());
-        deep_namespace.insert("binding-name".to_string(), deep_node.clone());
+        deeper_namespace.insert("deeper-binding-name".to_string(), deeper_leaf.clone());
+        deep_namespace.insert("binding-name".to_string(), deep_leaf.clone());
         deep_namespace.insert(
             "deeper-namespace".to_string(),
             NamespaceItem::Node(deeper_namespace),
