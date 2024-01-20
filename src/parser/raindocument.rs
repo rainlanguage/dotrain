@@ -1063,18 +1063,19 @@ impl RainDocument {
                             );
                             has_dispair = Some(dispair);
                         }
-                        if let Some(dmeta) = &seq.dotrain {
+                        if let Some(dotrain) = &seq.dotrain {
                             if let Some(dispair) = has_dispair {
-                                if dmeta.namespace.contains_key("Dispair") {
+                                if dotrain.namespace.contains_key("Dispair") {
                                     has_dup_words = true;
                                 } else if let Some(am) = &dispair.authoring_meta {
-                                    if am.0.iter().any(|w| dmeta.namespace.contains_key(&w.word)) {
+                                    if am.0.iter().any(|w| dotrain.namespace.contains_key(&w.word))
+                                    {
                                         has_dup_keys = true;
                                     }
                                 }
                             } else {
                                 new_imp_namespace.extend(Self::copy_namespace(
-                                    &dmeta.namespace,
+                                    &dotrain.namespace,
                                     i as isize,
                                     &imp.hash,
                                 ));
@@ -1090,75 +1091,10 @@ impl RainDocument {
                                 ErrorCode::MultipleWordSets.to_problem(vec![], imp.hash_position),
                             );
                         } else if let Some(configs) = &imp.configuration {
-                            for (old_conf, opt_new_conf) in &configs.pairs {
-                                if let Some(new_conf) = &opt_new_conf {
-                                    if new_conf.0 == "!" {
-                                        if old_conf.0 == "." {
-                                            if new_imp_namespace.remove("Dispair").is_none() {
-                                                self.problems.push(
-                                                    ErrorCode::UndefinedWordSet.to_problem(
-                                                        vec![],
-                                                        [old_conf.1[0], new_conf.1[1]],
-                                                    ),
-                                                );
-                                            };
-                                        } else if new_imp_namespace.remove(&old_conf.0).is_none() {
-                                            self.problems.push(
-                                                ErrorCode::UndefinedIdentifier
-                                                    .to_problem(vec![&old_conf.0], old_conf.1),
-                                            );
-                                        }
-                                    } else {
-                                        let key =
-                                            old_conf.0.strip_prefix('\'').unwrap_or(&old_conf.0);
-                                        if new_imp_namespace.contains_key(key) {
-                                            if old_conf.0.starts_with('\'') {
-                                                if new_imp_namespace.contains_key(&new_conf.0) {
-                                                    self.problems.push(
-                                                        ErrorCode::UnexpectedRename.to_problem(
-                                                            vec![&new_conf.0],
-                                                            new_conf.1,
-                                                        ),
-                                                    );
-                                                } else {
-                                                    let ns_item =
-                                                        new_imp_namespace.remove(key).unwrap();
-                                                    new_imp_namespace
-                                                        .insert(new_conf.0.clone(), ns_item);
-                                                }
-                                            } else {
-                                                let ns_item =
-                                                    new_imp_namespace.get_mut(key).unwrap();
-                                                if ns_item.is_binding() {
-                                                    if let NamespaceItem::Node(n) = ns_item {
-                                                        if let NamespaceNodeElement::Binding(b) =
-                                                            &mut n.element
-                                                        {
-                                                            b.item = BindingItem::Constant(
-                                                                ConstantBindingItem {
-                                                                    value: new_conf.0.clone(),
-                                                                },
-                                                            )
-                                                        }
-                                                    }
-                                                } else {
-                                                    self.problems.push(
-                                                        ErrorCode::UnexpectedRebinding.to_problem(
-                                                            vec![],
-                                                            [old_conf.1[0], new_conf.1[1]],
-                                                        ),
-                                                    );
-                                                }
-                                            }
-                                        } else {
-                                            self.problems.push(
-                                                ErrorCode::UndefinedIdentifier
-                                                    .to_problem(vec![key], old_conf.1),
-                                            );
-                                        }
-                                    }
-                                }
-                            }
+                            self.problems.extend(Self::apply_import_configs(
+                                configs,
+                                &mut new_imp_namespace,
+                            ));
                         }
                         imported_namespaces.push_back((
                             imp.name.clone(),
@@ -1170,6 +1106,68 @@ impl RainDocument {
             }
         }
         imported_namespaces
+    }
+
+    /// applies the import configurations to their corresponding ready to merge namespace
+    fn apply_import_configs(
+        configs: &ImportConfiguration,
+        new_imp_namespace: &mut Namespace,
+    ) -> Vec<Problem> {
+        let mut problems = vec![];
+        for (old_conf, opt_new_conf) in &configs.pairs {
+            if let Some(new_conf) = &opt_new_conf {
+                if new_conf.0 == "!" {
+                    if old_conf.0 == "." {
+                        if new_imp_namespace.remove("Dispair").is_none() {
+                            problems.push(
+                                ErrorCode::UndefinedWordSet
+                                    .to_problem(vec![], [old_conf.1[0], new_conf.1[1]]),
+                            );
+                        };
+                    } else if new_imp_namespace.remove(&old_conf.0).is_none() {
+                        problems.push(
+                            ErrorCode::UndefinedIdentifier
+                                .to_problem(vec![&old_conf.0], old_conf.1),
+                        );
+                    }
+                } else {
+                    let key = old_conf.0.strip_prefix('\'').unwrap_or(&old_conf.0);
+                    if new_imp_namespace.contains_key(key) {
+                        if old_conf.0.starts_with('\'') {
+                            if new_imp_namespace.contains_key(&new_conf.0) {
+                                problems.push(
+                                    ErrorCode::UnexpectedRename
+                                        .to_problem(vec![&new_conf.0], new_conf.1),
+                                );
+                            } else {
+                                let ns_item = new_imp_namespace.remove(key).unwrap();
+                                new_imp_namespace.insert(new_conf.0.clone(), ns_item);
+                            }
+                        } else {
+                            let ns_item = new_imp_namespace.get_mut(key).unwrap();
+                            if ns_item.is_binding() {
+                                if let NamespaceItem::Node(n) = ns_item {
+                                    if let NamespaceNodeElement::Binding(b) = &mut n.element {
+                                        b.item = BindingItem::Constant(ConstantBindingItem {
+                                            value: new_conf.0.clone(),
+                                        })
+                                    }
+                                }
+                            } else {
+                                problems.push(
+                                    ErrorCode::UnexpectedRebinding
+                                        .to_problem(vec![], [old_conf.1[0], new_conf.1[1]]),
+                                );
+                            }
+                        }
+                    } else {
+                        problems
+                            .push(ErrorCode::UndefinedIdentifier.to_problem(vec![key], old_conf.1));
+                    }
+                }
+            }
+        }
+        problems
     }
 
     /// processes a binding item
