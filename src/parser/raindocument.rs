@@ -490,10 +490,10 @@ impl RainDocument {
                     binding.item = BindingItem::Exp(rainlang_doc);
                     self.namespace.insert(
                         binding.name.clone(),
-                        NamespaceItem::Node(NamespaceNode {
+                        NamespaceItem::Leaf(NamespaceLeaf {
                             hash: String::new(),
                             import_index: -1,
-                            element: NamespaceNodeElement::Binding(binding.clone()),
+                            element: NamespaceLeafElement::Binding(binding.clone()),
                         }),
                     );
                 }
@@ -1045,7 +1045,7 @@ impl RainDocument {
         for (i, imp) in self.imports.iter().enumerate() {
             if imp.problems.is_empty() {
                 if let Some(item) = namespace.get(&imp.name) {
-                    if item.is_node() {
+                    if item.is_leaf() {
                         self.problems.push(
                             ErrorCode::OccupiedNamespace.to_problem(vec![], imp.hash_position),
                         );
@@ -1062,10 +1062,10 @@ impl RainDocument {
                         if let Some(dispair) = &seq.dispair {
                             new_imp_namespace.insert(
                                 "Dispair".to_owned(),
-                                NamespaceItem::Node(NamespaceNode {
+                                NamespaceItem::Leaf(NamespaceLeaf {
                                     hash: imp.hash.clone(),
                                     import_index: i as isize,
-                                    element: NamespaceNodeElement::Dispair(dispair.clone()),
+                                    element: NamespaceLeafElement::Dispair(dispair.clone()),
                                 }),
                             );
                             has_dispair = Some(dispair);
@@ -1156,8 +1156,8 @@ impl RainDocument {
                         } else {
                             let ns_item = new_imp_namespace.get_mut(key).unwrap();
                             if ns_item.is_binding() {
-                                if let NamespaceItem::Node(n) = ns_item {
-                                    if let NamespaceNodeElement::Binding(b) = &mut n.element {
+                                if let NamespaceItem::Leaf(n) = ns_item {
+                                    if let NamespaceLeafElement::Binding(b) = &mut n.element {
                                         b.item = BindingItem::Constant(ConstantBindingItem {
                                             value: new_conf.0.clone(),
                                         })
@@ -1280,10 +1280,10 @@ impl RainDocument {
             self.bindings.push(binding.clone());
             namespace.insert(
                 name,
-                NamespaceItem::Node(NamespaceNode {
+                NamespaceItem::Leaf(NamespaceLeaf {
                     hash: String::new(),
                     import_index: -1,
-                    element: NamespaceNodeElement::Binding(binding),
+                    element: NamespaceLeafElement::Binding(binding),
                 }),
             );
         }
@@ -1294,10 +1294,10 @@ impl RainDocument {
         let mut new_namespace: Namespace = HashMap::new();
         for (key, item) in namespace {
             match item {
-                NamespaceItem::Node(node) => {
+                NamespaceItem::Leaf(node) => {
                     new_namespace.insert(
                         key.clone(),
-                        NamespaceItem::Node(NamespaceNode {
+                        NamespaceItem::Leaf(NamespaceLeaf {
                             hash: if node.hash.is_empty() {
                                 hash.to_owned()
                             } else {
@@ -1308,10 +1308,10 @@ impl RainDocument {
                         }),
                     );
                 }
-                NamespaceItem::Namespace(deep_namespace) => {
+                NamespaceItem::Node(deep_namespace) => {
                     new_namespace.insert(
                         key.to_owned(),
-                        NamespaceItem::Namespace(Self::copy_namespace(deep_namespace, index, hash)),
+                        NamespaceItem::Node(Self::copy_namespace(deep_namespace, index, hash)),
                     );
                 }
             }
@@ -1327,9 +1327,9 @@ impl RainDocument {
             if let Some(main_ns_dispair) = main.get("Dispair") {
                 if let Some(new_ns_dispair) = new.get("Dispair") {
                     if !main_ns_dispair
-                        .unwrap_node()
+                        .unwrap_leaf()
                         .hash
-                        .eq_ignore_ascii_case(&new_ns_dispair.unwrap_node().hash)
+                        .eq_ignore_ascii_case(&new_ns_dispair.unwrap_leaf().hash)
                     {
                         return Some(ErrorCode::MultipleWordSets);
                     }
@@ -1338,12 +1338,12 @@ impl RainDocument {
             for (new_ns_key, new_ns_item) in new {
                 for (main_ns_key, main_ns_item) in main {
                     if new_ns_key == main_ns_key {
-                        let new_is_node = new_ns_item.is_node();
-                        let main_is_node = main_ns_item.is_node();
+                        let new_is_node = new_ns_item.is_leaf();
+                        let main_is_node = main_ns_item.is_leaf();
                         if !new_is_node && !main_is_node {
                             let res = Self::check_namespace(
-                                new_ns_item.unwrap_namespace(),
-                                main_ns_item.unwrap_namespace(),
+                                new_ns_item.unwrap_node(),
+                                main_ns_item.unwrap_node(),
                             );
                             if res.is_some() {
                                 return res;
@@ -1371,10 +1371,10 @@ impl RainDocument {
         if name != "." {
             if let Some(ns_item) = main.get_mut(&name) {
                 match ns_item {
-                    NamespaceItem::Node(_) => self
+                    NamespaceItem::Leaf(_) => self
                         .problems
                         .push(ErrorCode::OccupiedNamespace.to_problem(vec![], hash_position)),
-                    NamespaceItem::Namespace(deep_namespace) => {
+                    NamespaceItem::Node(deep_namespace) => {
                         if let Some(code) = Self::check_namespace(&new, deep_namespace) {
                             self.problems.push(code.to_problem(vec![], hash_position));
                         } else {
@@ -1383,7 +1383,7 @@ impl RainDocument {
                     }
                 }
             } else {
-                main.insert(name.clone(), NamespaceItem::Namespace(new));
+                main.insert(name.clone(), NamespaceItem::Node(new));
             }
         } else {
             Self::merge(&new, main);
@@ -1398,7 +1398,7 @@ impl RainDocument {
             for (key, item) in new {
                 if !main.contains_key(key) {
                     main.insert(key.clone(), item.clone());
-                } else if !item.is_node() && !main.get(key).unwrap().is_node() {
+                } else if !item.is_leaf() && !main.get(key).unwrap().is_leaf() {
                     Self::merge(new, main)
                 }
             }
@@ -1454,11 +1454,11 @@ impl RainDocument {
     fn check_namespace_deployer<'a>(
         namespace: &'a Namespace,
         mut hash: &'a str,
-    ) -> (usize, &'a str, Option<&'a NamespaceNode>) {
+    ) -> (usize, &'a str, Option<&'a NamespaceLeaf>) {
         let mut count = 0usize;
         let mut node = None;
         if let Some(dis_item) = namespace.get("Dispair") {
-            let dispair_node = dis_item.unwrap_node();
+            let dispair_node = dis_item.unwrap_leaf();
             if hash.is_empty() {
                 count += 1;
                 hash = &dispair_node.hash;
@@ -1468,8 +1468,8 @@ impl RainDocument {
             }
         }
         for (_key, item) in namespace {
-            if !item.is_node() {
-                let result = Self::check_namespace_deployer(item.unwrap_namespace(), hash);
+            if !item.is_leaf() {
+                let result = Self::check_namespace_deployer(item.unwrap_node(), hash);
                 hash = result.1;
                 count += result.0;
                 if count > 1 {
@@ -1706,10 +1706,10 @@ mod tests {
         let mut new_namespace: Namespace = HashMap::new();
         main_namespace.insert(
             "Dispair".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0x123".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Dispair(DispairImportItem {
+                element: NamespaceLeafElement::Dispair(DispairImportItem {
                     constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
                     constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
                     parser: "parser".as_bytes().to_vec(),
@@ -1722,10 +1722,10 @@ mod tests {
         );
         new_namespace.insert(
             "Dispair".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Dispair(DispairImportItem {
+                element: NamespaceLeafElement::Dispair(DispairImportItem {
                     constructor_meta_hash: "meta-hash2".as_bytes().to_vec(),
                     constructor_meta_bytes: "meta-bytes2".as_bytes().to_vec(),
                     parser: "parser2".as_bytes().to_vec(),
@@ -1741,10 +1741,10 @@ mod tests {
         let mut new_namespace: Namespace = HashMap::new();
         main_namespace.insert(
             "binding-name".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(Binding {
+                element: NamespaceLeafElement::Binding(Binding {
                     name: "binding-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-content".to_owned(),
@@ -1760,10 +1760,10 @@ mod tests {
         );
         new_namespace.insert(
             "binding-name".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(Binding {
+                element: NamespaceLeafElement::Binding(Binding {
                     name: "binding-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-content".to_owned(),
@@ -1786,10 +1786,10 @@ mod tests {
         let mut new_namespace: Namespace = HashMap::new();
         main_namespace.insert(
             "binding-name".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(Binding {
+                element: NamespaceLeafElement::Binding(Binding {
                     name: "binding-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-content".to_owned(),
@@ -1805,10 +1805,10 @@ mod tests {
         );
         new_namespace.insert(
             "binding-other-name".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(Binding {
+                element: NamespaceLeafElement::Binding(Binding {
                     name: "binding-other-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-other-content".to_owned(),
@@ -1836,10 +1836,10 @@ mod tests {
         let mut new_namespace: Namespace = HashMap::new();
         main_namespace.insert(
             "Dispair".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0x123".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Dispair(DispairImportItem {
+                element: NamespaceLeafElement::Dispair(DispairImportItem {
                     constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
                     constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
                     parser: "parser".as_bytes().to_vec(),
@@ -1852,10 +1852,10 @@ mod tests {
         );
         main_namespace.insert(
             "binding-name".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(Binding {
+                element: NamespaceLeafElement::Binding(Binding {
                     name: "binding-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-content".to_owned(),
@@ -1871,10 +1871,10 @@ mod tests {
         );
         new_namespace.insert(
             "binding-other-name".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(Binding {
+                element: NamespaceLeafElement::Binding(Binding {
                     name: "binding-other-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-other-content".to_owned(),
@@ -1890,7 +1890,7 @@ mod tests {
         );
         main_namespace.insert(
             "deep-namespace".to_owned(),
-            NamespaceItem::Namespace(new_namespace.clone()),
+            NamespaceItem::Node(new_namespace.clone()),
         );
 
         let mut rain_document = RainDocument::new(String::new(), None, 0);
@@ -1903,10 +1903,10 @@ mod tests {
         let mut expected = main_namespace.clone();
         expected.insert(
             "binding-other-name".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(Binding {
+                element: NamespaceLeafElement::Binding(Binding {
                     name: "binding-other-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-other-content".to_owned(),
@@ -2046,38 +2046,35 @@ _: opcode-1(0xabcd 456);
         let mut dispair_namespace: Namespace = HashMap::new();
         dispair_namespace.insert(
             "Dispair".to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: hash.to_owned(),
                 import_index: 0,
-                element: NamespaceNodeElement::Dispair(npe2_deployer_mock.clone().into()),
+                element: NamespaceLeafElement::Dispair(npe2_deployer_mock.clone().into()),
             }),
         );
-        expected_namespace.insert(
-            "dispair".to_owned(),
-            NamespaceItem::Namespace(dispair_namespace),
-        );
+        expected_namespace.insert("dispair".to_owned(), NamespaceItem::Node(dispair_namespace));
         expected_namespace.insert(
             expected_bindings[0].name.to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: String::new(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(expected_bindings[0].clone()),
+                element: NamespaceLeafElement::Binding(expected_bindings[0].clone()),
             }),
         );
         expected_namespace.insert(
             expected_bindings[1].name.to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: String::new(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(expected_bindings[1].clone()),
+                element: NamespaceLeafElement::Binding(expected_bindings[1].clone()),
             }),
         );
         expected_namespace.insert(
             expected_bindings[2].name.to_owned(),
-            NamespaceItem::Node(NamespaceNode {
+            NamespaceItem::Leaf(NamespaceLeaf {
                 hash: String::new(),
                 import_index: -1,
-                element: NamespaceNodeElement::Binding(expected_bindings[2].clone()),
+                element: NamespaceLeafElement::Binding(expected_bindings[2].clone()),
             }),
         );
 

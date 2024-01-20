@@ -344,7 +344,7 @@ impl RainlangDocument {
         for _ in 0..self.state.depth {
             let len = nodes.len();
             match &mut nodes[len - 1] {
-                Node::Opcode(v) => nodes = &mut v.parameters,
+                Node::Opcode(v) => nodes = &mut v.inputs,
                 _ => return Err(Error::StateUpdateFailed),
             }
         }
@@ -405,7 +405,7 @@ impl RainlangDocument {
         for _ in 0..self.state.depth - 1 {
             let len = nodes.len();
             match &mut nodes[len - 1] {
-                Node::Opcode(v) => nodes = &mut v.parameters,
+                Node::Opcode(v) => nodes = &mut v.inputs,
                 _ => return Err(Error::StateUpdateFailed),
             }
         }
@@ -533,7 +533,7 @@ impl RainlangDocument {
                 output: None,
                 position: [next_pos[0], 0],
                 parens: [1, 0],
-                parameters: vec![],
+                inputs: vec![],
                 operand_args: None,
                 lhs_alias: None,
             };
@@ -648,8 +648,8 @@ impl RainlangDocument {
                 }))?;
             } else if let Some(ns_type) = namespace.get(next) {
                 match ns_type {
-                    NamespaceItem::Node(node) => match &node.element {
-                        NamespaceNodeElement::Binding(b) => match &b.item {
+                    NamespaceItem::Leaf(node) => match &node.element {
+                        NamespaceLeafElement::Binding(b) => match &b.item {
                             BindingItem::Constant(c) => {
                                 self.update_state(Node::Literal(Literal {
                                     value: c.value.clone(),
@@ -679,12 +679,12 @@ impl RainlangDocument {
                                 }))?;
                             }
                         },
-                        NamespaceNodeElement::Dispair(_) => {
+                        NamespaceLeafElement::Dispair(_) => {
                             self.problems
                                 .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
                         }
                     },
-                    NamespaceItem::Namespace(_ns) => {
+                    NamespaceItem::Node(_ns) => {
                         self.problems.push(
                             ErrorCode::InvalidNamespaceReference.to_problem(vec![next], next_pos),
                         );
@@ -757,7 +757,7 @@ impl RainlangDocument {
             let iter = segments[1..].iter();
             for segment in iter {
                 match result {
-                    NamespaceItem::Namespace(ns) => {
+                    NamespaceItem::Node(ns) => {
                         if let Some(namespace_item) = ns.get(&segment.0) {
                             result = namespace_item;
                         } else {
@@ -778,7 +778,7 @@ impl RainlangDocument {
                 }
             }
             match result {
-                NamespaceItem::Namespace(_ns) => {
+                NamespaceItem::Node(_ns) => {
                     self.problems
                         .push(ErrorCode::InvalidNamespaceReference.to_problem(
                             vec![&segments[segments.len() - 1].0],
@@ -786,9 +786,9 @@ impl RainlangDocument {
                         ));
                     None
                 }
-                NamespaceItem::Node(node) => match &node.element {
-                    NamespaceNodeElement::Binding(e) => Some(e),
-                    NamespaceNodeElement::Dispair(_) => None,
+                NamespaceItem::Leaf(node) => match &node.element {
+                    NamespaceLeafElement::Binding(e) => Some(e),
+                    NamespaceLeafElement::Dispair(_) => None,
                 },
             }
         } else {
@@ -827,7 +827,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [8, 0],
-            parameters: vec![
+            inputs: vec![
                 Node::Literal(Literal {
                     value: "1".to_owned(),
                     position: [9, 10],
@@ -857,7 +857,7 @@ mod tests {
             output: None,
             position: [5, 14],
             parens: [8, 13],
-            parameters: vec![
+            inputs: vec![
                 Node::Literal(Literal {
                     value: "1".to_owned(),
                     position: [9, 10],
@@ -899,7 +899,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: None,
         };
@@ -915,7 +915,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [8, 15],
@@ -949,7 +949,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: None,
         };
@@ -965,7 +965,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [8, 14],
@@ -991,7 +991,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: None,
         };
@@ -1007,7 +1007,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [15, 31],
@@ -1079,7 +1079,7 @@ mod tests {
             output: None,
             position: [10, 0],
             parens: [23, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [16, 23],
@@ -1115,7 +1115,7 @@ mod tests {
             output: None,
             position: [24, 0],
             parens: [38, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: None,
         }));
@@ -1135,7 +1135,7 @@ mod tests {
             output: None,
             position: [77, 0],
             parens: [107, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [93, 107],
@@ -1180,10 +1180,10 @@ mod tests {
                 msg: "elided binding".to_string(),
             }),
         };
-        let deeper_node = NamespaceItem::Node(NamespaceNode {
+        let deeper_node = NamespaceItem::Leaf(NamespaceLeaf {
             hash: "some-hash".to_owned(),
             import_index: 2,
-            element: NamespaceNodeElement::Binding(deeper_binding.clone()),
+            element: NamespaceLeafElement::Binding(deeper_binding.clone()),
         });
 
         let binding = Binding {
@@ -1198,21 +1198,21 @@ mod tests {
                 value: "1234".to_owned(),
             }),
         };
-        let deep_node = NamespaceItem::Node(NamespaceNode {
+        let deep_node = NamespaceItem::Leaf(NamespaceLeaf {
             hash: "some-other-hash".to_owned(),
             import_index: 1,
-            element: NamespaceNodeElement::Binding(binding.clone()),
+            element: NamespaceLeafElement::Binding(binding.clone()),
         });
 
         deeper_namespace.insert("deeper-binding-name".to_string(), deeper_node.clone());
         deep_namespace.insert("binding-name".to_string(), deep_node.clone());
         deep_namespace.insert(
             "deeper-namespace".to_string(),
-            NamespaceItem::Namespace(deeper_namespace),
+            NamespaceItem::Node(deeper_namespace),
         );
         main_namespace.insert(
             "deep-namespace".to_string(),
-            NamespaceItem::Namespace(deep_namespace),
+            NamespaceItem::Node(deep_namespace),
         );
 
         let result = rl.search_name(

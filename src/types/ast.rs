@@ -186,13 +186,13 @@ impl TryFrom<i32> for ErrorCode {
 #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify::declare)]
 pub type Offsets = [usize; 2];
 
+/// Type for result of matches found in a text
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
     derive(Tsify),
     tsify(into_wasm_abi, from_wasm_abi)
 )]
-/// Type for result of matches found in a String
 pub struct ParsedItem(pub String, pub Offsets);
 
 /// Type for encountered problem within the text
@@ -280,7 +280,7 @@ pub struct Opcode {
     pub output: Option<u8>,
     pub position: Offsets,
     pub parens: Offsets,
-    pub parameters: Vec<Node>,
+    pub inputs: Vec<Node>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
     pub lhs_alias: Option<Vec<Alias>>,
@@ -564,7 +564,7 @@ pub struct Binding {
     pub item: BindingItem,
 }
 
-/// Type of an RainDocument namespace node element
+/// Type of an RainDocument namespace leaf element
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 #[cfg_attr(
@@ -572,12 +572,12 @@ pub struct Binding {
     derive(Tsify),
     tsify(into_wasm_abi, from_wasm_abi)
 )]
-pub enum NamespaceNodeElement {
+pub enum NamespaceLeafElement {
     Binding(Binding),
     Dispair(DispairImportItem),
 }
 
-/// Type for a namespace node
+/// Type for a namespace leaf
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(
@@ -585,38 +585,38 @@ pub enum NamespaceNodeElement {
     derive(Tsify),
     tsify(into_wasm_abi, from_wasm_abi)
 )]
-pub struct NamespaceNode {
+pub struct NamespaceLeaf {
     pub hash: String,
     pub import_index: isize,
-    pub element: NamespaceNodeElement,
+    pub element: NamespaceLeafElement,
 }
 
-impl NamespaceNode {
+impl NamespaceLeaf {
     pub fn is_binding(&self) -> bool {
-        matches!(self.element, NamespaceNodeElement::Binding(_))
+        matches!(self.element, NamespaceLeafElement::Binding(_))
     }
 
     pub fn unwrap_binding(&self) -> &Binding {
         match &self.element {
-            NamespaceNodeElement::Binding(b) => b,
+            NamespaceLeafElement::Binding(b) => b,
             _ => panic!("not a binding"),
         }
     }
 
     pub fn is_dispair(&self) -> bool {
-        matches!(self.element, NamespaceNodeElement::Dispair(_))
+        matches!(self.element, NamespaceLeafElement::Dispair(_))
     }
 
     pub fn unwrap_dispair(&self) -> &DispairImportItem {
         match &self.element {
-            NamespaceNodeElement::Dispair(d) => d,
+            NamespaceLeafElement::Dispair(d) => d,
             _ => panic!("not a dispair import"),
         }
     }
 
     pub fn is_elided_binding(&self) -> bool {
         match &self.element {
-            NamespaceNodeElement::Binding(b) => {
+            NamespaceLeafElement::Binding(b) => {
                 matches!(b.item, BindingItem::Elided(_))
             }
             _ => false,
@@ -625,7 +625,7 @@ impl NamespaceNode {
 
     pub fn unwrap_elided_binding(&self) -> &String {
         match &self.element {
-            NamespaceNodeElement::Binding(b) => {
+            NamespaceLeafElement::Binding(b) => {
                 if let BindingItem::Elided(e) = &b.item {
                     &e.msg
                 } else {
@@ -638,7 +638,7 @@ impl NamespaceNode {
 
     pub fn is_constant_binding(&self) -> bool {
         match &self.element {
-            NamespaceNodeElement::Binding(b) => {
+            NamespaceLeafElement::Binding(b) => {
                 matches!(b.item, BindingItem::Constant(_))
             }
             _ => false,
@@ -647,7 +647,7 @@ impl NamespaceNode {
 
     pub fn unwrap_constant_binding(&self) -> &String {
         match &self.element {
-            NamespaceNodeElement::Binding(b) => {
+            NamespaceLeafElement::Binding(b) => {
                 if let BindingItem::Constant(c) = &b.item {
                     &c.value
                 } else {
@@ -660,7 +660,7 @@ impl NamespaceNode {
 
     pub fn is_exp_binding(&self) -> bool {
         match &self.element {
-            NamespaceNodeElement::Binding(b) => {
+            NamespaceLeafElement::Binding(b) => {
                 matches!(b.item, BindingItem::Exp(_))
             }
             _ => false,
@@ -669,7 +669,7 @@ impl NamespaceNode {
 
     pub fn unwrap_exp_binding(&self) -> &RainlangDocument {
         match &self.element {
-            NamespaceNodeElement::Binding(b) => {
+            NamespaceLeafElement::Binding(b) => {
                 if let BindingItem::Exp(e) = &b.item {
                     e
                 } else {
@@ -681,7 +681,7 @@ impl NamespaceNode {
     }
 }
 
-/// An RainDocument's individual namespace item
+/// RainDocument's individual namespace item
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 #[cfg_attr(
@@ -690,44 +690,44 @@ impl NamespaceNode {
     tsify(into_wasm_abi, from_wasm_abi)
 )]
 pub enum NamespaceItem {
-    Node(NamespaceNode),
-    Namespace(Namespace),
+    Leaf(NamespaceLeaf),
+    Node(Namespace),
 }
 
 impl NamespaceItem {
-    pub fn is_node(&self) -> bool {
+    pub fn is_leaf(&self) -> bool {
         match self {
-            NamespaceItem::Node(_) => true,
-            NamespaceItem::Namespace(_) => false,
+            NamespaceItem::Leaf(_) => true,
+            NamespaceItem::Node(_) => false,
         }
     }
 
-    pub fn unwrap_node(&self) -> &NamespaceNode {
+    pub fn unwrap_leaf(&self) -> &NamespaceLeaf {
         match self {
-            NamespaceItem::Node(node) => node,
-            NamespaceItem::Namespace(_) => panic!("not a namespace node"),
+            NamespaceItem::Leaf(node) => node,
+            NamespaceItem::Node(_) => panic!("not a leaf"),
         }
     }
 
-    pub fn unwrap_namespace(&self) -> &Namespace {
+    pub fn unwrap_node(&self) -> &Namespace {
         match self {
-            NamespaceItem::Node(_) => panic!("not a namespace"),
-            NamespaceItem::Namespace(ns) => ns,
+            NamespaceItem::Leaf(_) => panic!("not a node"),
+            NamespaceItem::Node(ns) => ns,
         }
     }
 
     pub fn is_binding(&self) -> bool {
-        if let NamespaceItem::Node(n) = self {
-            matches!(n.element, NamespaceNodeElement::Binding(_))
+        if let NamespaceItem::Leaf(n) = self {
+            matches!(n.element, NamespaceLeafElement::Binding(_))
         } else {
             false
         }
     }
 
     pub fn unwrap_binding(&self) -> &Binding {
-        if let NamespaceItem::Node(n) = self {
+        if let NamespaceItem::Leaf(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => b,
+                NamespaceLeafElement::Binding(b) => b,
                 _ => panic!("not a binding"),
             }
         } else {
@@ -736,28 +736,28 @@ impl NamespaceItem {
     }
 
     pub fn is_dispair(&self) -> bool {
-        if let NamespaceItem::Node(n) = self {
-            matches!(n.element, NamespaceNodeElement::Dispair(_))
+        if let NamespaceItem::Leaf(n) = self {
+            matches!(n.element, NamespaceLeafElement::Dispair(_))
         } else {
             false
         }
     }
 
     pub fn unwrap_dispair(&self) -> &DispairImportItem {
-        if let NamespaceItem::Node(n) = self {
+        if let NamespaceItem::Leaf(n) = self {
             match &n.element {
-                NamespaceNodeElement::Dispair(d) => d,
-                _ => panic!("not a dispair import"),
+                NamespaceLeafElement::Dispair(d) => d,
+                _ => panic!("not a dispair"),
             }
         } else {
-            panic!("not a dispair import")
+            panic!("not a dispair")
         }
     }
 
     pub fn is_elided_binding(&self) -> bool {
-        if let NamespaceItem::Node(n) = self {
+        if let NamespaceItem::Leaf(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => matches!(&b.item, BindingItem::Elided(_)),
+                NamespaceLeafElement::Binding(b) => matches!(&b.item, BindingItem::Elided(_)),
                 _ => false,
             }
         } else {
@@ -766,9 +766,9 @@ impl NamespaceItem {
     }
 
     pub fn unwrap_elided_binding(&self) -> &String {
-        if let NamespaceItem::Node(n) = self {
+        if let NamespaceItem::Leaf(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => match &b.item {
+                NamespaceLeafElement::Binding(b) => match &b.item {
                     BindingItem::Elided(e) => &e.msg,
                     _ => panic!("not an elided binding"),
                 },
@@ -780,9 +780,9 @@ impl NamespaceItem {
     }
 
     pub fn is_constant_binding(&self) -> bool {
-        if let NamespaceItem::Node(n) = self {
+        if let NamespaceItem::Leaf(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => matches!(&b.item, BindingItem::Constant(_)),
+                NamespaceLeafElement::Binding(b) => matches!(&b.item, BindingItem::Constant(_)),
                 _ => false,
             }
         } else {
@@ -791,9 +791,9 @@ impl NamespaceItem {
     }
 
     pub fn unwrap_constant_binding(&self) -> &String {
-        if let NamespaceItem::Node(n) = self {
+        if let NamespaceItem::Leaf(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => match &b.item {
+                NamespaceLeafElement::Binding(b) => match &b.item {
                     BindingItem::Constant(c) => &c.value,
                     _ => panic!("not a constant binding"),
                 },
@@ -805,9 +805,9 @@ impl NamespaceItem {
     }
 
     pub fn is_exp_binding(&self) -> bool {
-        if let NamespaceItem::Node(n) = self {
+        if let NamespaceItem::Leaf(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => matches!(&b.item, BindingItem::Exp(_)),
+                NamespaceLeafElement::Binding(b) => matches!(&b.item, BindingItem::Exp(_)),
                 _ => false,
             }
         } else {
@@ -816,9 +816,9 @@ impl NamespaceItem {
     }
 
     pub fn unwrap_exp_binding(&self) -> &RainlangDocument {
-        if let NamespaceItem::Node(n) = self {
+        if let NamespaceItem::Leaf(n) = self {
             match &n.element {
-                NamespaceNodeElement::Binding(b) => match &b.item {
+                NamespaceLeafElement::Binding(b) => match &b.item {
                     BindingItem::Exp(e) => e,
                     _ => panic!("not an exp binding"),
                 },
