@@ -11,7 +11,7 @@ use rain_meta::{
 use super::{
     rainlangdocument::RainlangDocument,
     super::{
-        error::Error,
+        error::{Error, ErrorCode},
         types::{ast::*, patterns::*},
     },
     exclusive_parse, inclusive_parse, fill_in, is_consumable, tracked_trim, line_number, to_u256,

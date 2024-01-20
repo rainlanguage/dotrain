@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use rain_meta::types::authoring::v1::AuthoringMeta;
 use super::{
     super::{
-        error::Error,
+        error::{Error, ErrorCode},
         types::{ast::*, patterns::*},
     },
     line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
