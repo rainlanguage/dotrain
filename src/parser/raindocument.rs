@@ -1507,6 +1507,7 @@ impl PartialEq for RainDocument {
     fn eq(&self, other: &Self) -> bool {
         self.import_depth == other.import_depth
             && self.text == other.text
+            && self.front_matter == other.front_matter
             && self.comments == other.comments
             && self.bindings == other.bindings
             && self.namespace == other.namespace
@@ -2074,7 +2075,7 @@ _: opcode-1(0xabcd 456);
 
         let expected_rain_document = RainDocument {
             text: text.to_owned(),
-            front_matter: String::new(),
+            front_matter: "some front matter\n".to_owned(),
             error: None,
             bindings: expected_bindings.clone(),
             imports: expected_imports.clone(),
