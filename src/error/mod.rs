@@ -182,7 +182,6 @@ pub enum Error {
     StateUpdateFailed,
     NoDatabaseAttached,
     InvalidNumbericValue,
-    DuplicateContextAliases,
     InvalidExpressionDeployerData,
     SerdeJsonError(serde_json::Error),
     AbiCoderError(alloy_sol_types::Error),
@@ -197,7 +196,6 @@ impl std::fmt::Display for Error {
             Error::OutOfCharBoundry => f.write_str("position is not within char boundry"),
             Error::StateUpdateFailed => f.write_str("failed to update parse state"),
             Error::FailedToParse => f.write_str("failed to parse, something went wrong"),
-            Error::DuplicateContextAliases => f.write_str("includes duplicate context aliases"),
             Error::InvalidNumbericValue => {
                 f.write_str("does not follow rain numeric pattern and range")
             }
