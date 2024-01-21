@@ -408,10 +408,8 @@ impl ComposeError {
 
 #[cfg(test)]
 mod tests {
-    use crate::ErrorCode;
-
     use super::*;
-    // use crate::parser::RainDocument;
+    use crate::ErrorCode;
     use rain_meta::{
         types::authoring::v1::{AuthoringMetaItem, AuthoringMeta},
         NPE2Deployer,
