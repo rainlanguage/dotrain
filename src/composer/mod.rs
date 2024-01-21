@@ -223,7 +223,7 @@ impl RainDocument {
                                         .iter()
                                         .map(|p| Problem {
                                             msg: p.msg.clone(),
-                                            code: p.code,
+                                            code: p.code, 
                                             position: if leaf.import_index == -1 {
                                                 p.position
                                             } else {
