@@ -541,7 +541,8 @@ impl RainDocument {
     /// Checks if a binding is elided and returns the elision msg if it found any
     fn is_elided(text: &str) -> Option<String> {
         let msg = text.trim();
-        msg.strip_prefix('!').map(|stripped| stripped.to_owned())
+        msg.strip_prefix('!')
+            .map(|stripped| stripped.trim().to_owned())
     }
 
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
@@ -1559,7 +1560,7 @@ mod tests {
     fn test_is_elided_method() -> anyhow::Result<()> {
         let text = " ! \n some msg \n msg continues \n\t";
         let result = RainDocument::is_elided(text);
-        assert_eq!(result, Some(" \n some msg \n msg continues".to_owned()));
+        assert_eq!(result, Some("some msg \n msg continues".to_owned()));
 
         let text = " ! \n\t";
         let result = RainDocument::is_elided(text);
@@ -1997,7 +1998,7 @@ _: opcode-1(0xabcd 456);
                 problems: vec![],
                 dependencies: vec![],
                 item: BindingItem::Elided(ElidedBindingItem {
-                    msg: " this elided, rebind before use".to_owned(),
+                    msg: "this elided, rebind before use".to_owned(),
                 }),
             },
             Binding {

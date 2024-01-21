@@ -28,6 +28,7 @@
 pub mod types;
 pub(crate) mod error;
 pub(crate) mod parser;
+pub(crate) mod compiler;
 
 pub use lsp_types::Url;
 pub use rain_meta::Store;
