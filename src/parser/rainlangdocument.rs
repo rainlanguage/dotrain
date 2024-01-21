@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use rain_meta::types::authoring::v1::AuthoringMeta;
 use super::{
     super::{
-        error::Error,
+        error::{Error, ErrorCode},
         types::{ast::*, patterns::*},
     },
     line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
@@ -94,13 +94,11 @@ impl RainlangDocument {
         text: String,
         namespace: &Namespace,
         authoring_meta: Option<&AuthoringMeta>,
+        ignore_undefined_authoring_meta: bool,
     ) -> RainlangDocument {
         let mut am = &AuthoringMeta(vec![]);
-        let ignore_undefined_authoring_meta = if let Some(v) = authoring_meta {
+        if let Some(v) = authoring_meta {
             am = v;
-            false
-        } else {
-            true
         };
         let mut rl = RainlangDocument {
             text,
@@ -264,7 +262,7 @@ impl RainlangDocument {
                                 .push(ErrorCode::UnexpectedComment.to_problem(vec![], cm.position));
                         }
                     }
-                    // begin parsing LHS
+                    // parse LHS
                     if !lhs.is_empty() {
                         let lhs_items = inclusive_parse(lhs, &ANY_PATTERN, cursor_offset);
                         for item in lhs_items {
@@ -286,8 +284,8 @@ impl RainlangDocument {
                         }
                     }
 
-                    // parsing RHS
-                    self.consume(
+                    // parse RHS
+                    self.process_rhs(
                         rhs,
                         cursor_offset + sub_src.len(),
                         namespace,
@@ -346,7 +344,7 @@ impl RainlangDocument {
         for _ in 0..self.state.depth {
             let len = nodes.len();
             match &mut nodes[len - 1] {
-                Node::Opcode(v) => nodes = &mut v.parameters,
+                Node::Opcode(v) => nodes = &mut v.inputs,
                 _ => return Err(Error::StateUpdateFailed),
             }
         }
@@ -355,7 +353,7 @@ impl RainlangDocument {
     }
 
     /// Consumes items (separated by defnied boundries) in the text
-    fn consume(
+    fn process_rhs(
         &mut self,
         text: &str,
         offset: usize,
@@ -390,7 +388,7 @@ impl RainlangDocument {
                     exp = exp.split_at(1).1;
                 }
                 _ => {
-                    let consumed = self.process_next(exp, cursor, namespace, authoring_meta)?;
+                    let consumed = self.consume(exp, cursor, namespace, authoring_meta)?;
                     exp = exp.split_at(consumed).1;
                 }
             }
@@ -407,7 +405,7 @@ impl RainlangDocument {
         for _ in 0..self.state.depth - 1 {
             let len = nodes.len();
             match &mut nodes[len - 1] {
-                Node::Opcode(v) => nodes = &mut v.parameters,
+                Node::Opcode(v) => nodes = &mut v.inputs,
                 _ => return Err(Error::StateUpdateFailed),
             }
         }
@@ -449,7 +447,7 @@ impl RainlangDocument {
                     let is_quote = v.0.starts_with('\'');
                     if is_quote {
                         let quote = &v.0[1..];
-                        if let Some(b) = self.search_name(quote, v.1[0], namespace) {
+                        if let Some(b) = self.search_namespace(quote, v.1[0], namespace) {
                             match &b.item {
                                 BindingItem::Elided(e) => {
                                     let msg = e.msg.clone();
@@ -506,7 +504,7 @@ impl RainlangDocument {
     }
 
     /// parses an upcoming word to the corresponding AST node
-    fn process_next(
+    fn consume(
         &mut self,
         text: &str,
         cursor: usize,
@@ -535,7 +533,7 @@ impl RainlangDocument {
                 output: None,
                 position: [next_pos[0], 0],
                 parens: [1, 0],
-                parameters: vec![],
+                inputs: vec![],
                 operand_args: None,
                 lhs_alias: None,
             };
@@ -578,7 +576,7 @@ impl RainlangDocument {
                     .push(ErrorCode::ExpectedOpeningParen.to_problem(vec![], next_pos));
             }
         } else if next.contains('.') {
-            if let Some(b) = self.search_name(next, cursor, namespace) {
+            if let Some(b) = self.search_namespace(next, cursor, namespace) {
                 match &b.item {
                     BindingItem::Constant(c) => {
                         let value = c.value.to_owned();
@@ -620,7 +618,8 @@ impl RainlangDocument {
             if HEX_PATTERN.is_match(next) && next.len() % 2 == 1 {
                 self.problems
                     .push(ErrorCode::OddLenHex.to_problem(vec![], next_pos));
-            } else if to_u256(next).is_err() {
+            }
+            if to_u256(next).is_err() {
                 self.problems
                     .push(ErrorCode::OutOfRangeValue.to_problem(vec![], next_pos));
             }
@@ -650,8 +649,8 @@ impl RainlangDocument {
                 }))?;
             } else if let Some(ns_type) = namespace.get(next) {
                 match ns_type {
-                    NamespaceItem::Node(node) => match &node.element {
-                        NamespaceNodeElement::Binding(b) => match &b.item {
+                    NamespaceItem::Leaf(leaf) => match &leaf.element {
+                        NamespaceLeafElement::Binding(b) => match &b.item {
                             BindingItem::Constant(c) => {
                                 self.update_state(Node::Literal(Literal {
                                     value: c.value.clone(),
@@ -681,12 +680,12 @@ impl RainlangDocument {
                                 }))?;
                             }
                         },
-                        NamespaceNodeElement::Dispair(_) => {
+                        NamespaceLeafElement::Dispair(_) => {
                             self.problems
                                 .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
                         }
                     },
-                    NamespaceItem::Namespace(_ns) => {
+                    NamespaceItem::Node(_node) => {
                         self.problems.push(
                             ErrorCode::InvalidNamespaceReference.to_problem(vec![next], next_pos),
                         );
@@ -719,7 +718,7 @@ impl RainlangDocument {
     }
 
     /// Search in namespaces for a name
-    fn search_name<'a>(
+    fn search_namespace<'a>(
         &'a mut self,
         query: &str,
         offset: usize,
@@ -759,8 +758,8 @@ impl RainlangDocument {
             let iter = segments[1..].iter();
             for segment in iter {
                 match result {
-                    NamespaceItem::Namespace(ns) => {
-                        if let Some(namespace_item) = ns.get(&segment.0) {
+                    NamespaceItem::Node(node) => {
+                        if let Some(namespace_item) = node.get(&segment.0) {
                             result = namespace_item;
                         } else {
                             self.problems.push(
@@ -780,7 +779,7 @@ impl RainlangDocument {
                 }
             }
             match result {
-                NamespaceItem::Namespace(_ns) => {
+                NamespaceItem::Node(_node) => {
                     self.problems
                         .push(ErrorCode::InvalidNamespaceReference.to_problem(
                             vec![&segments[segments.len() - 1].0],
@@ -788,9 +787,9 @@ impl RainlangDocument {
                         ));
                     None
                 }
-                NamespaceItem::Node(node) => match &node.element {
-                    NamespaceNodeElement::Binding(e) => Some(e),
-                    NamespaceNodeElement::Dispair(_) => None,
+                NamespaceItem::Leaf(leaf) => match &leaf.element {
+                    NamespaceLeafElement::Binding(e) => Some(e),
+                    NamespaceLeafElement::Dispair(_) => None,
                 },
             }
         } else {
@@ -829,7 +828,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [8, 0],
-            parameters: vec![
+            inputs: vec![
                 Node::Literal(Literal {
                     value: "1".to_owned(),
                     position: [9, 10],
@@ -859,7 +858,7 @@ mod tests {
             output: None,
             position: [5, 14],
             parens: [8, 13],
-            parameters: vec![
+            inputs: vec![
                 Node::Literal(Literal {
                     value: "1".to_owned(),
                     position: [9, 10],
@@ -901,7 +900,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: None,
         };
@@ -917,7 +916,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [8, 15],
@@ -951,7 +950,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: None,
         };
@@ -967,7 +966,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [8, 14],
@@ -993,7 +992,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: None,
         };
@@ -1009,7 +1008,7 @@ mod tests {
             output: None,
             position: [5, 0],
             parens: [0, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [15, 31],
@@ -1048,7 +1047,7 @@ mod tests {
     }
 
     #[test]
-    fn test_process_next_method() -> anyhow::Result<()> {
+    fn test_consume_method() -> anyhow::Result<()> {
         let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
         let authoring_meta = AuthoringMeta(vec![
@@ -1070,7 +1069,7 @@ mod tests {
         ]);
 
         let text = "opcode<12 56>(";
-        let consumed_count = rl.process_next(text, 10, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta)?;
         let mut expected_state_nodes = vec![Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "opcode".to_owned(),
@@ -1081,7 +1080,7 @@ mod tests {
             output: None,
             position: [10, 0],
             parens: [23, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [16, 23],
@@ -1106,7 +1105,7 @@ mod tests {
 
         let text = "another-opcode(12 0x123abced)";
         rl.state.depth -= 1;
-        let consumed_count = rl.process_next(text, 24, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 24, &namespace, &authoring_meta)?;
         expected_state_nodes.push(Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "another-opcode".to_owned(),
@@ -1117,7 +1116,7 @@ mod tests {
             output: None,
             position: [24, 0],
             parens: [38, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: None,
         }));
@@ -1126,7 +1125,7 @@ mod tests {
 
         let text = "another-opcode-2<\n  0x1f\n  87>(\n  0xabcef1234\n)";
         rl.state.depth -= 1;
-        let consumed_count = rl.process_next(text, 77, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta)?;
         expected_state_nodes.push(Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "another-opcode-2".to_owned(),
@@ -1137,7 +1136,7 @@ mod tests {
             output: None,
             position: [77, 0],
             parens: [107, 0],
-            parameters: vec![],
+            inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
                 position: [93, 107],
@@ -1182,10 +1181,10 @@ mod tests {
                 msg: "elided binding".to_string(),
             }),
         };
-        let deeper_node = NamespaceItem::Node(NamespaceNode {
+        let deeper_leaf = NamespaceItem::Leaf(NamespaceLeaf {
             hash: "some-hash".to_owned(),
             import_index: 2,
-            element: NamespaceNodeElement::Binding(deeper_binding.clone()),
+            element: NamespaceLeafElement::Binding(deeper_binding.clone()),
         });
 
         let binding = Binding {
@@ -1200,37 +1199,37 @@ mod tests {
                 value: "1234".to_owned(),
             }),
         };
-        let deep_node = NamespaceItem::Node(NamespaceNode {
+        let deep_leaf = NamespaceItem::Leaf(NamespaceLeaf {
             hash: "some-other-hash".to_owned(),
             import_index: 1,
-            element: NamespaceNodeElement::Binding(binding.clone()),
+            element: NamespaceLeafElement::Binding(binding.clone()),
         });
 
-        deeper_namespace.insert("deeper-binding-name".to_string(), deeper_node.clone());
-        deep_namespace.insert("binding-name".to_string(), deep_node.clone());
+        deeper_namespace.insert("deeper-binding-name".to_string(), deeper_leaf.clone());
+        deep_namespace.insert("binding-name".to_string(), deep_leaf.clone());
         deep_namespace.insert(
             "deeper-namespace".to_string(),
-            NamespaceItem::Namespace(deeper_namespace),
+            NamespaceItem::Node(deeper_namespace),
         );
         main_namespace.insert(
             "deep-namespace".to_string(),
-            NamespaceItem::Namespace(deep_namespace),
+            NamespaceItem::Node(deep_namespace),
         );
 
-        let result = rl.search_name(
+        let result = rl.search_namespace(
             "deep-namespace.deeper-namespace.deeper-binding-name",
             0,
             &main_namespace,
         );
         assert_eq!(Some(&deeper_binding), result);
 
-        let result = rl.search_name(".deep-namespace.binding-name", 0, &main_namespace);
+        let result = rl.search_namespace(".deep-namespace.binding-name", 0, &main_namespace);
         assert_eq!(Some(&binding), result);
 
-        let result = rl.search_name("deep-namespace.other-binding-name", 0, &main_namespace);
+        let result = rl.search_namespace("deep-namespace.other-binding-name", 0, &main_namespace);
         assert_eq!(None, result);
 
-        let result = rl.search_name(
+        let result = rl.search_namespace(
             "deep-namespace.deeper-namespace.other-binding-name",
             0,
             &main_namespace,
