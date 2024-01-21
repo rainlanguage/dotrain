@@ -183,8 +183,11 @@ impl RainDocument {
             }
         }
 
-        let rainlang_sources: Vec<_> = sourcemaps.iter().map(|s| s.2.as_str()).collect();
-        let rainlang_string = rainlang_sources.join("\n\n");
+        let rainlang_string = sourcemaps
+            .iter()
+            .map(|s| s.2.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
         Ok(rainlang_string)
     }
 
