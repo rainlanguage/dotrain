@@ -569,10 +569,10 @@ _: opcode-1(0xabcd 456);
             &["exp-binding-1", "exp-binding-2"],
             Some(meta_store.clone()),
         );
-        let expected_problems = Err(ComposeError::Problems(vec![
+        let expected_err = Err(ComposeError::Problems(vec![
             ErrorCode::OddLenHex.to_problem(vec![], [134, 147])
         ]));
-        assert_eq!(rainlang_text, expected_problems);
+        assert_eq!(rainlang_text, expected_err);
 
         let text = r"some front matter
 ---
@@ -588,10 +588,10 @@ _: opcode-1(0xabcd elided);
 ";
         let rainlang_text =
             RainDocument::compose_text(text, &["exp-binding-1"], Some(meta_store.clone()));
-        let expected_problems = Err(ComposeError::Problems(vec![
+        let expected_err = Err(ComposeError::Problems(vec![
             ErrorCode::ElidedBinding.to_problem(vec!["this is elided"], [199, 205])
         ]));
-        assert_eq!(rainlang_text, expected_problems);
+        assert_eq!(rainlang_text, expected_err);
 
         let text = r"some front matter
 ---
@@ -604,10 +604,10 @@ _: opcode-1(0xabcd elided);
 ";
         let rainlang_text =
             RainDocument::compose_text(text, &["exp-binding"], Some(meta_store.clone()));
-        let expected_problems = Err(ComposeError::Reject(
+        let expected_err = Err(ComposeError::Reject(
             "undefined identifier: exp-binding".to_owned(),
         ));
-        assert_eq!(rainlang_text, expected_problems);
+        assert_eq!(rainlang_text, expected_err);
 
         Ok(())
     }
