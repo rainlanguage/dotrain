@@ -442,12 +442,13 @@ impl NamespaceLeaf {
     }
 
     pub fn is_elided_binding(&self) -> bool {
-        match &self.element {
-            NamespaceLeafElement::Binding(b) => {
-                matches!(b.item, BindingItem::Elided(_))
-            }
-            _ => false,
-        }
+        matches!(
+            self.element,
+            NamespaceLeafElement::Binding(Binding {
+                item: BindingItem::Elided(_),
+                ..
+            })
+        )
     }
 
     pub fn unwrap_elided_binding(&self) -> &String {
@@ -464,12 +465,13 @@ impl NamespaceLeaf {
     }
 
     pub fn is_constant_binding(&self) -> bool {
-        match &self.element {
-            NamespaceLeafElement::Binding(b) => {
-                matches!(b.item, BindingItem::Constant(_))
-            }
-            _ => false,
-        }
+        matches!(
+            self.element,
+            NamespaceLeafElement::Binding(Binding {
+                item: BindingItem::Constant(_),
+                ..
+            })
+        )
     }
 
     pub fn unwrap_constant_binding(&self) -> &String {
@@ -486,12 +488,13 @@ impl NamespaceLeaf {
     }
 
     pub fn is_exp_binding(&self) -> bool {
-        match &self.element {
-            NamespaceLeafElement::Binding(b) => {
-                matches!(b.item, BindingItem::Exp(_))
-            }
-            _ => false,
-        }
+        matches!(
+            self.element,
+            NamespaceLeafElement::Binding(Binding {
+                item: BindingItem::Exp(_),
+                ..
+            })
+        )
     }
 
     pub fn unwrap_exp_binding(&self) -> &RainlangDocument {
@@ -523,15 +526,12 @@ pub enum NamespaceItem {
 
 impl NamespaceItem {
     pub fn is_leaf(&self) -> bool {
-        match self {
-            NamespaceItem::Leaf(_) => true,
-            NamespaceItem::Node(_) => false,
-        }
+        matches!(self, NamespaceItem::Leaf(_))
     }
 
     pub fn unwrap_leaf(&self) -> &NamespaceLeaf {
         match self {
-            NamespaceItem::Leaf(node) => node,
+            NamespaceItem::Leaf(leaf) => leaf,
             NamespaceItem::Node(_) => panic!("not a leaf"),
         }
     }
@@ -539,16 +539,18 @@ impl NamespaceItem {
     pub fn unwrap_node(&self) -> &Namespace {
         match self {
             NamespaceItem::Leaf(_) => panic!("not a node"),
-            NamespaceItem::Node(ns) => ns,
+            NamespaceItem::Node(node) => node,
         }
     }
 
     pub fn is_binding(&self) -> bool {
-        if let NamespaceItem::Leaf(n) = self {
-            matches!(n.element, NamespaceLeafElement::Binding(_))
-        } else {
-            false
-        }
+        matches!(
+            self,
+            NamespaceItem::Leaf(NamespaceLeaf {
+                element: NamespaceLeafElement::Binding(_),
+                ..
+            })
+        )
     }
 
     pub fn unwrap_binding(&self) -> &Binding {
@@ -563,11 +565,13 @@ impl NamespaceItem {
     }
 
     pub fn is_dispair(&self) -> bool {
-        if let NamespaceItem::Leaf(n) = self {
-            matches!(n.element, NamespaceLeafElement::Dispair(_))
-        } else {
-            false
-        }
+        matches!(
+            self,
+            NamespaceItem::Leaf(NamespaceLeaf {
+                element: NamespaceLeafElement::Dispair(_),
+                ..
+            })
+        )
     }
 
     pub fn unwrap_dispair(&self) -> &DispairImportItem {
@@ -582,14 +586,16 @@ impl NamespaceItem {
     }
 
     pub fn is_elided_binding(&self) -> bool {
-        if let NamespaceItem::Leaf(n) = self {
-            match &n.element {
-                NamespaceLeafElement::Binding(b) => matches!(&b.item, BindingItem::Elided(_)),
-                _ => false,
-            }
-        } else {
-            false
-        }
+        matches!(
+            self,
+            NamespaceItem::Leaf(NamespaceLeaf {
+                element: NamespaceLeafElement::Binding(Binding {
+                    item: BindingItem::Elided(_),
+                    ..
+                }),
+                ..
+            })
+        )
     }
 
     pub fn unwrap_elided_binding(&self) -> &String {
@@ -607,14 +613,16 @@ impl NamespaceItem {
     }
 
     pub fn is_constant_binding(&self) -> bool {
-        if let NamespaceItem::Leaf(n) = self {
-            match &n.element {
-                NamespaceLeafElement::Binding(b) => matches!(&b.item, BindingItem::Constant(_)),
-                _ => false,
-            }
-        } else {
-            false
-        }
+        matches!(
+            self,
+            NamespaceItem::Leaf(NamespaceLeaf {
+                element: NamespaceLeafElement::Binding(Binding {
+                    item: BindingItem::Constant(_),
+                    ..
+                }),
+                ..
+            })
+        )
     }
 
     pub fn unwrap_constant_binding(&self) -> &String {
@@ -632,14 +640,16 @@ impl NamespaceItem {
     }
 
     pub fn is_exp_binding(&self) -> bool {
-        if let NamespaceItem::Leaf(n) = self {
-            match &n.element {
-                NamespaceLeafElement::Binding(b) => matches!(&b.item, BindingItem::Exp(_)),
-                _ => false,
-            }
-        } else {
-            false
-        }
+        matches!(
+            self,
+            NamespaceItem::Leaf(NamespaceLeaf {
+                element: NamespaceLeafElement::Binding(Binding {
+                    item: BindingItem::Exp(_),
+                    ..
+                }),
+                ..
+            })
+        )
     }
 
     pub fn unwrap_exp_binding(&self) -> &RainlangDocument {

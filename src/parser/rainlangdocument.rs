@@ -262,7 +262,7 @@ impl RainlangDocument {
                                 .push(ErrorCode::UnexpectedComment.to_problem(vec![], cm.position));
                         }
                     }
-                    // begin parsing LHS
+                    // parse LHS
                     if !lhs.is_empty() {
                         let lhs_items = inclusive_parse(lhs, &ANY_PATTERN, cursor_offset);
                         for item in lhs_items {
@@ -284,8 +284,8 @@ impl RainlangDocument {
                         }
                     }
 
-                    // parsing RHS
-                    self.consume(
+                    // parse RHS
+                    self.process_rhs(
                         rhs,
                         cursor_offset + sub_src.len(),
                         namespace,
@@ -353,7 +353,7 @@ impl RainlangDocument {
     }
 
     /// Consumes items (separated by defnied boundries) in the text
-    fn consume(
+    fn process_rhs(
         &mut self,
         text: &str,
         offset: usize,
@@ -388,7 +388,7 @@ impl RainlangDocument {
                     exp = exp.split_at(1).1;
                 }
                 _ => {
-                    let consumed = self.process_next(exp, cursor, namespace, authoring_meta)?;
+                    let consumed = self.consume(exp, cursor, namespace, authoring_meta)?;
                     exp = exp.split_at(consumed).1;
                 }
             }
@@ -447,7 +447,7 @@ impl RainlangDocument {
                     let is_quote = v.0.starts_with('\'');
                     if is_quote {
                         let quote = &v.0[1..];
-                        if let Some(b) = self.search_name(quote, v.1[0], namespace) {
+                        if let Some(b) = self.search_namespace(quote, v.1[0], namespace) {
                             match &b.item {
                                 BindingItem::Elided(e) => {
                                     let msg = e.msg.clone();
@@ -504,7 +504,7 @@ impl RainlangDocument {
     }
 
     /// parses an upcoming word to the corresponding AST node
-    fn process_next(
+    fn consume(
         &mut self,
         text: &str,
         cursor: usize,
@@ -576,7 +576,7 @@ impl RainlangDocument {
                     .push(ErrorCode::ExpectedOpeningParen.to_problem(vec![], next_pos));
             }
         } else if next.contains('.') {
-            if let Some(b) = self.search_name(next, cursor, namespace) {
+            if let Some(b) = self.search_namespace(next, cursor, namespace) {
                 match &b.item {
                     BindingItem::Constant(c) => {
                         let value = c.value.to_owned();
@@ -618,7 +618,8 @@ impl RainlangDocument {
             if HEX_PATTERN.is_match(next) && next.len() % 2 == 1 {
                 self.problems
                     .push(ErrorCode::OddLenHex.to_problem(vec![], next_pos));
-            } else if to_u256(next).is_err() {
+            }
+            if to_u256(next).is_err() {
                 self.problems
                     .push(ErrorCode::OutOfRangeValue.to_problem(vec![], next_pos));
             }
@@ -717,7 +718,7 @@ impl RainlangDocument {
     }
 
     /// Search in namespaces for a name
-    fn search_name<'a>(
+    fn search_namespace<'a>(
         &'a mut self,
         query: &str,
         offset: usize,
@@ -1046,7 +1047,7 @@ mod tests {
     }
 
     #[test]
-    fn test_process_next_method() -> anyhow::Result<()> {
+    fn test_consume_method() -> anyhow::Result<()> {
         let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
         let authoring_meta = AuthoringMeta(vec![
@@ -1068,7 +1069,7 @@ mod tests {
         ]);
 
         let text = "opcode<12 56>(";
-        let consumed_count = rl.process_next(text, 10, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta)?;
         let mut expected_state_nodes = vec![Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "opcode".to_owned(),
@@ -1104,7 +1105,7 @@ mod tests {
 
         let text = "another-opcode(12 0x123abced)";
         rl.state.depth -= 1;
-        let consumed_count = rl.process_next(text, 24, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 24, &namespace, &authoring_meta)?;
         expected_state_nodes.push(Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "another-opcode".to_owned(),
@@ -1124,7 +1125,7 @@ mod tests {
 
         let text = "another-opcode-2<\n  0x1f\n  87>(\n  0xabcef1234\n)";
         rl.state.depth -= 1;
-        let consumed_count = rl.process_next(text, 77, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta)?;
         expected_state_nodes.push(Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "another-opcode-2".to_owned(),
@@ -1215,20 +1216,20 @@ mod tests {
             NamespaceItem::Node(deep_namespace),
         );
 
-        let result = rl.search_name(
+        let result = rl.search_namespace(
             "deep-namespace.deeper-namespace.deeper-binding-name",
             0,
             &main_namespace,
         );
         assert_eq!(Some(&deeper_binding), result);
 
-        let result = rl.search_name(".deep-namespace.binding-name", 0, &main_namespace);
+        let result = rl.search_namespace(".deep-namespace.binding-name", 0, &main_namespace);
         assert_eq!(Some(&binding), result);
 
-        let result = rl.search_name("deep-namespace.other-binding-name", 0, &main_namespace);
+        let result = rl.search_namespace("deep-namespace.other-binding-name", 0, &main_namespace);
         assert_eq!(None, result);
 
-        let result = rl.search_name(
+        let result = rl.search_namespace(
             "deep-namespace.deeper-namespace.other-binding-name",
             0,
             &main_namespace,
