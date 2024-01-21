@@ -188,6 +188,7 @@ impl RainDocument {
             .map(|s| {
                 let mut source = s.2.clone();
                 source.push('\n');
+                source.push('\n');
                 source
             })
             .collect();
@@ -481,7 +482,7 @@ _: opcode-1(0xabcd 456);
 ";
         let rainlang_text =
             RainDocument::compose_text(text, &["exp-binding"], Some(meta_store.clone()))?;
-        let expected_rainlang = "_: opcode-1(0xabcd 456);\n";
+        let expected_rainlang = "_: opcode-1(0xabcd 456);\n\n";
         assert_eq!(rainlang_text, expected_rainlang);
 
         let text = r"some front matter
@@ -497,6 +498,7 @@ some-name _: opcode-2(opcode-1(1 2) const-binding) 0xab34;
             RainDocument::compose_text(text, &["exp-binding"], Some(meta_store.clone()))?;
         let expected_rainlang = "_: opcode-1(0xabcd 456),
 some-name _: opcode-2(opcode-1(1 2) 4e18) 0xab34;
+
 ";
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -518,7 +520,9 @@ _: opcode-2(0xabcd some-value);
             RainDocument::compose_text(text, &["exp-binding-1"], Some(meta_store.clone()))?;
         let expected_rainlang = "_: opcode-1<1>(0xabcd 456),
 some-name _: 0xab34;
+
 _: opcode-2(0xabcd 4e18);
+
 ";
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -543,7 +547,9 @@ _: opcode-2(0xabcd some-value);
         )?;
         let expected_rainlang = "_: opcode-1(0xabcd 456),
 some-name _: 0xab34;
+
 _: opcode-2(0xabcd 4e18);
+
 ";
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -570,9 +576,12 @@ _: opcode-2(some-name some-other-value);
             Some(meta_store.clone()),
         )?;
         let expected_rainlang = "_: opcode-1(0xabcd 456);
+
 _: opcode-1<2>(0xabcd 456);
+
 some-name: opcode-2(0xabcd 4e18),
 _: opcode-2(some-name 0xabcdef1234);
+
 ";
         assert_eq!(rainlang_text, expected_rainlang);
 
