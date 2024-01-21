@@ -1,42 +1,43 @@
-use regex::Regex;
 use rain_meta::Store;
 use std::{
-    collections::VecDeque,
     sync::{Arc, RwLock},
+    collections::VecDeque,
 };
-use magic_string::{MagicString, OverwriteOptions, DecodedMap, GenerateDecodedMapOptions};
+use magic_string::{MagicString, OverwriteOptions, GenerateDecodedMapOptions};
 use super::{
     error::ComposeError,
+    parser::{RainlangDocument, RainDocument, exclusive_parse},
     types::{
-        patterns::{WORD_PATTERN, NUMERIC_PATTERN},
+        patterns::{WORD_PATTERN, NUMERIC_PATTERN, NAMESPACE_SEGMENT_PATTERN},
         ast::{
             Offsets, Problem, Node, Namespace, NamespaceItem, NamespaceLeaf, Binding, BindingItem,
             NamespaceLeafElement, Import,
         },
     },
-    parser::{RainlangDocument, RainDocument, exclusive_parse},
 };
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
 use tsify::Tsify;
 
+/// a composing target element
 #[derive(Debug, PartialEq, Clone)]
-struct ComposeTargetElement {
-    name: String,
-    name_position: Offsets,
-    content: String,
-    content_position: Offsets,
-    position: Offsets,
-    problems: Vec<Problem>,
-    dependencies: Vec<String>,
-    item: RainlangDocument,
+pub(crate) struct ComposeTargetElement {
+    pub(crate) name: String,
+    pub(crate) name_position: Offsets,
+    pub(crate) content: String,
+    pub(crate) content_position: Offsets,
+    pub(crate) position: Offsets,
+    pub(crate) problems: Vec<Problem>,
+    pub(crate) dependencies: Vec<String>,
+    pub(crate) item: RainlangDocument,
 }
 
+/// a composing target
 #[derive(Debug, PartialEq, Clone)]
-struct ComposeTarget {
-    hash: String,
-    import_index: isize,
-    element: ComposeTargetElement,
+pub(crate) struct ComposeTarget {
+    pub(crate) hash: String,
+    pub(crate) import_index: isize,
+    pub(crate) element: ComposeTargetElement,
 }
 
 impl ComposeTarget {
@@ -56,6 +57,14 @@ impl ComposeTarget {
             },
         }
     }
+}
+
+/// Type of a compsoing item details
+#[derive(Debug, PartialEq, Clone)]
+pub(crate) struct ComposeSourcemap {
+    pub(crate) target: ComposeTarget,
+    pub(crate) generated_string: String,
+    pub(crate) mappings: Vec<Vec<Vec<i64>>>,
 }
 
 impl RainDocument {
@@ -81,6 +90,20 @@ impl RainDocument {
 
     /// composes to rainlang text from the specified entrypoints
     pub fn compose(&self, entrypoints: &[&str]) -> Result<String, ComposeError> {
+        let sourcemaps = self.build_targets_sourcemap(entrypoints)?;
+        let rainlang_string = sourcemaps
+            .iter()
+            .map(|s| s.generated_string.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        Ok(rainlang_string)
+    }
+
+    /// builds composing targets sourcemaps
+    pub(crate) fn build_targets_sourcemap(
+        &self,
+        entrypoints: &[&str],
+    ) -> Result<Vec<ComposeSourcemap>, ComposeError> {
         if entrypoints.is_empty() {
             return Err(ComposeError::Reject("no entrypoints specified".to_owned()));
         }
@@ -129,7 +152,7 @@ impl RainDocument {
         let mut deps_indexes = self.resolve_deps(&mut nodes)?;
 
         // represents sourcemap details of each composing node
-        let mut sourcemaps: Vec<(&ComposeTarget, &String, String, DecodedMap, usize)> = vec![];
+        let mut sourcemaps: Vec<ComposeSourcemap> = vec![];
         for node in &nodes {
             let generator = &mut MagicString::new(&node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
@@ -148,36 +171,24 @@ impl RainDocument {
                     hires: true,
                     ..Default::default()
                 };
-                let offset = if sourcemaps.is_empty() {
-                    0usize
-                } else {
-                    let last = &sourcemaps[sourcemaps.len() - 1];
-                    last.4 + last.2.len() + 1
-                };
-                sourcemaps.push((
-                    node,
-                    &node.element.content,
-                    generator.to_string(),
-                    generator
+
+                sourcemaps.push(ComposeSourcemap {
+                    target: node.clone(),
+                    generated_string: generator.to_string(),
+                    mappings: generator
                         .generate_decoded_map(opts.clone())
                         .or(Err(ComposeError::Reject(
                             "cannot build sourcemap".to_owned(),
-                        )))?,
-                    offset,
-                ))
+                        )))?
+                        .mappings,
+                })
             } else {
                 return Err(ComposeError::Reject(
                     "cannot resolve dependecies".to_owned(),
                 ));
             }
         }
-
-        let rainlang_string = sourcemaps
-            .iter()
-            .map(|s| s.2.as_str())
-            .collect::<Vec<_>>()
-            .join("\n\n");
-        Ok(rainlang_string)
+        Ok(sourcemaps)
     }
 
     /// resolves dependencies recuresively
@@ -264,7 +275,7 @@ fn search_namespace<'a>(
     name: &str,
     namespace: &'a Namespace,
 ) -> Result<(&'a Namespace, &'a NamespaceLeaf, &'a Binding), String> {
-    let mut segments = VecDeque::from(exclusive_parse(name, &Regex::new(r"\.").unwrap(), 0, true));
+    let mut segments = VecDeque::from(exclusive_parse(name, &NAMESPACE_SEGMENT_PATTERN, 0, true));
     if name.starts_with('.') {
         segments.pop_front();
     }
@@ -328,7 +339,7 @@ fn search_namespace<'a>(
     }
 }
 
-/// Builds sourcemaps for a given array of AST Nodes
+/// builds sourcemaps for a given array of AST Nodes recursively
 fn build_sourcemap(
     nodes: Vec<&Node>,
     generator: &mut MagicString,
