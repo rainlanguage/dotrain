@@ -539,14 +539,9 @@ impl RainDocument {
     }
 
     /// Checks if a binding is elided and returns the elision msg if it found any
-    #[allow(clippy::manual_strip)]
     fn is_elided(text: &str) -> Option<String> {
         let msg = text.trim();
-        if msg.starts_with('!') {
-            Some(msg[1..].to_owned())
-        } else {
-            None
-        }
+        msg.strip_prefix('!').map(|stripped| stripped.to_owned())
     }
 
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
@@ -1450,7 +1445,6 @@ impl RainDocument {
     }
 
     /// checks and counts the word sets (deployer) in a namespace recursively by their hashes
-    #[allow(clippy::for_kv_map)]
     fn check_namespace_deployer<'a>(
         namespace: &'a Namespace,
         mut hash: &'a str,
@@ -1467,7 +1461,7 @@ impl RainDocument {
                 return (count + 1, hash, None);
             }
         }
-        for (_key, item) in namespace {
+        for (_key, item) in namespace.iter() {
             if !item.is_leaf() {
                 let result = Self::check_namespace_deployer(item.unwrap_node(), hash);
                 hash = result.1;
