@@ -259,14 +259,9 @@ pub(crate) fn line_number(text: &str, pos: usize) -> usize {
 }
 
 pub(crate) fn hex_to_u256(val: &str) -> Result<U256, Error> {
-    let temp;
     let mut hex = val;
     if let Some(stripped) = val.strip_prefix("0x") {
         hex = stripped
-    }
-    if hex.len() % 2 == 1 {
-        temp = "0".to_owned() + hex;
-        hex = temp.as_str();
     }
     Ok(U256::from_str_radix(hex, 16)?)
 }
