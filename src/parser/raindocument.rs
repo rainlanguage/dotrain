@@ -51,14 +51,13 @@ let rain_document = RainDocument::create(text, Some(meta_store));
 // get all problems
 let problems = rain_document.all_problems();
 
-// let entrypoints = vec![
-//    "entrypoint1".to_string(), 
-//    "entrypoint2".to_string()
-// ];
-// let revm = None;
+let entrypoints = vec![
+   "entrypoint1", 
+   "entrypoint2"
+];
 
-// compile this instance to get ExpressionConfig
-// let result = rain_document.compile(&entrypoints, revm);
+// compose this instance to get rainlang string
+let result = rain_document.compose(&entrypoints);
 ```
 "#
 )]
@@ -75,8 +74,8 @@ let problems = rain_document.all_problems();
  // get all problems
  const problems = rainDocument.allProblems;
 
- // compile this instance to get ExpressionConfig
- const expConfig = rainDocument.compile([\"entrypoint1\", \"entrypoint2\"]);
+ // compose this instance to get rainlang string
+ const expConfig = rainDocument.compose([\"entrypoint1\", \"entrypoint2\"]);
  ```
 "
 )]

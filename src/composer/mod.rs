@@ -73,7 +73,7 @@ impl RainDocument {
 
         let mut nodes: Vec<ComposeTarget> = vec![];
 
-        // resolve the entrypoints and their deps
+        // resolve the entrypoints, check their validity and put them at top of compose target list
         for entrypoint in entrypoints {
             match search_namespace(entrypoint, &self.namespace) {
                 Ok((parent_node, leaf, binding)) => {
@@ -140,8 +140,11 @@ impl RainDocument {
             }
         }
 
-        // resolve deps of deps and return the array of deps indexes that will be used to replace with deps in the text
+        // resolve deps of deps recursively and return the array of deps indexes that
+        // will be used to replace with dep identifiers in the text
         let mut deps_indexes = self.resolve_deps(&mut nodes)?;
+
+        // represents sourcemap details of each composing node
         let mut sourcemaps: Vec<(&ComposeTarget, &String, String, DecodedMap, usize)> = vec![];
         for node in &nodes {
             let generator = &mut MagicString::new(&node.element.content);
@@ -192,6 +195,13 @@ impl RainDocument {
     }
 
     /// resolves dependencies recuresively
+    /// this means resolving deps of deps recursively as long as any of them have nested deps
+    /// gathers all the deps into 'nodes' array for building the sourcemap and returns deps indexes
+    /// which represent node indexes in the nodes array.
+    /// this ensures that each composing node (being entrypoint or dep) will get its own array of dep
+    /// indexes, for example [[], [2, 3], [], []],  will indicate that composing- node[0], node[2] and node[3]
+    /// have no deps, node[1] has 2 deps with index 2 and 3 in order, so when first dependency is reached
+    /// when building the sourcemap for node[1], it will be replaced with '2' and the next one with '3'
     fn resolve_deps(
         &self,
         nodes: &mut Vec<ComposeTarget>,
@@ -202,7 +212,7 @@ impl RainDocument {
         while len - ignore_offset > 0 {
             let mut deps_nodes = vec![];
             for node in nodes[ignore_offset..].iter() {
-                let mut temp_deps = VecDeque::new();
+                let mut temp_deps_indexes = VecDeque::new();
                 for dep in node.element.dependencies.iter() {
                     match search_namespace(dep, &self.namespace) {
                         Ok((parent_node, leaf, binding)) => {
@@ -267,15 +277,16 @@ impl RainDocument {
                                         .enumerate()
                                         .find(|(_, middle)| **middle == comp_target)
                                     {
-                                        temp_deps.push_back(*index as u8);
+                                        temp_deps_indexes.push_back(*index as u8);
                                     } else if let Some((index, _)) = &deps_nodes
                                         .iter()
                                         .enumerate()
                                         .find(|(_, middle)| **middle == comp_target)
                                     {
-                                        temp_deps.push_back((nodes.len() + index) as u8);
+                                        temp_deps_indexes.push_back((nodes.len() + index) as u8);
                                     } else {
-                                        temp_deps.push_back((nodes.len() + deps_nodes.len()) as u8);
+                                        temp_deps_indexes
+                                            .push_back((nodes.len() + deps_nodes.len()) as u8);
                                         deps_nodes.push(comp_target);
                                     }
                                 }
@@ -289,7 +300,7 @@ impl RainDocument {
                         }
                     }
                 }
-                deps_indexes.push_back(temp_deps);
+                deps_indexes.push_back(temp_deps_indexes);
             }
             ignore_offset = nodes.len();
             nodes.extend(deps_nodes);
