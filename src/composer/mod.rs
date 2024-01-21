@@ -33,7 +33,7 @@ struct ComposeTargetElement {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-struct ComposeTargetItem {
+struct ComposeTarget {
     hash: String,
     import_index: isize,
     element: ComposeTargetElement,
@@ -71,7 +71,7 @@ impl RainDocument {
             return Err(RainDocumentComposeError::Problems(self.problems.clone()));
         }
 
-        let mut nodes: Vec<ComposeTargetItem> = vec![];
+        let mut nodes: Vec<ComposeTarget> = vec![];
 
         // resolve the entrypoints and their deps
         for entrypoint in entrypoints {
@@ -117,7 +117,7 @@ impl RainDocument {
                                     .collect(),
                             ));
                         } else {
-                            nodes.push(ComposeTargetItem {
+                            nodes.push(ComposeTarget {
                                 hash: leaf.hash.clone(),
                                 import_index: leaf.import_index,
                                 element: ComposeTargetElement {
@@ -142,7 +142,7 @@ impl RainDocument {
 
         // resolve deps of deps and return the array of deps indexes that will be used to replace with deps in the text
         let mut deps_indexes = self.resolve_deps(&mut nodes)?;
-        let mut sourcemaps: Vec<(&ComposeTargetItem, &String, String, DecodedMap, usize)> = vec![];
+        let mut sourcemaps: Vec<(&ComposeTarget, &String, String, DecodedMap, usize)> = vec![];
         for node in &nodes {
             let generator = &mut MagicString::new(&node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
@@ -198,7 +198,7 @@ impl RainDocument {
     /// resolves dependencies recuresively
     fn resolve_deps(
         &self,
-        nodes: &mut Vec<ComposeTargetItem>,
+        nodes: &mut Vec<ComposeTarget>,
     ) -> Result<VecDeque<VecDeque<u8>>, RainDocumentComposeError> {
         let mut deps_indexes: VecDeque<VecDeque<u8>> = VecDeque::new();
         let mut len = nodes.len();
@@ -252,7 +252,7 @@ impl RainDocument {
                                             .collect(),
                                     ));
                                 } else {
-                                    let comp_target = ComposeTargetItem {
+                                    let comp_target = ComposeTarget {
                                         hash: leaf.hash.clone(),
                                         import_index: leaf.import_index,
                                         element: ComposeTargetElement {
