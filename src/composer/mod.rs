@@ -183,16 +183,8 @@ impl RainDocument {
             }
         }
 
-        let rainlang_string: String = sourcemaps
-            .iter()
-            .map(|s| {
-                let mut source = s.2.clone();
-                source.push('\n');
-                source.push('\n');
-                source
-            })
-            .collect();
-
+        let rainlang_sources: Vec<_> = sourcemaps.iter().map(|s| s.2.as_str()).collect();
+        let rainlang_string = rainlang_sources.join("\n\n");
         Ok(rainlang_string)
     }
 
@@ -482,7 +474,7 @@ _: opcode-1(0xabcd 456);
 ";
         let rainlang_text =
             RainDocument::compose_text(text, &["exp-binding"], Some(meta_store.clone()))?;
-        let expected_rainlang = "_: opcode-1(0xabcd 456);\n\n";
+        let expected_rainlang = "_: opcode-1(0xabcd 456);";
         assert_eq!(rainlang_text, expected_rainlang);
 
         let text = r"some front matter
@@ -497,9 +489,7 @@ some-name _: opcode-2(opcode-1(1 2) const-binding) 0xab34;
         let rainlang_text =
             RainDocument::compose_text(text, &["exp-binding"], Some(meta_store.clone()))?;
         let expected_rainlang = "_: opcode-1(0xabcd 456),
-some-name _: opcode-2(opcode-1(1 2) 4e18) 0xab34;
-
-";
+some-name _: opcode-2(opcode-1(1 2) 4e18) 0xab34;";
         assert_eq!(rainlang_text, expected_rainlang);
 
         let text = r"some front matter
@@ -521,9 +511,7 @@ _: opcode-2(0xabcd some-value);
         let expected_rainlang = "_: opcode-1<1>(0xabcd 456),
 some-name _: 0xab34;
 
-_: opcode-2(0xabcd 4e18);
-
-";
+_: opcode-2(0xabcd 4e18);";
         assert_eq!(rainlang_text, expected_rainlang);
 
         let text = r"some front matter
@@ -548,9 +536,7 @@ _: opcode-2(0xabcd some-value);
         let expected_rainlang = "_: opcode-1(0xabcd 456),
 some-name _: 0xab34;
 
-_: opcode-2(0xabcd 4e18);
-
-";
+_: opcode-2(0xabcd 4e18);";
         assert_eq!(rainlang_text, expected_rainlang);
 
         let text = r"some front matter
@@ -580,9 +566,7 @@ _: opcode-2(some-name some-other-value);
 _: opcode-1<2>(0xabcd 456);
 
 some-name: opcode-2(0xabcd 4e18),
-_: opcode-2(some-name 0xabcdef1234);
-
-";
+_: opcode-2(some-name 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
 
         let text = r"some front matter
