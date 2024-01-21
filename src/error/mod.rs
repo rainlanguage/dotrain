@@ -2,6 +2,8 @@ use super::types::ast::{Offsets, Problem};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
+use tsify::Tsify;
+#[cfg(any(feature = "js-api", target_family = "wasm"))]
 use wasm_bindgen::prelude::*;
 
 /// All Error codes of RainlangDocument/RainDocument problem and LSP Diagnostics
