@@ -6,7 +6,7 @@ use std::{
 };
 use magic_string::{MagicString, OverwriteOptions, DecodedMap, GenerateDecodedMapOptions};
 use super::{
-    error::RainDocumentComposeError,
+    error::ComposeError,
     types::{
         patterns::{WORD_PATTERN, NUMERIC_PATTERN},
         ast::{
@@ -64,7 +64,7 @@ impl RainDocument {
         text: &str,
         entrypoints: &[&str],
         meta_store: Option<Arc<RwLock<Store>>>,
-    ) -> Result<String, RainDocumentComposeError> {
+    ) -> Result<String, ComposeError> {
         RainDocument::create(text.to_string(), meta_store).compose(entrypoints)
     }
 
@@ -73,21 +73,19 @@ impl RainDocument {
         text: &str,
         entrypoints: &[&str],
         meta_store: Option<Arc<RwLock<Store>>>,
-    ) -> Result<String, RainDocumentComposeError> {
+    ) -> Result<String, ComposeError> {
         RainDocument::create_async(text.to_string(), meta_store)
             .await
             .compose(entrypoints)
     }
 
     /// composes to rainlang text from the specified entrypoints
-    pub fn compose(&self, entrypoints: &[&str]) -> Result<String, RainDocumentComposeError> {
+    pub fn compose(&self, entrypoints: &[&str]) -> Result<String, ComposeError> {
         if entrypoints.is_empty() {
-            return Err(RainDocumentComposeError::Reject(
-                "no entrypoints specified".to_owned(),
-            ));
+            return Err(ComposeError::Reject("no entrypoints specified".to_owned()));
         }
         if !self.problems.is_empty() {
-            return Err(RainDocumentComposeError::Problems(self.problems.clone()));
+            return Err(ComposeError::Problems(self.problems.clone()));
         }
 
         let mut nodes: Vec<ComposeTarget> = vec![];
@@ -97,7 +95,7 @@ impl RainDocument {
             match search_namespace(entrypoint, &self.namespace) {
                 Ok((parent_node, leaf, binding)) => {
                     if !binding.problems.is_empty() {
-                        return Err(RainDocumentComposeError::from_problems(
+                        return Err(ComposeError::from_problems(
                             &binding.problems,
                             leaf.import_index,
                             &self.imports,
@@ -110,7 +108,7 @@ impl RainDocument {
                             self.ignore_undefined_words,
                         );
                         if !rainlang_doc.problems.is_empty() {
-                            return Err(RainDocumentComposeError::from_problems(
+                            return Err(ComposeError::from_problems(
                                 &rainlang_doc.problems,
                                 leaf.import_index,
                                 &self.imports,
@@ -121,7 +119,7 @@ impl RainDocument {
                     }
                 }
                 Err(e) => {
-                    return Err(RainDocumentComposeError::Reject(e));
+                    return Err(ComposeError::Reject(e));
                 }
             }
         }
@@ -145,7 +143,7 @@ impl RainDocument {
                     generator,
                     deps,
                 )
-                .map_err(RainDocumentComposeError::Reject)?;
+                .map_err(ComposeError::Reject)?;
                 let opts = GenerateDecodedMapOptions {
                     hires: true,
                     ..Default::default()
@@ -160,13 +158,15 @@ impl RainDocument {
                     node,
                     &node.element.content,
                     generator.to_string(),
-                    generator.generate_decoded_map(opts.clone()).or(Err(
-                        RainDocumentComposeError::Reject("cannot build sourcemap".to_owned()),
-                    ))?,
+                    generator
+                        .generate_decoded_map(opts.clone())
+                        .or(Err(ComposeError::Reject(
+                            "cannot build sourcemap".to_owned(),
+                        )))?,
                     offset,
                 ))
             } else {
-                return Err(RainDocumentComposeError::Reject(
+                return Err(ComposeError::Reject(
                     "cannot resolve dependecies".to_owned(),
                 ));
             }
@@ -191,7 +191,7 @@ impl RainDocument {
     fn resolve_deps(
         &self,
         nodes: &mut Vec<ComposeTarget>,
-    ) -> Result<VecDeque<VecDeque<u8>>, RainDocumentComposeError> {
+    ) -> Result<VecDeque<VecDeque<u8>>, ComposeError> {
         let mut deps_indexes: VecDeque<VecDeque<u8>> = VecDeque::new();
         let mut len = nodes.len();
         let mut ignore_offset = 0;
@@ -203,7 +203,7 @@ impl RainDocument {
                     match search_namespace(dep, &self.namespace) {
                         Ok((parent_node, leaf, binding)) => {
                             if !binding.problems.is_empty() {
-                                return Err(RainDocumentComposeError::from_problems(
+                                return Err(ComposeError::from_problems(
                                     &binding.problems,
                                     leaf.import_index,
                                     &self.imports,
@@ -216,7 +216,7 @@ impl RainDocument {
                                     self.ignore_undefined_words,
                                 );
                                 if !rainlang_doc.problems.is_empty() {
-                                    return Err(RainDocumentComposeError::from_problems(
+                                    return Err(ComposeError::from_problems(
                                         &rainlang_doc.problems,
                                         leaf.import_index,
                                         &self.imports,
@@ -245,10 +245,7 @@ impl RainDocument {
                             }
                         }
                         Err(e) => {
-                            return Err(RainDocumentComposeError::Reject(format!(
-                                "dependency binding: {}",
-                                e
-                            )));
+                            return Err(ComposeError::Reject(format!("dependency binding: {}", e)));
                         }
                     }
                 }
@@ -390,7 +387,7 @@ fn build_sourcemap(
     Ok(())
 }
 
-impl RainDocumentComposeError {
+impl ComposeError {
     fn from_problems(problems: &[Problem], import_index: isize, imports: &[Import]) -> Self {
         Self::Problems(
             problems
@@ -572,8 +569,8 @@ _: opcode-1(0xabcd 456);
             &["exp-binding-1", "exp-binding-2"],
             Some(meta_store.clone()),
         );
-        let expected_problems = Err(RainDocumentComposeError::Problems(vec![
-            ErrorCode::OddLenHex.to_problem(vec![], [134, 147]),
+        let expected_problems = Err(ComposeError::Problems(vec![
+            ErrorCode::OddLenHex.to_problem(vec![], [134, 147])
         ]));
         assert_eq!(rainlang_text, expected_problems);
 
@@ -591,8 +588,8 @@ _: opcode-1(0xabcd elided);
 ";
         let rainlang_text =
             RainDocument::compose_text(text, &["exp-binding-1"], Some(meta_store.clone()));
-        let expected_problems = Err(RainDocumentComposeError::Problems(vec![
-            ErrorCode::ElidedBinding.to_problem(vec!["this is elided"], [199, 205]),
+        let expected_problems = Err(ComposeError::Problems(vec![
+            ErrorCode::ElidedBinding.to_problem(vec!["this is elided"], [199, 205])
         ]));
         assert_eq!(rainlang_text, expected_problems);
 
@@ -607,7 +604,7 @@ _: opcode-1(0xabcd elided);
 ";
         let rainlang_text =
             RainDocument::compose_text(text, &["exp-binding"], Some(meta_store.clone()));
-        let expected_problems = Err(RainDocumentComposeError::Reject(
+        let expected_problems = Err(ComposeError::Reject(
             "undefined identifier: exp-binding".to_owned(),
         ));
         assert_eq!(rainlang_text, expected_problems);

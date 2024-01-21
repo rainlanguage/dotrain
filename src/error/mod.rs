@@ -248,32 +248,32 @@ impl From<revm::primitives::EVMError<std::convert::Infallible>> for Error {
     }
 }
 
-/// Returned by RainDocument compilation if it failed
+/// Returned by RainDocument composing process if it failed
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(
     any(feature = "js-api", target_family = "wasm"),
     derive(Tsify),
     tsify(into_wasm_abi, from_wasm_abi)
 )]
-pub enum RainDocumentComposeError {
+pub enum ComposeError {
     Reject(String),
     Problems(Vec<Problem>),
 }
 
-impl std::fmt::Display for RainDocumentComposeError {
+impl std::fmt::Display for ComposeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Problems(v) => write!(f, "{:?}", v),
-            Self::Reject(v) => write!(f, "{}", v),
+            Self::Reject(v) => f.write_str(v),
         }
     }
 }
 
-impl std::error::Error for RainDocumentComposeError {}
+impl std::error::Error for ComposeError {}
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
-impl From<RainDocumentComposeError> for JsValue {
-    fn from(value: RainDocumentComposeError) -> Self {
+impl From<ComposeError> for JsValue {
+    fn from(value: ComposeError) -> Self {
         serde_wasm_bindgen::to_value(&value).unwrap_or(JsValue::NULL)
     }
 }
