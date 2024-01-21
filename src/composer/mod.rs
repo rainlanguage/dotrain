@@ -446,7 +446,10 @@ mod tests {
         store.set_deployer(&hash_bytes, &npe2_deployer_mock, None);
         let meta_store = Arc::new(RwLock::new(store));
 
-        let text = r"some front matter
+        let dotrain_text = r"
+        some 
+        front 
+        matter
 ---
 /** this is test */
 @dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
@@ -455,11 +458,14 @@ mod tests {
 _: opcode-1(0xabcd 456);
 ";
         let rainlang_text =
-            RainDocument::compose_text(text, &["exp-binding"], Some(meta_store.clone()))?;
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], Some(meta_store.clone()))?;
         let expected_rainlang = "_: opcode-1(0xabcd 456);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let text = r"some front matter
+        let dotrain_text = r"
+        some 
+        front 
+        matter
 ---
 @0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
@@ -469,12 +475,12 @@ _: opcode-1(0xabcd 456),
 some-name _: opcode-2(opcode-1(1 2) const-binding) 0xab34;
 ";
         let rainlang_text =
-            RainDocument::compose_text(text, &["exp-binding"], Some(meta_store.clone()))?;
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], Some(meta_store.clone()))?;
         let expected_rainlang = "_: opcode-1(0xabcd 456),
 some-name _: opcode-2(opcode-1(1 2) 4e18) 0xab34;";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let text = r"some front matter
+        let dotrain_text = r"some front matter
 ---
 @0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
@@ -489,14 +495,17 @@ some-name _: 0xab34;
 _: opcode-2(0xabcd some-value);
 ";
         let rainlang_text =
-            RainDocument::compose_text(text, &["exp-binding-1"], Some(meta_store.clone()))?;
+            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()))?;
         let expected_rainlang = "_: opcode-1<1>(0xabcd 456),
 some-name _: 0xab34;
 
 _: opcode-2(0xabcd 4e18);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let text = r"some front matter
+        let dotrain_text = r"
+        some 
+        front 
+        matter
 ---
 @0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
@@ -511,7 +520,7 @@ some-name _: 0xab34;
 _: opcode-2(0xabcd some-value);
 ";
         let rainlang_text = RainDocument::compose_text(
-            text,
+            dotrain_text,
             &["exp-binding-1", "exp-binding-2"],
             Some(meta_store.clone()),
         )?;
@@ -521,9 +530,7 @@ some-name _: 0xab34;
 _: opcode-2(0xabcd 4e18);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let text = r"some front matter
----
-@0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
+        let dotrain_text = r"@0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
 #some-value 4e18
 #some-other-value 0xabcdef1234
@@ -539,7 +546,7 @@ some-name: opcode-2(0xabcd some-value),
 _: opcode-2(some-name some-other-value);
 ";
         let rainlang_text = RainDocument::compose_text(
-            text,
+            dotrain_text,
             &["exp-binding-1", "exp-binding-2"],
             Some(meta_store.clone()),
         )?;
@@ -551,7 +558,10 @@ some-name: opcode-2(0xabcd 4e18),
 _: opcode-2(some-name 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let text = r"some front matter
+        let dotrain_text = r"
+        some 
+        front 
+        matter
 ---
 @dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
@@ -565,16 +575,16 @@ _: opcode-1(0xabcd 456);
 _: opcode-1(0xabcd 456);
 ";
         let rainlang_text = RainDocument::compose_text(
-            text,
+            dotrain_text,
             &["exp-binding-1", "exp-binding-2"],
             Some(meta_store.clone()),
         );
         let expected_err = Err(ComposeError::Problems(vec![
-            ErrorCode::OddLenHex.to_problem(vec![], [134, 147])
+            ErrorCode::OddLenHex.to_problem(vec![], [161, 174])
         ]));
         assert_eq!(rainlang_text, expected_err);
 
-        let text = r"some front matter
+        let dotrain_text = r"some front matter
 ---
 @dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
@@ -587,13 +597,13 @@ _: opcode-1(0xabcd 456);
 _: opcode-1(0xabcd elided);
 ";
         let rainlang_text =
-            RainDocument::compose_text(text, &["exp-binding-1"], Some(meta_store.clone()));
+            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()));
         let expected_err = Err(ComposeError::Problems(vec![
             ErrorCode::ElidedBinding.to_problem(vec!["this is elided"], [199, 205])
         ]));
         assert_eq!(rainlang_text, expected_err);
 
-        let text = r"some front matter
+        let dotrain_text = r"some front matter
 ---
 @dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
@@ -603,7 +613,7 @@ _: opcode-1(0xabcd elided);
 _: opcode-1(0xabcd elided);
 ";
         let rainlang_text =
-            RainDocument::compose_text(text, &["exp-binding"], Some(meta_store.clone()));
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], Some(meta_store.clone()));
         let expected_err = Err(ComposeError::Reject(
             "undefined identifier: exp-binding".to_owned(),
         ));
