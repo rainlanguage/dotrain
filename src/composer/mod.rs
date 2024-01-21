@@ -11,7 +11,7 @@ use super::{
         patterns::{WORD_PATTERN, NUMERIC_PATTERN},
         ast::{
             Offsets, Problem, Node, Namespace, NamespaceItem, NamespaceLeaf, Binding, BindingItem,
-            NamespaceLeafElement,
+            NamespaceLeafElement, Import,
         },
     },
     parser::{RainlangDocument, RainDocument, exclusive_parse},
@@ -37,6 +37,25 @@ struct ComposeTarget {
     hash: String,
     import_index: isize,
     element: ComposeTargetElement,
+}
+
+impl ComposeTarget {
+    fn create(leaf: &NamespaceLeaf, binding: &Binding, rainlang_doc: RainlangDocument) -> Self {
+        ComposeTarget {
+            hash: leaf.hash.clone(),
+            import_index: leaf.import_index,
+            element: ComposeTargetElement {
+                name: binding.name.to_owned(),
+                name_position: binding.name_position,
+                content: binding.content.to_owned(),
+                content_position: binding.content_position,
+                position: binding.position,
+                problems: binding.problems.clone(),
+                dependencies: binding.dependencies.clone(),
+                item: rainlang_doc,
+            },
+        }
+    }
 }
 
 impl RainDocument {
@@ -78,20 +97,10 @@ impl RainDocument {
             match search_namespace(entrypoint, &self.namespace) {
                 Ok((parent_node, leaf, binding)) => {
                     if !binding.problems.is_empty() {
-                        return Err(RainDocumentComposeError::Problems(
-                            binding
-                                .problems
-                                .iter()
-                                .map(|p| Problem {
-                                    msg: p.msg.clone(),
-                                    code: p.code,
-                                    position: if leaf.import_index == -1 {
-                                        p.position
-                                    } else {
-                                        self.imports[leaf.import_index as usize].hash_position
-                                    },
-                                })
-                                .collect(),
+                        return Err(RainDocumentComposeError::from_problems(
+                            &binding.problems,
+                            leaf.import_index,
+                            &self.imports,
                         ));
                     } else {
                         let rainlang_doc = RainlangDocument::create(
@@ -101,36 +110,13 @@ impl RainDocument {
                             self.ignore_undefined_words,
                         );
                         if !rainlang_doc.problems.is_empty() {
-                            return Err(RainDocumentComposeError::Problems(
-                                rainlang_doc
-                                    .problems
-                                    .iter()
-                                    .map(|p| Problem {
-                                        msg: p.msg.clone(),
-                                        code: p.code,
-                                        position: if leaf.import_index == -1 {
-                                            p.position
-                                        } else {
-                                            self.imports[leaf.import_index as usize].hash_position
-                                        },
-                                    })
-                                    .collect(),
+                            return Err(RainDocumentComposeError::from_problems(
+                                &rainlang_doc.problems,
+                                leaf.import_index,
+                                &self.imports,
                             ));
                         } else {
-                            nodes.push(ComposeTarget {
-                                hash: leaf.hash.clone(),
-                                import_index: leaf.import_index,
-                                element: ComposeTargetElement {
-                                    name: binding.name.to_owned(),
-                                    name_position: binding.name_position,
-                                    content: binding.content.to_owned(),
-                                    content_position: binding.content_position,
-                                    position: binding.position,
-                                    problems: binding.problems.clone(),
-                                    dependencies: binding.dependencies.clone(),
-                                    item: rainlang_doc,
-                                },
-                            });
+                            nodes.push(ComposeTarget::create(leaf, binding, rainlang_doc));
                         }
                     }
                 }
@@ -217,21 +203,10 @@ impl RainDocument {
                     match search_namespace(dep, &self.namespace) {
                         Ok((parent_node, leaf, binding)) => {
                             if !binding.problems.is_empty() {
-                                return Err(RainDocumentComposeError::Problems(
-                                    binding
-                                        .problems
-                                        .iter()
-                                        .map(|p| Problem {
-                                            msg: p.msg.clone(),
-                                            code: p.code, 
-                                            position: if leaf.import_index == -1 {
-                                                p.position
-                                            } else {
-                                                self.imports[leaf.import_index as usize]
-                                                    .hash_position
-                                            },
-                                        })
-                                        .collect(),
+                                return Err(RainDocumentComposeError::from_problems(
+                                    &binding.problems,
+                                    leaf.import_index,
+                                    &self.imports,
                                 ));
                             } else {
                                 let rainlang_doc = RainlangDocument::create(
@@ -241,37 +216,14 @@ impl RainDocument {
                                     self.ignore_undefined_words,
                                 );
                                 if !rainlang_doc.problems.is_empty() {
-                                    return Err(RainDocumentComposeError::Problems(
-                                        rainlang_doc
-                                            .problems
-                                            .iter()
-                                            .map(|p| Problem {
-                                                msg: p.msg.clone(),
-                                                code: p.code,
-                                                position: if leaf.import_index == -1 {
-                                                    p.position
-                                                } else {
-                                                    self.imports[leaf.import_index as usize]
-                                                        .hash_position
-                                                },
-                                            })
-                                            .collect(),
+                                    return Err(RainDocumentComposeError::from_problems(
+                                        &rainlang_doc.problems,
+                                        leaf.import_index,
+                                        &self.imports,
                                     ));
                                 } else {
-                                    let comp_target = ComposeTarget {
-                                        hash: leaf.hash.clone(),
-                                        import_index: leaf.import_index,
-                                        element: ComposeTargetElement {
-                                            name: binding.name.to_owned(),
-                                            name_position: binding.name_position,
-                                            content: binding.content.to_owned(),
-                                            content_position: binding.content_position,
-                                            position: binding.position,
-                                            problems: binding.problems.clone(),
-                                            dependencies: binding.dependencies.clone(),
-                                            item: rainlang_doc,
-                                        },
-                                    };
+                                    let comp_target =
+                                        ComposeTarget::create(leaf, binding, rainlang_doc);
                                     if let Some((index, _)) = &nodes
                                         .iter()
                                         .enumerate()
@@ -436,6 +388,25 @@ fn build_sourcemap(
         }
     }
     Ok(())
+}
+
+impl RainDocumentComposeError {
+    fn from_problems(problems: &[Problem], import_index: isize, imports: &[Import]) -> Self {
+        Self::Problems(
+            problems
+                .iter()
+                .map(|p| Problem {
+                    msg: p.msg.clone(),
+                    code: p.code,
+                    position: if import_index == -1 {
+                        p.position
+                    } else {
+                        imports[import_index as usize].hash_position
+                    },
+                })
+                .collect(),
+        )
+    }
 }
 
 #[cfg(test)]
