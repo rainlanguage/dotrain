@@ -23,7 +23,7 @@ pub struct RainComposerCli {
     /// Entrypoints
     #[arg(short, long)]
     entrypoints: Vec<String>,
-    /// Path to the rainconfig json file that contains configurations, 
+    /// Path to the rainconfig json file that contains configurations,
     /// if provided will be used to when composing the .rain, see
     /// './example.rainconfig.json' for more details.
     #[arg(short, long)]
@@ -79,7 +79,9 @@ pub async fn dispatch(cli: RainComposerCli) -> anyhow::Result<()> {
                     "{}",
                     ["- include", "- subgraphs", "- meta", "- deployers"].join("\n")
                 ),
-                RainconfigInfo::Include => println!("{}", rainconfig::RAINCONFIG_INCLUDE_DESCRIPTION),
+                RainconfigInfo::Include => {
+                    println!("{}", rainconfig::RAINCONFIG_INCLUDE_DESCRIPTION)
+                }
                 RainconfigInfo::Subgraphs => {
                     println!("{}", rainconfig::RAINCONFIG_SUBGRAPHS_DESCRIPTION)
                 }

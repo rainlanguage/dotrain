@@ -1658,7 +1658,7 @@ mod tests {
             hash: hash1.to_owned(),
             hash_position: [9, 15],
             position: [0, 15],
-            problems: vec![ErrorCode::UndefinedAuthoringMeta.to_problem(vec![], [9, 15])],
+            problems: vec![],
             configuration: None,
             sequence: Some(ImportSequence {
                 dispair: Some(DispairImportItem {
@@ -2008,7 +2008,7 @@ _: opcode-1(0xabcd 456);
                     "_: opcode-1(0xabcd 456);".to_owned(),
                     &HashMap::new(),
                     Some(&authoring_meta),
-                    false,
+                    true,
                 )),
             },
         ];
@@ -2082,7 +2082,7 @@ _: opcode-1(0xabcd 456);
             problems: vec![],
             import_depth: 0,
             ignore_words: false,
-            ignore_undefined_words: false,
+            ignore_undefined_words: true,
             namespace: expected_namespace,
             meta_store,
             authoring_meta: Some(AuthoringMeta(vec![

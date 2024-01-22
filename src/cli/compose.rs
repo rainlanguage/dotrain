@@ -26,11 +26,7 @@ pub async fn compose_target(
     let text = read_to_string(&opts.input)?;
 
     // instantiate the RainDocument
-    let mut rain_document = RainDocument::new(
-        text,
-        Some(store.clone()),
-        0,
-    );
+    let mut rain_document = RainDocument::new(text, Some(store.clone()), 0);
 
     // parse
     if local_data_only {
@@ -40,7 +36,11 @@ pub async fn compose_target(
     }
 
     // generate rainlang
-    let entrypoints = opts.entrypoints.iter().map(|e| e.as_str()).collect::<Vec<&str>>();
+    let entrypoints = opts
+        .entrypoints
+        .iter()
+        .map(|e| e.as_str())
+        .collect::<Vec<&str>>();
     let result = match rain_document.compose(&entrypoints) {
         Ok(v) => serde_json::to_string_pretty(&v)?,
         Err(e) => serde_json::to_string_pretty(&e)?,
