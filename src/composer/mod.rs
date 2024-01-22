@@ -127,12 +127,8 @@ impl RainDocument {
                             &self.imports,
                         ));
                     } else {
-                        let rainlang_doc = RainlangDocument::create(
-                            binding.content.clone(),
-                            parent_node,
-                            self.authoring_meta.as_ref(),
-                            self.ignore_undefined_words,
-                        );
+                        let rainlang_doc =
+                            RainlangDocument::create(binding.content.clone(), parent_node, None);
                         if !rainlang_doc.problems.is_empty() {
                             return Err(ComposeError::from_problems(
                                 &rainlang_doc.problems,
@@ -229,8 +225,7 @@ impl RainDocument {
                                 let rainlang_doc = RainlangDocument::create(
                                     binding.content.clone(),
                                     parent_node,
-                                    self.authoring_meta.as_ref(),
-                                    self.ignore_undefined_words,
+                                    None,
                                 );
                                 if !rainlang_doc.problems.is_empty() {
                                     return Err(ComposeError::from_problems(

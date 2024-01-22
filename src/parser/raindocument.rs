@@ -109,7 +109,7 @@ pub struct RainDocument {
         any(feature = "js-api", target_family = "wasm"),
         tsify(type = "IAuthoringMeta | undefined")
     )]
-    pub(crate) authoring_meta: Option<AuthoringMeta>,
+    pub(crate) known_words: Option<AuthoringMeta>,
 }
 
 impl RainDocument {
@@ -117,9 +117,9 @@ impl RainDocument {
     pub async fn create_async(
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
-        authoring_meta: Option<AuthoringMeta>,
+        words: Option<AuthoringMeta>,
     ) -> RainDocument {
-        let mut rd = RainDocument::new(text, meta_store, 0, authoring_meta);
+        let mut rd = RainDocument::new(text, meta_store, 0, words);
         rd.parse(true).await;
         rd
     }
@@ -128,9 +128,9 @@ impl RainDocument {
     pub fn create(
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
-        authoring_meta: Option<AuthoringMeta>,
+        words: Option<AuthoringMeta>,
     ) -> RainDocument {
-        let mut rd = RainDocument::new(text, meta_store, 0, authoring_meta);
+        let mut rd = RainDocument::new(text, meta_store, 0, words);
         block_on(rd.parse(false));
         rd
     }
@@ -196,9 +196,9 @@ impl RainDocument {
         self.ignore_undefined_words
     }
 
-    /// This instance's AuthoringMeta
-    pub fn authoring_meta(&self) -> &Option<AuthoringMeta> {
-        &self.authoring_meta
+    /// This instance's words
+    pub fn known_words(&self) -> &Option<AuthoringMeta> {
+        &self.known_words
     }
 
     /// The error msg if parsing had resulted in an error
@@ -235,7 +235,7 @@ impl RainDocument {
             self.comments.clear();
             self.bindings.clear();
             self.namespace.clear();
-            self.authoring_meta = None;
+            self.known_words = None;
             self.front_matter = String::new();
             self.ignore_words = false;
             // set to true as subparser words are not yet available from metaboard
@@ -250,7 +250,7 @@ impl RainDocument {
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
         import_depth: usize,
-        authoring_meta: Option<AuthoringMeta>,
+        known_words: Option<AuthoringMeta>,
     ) -> RainDocument {
         let ms = if let Some(v) = meta_store {
             v
@@ -265,7 +265,7 @@ impl RainDocument {
             bindings: vec![],
             namespace: HashMap::new(),
             imports: vec![],
-            authoring_meta,
+            known_words,
             comments: vec![],
             problems: vec![],
             import_depth,
@@ -286,7 +286,7 @@ impl RainDocument {
         self.comments.clear();
         self.bindings.clear();
         self.namespace.clear();
-        self.authoring_meta = None;
+        self.known_words = None;
         self.ignore_words = false;
         self.front_matter = String::new();
         let mut document = self.text.clone();
@@ -467,8 +467,7 @@ impl RainDocument {
                     let rainlang_doc = RainlangDocument::create(
                         binding.content.clone(),
                         &self.namespace,
-                        self.authoring_meta.as_ref(),
-                        self.ignore_undefined_words,
+                        self.known_words.as_ref(),
                     );
                     // add the rainlang problems to the binding problems by applying
                     // the initial offset difference to their positions
@@ -855,7 +854,7 @@ impl RainDocument {
                                 dotrain_text,
                                 Some(self.meta_store.clone()),
                                 self.import_depth + 1,
-                                self.authoring_meta.clone(),
+                                self.known_words.clone(),
                             );
                             if remote_search {
                                 dotrain.parse(true).await;
@@ -948,14 +947,7 @@ impl RainDocument {
         for (old_conf, opt_new_conf) in &configs.groups {
             if let Some(new_conf) = &opt_new_conf {
                 if new_conf.0 == "!" {
-                    if old_conf.0 == "." {
-                        if new_imp_namespace.remove("Dispair").is_none() {
-                            problems.push(
-                                ErrorCode::UndefinedWordSet
-                                    .to_problem(vec![], [old_conf.1[0], new_conf.1[1]]),
-                            );
-                        };
-                    } else if new_imp_namespace.remove(&old_conf.0).is_none() {
+                    if new_imp_namespace.remove(&old_conf.0).is_none() {
                         problems.push(
                             ErrorCode::UndefinedIdentifier
                                 .to_problem(vec![&old_conf.0], old_conf.1),
@@ -1265,7 +1257,7 @@ impl PartialEq for RainDocument {
             && self.bindings == other.bindings
             && self.namespace == other.namespace
             && self.imports == other.imports
-            && self.authoring_meta == other.authoring_meta
+            && self.known_words == other.known_words
             && self.ignore_words == other.ignore_words
             && self.ignore_undefined_words == other.ignore_undefined_words
             && self.problems == other.problems
@@ -1650,7 +1642,6 @@ _: opcode-1(0xabcd 456);
                     "_: opcode-1(0xabcd 456);".to_owned(),
                     &HashMap::new(),
                     None,
-                    true,
                 )),
             },
         ];
@@ -1696,7 +1687,7 @@ _: opcode-1(0xabcd 456);
             ignore_undefined_words: true,
             namespace: expected_namespace,
             meta_store,
-            authoring_meta: None,
+            known_words: None,
         };
         assert_eq!(rain_document, expected_rain_document);
 

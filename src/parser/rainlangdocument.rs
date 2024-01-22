@@ -56,7 +56,6 @@ pub struct RainlangDocument {
     pub(crate) problems: Vec<Problem>,
     pub(crate) comments: Vec<Comment>,
     pub(crate) error: Option<String>,
-    pub(crate) ignore_undefined_authoring_meta: bool,
     #[serde(skip)]
     state: RainlangState,
 }
@@ -94,7 +93,6 @@ impl RainlangDocument {
         text: String,
         namespace: &Namespace,
         authoring_meta: Option<&AuthoringMeta>,
-        ignore_undefined_authoring_meta: bool,
     ) -> RainlangDocument {
         let mut am = &AuthoringMeta(vec![]);
         if let Some(v) = authoring_meta {
@@ -106,7 +104,6 @@ impl RainlangDocument {
             problems: vec![],
             comments: vec![],
             error: None,
-            ignore_undefined_authoring_meta,
             state: RainlangState::default(),
         };
         rl.parse(namespace, am);
@@ -120,7 +117,6 @@ impl RainlangDocument {
             problems: vec![],
             comments: vec![],
             error: None,
-            ignore_undefined_authoring_meta: false,
             state: RainlangState::default(),
         }
     }
@@ -547,10 +543,8 @@ impl RainlangDocument {
                     .push(ErrorCode::InvalidWordPattern.to_problem(vec![next], next_pos));
             } else if let Some(word) = authoring_meta.0.iter().find(|&v| v.word.as_str() == next) {
                 op.opcode.description = word.description.clone();
-            } else if !self.ignore_undefined_authoring_meta {
-                self.problems
-                    .push(ErrorCode::UndefinedOpcode.to_problem(vec![next], next_pos));
             }
+
             if remaining.starts_with('<') {
                 let consumed =
                     self.process_operand(remaining, cursor + next.len(), &mut op, namespace);
