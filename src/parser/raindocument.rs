@@ -244,7 +244,9 @@ impl RainDocument {
             self.front_matter = String::new();
             self.deployer = NPE2Deployer::default();
             self.ignore_words = false;
-            self.ignore_undefined_words = false;
+            // set to true as subparser words are not yet available from metaboard
+            // this ensures no checks and readings are done for global or subparser words
+            self.ignore_undefined_words = true;
         }
     }
 }
@@ -274,7 +276,9 @@ impl RainDocument {
             problems: vec![],
             import_depth,
             ignore_words: false,
-            ignore_undefined_words: false,
+            // set to true as subparser words are not yet available from metaboard
+            // this ensures no checks and readings are done for global or subparser words
+            ignore_undefined_words: true,
         }
     }
 
@@ -291,10 +295,13 @@ impl RainDocument {
         self.authoring_meta = None;
         self.ignore_words = false;
         self.front_matter = String::new();
-        self.ignore_undefined_words = false;
         self.deployer = NPE2Deployer::default();
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
+
+        // set to true as subparser words are not yet available from metaboard
+        // this ensures no checks and readings are done for global or subparser words
+        self.ignore_undefined_words = true;
 
         // split front matter and rest of the text
         if let Some(splitter) = document.find("---") {
@@ -1050,8 +1057,7 @@ impl RainDocument {
                         .push(ErrorCode::DeepImport.to_problem(vec![], imp.hash_position));
                 } else {
                     let mut has_dup_words = false;
-                    let mut has_dup_keys = false;
-                    let mut has_dispair = None;
+                    let mut has_dispair = false;
                     let mut new_imp_namespace: Namespace = HashMap::new();
                     if let Some(seq) = &imp.sequence {
                         if let Some(dispair) = &seq.dispair {
@@ -1063,17 +1069,12 @@ impl RainDocument {
                                     element: NamespaceLeafElement::Dispair(dispair.clone()),
                                 }),
                             );
-                            has_dispair = Some(dispair);
+                            has_dispair = true;
                         }
                         if let Some(dotrain) = &seq.dotrain {
-                            if let Some(dispair) = has_dispair {
+                            if has_dispair {
                                 if dotrain.namespace.contains_key("Dispair") {
                                     has_dup_words = true;
-                                } else if let Some(am) = &dispair.authoring_meta {
-                                    if am.0.iter().any(|w| dotrain.namespace.contains_key(&w.word))
-                                    {
-                                        has_dup_keys = true;
-                                    }
                                 }
                             } else {
                                 new_imp_namespace.extend(Self::copy_namespace(
@@ -1083,12 +1084,7 @@ impl RainDocument {
                                 ));
                             }
                         }
-                        if has_dup_keys {
-                            self.problems.push(
-                                ErrorCode::CollidingNamespaceNodes
-                                    .to_problem(vec![], imp.hash_position),
-                            );
-                        } else if has_dup_words {
+                        if has_dup_words {
                             self.problems.push(
                                 ErrorCode::MultipleWordSets.to_problem(vec![], imp.hash_position),
                             );

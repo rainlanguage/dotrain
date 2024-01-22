@@ -16,9 +16,6 @@ use super::{
     },
 };
 
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
-use tsify::Tsify;
-
 /// a composing target element
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct ComposeTargetElement<'a> {
@@ -435,7 +432,7 @@ impl ComposeError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ErrorCode;
+    use crate::error::ErrorCode;
     use rain_meta::{
         types::authoring::v1::{AuthoringMetaItem, AuthoringMeta},
         NPE2Deployer,
