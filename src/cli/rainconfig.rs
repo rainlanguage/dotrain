@@ -8,7 +8,7 @@ use std::{
 
 pub(crate) const RAINCONFIG_DESCRIPTION: &str = r"
 Description:
-rainconfig.json provides configuration details and information required for .rain compiler.
+rainconfig.json provides configuration details and information required for .rain composer.
 
 usually it should be placed at the root directory of the working workspace and named as 
 'rainconfig.json', however if this is not desired at times, it is possible to pass any path for 
