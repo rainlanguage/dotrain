@@ -2,6 +2,8 @@ use super::types::ast::{Offsets, Problem};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 
 #[cfg(any(feature = "js-api", target_family = "wasm"))]
+use tsify::Tsify;
+#[cfg(any(feature = "js-api", target_family = "wasm"))]
 use wasm_bindgen::prelude::*;
 
 /// All Error codes of RainlangDocument/RainDocument problem and LSP Diagnostics
@@ -24,6 +26,7 @@ pub enum ErrorCode {
     OddLenHex = 12,
     CollidingNamespaceNodes = 13,
     NoneTopLevelImport = 14,
+    NativeParserError = 15,
 
     UndefinedWord = 0x101,
     UndefinedAuthoringMeta = 0x102,
@@ -103,6 +106,7 @@ impl ErrorCode {
             Self::CollidingNamespaceNodes => "namespace nodes colliding".to_owned(),
             Self::OddLenHex => "odd length hex literal".to_owned(),
             Self::NoneTopLevelImport => "imports can only be stated at top level".to_owned(),
+            Self::NativeParserError => msg_items[0].to_owned(),
 
             Self::UndefinedWord => format!("undefined word: {}", msg_items[0]),
             Self::UndefinedAuthoringMeta => "deployer's authroing meta is undefined".to_owned(),
@@ -241,5 +245,35 @@ impl From<std::num::ParseIntError> for Error {
 impl From<revm::primitives::EVMError<std::convert::Infallible>> for Error {
     fn from(value: revm::primitives::EVMError<std::convert::Infallible>) -> Self {
         Error::EVMError(value)
+    }
+}
+
+/// Returned by RainDocument composing process if it failed
+#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(
+    any(feature = "js-api", target_family = "wasm"),
+    derive(Tsify),
+    tsify(into_wasm_abi, from_wasm_abi)
+)]
+pub enum ComposeError {
+    Reject(String),
+    Problems(Vec<Problem>),
+}
+
+impl std::fmt::Display for ComposeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Problems(v) => write!(f, "{:?}", v),
+            Self::Reject(v) => f.write_str(v),
+        }
+    }
+}
+
+impl std::error::Error for ComposeError {}
+
+#[cfg(any(feature = "js-api", target_family = "wasm"))]
+impl From<ComposeError> for JsValue {
+    fn from(value: ComposeError) -> Self {
+        serde_wasm_bindgen::to_value(&value).unwrap_or(JsValue::NULL)
     }
 }

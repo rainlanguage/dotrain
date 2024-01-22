@@ -51,14 +51,13 @@ let rain_document = RainDocument::create(text, Some(meta_store));
 // get all problems
 let problems = rain_document.all_problems();
 
-// let entrypoints = vec![
-//    "entrypoint1".to_string(), 
-//    "entrypoint2".to_string()
-// ];
-// let revm = None;
+let entrypoints = vec![
+   "entrypoint1", 
+   "entrypoint2"
+];
 
-// compile this instance to get ExpressionConfig
-// let result = rain_document.compile(&entrypoints, revm);
+// compose this instance to get rainlang string
+let result = rain_document.compose(&entrypoints);
 ```
 "#
 )]
@@ -75,8 +74,8 @@ let problems = rain_document.all_problems();
  // get all problems
  const problems = rainDocument.allProblems;
 
- // compile this instance to get ExpressionConfig
- const expConfig = rainDocument.compile([\"entrypoint1\", \"entrypoint2\"]);
+ // compose this instance to get rainlang string
+ const expConfig = rainDocument.compose([\"entrypoint1\", \"entrypoint2\"]);
  ```
 "
 )]
@@ -541,7 +540,8 @@ impl RainDocument {
     /// Checks if a binding is elided and returns the elision msg if it found any
     fn is_elided(text: &str) -> Option<String> {
         let msg = text.trim();
-        msg.strip_prefix('!').map(|stripped| stripped.to_owned())
+        msg.strip_prefix('!')
+            .map(|stripped| stripped.trim().to_owned())
     }
 
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
@@ -1559,7 +1559,7 @@ mod tests {
     fn test_is_elided_method() -> anyhow::Result<()> {
         let text = " ! \n some msg \n msg continues \n\t";
         let result = RainDocument::is_elided(text);
-        assert_eq!(result, Some(" \n some msg \n msg continues".to_owned()));
+        assert_eq!(result, Some("some msg \n msg continues".to_owned()));
 
         let text = " ! \n\t";
         let result = RainDocument::is_elided(text);
@@ -1997,7 +1997,7 @@ _: opcode-1(0xabcd 456);
                 problems: vec![],
                 dependencies: vec![],
                 item: BindingItem::Elided(ElidedBindingItem {
-                    msg: " this elided, rebind before use".to_owned(),
+                    msg: "this elided, rebind before use".to_owned(),
                 }),
             },
             Binding {
