@@ -98,7 +98,9 @@ impl RainDocument {
             .join("\n\n");
         Ok(rainlang_string)
     }
+}
 
+impl RainDocument {
     /// builds composing targets sourcemaps
     pub(crate) fn build_targets_sourcemap(
         &self,
@@ -161,8 +163,7 @@ impl RainDocument {
                         .item
                         .ast
                         .iter()
-                        .flat_map(|src| src.lines.iter().flat_map(|line| &line.nodes))
-                        .collect::<Vec<_>>(),
+                        .flat_map(|src| src.lines.iter().flat_map(|line| &line.nodes)),
                     generator,
                     deps,
                 )
@@ -340,8 +341,8 @@ fn search_namespace<'a>(
 }
 
 /// builds sourcemaps for a given array of AST Nodes recursively
-fn build_sourcemap(
-    nodes: Vec<&Node>,
+fn build_sourcemap<'a>(
+    nodes: impl Iterator<Item = &'a Node>,
     generator: &mut MagicString,
     deps_indexes: &mut VecDeque<u8>,
 ) -> Result<(), String> {
@@ -389,7 +390,7 @@ fn build_sourcemap(
                     }
                 }
                 if !opcode.inputs.is_empty() {
-                    build_sourcemap(opcode.inputs.iter().collect(), generator, deps_indexes)?;
+                    build_sourcemap(opcode.inputs.iter(), generator, deps_indexes)?;
                 }
             }
             _ => {}
