@@ -100,8 +100,6 @@ pub struct RainDocument {
     pub(crate) comments: Vec<Comment>,
     pub(crate) problems: Vec<Problem>,
     pub(crate) import_depth: usize,
-    pub(crate) ignore_words: bool,
-    pub(crate) ignore_undefined_words: bool,
     pub(crate) namespace: Namespace,
     #[serde(skip)]
     pub(crate) meta_store: Arc<RwLock<Store>>,
@@ -186,16 +184,6 @@ impl RainDocument {
         self.meta_store.clone()
     }
 
-    /// If 'ignore_words' lint option is enabled or not
-    pub fn ignore_words(&self) -> bool {
-        self.ignore_words
-    }
-
-    /// If 'ignore_undefined_words' lint option is enabled or not
-    pub fn ignore_undefined_words(&self) -> bool {
-        self.ignore_undefined_words
-    }
-
     /// This instance's words
     pub fn known_words(&self) -> &Option<AuthoringMeta> {
         &self.known_words
@@ -237,10 +225,6 @@ impl RainDocument {
             self.namespace.clear();
             self.known_words = None;
             self.front_matter = String::new();
-            self.ignore_words = false;
-            // set to true as subparser words are not yet available from metaboard
-            // this ensures no checks and readings are done for global or subparser words
-            self.ignore_undefined_words = true;
         }
     }
 }
@@ -269,10 +253,6 @@ impl RainDocument {
             comments: vec![],
             problems: vec![],
             import_depth,
-            ignore_words: false,
-            // set to true as subparser words are not yet available from metaboard
-            // this ensures no checks and readings are done for global or subparser words
-            ignore_undefined_words: true,
         }
     }
 
@@ -287,14 +267,9 @@ impl RainDocument {
         self.bindings.clear();
         self.namespace.clear();
         self.known_words = None;
-        self.ignore_words = false;
         self.front_matter = String::new();
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
-
-        // set to true as subparser words are not yet available from metaboard
-        // this ensures no checks and readings are done for global or subparser words
-        self.ignore_undefined_words = true;
 
         // split front matter and rest of the text
         if let Some(splitter) = document.find("---") {
@@ -323,22 +298,7 @@ impl RainDocument {
                 comment: parsed_comment.0.clone(),
                 position: parsed_comment.1,
             });
-
-            // check for lint comments
-            if lint_patterns::IGNORE_WORDS.is_match(&parsed_comment.0) {
-                self.ignore_words = true;
-            }
-            if lint_patterns::IGNORE_UNDEFINED_WORDS.is_match(&parsed_comment.0) {
-                self.ignore_undefined_words = true;
-            }
-
             fill_in(&mut document, parsed_comment.1)?;
-        }
-
-        // if a 'ignore words' lint was found, 'ignore undfeined words' should be
-        // also set to true because the former is a superset of the latter
-        if self.ignore_words {
-            self.ignore_undefined_words = true;
         }
 
         // since exclusive_parse() is being used with 'include_empty_ends' arg set to true,
@@ -1258,8 +1218,6 @@ impl PartialEq for RainDocument {
             && self.namespace == other.namespace
             && self.imports == other.imports
             && self.known_words == other.known_words
-            && self.ignore_words == other.ignore_words
-            && self.ignore_undefined_words == other.ignore_undefined_words
             && self.problems == other.problems
             && self.error == other.error
     }
@@ -1683,8 +1641,6 @@ _: opcode-1(0xabcd 456);
             }],
             problems: vec![],
             import_depth: 0,
-            ignore_words: false,
-            ignore_undefined_words: true,
             namespace: expected_namespace,
             meta_store,
             known_words: None,
