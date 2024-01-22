@@ -159,6 +159,14 @@ impl RainDocument {
 
         // represents sourcemap details of each composing node
         let mut sourcemaps: Vec<ComposeSourcemap> = vec![];
+
+        // sourcemap mappings generation options
+        let mapping_opts = GenerateDecodedMapOptions {
+            hires: true, // enabled high resolution, makes it easier to decode back
+            ..Default::default()
+        };
+
+        // build composing sourcemap struct for each target node
         for node in &nodes {
             let generator = &mut MagicString::new(node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
@@ -172,16 +180,12 @@ impl RainDocument {
                     deps,
                 )
                 .map_err(ComposeError::Reject)?;
-                let opts = GenerateDecodedMapOptions {
-                    hires: true,
-                    ..Default::default()
-                };
 
                 sourcemaps.push(ComposeSourcemap {
                     target: node.clone(),
                     generated_string: generator.to_string(),
                     mappings: generator
-                        .generate_decoded_map(opts.clone())
+                        .generate_decoded_map(mapping_opts.clone())
                         .or(Err(ComposeError::Reject(
                             "cannot build sourcemap".to_owned(),
                         )))?
@@ -212,10 +216,10 @@ impl RainDocument {
         let mut len = nodes.len();
         let mut ignore_offset = 0;
         while len - ignore_offset > 0 {
-            let mut deps_nodes = vec![];
+            let mut new_nested_nodes = vec![];
             for node in nodes[ignore_offset..].iter() {
-                let mut temp_deps_indexes = VecDeque::new();
-                for dep in node.element.dependencies.iter() {
+                let mut this_node_deps_indexes = VecDeque::new();
+                for dep in node.element.dependencies {
                     match search_namespace(dep, &self.namespace) {
                         Ok((parent_node, leaf, binding)) => {
                             if !binding.problems.is_empty() {
@@ -238,24 +242,30 @@ impl RainDocument {
                                         &self.imports,
                                     ));
                                 } else {
-                                    let comp_target =
+                                    // first search in composing nodes list to see if the current dep
+                                    // is already present and if so capture its index, if not repeat
+                                    // the same process with newly found nested nodes, if still not present
+                                    // add this target to the nodes and add then capture its index
+                                    let new_compse_target =
                                         ComposeTarget::create(leaf, binding, rainlang_doc);
                                     if let Some((index, _)) = &nodes
                                         .iter()
                                         .enumerate()
-                                        .find(|(_, middle)| **middle == comp_target)
+                                        .find(|(_, found)| **found == new_compse_target)
                                     {
-                                        temp_deps_indexes.push_back(*index as u8);
-                                    } else if let Some((index, _)) = &deps_nodes
+                                        this_node_deps_indexes.push_back(*index as u8);
+                                    } else if let Some((index, _)) = &new_nested_nodes
                                         .iter()
                                         .enumerate()
-                                        .find(|(_, middle)| **middle == comp_target)
+                                        .find(|(_, found)| **found == new_compse_target)
                                     {
-                                        temp_deps_indexes.push_back((nodes.len() + index) as u8);
+                                        this_node_deps_indexes
+                                            .push_back((nodes.len() + index) as u8);
                                     } else {
-                                        temp_deps_indexes
-                                            .push_back((nodes.len() + deps_nodes.len()) as u8);
-                                        deps_nodes.push(comp_target);
+                                        this_node_deps_indexes.push_back(
+                                            (nodes.len() + new_nested_nodes.len()) as u8,
+                                        );
+                                        new_nested_nodes.push(new_compse_target);
                                     }
                                 }
                             }
@@ -265,10 +275,10 @@ impl RainDocument {
                         }
                     }
                 }
-                deps_indexes.push_back(temp_deps_indexes);
+                deps_indexes.push_back(this_node_deps_indexes);
             }
             ignore_offset = nodes.len();
-            nodes.extend(deps_nodes);
+            nodes.extend(new_nested_nodes);
             len = nodes.len();
         }
         Ok(deps_indexes)
