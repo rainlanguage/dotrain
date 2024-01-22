@@ -31,7 +31,7 @@ pub struct RainComposerCli {
     /// Force compile by ignoring all erroneous paths/contents specified in rainconfig
     #[arg(short, long)]
     force: Option<bool>,
-    /// Only use local meta and deployers specified in rainconfig and dont search for them in subgraphs
+    /// Only use local dotrain meta specified in rainconfig include field and dont search for them in subgraphs
     #[arg(short, long)]
     local_data_only: Option<bool>,
     #[command(subcommand)]
@@ -57,10 +57,6 @@ pub enum RainconfigInfo {
     Include,
     /// Prints info about 'subgraphs' field
     Subgraphs,
-    /// Prints info about 'meta' field
-    Meta,
-    /// Prints info about 'deployers' field
-    Deployers,
 }
 
 /// Dispatches the CLI call based on the given options and commands
@@ -77,17 +73,13 @@ pub async fn dispatch(cli: RainComposerCli) -> anyhow::Result<()> {
                 RainconfigInfo::Info => println!("{}", rainconfig::RAINCONFIG_DESCRIPTION),
                 RainconfigInfo::PrintAll => println!(
                     "{}",
-                    ["- include", "- subgraphs", "- meta", "- deployers"].join("\n")
+                    ["- include", "- subgraphs"].join("\n")
                 ),
                 RainconfigInfo::Include => {
                     println!("{}", rainconfig::RAINCONFIG_INCLUDE_DESCRIPTION)
                 }
                 RainconfigInfo::Subgraphs => {
                     println!("{}", rainconfig::RAINCONFIG_SUBGRAPHS_DESCRIPTION)
-                }
-                RainconfigInfo::Meta => println!("{}", rainconfig::RAINCONFIG_META_DESCRIPTION),
-                RainconfigInfo::Deployers => {
-                    println!("{}", rainconfig::RAINCONFIG_DEPLOYERS_DESCRIPTION)
                 }
             },
         }

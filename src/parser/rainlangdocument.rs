@@ -651,40 +651,32 @@ impl RainlangDocument {
                 }))?;
             } else if let Some(ns_type) = namespace.get(next) {
                 match ns_type {
-                    NamespaceItem::Leaf(leaf) => match &leaf.element {
-                        NamespaceLeafElement::Binding(b) => match &b.item {
-                            BindingItem::Constant(c) => {
-                                self.update_state(Node::Literal(Literal {
-                                    value: c.value.clone(),
-                                    position: next_pos,
-                                    lhs_alias: None,
-                                    id: Some(next.to_owned()),
-                                }))?;
-                            }
-                            BindingItem::Elided(e) => {
-                                self.problems.push(
-                                    ErrorCode::ElidedBinding.to_problem(vec![&e.msg], next_pos),
-                                );
-                                self.update_state(Node::Alias(Alias {
-                                    name: next.to_owned(),
-                                    position: next_pos,
-                                    lhs_alias: None,
-                                }))?;
-                            }
-                            BindingItem::Exp(_e) => {
-                                self.problems.push(
-                                    ErrorCode::InvalidReference.to_problem(vec![next], next_pos),
-                                );
-                                self.update_state(Node::Alias(Alias {
-                                    name: next.to_owned(),
-                                    position: next_pos,
-                                    lhs_alias: None,
-                                }))?;
-                            }
-                        },
-                        NamespaceLeafElement::Dispair(_) => {
+                    NamespaceItem::Leaf(leaf) => match &leaf.element.item {
+                        BindingItem::Constant(c) => {
+                            self.update_state(Node::Literal(Literal {
+                                value: c.value.clone(),
+                                position: next_pos,
+                                lhs_alias: None,
+                                id: Some(next.to_owned()),
+                            }))?;
+                        }
+                        BindingItem::Elided(e) => {
+                            self.problems
+                                .push(ErrorCode::ElidedBinding.to_problem(vec![&e.msg], next_pos));
+                            self.update_state(Node::Alias(Alias {
+                                name: next.to_owned(),
+                                position: next_pos,
+                                lhs_alias: None,
+                            }))?;
+                        }
+                        BindingItem::Exp(_e) => {
                             self.problems
                                 .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
+                            self.update_state(Node::Alias(Alias {
+                                name: next.to_owned(),
+                                position: next_pos,
+                                lhs_alias: None,
+                            }))?;
                         }
                     },
                     NamespaceItem::Node(_node) => {
@@ -789,10 +781,7 @@ impl RainlangDocument {
                         ));
                     None
                 }
-                NamespaceItem::Leaf(leaf) => match &leaf.element {
-                    NamespaceLeafElement::Binding(e) => Some(e),
-                    NamespaceLeafElement::Dispair(_) => None,
-                },
+                NamespaceItem::Leaf(leaf) => Some(&leaf.element),
             }
         } else {
             self.problems.push(
@@ -1186,7 +1175,7 @@ mod tests {
         let deeper_leaf = NamespaceItem::Leaf(NamespaceLeaf {
             hash: "some-hash".to_owned(),
             import_index: 2,
-            element: NamespaceLeafElement::Binding(deeper_binding.clone()),
+            element: deeper_binding.clone(),
         });
 
         let binding = Binding {
@@ -1204,7 +1193,7 @@ mod tests {
         let deep_leaf = NamespaceItem::Leaf(NamespaceLeaf {
             hash: "some-other-hash".to_owned(),
             import_index: 1,
-            element: NamespaceLeafElement::Binding(binding.clone()),
+            element: binding.clone(),
         });
 
         deeper_namespace.insert("deeper-binding-name".to_string(), deeper_leaf.clone());

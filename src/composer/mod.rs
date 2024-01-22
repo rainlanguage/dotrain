@@ -11,7 +11,7 @@ use super::{
         patterns::{WORD_PATTERN, NUMERIC_PATTERN, NAMESPACE_SEGMENT_PATTERN},
         ast::{
             Offsets, Problem, Node, Namespace, NamespaceItem, NamespaceLeaf, Binding, BindingItem,
-            NamespaceLeafElement, Import,
+            Import,
         },
     },
 };
@@ -86,7 +86,7 @@ impl RainDocument {
         entrypoints: &[&str],
         meta_store: Option<Arc<RwLock<Store>>>,
     ) -> Result<String, ComposeError> {
-        RainDocument::create(text.to_string(), meta_store).compose(entrypoints)
+        RainDocument::create(text.to_string(), meta_store, None).compose(entrypoints)
     }
 
     /// composes a given text as RainDocument into rainlang with remote meta search enabled for parsing
@@ -95,7 +95,7 @@ impl RainDocument {
         entrypoints: &[&str],
         meta_store: Option<Arc<RwLock<Store>>>,
     ) -> Result<String, ComposeError> {
-        RainDocument::create_async(text.to_string(), meta_store)
+        RainDocument::create_async(text.to_string(), meta_store, None)
             .await
             .compose(entrypoints)
     }
@@ -326,25 +326,14 @@ fn search_namespace<'a>(
                 "invalid entrypoint: {}, entrypoint must be bindings",
                 name
             )),
-            NamespaceItem::Leaf(leaf) => {
-                if let NamespaceLeafElement::Binding(binding) = &leaf.element {
-                    match &binding.item {
-                        BindingItem::Elided(e) => {
-                            Err(format!("elided entrypoint: {}, {}", name, e.msg))
-                        }
-                        BindingItem::Constant(_c) => Err(format!(
-                            "invalid entrypoint: {}, constants cannot be entrypoint",
-                            name
-                        )),
-                        BindingItem::Exp(_e) => Ok((parent, leaf, binding)),
-                    }
-                } else {
-                    Err(format!(
-                        "invalid entrypoint: {}, entrypoint must be bindings",
-                        name
-                    ))
-                }
-            }
+            NamespaceItem::Leaf(leaf) => match &leaf.element.item {
+                BindingItem::Elided(e) => Err(format!("elided entrypoint: {}, {}", name, e.msg)),
+                BindingItem::Constant(_c) => Err(format!(
+                    "invalid entrypoint: {}, constants cannot be entrypoint",
+                    name
+                )),
+                BindingItem::Exp(_e) => Ok((parent, leaf, &leaf.element)),
+            },
         }
     } else {
         Err(format!("undefined identifier: {}", name))
@@ -473,7 +462,6 @@ mod tests {
         matter
 ---
 /** this is test */
-@dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
 #exp-binding
 _: opcode-1(0xabcd 456);
@@ -488,7 +476,6 @@ _: opcode-1(0xabcd 456);
         front 
         matter
 ---
-@0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
 #const-binding 4e18
 #exp-binding
@@ -503,7 +490,6 @@ some-name _: opcode-2(opcode-1(1 2) 4e18) 0xab34;";
 
         let dotrain_text = r"some front matter
 ---
-@0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
 #some-value 4e18
 
@@ -528,7 +514,6 @@ _: opcode-2(0xabcd 4e18);";
         front 
         matter
 ---
-@0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
 /** some comment */
 #some-value 4e18
@@ -551,8 +536,7 @@ some-name _: 0xab34;
 _: opcode-2(0xabcd 4e18);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let dotrain_text = r"@0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
-
+        let dotrain_text = r"
 #some-value 4e18
 #some-other-value 0xabcdef1234
 
@@ -579,8 +563,7 @@ some-name: opcode-2(0xabcd 4e18),
 _: opcode-2(some-name 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let dotrain_text = r"@0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
-
+        let dotrain_text = r"
 #some-value 4e18
 #some-other-value 0xabcdef1234
 
@@ -599,7 +582,6 @@ _: some-sub-parser-word<1 2>(4e18 0xabcdef1234);";
         front 
         matter
 ---
-@dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
 #some-value 4e18
 #some-other-value 0xabcdef12346
@@ -616,13 +598,12 @@ _: opcode-1(0xabcd 456);
             Some(meta_store.clone()),
         );
         let expected_err = Err(ComposeError::Problems(vec![
-            ErrorCode::OddLenHex.to_problem(vec![], [161, 174])
+            ErrorCode::OddLenHex.to_problem(vec![], [85, 98])
         ]));
         assert_eq!(result, expected_err);
 
         let dotrain_text = r"some front matter
 ---
-@dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
 #some-value 4e18
 
@@ -635,13 +616,12 @@ _: opcode-1(0xabcd elided);
         let result =
             RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()));
         let expected_err = Err(ComposeError::Problems(vec![
-            ErrorCode::ElidedBinding.to_problem(vec!["this is elided"], [199, 205])
+            ErrorCode::ElidedBinding.to_problem(vec!["this is elided"], [123, 129])
         ]));
         assert_eq!(result, expected_err);
 
         let dotrain_text = r"some front matter
 ---
-@dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
 
 #some-value 4e18
 

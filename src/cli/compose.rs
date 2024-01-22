@@ -26,7 +26,7 @@ pub async fn compose_target(
     let text = read_to_string(&opts.input)?;
 
     // instantiate the RainDocument
-    let mut rain_document = RainDocument::new(text, Some(store.clone()), 0);
+    let mut rain_document = RainDocument::new(text, Some(store.clone()), 0, None);
 
     // parse
     if local_data_only {

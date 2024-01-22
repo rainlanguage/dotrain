@@ -6,7 +6,7 @@ use std::collections::{HashMap, VecDeque};
 use futures::{executor::block_on, future::join_all};
 use rain_meta::{
     types::{dotrain::v1::DotrainMeta, authoring::v1::AuthoringMeta},
-    Store, NPE2Deployer, KnownMagic, RainMetaDocumentV1Item, search_deployer, search,
+    Store, KnownMagic, RainMetaDocumentV1Item, search,
 };
 use super::{
     rainlangdocument::RainlangDocument,
@@ -46,7 +46,7 @@ let text = "some .rain text content".to_string();
 let meta_store = Arc::new(RwLock::new(Store::default()));
 
 // create a new instance that gets parsed right away
-let rain_document = RainDocument::create(text, Some(meta_store));
+let rain_document = RainDocument::create(text, Some(meta_store), None);
 
 // get all problems
 let problems = rain_document.all_problems();
@@ -110,11 +110,6 @@ pub struct RainDocument {
         tsify(type = "IAuthoringMeta | undefined")
     )]
     pub(crate) authoring_meta: Option<AuthoringMeta>,
-    #[cfg_attr(
-        any(feature = "js-api", target_family = "wasm"),
-        tsify(type = "INPE2Deployer")
-    )]
-    pub(crate) deployer: NPE2Deployer,
 }
 
 impl RainDocument {
@@ -122,15 +117,20 @@ impl RainDocument {
     pub async fn create_async(
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
+        authoring_meta: Option<AuthoringMeta>,
     ) -> RainDocument {
-        let mut rd = RainDocument::new(text, meta_store, 0);
+        let mut rd = RainDocument::new(text, meta_store, 0, authoring_meta);
         rd.parse(true).await;
         rd
     }
 
     /// Creates an instance and parses with remote meta search disabled (cached metas only)
-    pub fn create(text: String, meta_store: Option<Arc<RwLock<Store>>>) -> RainDocument {
-        let mut rd = RainDocument::new(text, meta_store, 0);
+    pub fn create(
+        text: String,
+        meta_store: Option<Arc<RwLock<Store>>>,
+        authoring_meta: Option<AuthoringMeta>,
+    ) -> RainDocument {
+        let mut rd = RainDocument::new(text, meta_store, 0, authoring_meta);
         block_on(rd.parse(false));
         rd
     }
@@ -201,11 +201,6 @@ impl RainDocument {
         &self.authoring_meta
     }
 
-    /// This instance's NPE2 Deployer details
-    pub fn deployer(&self) -> &NPE2Deployer {
-        &self.deployer
-    }
-
     /// The error msg if parsing had resulted in an error
     pub fn runtime_error(&self) -> &Option<String> {
         &self.error
@@ -242,7 +237,6 @@ impl RainDocument {
             self.namespace.clear();
             self.authoring_meta = None;
             self.front_matter = String::new();
-            self.deployer = NPE2Deployer::default();
             self.ignore_words = false;
             // set to true as subparser words are not yet available from metaboard
             // this ensures no checks and readings are done for global or subparser words
@@ -256,6 +250,7 @@ impl RainDocument {
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
         import_depth: usize,
+        authoring_meta: Option<AuthoringMeta>,
     ) -> RainDocument {
         let ms = if let Some(v) = meta_store {
             v
@@ -270,8 +265,7 @@ impl RainDocument {
             bindings: vec![],
             namespace: HashMap::new(),
             imports: vec![],
-            authoring_meta: None,
-            deployer: NPE2Deployer::default(),
+            authoring_meta,
             comments: vec![],
             problems: vec![],
             import_depth,
@@ -295,7 +289,6 @@ impl RainDocument {
         self.authoring_meta = None;
         self.ignore_words = false;
         self.front_matter = String::new();
-        self.deployer = NPE2Deployer::default();
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
 
@@ -467,9 +460,6 @@ impl RainDocument {
                 .iter()
                 .any(|b| matches!(b.item, BindingItem::Exp(_)))
         {
-            // assign global words for this instance
-            self.resolve_global_deployer();
-
             for binding in &mut self.bindings {
                 // parse the rainlang binding to ast and repopulate the
                 // binding.item and corresponding namespace with it
@@ -499,7 +489,7 @@ impl RainDocument {
                         NamespaceItem::Leaf(NamespaceLeaf {
                             hash: String::new(),
                             import_index: -1,
-                            element: NamespaceLeafElement::Binding(binding.clone()),
+                            element: binding.clone(),
                         }),
                     );
                 }
@@ -768,22 +758,14 @@ impl RainDocument {
         let subgraphs = { self.meta_store.read().unwrap().subgraphs().clone() };
 
         // read the corresponding hash from CAS
-        let (opt_deployer, opt_meta_seq) = self
+        let opt_meta_seq = self
             .fetch_import_contents(&subgraphs, &hash_bytes, &mut result, remote_search)
             .await;
 
         // continue based on if the result was a deployer or a meta
-        if let Some(deployer) = opt_deployer {
-            self.process_deployer_import(deployer, &mut result);
-        } else if let Some(meta_items) = opt_meta_seq {
-            self.process_meta_import(
-                &hash_bytes,
-                &subgraphs,
-                meta_items,
-                &mut result,
-                remote_search,
-            )
-            .await;
+        if let Some(meta_items) = opt_meta_seq {
+            self.process_meta_import(meta_items, &mut result, remote_search)
+                .await;
         } else if result
             .problems
             .iter()
@@ -804,204 +786,76 @@ impl RainDocument {
         hash_bytes: &[u8],
         result: &mut Import,
         remote_search: bool,
-    ) -> (Option<NPE2Deployer>, Option<Vec<RainMetaDocumentV1Item>>) {
-        let mut opt_deployer = None;
-        let opt_meta_seq = {
-            let mut is_cached = false;
-            let seq = {
-                if let Some(cached_deployer) =
-                    self.meta_store.read().unwrap().get_deployer(hash_bytes)
-                {
-                    opt_deployer = Some(cached_deployer.clone());
-                    is_cached = true;
-                    None
-                } else if let Some(cached_meta) =
-                    self.meta_store.read().unwrap().get_meta(hash_bytes)
-                {
-                    is_cached = true;
-
-                    match RainMetaDocumentV1Item::cbor_decode(&cached_meta.clone()) {
-                        Ok(v) => {
-                            if is_consumable(&v) {
-                                Some(v)
-                            } else {
-                                result.problems.push(
-                                    ErrorCode::InconsumableMeta
-                                        .to_problem(vec![], result.hash_position),
-                                );
-                                None
-                            }
-                        }
-                        Err(_) => {
-                            result.problems.push(
-                                ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position),
-                            );
-                            None
-                        }
+    ) -> Option<Vec<RainMetaDocumentV1Item>> {
+        if let Some(cached_meta) = self.meta_store.read().unwrap().get_meta(hash_bytes) {
+            match RainMetaDocumentV1Item::cbor_decode(&cached_meta.clone()) {
+                Ok(v) => {
+                    if is_consumable(&v) {
+                        return Some(v);
+                    } else {
+                        result.problems.push(
+                            ErrorCode::InconsumableMeta.to_problem(vec![], result.hash_position),
+                        );
                     }
-                } else {
-                    None
                 }
-            };
-            if !is_cached && remote_search {
-                let deployer_search = search_deployer(&result.hash, subgraphs);
-                let meta_search = search(&result.hash, subgraphs);
-                if let Ok(deployer_res) = deployer_search.await {
-                    opt_deployer = Some(
-                        self.meta_store
-                            .write()
-                            .unwrap()
-                            .set_deployer_from_query_response(deployer_res),
-                    );
-                    None
-                } else if let Ok(meta_res) = meta_search.await {
-                    self.meta_store
-                        .write()
-                        .unwrap()
-                        .update_with(hash_bytes, &meta_res.bytes);
-
-                    match RainMetaDocumentV1Item::cbor_decode(&meta_res.bytes) {
-                        Ok(v) => {
-                            if is_consumable(&v) {
-                                Some(v)
-                            } else {
-                                result.problems.push(
-                                    ErrorCode::InconsumableMeta
-                                        .to_problem(vec![], result.hash_position),
-                                );
-                                None
-                            }
-                        }
-                        Err(_) => {
-                            result.problems.push(
-                                ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position),
-                            );
-                            None
-                        }
-                    }
-                } else {
-                    None
+                Err(_) => {
+                    result
+                        .problems
+                        .push(ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position));
                 }
-            } else {
-                seq
             }
         };
-        (opt_deployer, opt_meta_seq)
-    }
+        if remote_search {
+            if let Ok(meta_res) = search(&result.hash, subgraphs).await {
+                self.meta_store
+                    .write()
+                    .unwrap()
+                    .update_with(hash_bytes, &meta_res.bytes);
 
-    /// validates and proccesses an import that is deployer
-    fn process_deployer_import(&self, deployer: NPE2Deployer, result: &mut Import) {
-        result.sequence = Some(ImportSequence {
-            dispair: None,
-            dotrain: None,
-        });
-        if deployer.is_corrupt() {
-            result.sequence = None;
-            result
-                .problems
-                .push(ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position));
-        } else {
-            if deployer.authoring_meta.is_none() && !self.ignore_undefined_words {
-                result.problems.push(
-                    ErrorCode::UndefinedAuthoringMeta.to_problem(vec![], result.hash_position),
-                );
-            };
-            result.sequence.as_mut().unwrap().dispair = Some(deployer.into());
+                match RainMetaDocumentV1Item::cbor_decode(&meta_res.bytes) {
+                    Ok(v) => {
+                        if is_consumable(&v) {
+                            return Some(v);
+                        } else {
+                            result.problems.push(
+                                ErrorCode::InconsumableMeta
+                                    .to_problem(vec![], result.hash_position),
+                            );
+                            return None;
+                        }
+                    }
+                    Err(_) => {
+                        result
+                            .problems
+                            .push(ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position));
+                        return None;
+                    }
+                }
+            } else {
+                return None;
+            }
         }
+        None
     }
 
     /// validates and processes an import that is meta
     async fn process_meta_import(
         &self,
-        hash_bytes: &[u8],
-        subgraphs: &Vec<String>,
         meta_items: Vec<RainMetaDocumentV1Item>,
         result: &mut Import,
         remote_search: bool,
     ) {
-        result.sequence = Some(ImportSequence {
-            dispair: None,
-            dotrain: None,
-        });
+        result.sequence = Some(ImportSequence { dotrain: None });
         for meta in meta_items {
             match meta.unpack() {
-                Ok(meta_data) => match meta.magic {
-                    KnownMagic::ExpressionDeployerV2BytecodeV1 => {
-                        let deployer = {
-                            if let Some(deployer) =
-                                self.meta_store.read().unwrap().get_deployer(hash_bytes)
-                            {
-                                if deployer.is_corrupt() {
-                                    result.sequence = None;
-                                    result.problems.push(
-                                        ErrorCode::CorruptMeta
-                                            .to_problem(vec![], result.hash_position),
-                                    );
-                                    break;
-                                } else {
-                                    if deployer.authoring_meta.is_none()
-                                        && !self.ignore_undefined_words
-                                    {
-                                        result.problems.push(
-                                            ErrorCode::UndefinedAuthoringMeta
-                                                .to_problem(vec![], result.hash_position),
-                                        );
-                                    };
-                                    Some(deployer.clone().into())
-                                }
-                            } else {
-                                None
-                            }
-                        };
-                        result.sequence.as_mut().unwrap().dispair = if deployer.is_some() {
-                            deployer
-                        } else if remote_search {
-                            if let Ok(deployer_res) = search_deployer(&result.hash, subgraphs).await
-                            {
-                                let deployer = self
-                                    .meta_store
-                                    .write()
-                                    .unwrap()
-                                    .set_deployer_from_query_response(deployer_res);
-                                if deployer.is_corrupt() {
-                                    result.sequence = None;
-                                    result.problems.push(
-                                        ErrorCode::CorruptMeta
-                                            .to_problem(vec![], result.hash_position),
-                                    );
-                                    break;
-                                } else {
-                                    if deployer.authoring_meta.is_none()
-                                        && !self.ignore_undefined_words
-                                    {
-                                        result.problems.push(
-                                            ErrorCode::UndefinedAuthoringMeta
-                                                .to_problem(vec![], result.hash_position),
-                                        );
-                                    };
-                                    Some(deployer.into())
-                                }
-                            } else {
-                                result.problems.push(
-                                    ErrorCode::UndefinedDeployerDetails
-                                        .to_problem(vec![], result.hash_position),
-                                );
-                                None
-                            }
-                        } else {
-                            result.problems.push(
-                                ErrorCode::UndefinedDeployerDetails
-                                    .to_problem(vec![], result.hash_position),
-                            );
-                            None
-                        };
-                    }
-                    KnownMagic::DotrainV1 => {
+                Ok(meta_data) => {
+                    if matches!(meta.magic, KnownMagic::DotrainV1) {
                         if let Ok(dotrain_text) = DotrainMeta::from_utf8(meta_data) {
                             let mut dotrain = RainDocument::new(
                                 dotrain_text,
                                 Some(self.meta_store.clone()),
                                 self.import_depth + 1,
+                                self.authoring_meta.clone(),
                             );
                             if remote_search {
                                 dotrain.parse(true).await;
@@ -1023,8 +877,7 @@ impl RainDocument {
                             break;
                         }
                     }
-                    _ => {}
-                },
+                }
                 Err(_e) => {
                     result.sequence = None;
                     result
@@ -1056,39 +909,16 @@ impl RainDocument {
                     self.problems
                         .push(ErrorCode::DeepImport.to_problem(vec![], imp.hash_position));
                 } else {
-                    let mut has_dup_words = false;
-                    let mut has_dispair = false;
                     let mut new_imp_namespace: Namespace = HashMap::new();
                     if let Some(seq) = &imp.sequence {
-                        if let Some(dispair) = &seq.dispair {
-                            new_imp_namespace.insert(
-                                "Dispair".to_owned(),
-                                NamespaceItem::Leaf(NamespaceLeaf {
-                                    hash: imp.hash.clone(),
-                                    import_index: i as isize,
-                                    element: NamespaceLeafElement::Dispair(dispair.clone()),
-                                }),
-                            );
-                            has_dispair = true;
-                        }
                         if let Some(dotrain) = &seq.dotrain {
-                            if has_dispair {
-                                if dotrain.namespace.contains_key("Dispair") {
-                                    has_dup_words = true;
-                                }
-                            } else {
-                                new_imp_namespace.extend(Self::copy_namespace(
-                                    &dotrain.namespace,
-                                    i as isize,
-                                    &imp.hash,
-                                ));
-                            }
+                            new_imp_namespace.extend(Self::copy_namespace(
+                                &dotrain.namespace,
+                                i as isize,
+                                &imp.hash,
+                            ));
                         }
-                        if has_dup_words {
-                            self.problems.push(
-                                ErrorCode::MultipleWordSets.to_problem(vec![], imp.hash_position),
-                            );
-                        } else if let Some(configs) = &imp.configuration {
+                        if let Some(configs) = &imp.configuration {
                             // applies the configurations and reports back the found problems
                             // to be pushed to main problems list
                             self.problems.extend(Self::apply_import_configs(
@@ -1146,14 +976,10 @@ impl RainDocument {
                             }
                         } else {
                             let ns_item = new_imp_namespace.get_mut(key).unwrap();
-                            if ns_item.is_binding() {
-                                if let NamespaceItem::Leaf(leaf) = ns_item {
-                                    if let NamespaceLeafElement::Binding(b) = &mut leaf.element {
-                                        b.item = BindingItem::Constant(ConstantBindingItem {
-                                            value: new_conf.0.clone(),
-                                        })
-                                    }
-                                }
+                            if let NamespaceItem::Leaf(leaf) = ns_item {
+                                leaf.element.item = BindingItem::Constant(ConstantBindingItem {
+                                    value: new_conf.0.clone(),
+                                })
                             } else {
                                 problems.push(
                                     ErrorCode::UnexpectedRebinding
@@ -1274,7 +1100,7 @@ impl RainDocument {
                 NamespaceItem::Leaf(NamespaceLeaf {
                     hash: String::new(),
                     import_index: -1,
-                    element: NamespaceLeafElement::Binding(binding),
+                    element: binding,
                 }),
             );
         }
@@ -1315,17 +1141,6 @@ impl RainDocument {
         if main.is_empty() {
             None
         } else {
-            if let Some(main_ns_dispair) = main.get("Dispair") {
-                if let Some(new_ns_dispair) = new.get("Dispair") {
-                    if !main_ns_dispair
-                        .unwrap_leaf()
-                        .hash
-                        .eq_ignore_ascii_case(&new_ns_dispair.unwrap_leaf().hash)
-                    {
-                        return Some(ErrorCode::MultipleWordSets);
-                    }
-                }
-            }
             for (new_ns_key, new_ns_item) in new {
                 for (main_ns_key, main_ns_item) in main {
                     if new_ns_key == main_ns_key {
@@ -1439,67 +1254,6 @@ impl RainDocument {
             }
         }
     }
-
-    /// checks and counts the word sets (deployer) in a namespace recursively by their hashes
-    fn check_namespace_deployer<'a>(
-        namespace: &'a Namespace,
-        mut hash: &'a str,
-    ) -> (usize, &'a str, Option<&'a NamespaceLeaf>) {
-        let mut count = 0usize;
-        let mut node = None;
-        if let Some(dis_item) = namespace.get("Dispair") {
-            let dispair_leaf = dis_item.unwrap_leaf();
-            if hash.is_empty() {
-                count += 1;
-                hash = &dispair_leaf.hash;
-                node = Some(dispair_leaf);
-            } else if !dispair_leaf.hash.eq_ignore_ascii_case(hash) {
-                return (count + 1, hash, None);
-            }
-        }
-        for (_key, item) in namespace.iter() {
-            if !item.is_leaf() {
-                let result = Self::check_namespace_deployer(item.unwrap_node(), hash);
-                hash = result.1;
-                count += result.0;
-                if count > 1 {
-                    node = None;
-                    break;
-                }
-                if result.2.is_some() && node.is_none() {
-                    node = result.2;
-                }
-            }
-        }
-        (count, hash, node)
-    }
-
-    /// assigns working word set (deployer) for this RainDocument instance if
-    /// only one is found in this instance's namespace
-    fn resolve_global_deployer(&mut self) {
-        let (words_set_count, _hash, opt_leaf) =
-            Self::check_namespace_deployer(&self.namespace, "");
-        if words_set_count > 1 {
-            self.problems.push(
-                ErrorCode::SingletonWords.to_problem(vec![&words_set_count.to_string()], [0, 0]),
-            );
-        } else if words_set_count == 0 {
-            self.problems
-                .push(ErrorCode::UndefinedGlobalWords.to_problem(vec![], [0, 0]));
-        } else if let Some(leaf) = opt_leaf {
-            if leaf.is_dispair() {
-                let dispair = leaf.unwrap_dispair();
-                self.deployer = dispair.clone().into();
-                self.authoring_meta = self.deployer.authoring_meta.clone();
-            } else {
-                self.problems
-                    .push(ErrorCode::UndefinedGlobalWords.to_problem(vec![], [0, 0]));
-            }
-        } else {
-            self.problems
-                .push(ErrorCode::UndefinedGlobalWords.to_problem(vec![], [0, 0]));
-        }
-    }
 }
 
 impl PartialEq for RainDocument {
@@ -1512,7 +1266,6 @@ impl PartialEq for RainDocument {
             && self.namespace == other.namespace
             && self.imports == other.imports
             && self.authoring_meta == other.authoring_meta
-            && self.deployer == other.deployer
             && self.ignore_words == other.ignore_words
             && self.ignore_undefined_words == other.ignore_undefined_words
             && self.problems == other.problems
@@ -1524,7 +1277,6 @@ impl PartialEq for RainDocument {
 mod tests {
     use super::*;
     use super::super::rainlangdocument::RainlangDocument;
-    use rain_meta::types::authoring::v1::AuthoringMetaItem;
 
     #[test]
     fn test_is_constant_method() -> anyhow::Result<()> {
@@ -1625,68 +1377,33 @@ mod tests {
     #[test]
     fn test_process_import_method() -> anyhow::Result<()> {
         let mut meta_store = rain_meta::Store::new();
-        let hash1 = "0x1234";
-        let hash2 = "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184";
-        let hash1_bytes = alloy_primitives::hex::decode(hash1).unwrap();
-        let hash2_bytes = alloy_primitives::hex::decode(hash2).unwrap();
-        let npe2_deployer_mock = NPE2Deployer {
-            meta_hash: "meta-hash".as_bytes().to_vec(),
-            meta_bytes: "meta-bytes".as_bytes().to_vec(),
-            bytecode: "bytecode".as_bytes().to_vec(),
-            parser: "parser".as_bytes().to_vec(),
-            store: "store".as_bytes().to_vec(),
-            interpreter: "interpreter".as_bytes().to_vec(),
-            authoring_meta: None,
-        };
-        meta_store.set_deployer(&hash1_bytes, &npe2_deployer_mock, None);
-        meta_store.update_with(&hash2_bytes, "meta2-bytes".as_bytes());
+        let hash = "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184";
+        let hash_bytes = alloy_primitives::hex::decode(hash).unwrap();
+        meta_store.update_with(&hash_bytes, "meta2-bytes".as_bytes());
 
-        let rain_document =
-            RainDocument::new(String::new(), Some(Arc::new(RwLock::new(meta_store))), 0);
-        let statements = vec![
-            ParsedItem("dispair 0x1234".to_owned(), [1, 15]),
-            ParsedItem(
-                "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184".to_owned(),
-                [17, 83],
-            ),
-        ];
+        let rain_document = RainDocument::new(
+            String::new(),
+            Some(Arc::new(RwLock::new(meta_store))),
+            0,
+            None,
+        );
+        let statements = vec![ParsedItem(
+            "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184".to_owned(),
+            [17, 83],
+        )];
 
-        let result1 = block_on(rain_document.process_import(&statements[0], false));
-        let expected1 = Import {
-            name: "dispair".to_owned(),
-            name_position: [1, 8],
-            hash: hash1.to_owned(),
-            hash_position: [9, 15],
-            position: [0, 15],
-            problems: vec![],
-            configuration: None,
-            sequence: Some(ImportSequence {
-                dispair: Some(DispairImportItem {
-                    constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
-                    constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
-                    parser: "parser".as_bytes().to_vec(),
-                    store: "store".as_bytes().to_vec(),
-                    interpreter: "interpreter".as_bytes().to_vec(),
-                    bytecode: "bytecode".as_bytes().to_vec(),
-                    authoring_meta: None,
-                }),
-                dotrain: None,
-            }),
-        };
-        assert_eq!(result1, expected1);
-
-        let result2 = block_on(rain_document.process_import(&statements[1], false));
-        let expected2 = Import {
+        let result = block_on(rain_document.process_import(&statements[0], false));
+        let expected = Import {
             name: ".".to_owned(),
             name_position: [17, 83],
-            hash: hash2.to_owned(),
+            hash: hash.to_owned(),
             hash_position: [17, 83],
             position: [16, 83],
             problems: vec![ErrorCode::CorruptMeta.to_problem(vec![], [17, 83])],
             configuration: None,
             sequence: None,
         };
-        assert_eq!(result2, expected2);
+        assert_eq!(result, expected);
 
         Ok(())
     }
@@ -1696,46 +1413,11 @@ mod tests {
         let mut main_namespace: Namespace = HashMap::new();
         let mut new_namespace: Namespace = HashMap::new();
         main_namespace.insert(
-            "Dispair".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0x123".to_owned(),
-                import_index: -1,
-                element: NamespaceLeafElement::Dispair(DispairImportItem {
-                    constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
-                    constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
-                    parser: "parser".as_bytes().to_vec(),
-                    store: "store".as_bytes().to_vec(),
-                    interpreter: "interpreter".as_bytes().to_vec(),
-                    bytecode: "bytecode".as_bytes().to_vec(),
-                    authoring_meta: None,
-                }),
-            }),
-        );
-        new_namespace.insert(
-            "Dispair".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0xabc".to_owned(),
-                import_index: -1,
-                element: NamespaceLeafElement::Dispair(DispairImportItem {
-                    constructor_meta_hash: "meta-hash2".as_bytes().to_vec(),
-                    constructor_meta_bytes: "meta-bytes2".as_bytes().to_vec(),
-                    parser: "parser2".as_bytes().to_vec(),
-                    store: "store2".as_bytes().to_vec(),
-                    interpreter: "interpreter2".as_bytes().to_vec(),
-                    bytecode: "bytecode2".as_bytes().to_vec(),
-                    authoring_meta: None,
-                }),
-            }),
-        );
-
-        let mut main_namespace: Namespace = HashMap::new();
-        let mut new_namespace: Namespace = HashMap::new();
-        main_namespace.insert(
             "binding-name".to_owned(),
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(Binding {
+                element: Binding {
                     name: "binding-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-content".to_owned(),
@@ -1746,7 +1428,7 @@ mod tests {
                     item: BindingItem::Constant(ConstantBindingItem {
                         value: "3e18".to_owned(),
                     }),
-                }),
+                },
             }),
         );
         new_namespace.insert(
@@ -1754,7 +1436,7 @@ mod tests {
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(Binding {
+                element: Binding {
                     name: "binding-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-content".to_owned(),
@@ -1765,7 +1447,7 @@ mod tests {
                     item: BindingItem::Constant(ConstantBindingItem {
                         value: "3e18".to_owned(),
                     }),
-                }),
+                },
             }),
         );
         assert_eq!(
@@ -1780,7 +1462,7 @@ mod tests {
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(Binding {
+                element: Binding {
                     name: "binding-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-content".to_owned(),
@@ -1791,7 +1473,7 @@ mod tests {
                     item: BindingItem::Constant(ConstantBindingItem {
                         value: "3e18".to_owned(),
                     }),
-                }),
+                },
             }),
         );
         new_namespace.insert(
@@ -1799,7 +1481,7 @@ mod tests {
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(Binding {
+                element: Binding {
                     name: "binding-other-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-other-content".to_owned(),
@@ -1810,7 +1492,7 @@ mod tests {
                     item: BindingItem::Constant(ConstantBindingItem {
                         value: "3e18".to_owned(),
                     }),
-                }),
+                },
             }),
         );
         assert_eq!(
@@ -1826,27 +1508,11 @@ mod tests {
         let mut main_namespace: Namespace = HashMap::new();
         let mut new_namespace: Namespace = HashMap::new();
         main_namespace.insert(
-            "Dispair".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0x123".to_owned(),
-                import_index: -1,
-                element: NamespaceLeafElement::Dispair(DispairImportItem {
-                    constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
-                    constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
-                    parser: "parser".as_bytes().to_vec(),
-                    store: "store".as_bytes().to_vec(),
-                    interpreter: "interpreter".as_bytes().to_vec(),
-                    bytecode: "bytecode".as_bytes().to_vec(),
-                    authoring_meta: None,
-                }),
-            }),
-        );
-        main_namespace.insert(
             "binding-name".to_owned(),
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(Binding {
+                element: Binding {
                     name: "binding-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-content".to_owned(),
@@ -1857,7 +1523,7 @@ mod tests {
                     item: BindingItem::Constant(ConstantBindingItem {
                         value: "3e18".to_owned(),
                     }),
-                }),
+                },
             }),
         );
         new_namespace.insert(
@@ -1865,7 +1531,7 @@ mod tests {
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(Binding {
+                element: Binding {
                     name: "binding-other-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-other-content".to_owned(),
@@ -1876,7 +1542,7 @@ mod tests {
                     item: BindingItem::Constant(ConstantBindingItem {
                         value: "3e18".to_owned(),
                     }),
-                }),
+                },
             }),
         );
         main_namespace.insert(
@@ -1884,7 +1550,7 @@ mod tests {
             NamespaceItem::Node(new_namespace.clone()),
         );
 
-        let mut rain_document = RainDocument::new(String::new(), None, 0);
+        let mut rain_document = RainDocument::new(String::new(), None, 0, None);
         rain_document.merge_namespace(
             ".".to_owned(),
             [0, 10],
@@ -1897,7 +1563,7 @@ mod tests {
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: "0xabc".to_owned(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(Binding {
+                element: Binding {
                     name: "binding-other-name".to_owned(),
                     name_position: [0, 1],
                     content: "some-other-content".to_owned(),
@@ -1908,13 +1574,13 @@ mod tests {
                     item: BindingItem::Constant(ConstantBindingItem {
                         value: "3e18".to_owned(),
                     }),
-                }),
+                },
             }),
         );
         assert_eq!(main_namespace, expected);
         assert!(rain_document.problems.is_empty());
 
-        let mut rain_document = RainDocument::new(String::new(), None, 0);
+        let mut rain_document = RainDocument::new(String::new(), None, 0, None);
         rain_document.merge_namespace(
             "deep-namespace".to_owned(),
             [0, 10],
@@ -1933,44 +1599,20 @@ mod tests {
 
     #[test]
     fn test_parse_method() -> anyhow::Result<()> {
-        let mut store = rain_meta::Store::new();
-        let authoring_meta = AuthoringMeta(vec![
-            AuthoringMetaItem {
-                word: "opcode-1".to_owned(),
-                operand_parser_offset: 0,
-                description: String::new(),
-            },
-            AuthoringMetaItem {
-                word: "opcode-2".to_owned(),
-                operand_parser_offset: 0,
-                description: String::new(),
-            },
-        ]);
-        let hash = "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184";
-        let hash_bytes = alloy_primitives::hex::decode(hash).unwrap();
-        let npe2_deployer_mock = NPE2Deployer {
-            meta_hash: "meta-hash".as_bytes().to_vec(),
-            meta_bytes: "meta-bytes".as_bytes().to_vec(),
-            bytecode: "bytecode".as_bytes().to_vec(),
-            parser: "parser".as_bytes().to_vec(),
-            store: "store".as_bytes().to_vec(),
-            interpreter: "interpreter".as_bytes().to_vec(),
-            authoring_meta: Some(authoring_meta.clone()),
-        };
-        store.set_deployer(&hash_bytes, &npe2_deployer_mock, None);
+        let store = rain_meta::Store::new();
         let meta_store = Arc::new(RwLock::new(store));
 
         let text = r"some front matter
 ---
 /** this is test */
-@dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
+                                                                           
 
 #const-binding 4e18
 #elided-binding ! this elided, rebind before use
 #exp-binding
 _: opcode-1(0xabcd 456);
 ";
-        let rain_document = RainDocument::create(text.to_owned(), Some(meta_store.clone()));
+        let rain_document = RainDocument::create(text.to_owned(), Some(meta_store.clone()), None);
         let expected_bindings: Vec<Binding> = vec![
             Binding {
                 name: "const-binding".to_owned(),
@@ -2007,49 +1649,18 @@ _: opcode-1(0xabcd 456);
                 item: BindingItem::Exp(RainlangDocument::create(
                     "_: opcode-1(0xabcd 456);".to_owned(),
                     &HashMap::new(),
-                    Some(&authoring_meta),
+                    None,
                     true,
                 )),
             },
         ];
-        let expected_imports: Vec<Import> = vec![Import {
-            name: "dispair".to_owned(),
-            name_position: [43, 50],
-            hash: hash.to_owned(),
-            hash_position: [51, 117],
-            position: [42, 119],
-            problems: vec![],
-            configuration: None,
-            sequence: Some(ImportSequence {
-                dispair: Some(DispairImportItem {
-                    constructor_meta_hash: "meta-hash".as_bytes().to_vec(),
-                    constructor_meta_bytes: "meta-bytes".as_bytes().to_vec(),
-                    parser: "parser".as_bytes().to_vec(),
-                    store: "store".as_bytes().to_vec(),
-                    interpreter: "interpreter".as_bytes().to_vec(),
-                    bytecode: "bytecode".as_bytes().to_vec(),
-                    authoring_meta: Some(authoring_meta.clone()),
-                }),
-                dotrain: None,
-            }),
-        }];
         let mut expected_namespace: Namespace = HashMap::new();
-        let mut dispair_namespace: Namespace = HashMap::new();
-        dispair_namespace.insert(
-            "Dispair".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: hash.to_owned(),
-                import_index: 0,
-                element: NamespaceLeafElement::Dispair(npe2_deployer_mock.clone().into()),
-            }),
-        );
-        expected_namespace.insert("dispair".to_owned(), NamespaceItem::Node(dispair_namespace));
         expected_namespace.insert(
             expected_bindings[0].name.to_owned(),
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: String::new(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(expected_bindings[0].clone()),
+                element: expected_bindings[0].clone(),
             }),
         );
         expected_namespace.insert(
@@ -2057,7 +1668,7 @@ _: opcode-1(0xabcd 456);
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: String::new(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(expected_bindings[1].clone()),
+                element: expected_bindings[1].clone(),
             }),
         );
         expected_namespace.insert(
@@ -2065,7 +1676,7 @@ _: opcode-1(0xabcd 456);
             NamespaceItem::Leaf(NamespaceLeaf {
                 hash: String::new(),
                 import_index: -1,
-                element: NamespaceLeafElement::Binding(expected_bindings[2].clone()),
+                element: expected_bindings[2].clone(),
             }),
         );
 
@@ -2074,7 +1685,7 @@ _: opcode-1(0xabcd 456);
             front_matter: "some front matter\n".to_owned(),
             error: None,
             bindings: expected_bindings.clone(),
-            imports: expected_imports.clone(),
+            imports: vec![],
             comments: vec![Comment {
                 comment: "/** this is test */".to_owned(),
                 position: [22, 41],
@@ -2085,19 +1696,7 @@ _: opcode-1(0xabcd 456);
             ignore_undefined_words: true,
             namespace: expected_namespace,
             meta_store,
-            authoring_meta: Some(AuthoringMeta(vec![
-                AuthoringMetaItem {
-                    word: "opcode-1".to_owned(),
-                    operand_parser_offset: 0,
-                    description: String::new(),
-                },
-                AuthoringMetaItem {
-                    word: "opcode-2".to_owned(),
-                    operand_parser_offset: 0,
-                    description: String::new(),
-                },
-            ])),
-            deployer: npe2_deployer_mock.clone(),
+            authoring_meta: None,
         };
         assert_eq!(rain_document, expected_rain_document);
 
