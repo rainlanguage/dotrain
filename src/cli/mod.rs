@@ -71,10 +71,7 @@ pub async fn dispatch(cli: RainComposerCli) -> anyhow::Result<()> {
         match subcmd {
             SubCommands::RainconfigInfo(v) => match v {
                 RainconfigInfo::Info => println!("{}", rainconfig::RAINCONFIG_DESCRIPTION),
-                RainconfigInfo::PrintAll => println!(
-                    "{}",
-                    ["- include", "- subgraphs"].join("\n")
-                ),
+                RainconfigInfo::PrintAll => println!("{}", ["- include", "- subgraphs"].join("\n")),
                 RainconfigInfo::Include => {
                     println!("{}", rainconfig::RAINCONFIG_INCLUDE_DESCRIPTION)
                 }

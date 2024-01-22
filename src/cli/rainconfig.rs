@@ -27,27 +27,6 @@ all fields in the rainconfig are optional and are as follows:
 pub(crate) const RAINCONFIG_INCLUDE_DESCRIPTION: &str = r"Specifies a list of directories (files/folders) to be included and watched. folders will be watched recursively for .rain files. These files will be available as dotrain meta in the cas so if their hash is specified in a compilation target they will get resolved.";
 pub(crate) const RAINCONFIG_SUBGRAPHS_DESCRIPTION: &str = r"Additional subgraph endpoint URLs to include when searching for metas of specified meta hashes in a rainlang document.";
 
-/// Type of a meta data type
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub enum RainConfigMetaType {
-    /// Indicates a binary data
-    Binary(PathBuf),
-    /// Indicates a utf8 encoded hex string data
-    Hex(PathBuf),
-}
-
-/// Data structure of deserialized deployer item from rainconfig.json
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct RainConfigDeployer {
-    pub construction_meta: RainConfigMetaType,
-    pub expression_deployer: PathBuf,
-    pub parser: PathBuf,
-    pub store: PathBuf,
-    pub interpreter: PathBuf,
-}
-
 /// Data structure of deserialized rainconfig.json
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct RainConfigStruct {
