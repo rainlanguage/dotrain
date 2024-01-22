@@ -579,6 +579,21 @@ some-name: opcode-2(0xabcd 4e18),
 _: opcode-2(some-name 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
 
+        let dotrain_text = r"@0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
+
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#exp-binding-1
+using-words-from 0x1234abced
+_: some-sub-parser-word<1 2>(some-value some-other-value);
+";
+        let rainlang_text =
+            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()))?;
+        let expected_rainlang = "using-words-from 0x1234abced
+_: some-sub-parser-word<1 2>(4e18 0xabcdef1234);";
+        assert_eq!(rainlang_text, expected_rainlang);
+
         let dotrain_text = r"
         some 
         front 
