@@ -6,11 +6,13 @@ use std::{
 use super::{rainconfig::RainConfigStruct, super::parser::raindocument::RainDocument, RainComposerCli};
 
 /// Composes only the given .rain files based on provided options
-pub async fn compose_target(
-    opts: RainComposerCli,
-    local_data_only: bool,
-    force: bool,
-) -> anyhow::Result<String> {
+pub async fn compose_target(opts: RainComposerCli) -> anyhow::Result<String> {
+    let local_data_only = if let Some(v) = opts.local_data_only {
+        v
+    } else {
+        false
+    };
+    let force = if let Some(v) = opts.force { v } else { false };
     let store = if let Some(rainconfig_path) = &opts.config {
         let rainconfig = RainConfigStruct::read(rainconfig_path)?;
         if force {

@@ -61,12 +61,6 @@ pub enum RainconfigInfo {
 
 /// Dispatches the CLI call based on the given options and commands
 pub async fn dispatch(cli: RainComposerCli) -> anyhow::Result<()> {
-    let local_data_only = if let Some(v) = cli.local_data_only {
-        v
-    } else {
-        false
-    };
-    let force = if let Some(v) = cli.force { v } else { false };
     if let Some(subcmd) = cli.subcmd {
         match subcmd {
             SubCommands::RainconfigInfo(v) => match v {
@@ -81,7 +75,7 @@ pub async fn dispatch(cli: RainComposerCli) -> anyhow::Result<()> {
             },
         }
     } else {
-        println!("{}", compose_target(cli, local_data_only, force).await?);
+        println!("{}", compose_target(cli).await?);
     };
     Ok(())
 }
