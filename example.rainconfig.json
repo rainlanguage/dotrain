@@ -5,33 +5,5 @@
     "https://subgraph1-uril",
     "https://subgraph2-uril",
     "https://subgraph3-uril"
-  ],
-  "meta": [
-    {
-      "hex": "./path/to/hex-meta"
-    },
-    {
-      "binary": "./path/to/binary-meta"
-    }
-  ],
-  "deployers": {
-    "0x78fd1edb0bdb928db6015990fecafbb964b44692e2d435693062dd4efc6254dd": {
-      "constructionMeta": {
-        "binary": "./path/to/binary-construction-meta"
-      },
-      "expressionDeployer": "./path/to/deployer-json-artifact.json",
-      "parser": "./path/to/parser-artifact.json",
-      "store": "./path/to/store-artifact.json",
-      "interpreter": "./path/to/interpreter-artifact.json"
-    },
-    "0xa60a26b92501195b72f34dad09dc163ff65d3a86109e76b8c80110904f574dbb": {
-      "constructionMeta": {
-        "hex": "./path/to/hex-construction-meta"
-      },
-      "expressionDeployer": "./path/to/deployer-json-artifact.json",
-      "parser": "./path/to/parser-artifact.json",
-      "store": "./path/to/store-artifact.json",
-      "interpreter": "./path/to/interpreter-artifact.json"
-    }
-  }
+  ]
 }
