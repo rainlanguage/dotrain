@@ -21,38 +21,42 @@ use tsify::Tsify;
 
 /// a composing target element
 #[derive(Debug, PartialEq, Clone)]
-pub(crate) struct ComposeTargetElement {
-    pub(crate) name: String,
+pub(crate) struct ComposeTargetElement<'a> {
+    pub(crate) name: &'a str,
     pub(crate) name_position: Offsets,
-    pub(crate) content: String,
+    pub(crate) content: &'a str,
     pub(crate) content_position: Offsets,
     pub(crate) position: Offsets,
-    pub(crate) problems: Vec<Problem>,
-    pub(crate) dependencies: Vec<String>,
+    pub(crate) problems: &'a [Problem],
+    pub(crate) dependencies: &'a [String],
     pub(crate) item: RainlangDocument,
 }
 
 /// a composing target
 #[derive(Debug, PartialEq, Clone)]
-pub(crate) struct ComposeTarget {
-    pub(crate) hash: String,
+pub(crate) struct ComposeTarget<'a> {
+    pub(crate) hash: &'a str,
     pub(crate) import_index: isize,
-    pub(crate) element: ComposeTargetElement,
+    pub(crate) element: ComposeTargetElement<'a>,
 }
 
-impl ComposeTarget {
-    fn create(leaf: &NamespaceLeaf, binding: &Binding, rainlang_doc: RainlangDocument) -> Self {
+impl<'a> ComposeTarget<'a> {
+    fn create(
+        leaf: &'a NamespaceLeaf,
+        binding: &'a Binding,
+        rainlang_doc: RainlangDocument,
+    ) -> Self {
         ComposeTarget {
-            hash: leaf.hash.clone(),
+            hash: &leaf.hash,
             import_index: leaf.import_index,
             element: ComposeTargetElement {
-                name: binding.name.to_owned(),
+                name: &binding.name,
                 name_position: binding.name_position,
-                content: binding.content.to_owned(),
+                content: &binding.content,
                 content_position: binding.content_position,
                 position: binding.position,
-                problems: binding.problems.clone(),
-                dependencies: binding.dependencies.clone(),
+                problems: &binding.problems,
+                dependencies: &binding.dependencies,
                 item: rainlang_doc,
             },
         }
@@ -61,13 +65,24 @@ impl ComposeTarget {
 
 /// Type of a compsoing item details
 #[derive(Debug, PartialEq, Clone)]
-pub(crate) struct ComposeSourcemap {
-    pub(crate) target: ComposeTarget,
+pub(crate) struct ComposeSourcemap<'a> {
+    pub(crate) target: ComposeTarget<'a>,
     pub(crate) generated_string: String,
     pub(crate) mappings: Vec<Vec<Vec<i64>>>,
 }
 
 impl RainDocument {
+    /// composes to rainlang text from the specified entrypoints
+    pub fn compose(&self, entrypoints: &[&str]) -> Result<String, ComposeError> {
+        let sourcemaps = self.build_targets_sourcemap(entrypoints)?;
+        let rainlang_string = sourcemaps
+            .iter()
+            .map(|s| s.generated_string.as_str())
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        Ok(rainlang_string)
+    }
+
     /// composes a given text as RainDocument into rainlang with remote meta search disabled for parsing
     pub fn compose_text(
         text: &str,
@@ -86,17 +101,6 @@ impl RainDocument {
         RainDocument::create_async(text.to_string(), meta_store)
             .await
             .compose(entrypoints)
-    }
-
-    /// composes to rainlang text from the specified entrypoints
-    pub fn compose(&self, entrypoints: &[&str]) -> Result<String, ComposeError> {
-        let sourcemaps = self.build_targets_sourcemap(entrypoints)?;
-        let rainlang_string = sourcemaps
-            .iter()
-            .map(|s| s.generated_string.as_str())
-            .collect::<Vec<_>>()
-            .join("\n\n");
-        Ok(rainlang_string)
     }
 }
 
@@ -156,7 +160,7 @@ impl RainDocument {
         // represents sourcemap details of each composing node
         let mut sourcemaps: Vec<ComposeSourcemap> = vec![];
         for node in &nodes {
-            let generator = &mut MagicString::new(&node.element.content);
+            let generator = &mut MagicString::new(node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
                 build_sourcemap(
                     node.element
@@ -200,9 +204,9 @@ impl RainDocument {
     /// indexes, for example [[], [2, 3], [], []],  will indicate that composing- node[0], node[2] and node[3]
     /// have no deps, node[1] has 2 deps with index 2 and 3 in order, so when first dependency is reached
     /// when building the sourcemap for node[1], it will be replaced with '2' and the next one with '3'
-    fn resolve_deps(
-        &self,
-        nodes: &mut Vec<ComposeTarget>,
+    fn resolve_deps<'a>(
+        &'a self,
+        nodes: &mut Vec<ComposeTarget<'a>>,
     ) -> Result<VecDeque<VecDeque<u8>>, ComposeError> {
         let mut deps_indexes: VecDeque<VecDeque<u8>> = VecDeque::new();
         let mut len = nodes.len();
@@ -375,12 +379,12 @@ fn build_sourcemap<'a>(
                         return Err("cannot resolve dependecies".to_owned());
                     }
                     for quote in quotes {
-                        if let Some(di) = deps_indexes.pop_front() {
+                        if let Some(dep_index) = deps_indexes.pop_front() {
                             generator
                                 .overwrite(
                                     quote.position[0] as i64,
                                     quote.position[1] as i64,
-                                    &di.to_string(),
+                                    &dep_index.to_string(),
                                     OverwriteOptions::default(),
                                 )
                                 .or(Err("could not build sourcemap".to_owned()))?;
