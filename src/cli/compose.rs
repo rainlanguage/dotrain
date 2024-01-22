@@ -10,7 +10,7 @@ pub async fn compose_target(
     opts: RainComposerCli,
     local_data_only: bool,
     force: bool,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<String> {
     let store = if let Some(rainconfig_path) = &opts.config {
         let rainconfig = RainConfigStruct::read(rainconfig_path)?;
         if force {
@@ -41,13 +41,6 @@ pub async fn compose_target(
         .iter()
         .map(|e| e.as_str())
         .collect::<Vec<&str>>();
-    let result = match rain_document.compose(&entrypoints) {
-        Ok(v) => serde_json::to_string_pretty(&v)?,
-        Err(e) => serde_json::to_string_pretty(&e)?,
-    };
 
-    // print on stdout
-    println!("{}", result);
-
-    Ok(())
+    Ok(rain_document.compose(&entrypoints)?)
 }

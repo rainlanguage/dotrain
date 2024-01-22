@@ -92,7 +92,7 @@ pub async fn dispatch(cli: RainComposerCli) -> anyhow::Result<()> {
             },
         }
     } else {
-        compose_target(cli, local_data_only, force).await?;
+        println!("{}", compose_target(cli, local_data_only, force).await?);
     };
     Ok(())
 }
