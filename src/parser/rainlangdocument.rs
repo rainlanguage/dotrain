@@ -212,9 +212,6 @@ impl RainlangDocument {
         reserved_keys.extend(KEYWORDS.iter().map(|v| v.to_string()));
         reserved_keys.extend(namespace.keys().cloned());
 
-        // @TODO - include authoring meta words once readable from metaboard
-        // reserved_keys.extend(authoring_meta.0.iter().map(|v| v.word.clone()));
-
         for (i, src) in src_items.iter().enumerate() {
             // reserved keys + parsed lhs items of this srouce
             let mut occupied_keys = reserved_keys.clone();
