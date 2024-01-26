@@ -94,6 +94,7 @@ pub struct RainDocument {
     )]
     pub(crate) text: String,
     pub(crate) front_matter: String,
+    pub(crate) body: String,
     pub(crate) error: Option<String>,
     pub(crate) bindings: Vec<Binding>,
     pub(crate) imports: Vec<Import>,
@@ -155,6 +156,11 @@ impl RainDocument {
     /// This instance's front matter
     pub fn front_matter(&self) -> &String {
         &self.front_matter
+    }
+
+    /// This instance's body (i.e. text minus front matter)
+    pub fn body(&self) -> &String {
+        &self.body
     }
 
     /// This instance's top problems
@@ -242,6 +248,7 @@ impl RainDocument {
             self.namespace.clear();
             self.authoring_meta = None;
             self.front_matter = String::new();
+            self.body = String::new();
             self.deployer = NPE2Deployer::default();
             self.ignore_words = false;
             self.ignore_undefined_words = false;
@@ -264,6 +271,7 @@ impl RainDocument {
             meta_store: ms,
             text,
             front_matter: String::new(),
+            body: String::new(),
             error: None,
             bindings: vec![],
             namespace: HashMap::new(),
@@ -291,15 +299,17 @@ impl RainDocument {
         self.authoring_meta = None;
         self.ignore_words = false;
         self.front_matter = String::new();
+        self.body = String::new();
         self.ignore_undefined_words = false;
         self.deployer = NPE2Deployer::default();
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
 
         // split front matter and rest of the text
-        if let Some(splitter) = document.find("---") {
+        if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
             self.front_matter = document[..splitter].to_owned();
-            fill_in(&mut document, [0, splitter + 3])?;
+            self.body = document[(splitter + FRONTMATTER_SEPARATOR.len())..].to_owned();
+            fill_in(&mut document, [0, splitter + FRONTMATTER_SEPARATOR.len()])?;
         };
 
         // check for illegal characters, ends parsing right away if found any
@@ -1510,6 +1520,7 @@ impl PartialEq for RainDocument {
     fn eq(&self, other: &Self) -> bool {
         self.import_depth == other.import_depth
             && self.text == other.text
+            && self.body == other.body
             && self.front_matter == other.front_matter
             && self.comments == other.comments
             && self.bindings == other.bindings
@@ -2076,6 +2087,16 @@ _: opcode-1(0xabcd 456);
         let expected_rain_document = RainDocument {
             text: text.to_owned(),
             front_matter: "some front matter\n".to_owned(),
+            body: "
+/** this is test */
+@dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
+
+#const-binding 4e18
+#elided-binding ! this elided, rebind before use
+#exp-binding
+_: opcode-1(0xabcd 456);
+"
+            .to_owned(),
             error: None,
             bindings: expected_bindings.clone(),
             imports: expected_imports.clone(),

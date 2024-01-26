@@ -117,6 +117,8 @@ pub mod lint_patterns {
         Lazy::new(|| Regex::new(r"(:?*|\s)ignore-words(:?*|\s)").unwrap());
 }
 
+pub static FRONTMATTER_SEPARATOR: &str = "---";
+
 #[cfg(test)]
 mod tests {
     use super::*;
