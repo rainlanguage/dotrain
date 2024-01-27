@@ -141,12 +141,12 @@ impl RainLanguageServices {
     }
     /// Instantiates from the given params
     pub fn new(language_params: &LanguageServiceParams) -> RainLanguageServices {
-        let meta_store = if let Some(s) = &language_params.meta_store {
-            s.clone()
-        } else {
-            Arc::new(RwLock::new(Store::default()))
-        };
-        RainLanguageServices { meta_store }
+        RainLanguageServices {
+            meta_store: language_params
+                .meta_store
+                .as_ref()
+                .map_or(Arc::new(RwLock::new(Store::default())), |s| s.clone()),
+        }
     }
 
     /// Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
@@ -220,11 +220,7 @@ impl RainLanguageServices {
             &rd,
             &text_document.uri,
             position,
-            if let Some(df) = documentation_format {
-                df
-            } else {
-                MarkupKind::PlainText
-            },
+            documentation_format.unwrap_or(MarkupKind::PlainText),
         )
     }
     /// Provides completion items at the given position
@@ -239,11 +235,7 @@ impl RainLanguageServices {
             rain_document,
             uri,
             position,
-            if let Some(df) = documentation_format {
-                df
-            } else {
-                MarkupKind::PlainText
-            },
+            documentation_format.unwrap_or(MarkupKind::PlainText),
         )
     }
 
@@ -262,11 +254,7 @@ impl RainLanguageServices {
         hover::get_hover(
             &rd,
             position,
-            if let Some(cf) = content_format {
-                cf
-            } else {
-                MarkupKind::PlainText
-            },
+            content_format.unwrap_or(MarkupKind::PlainText),
         )
     }
     /// Provides hover for a RainDocument fragment at the given position
@@ -279,11 +267,7 @@ impl RainLanguageServices {
         hover::get_hover(
             rain_document,
             position,
-            if let Some(cf) = content_format {
-                cf
-            } else {
-                MarkupKind::PlainText
-            },
+            content_format.unwrap_or(MarkupKind::PlainText),
         )
     }
 
