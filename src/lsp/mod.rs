@@ -173,12 +173,12 @@ impl RainLanguageServices {
         text_document: &TextDocumentItem,
         related_information: bool,
     ) -> Vec<Diagnostic> {
-        let rd = RainDocument::create(
+        let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
         );
-        diagnostic::get_diagnostics(&rd, &text_document.uri, related_information)
+        diagnostic::get_diagnostics(&rain_document, &text_document.uri, related_information)
     }
     /// Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
     pub async fn do_validate_async(
@@ -186,13 +186,13 @@ impl RainLanguageServices {
         text_document: &TextDocumentItem,
         related_information: bool,
     ) -> Vec<Diagnostic> {
-        let rd = RainDocument::create_async(
+        let rain_document = RainDocument::create_async(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
         )
         .await;
-        diagnostic::get_diagnostics(&rd, &text_document.uri, related_information)
+        diagnostic::get_diagnostics(&rain_document, &text_document.uri, related_information)
     }
     /// Reports LSP diagnostics from RainDocument's all problems
     pub fn do_validate_rain_document(
@@ -211,13 +211,13 @@ impl RainLanguageServices {
         position: Position,
         documentation_format: Option<MarkupKind>,
     ) -> Option<Vec<CompletionItem>> {
-        let rd = RainDocument::create(
+        let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
         );
         completion::get_completion(
-            &rd,
+            &rain_document,
             &text_document.uri,
             position,
             documentation_format.unwrap_or(MarkupKind::PlainText),
@@ -227,8 +227,8 @@ impl RainLanguageServices {
     pub fn do_complete_rain_document(
         &self,
         rain_document: &RainDocument,
-        position: Position,
         uri: &Url,
+        position: Position,
         documentation_format: Option<MarkupKind>,
     ) -> Option<Vec<CompletionItem>> {
         completion::get_completion(
@@ -246,13 +246,13 @@ impl RainLanguageServices {
         position: Position,
         content_format: Option<MarkupKind>,
     ) -> Option<Hover> {
-        let rd = RainDocument::create(
+        let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
         );
         hover::get_hover(
-            &rd,
+            &rain_document,
             position,
             content_format.unwrap_or(MarkupKind::PlainText),
         )
@@ -278,13 +278,13 @@ impl RainLanguageServices {
         semantic_token_types_index: u32,
         semantic_token_modifiers_len: usize,
     ) -> SemanticTokensPartialResult {
-        let rd = RainDocument::create(
+        let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
         );
         get_semantic_token(
-            &rd,
+            &rain_document,
             semantic_token_types_index,
             semantic_token_modifiers_len,
         )
