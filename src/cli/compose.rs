@@ -27,11 +27,7 @@ pub async fn compose_target(opts: RainComposerCli) -> anyhow::Result<String> {
     let mut rain_document = RainDocument::new(text, Some(store.clone()), 0, None);
 
     // parse
-    if local_data_only {
-        rain_document.parse(false).await;
-    } else {
-        rain_document.parse(true).await;
-    }
+    rain_document.parse(!local_data_only).await;
 
     // generate rainlang
     let entrypoints = opts
