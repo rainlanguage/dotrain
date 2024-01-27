@@ -34,13 +34,14 @@ pub fn get_completion(
         .text
         .get(target_offset..target_offset + 1)
         .unwrap_or("");
+
     let mut result = VecDeque::new();
-    if let Some(import) = rain_document
-        .imports
-        .iter()
-        .find(|v| v.position[0] <= target_offset && v.position[1] >= target_offset)
-    {
-        if !TRIGGERS.is_match(lookahead) {
+    if !TRIGGERS.is_match(lookahead) {
+        if let Some(import) = rain_document
+            .imports
+            .iter()
+            .find(|v| v.position[0] <= target_offset && v.position[1] >= target_offset)
+        {
             let pretext = rain_document
                 .text
                 .get(import.position[0]..rain_document.text.offset_at(&position))?;
@@ -86,7 +87,7 @@ pub fn get_completion(
                     last = &temp
                 }
                 let _prefix = get_prefix(pretext, &TRIGGERS_PATH);
-                // auto complete local path with its equivelant hash that is stored in CAS
+                // completion items from local path with its equivelant hash that is stored in CAS
                 {
                     rain_document
                         .meta_store
@@ -154,70 +155,68 @@ pub fn get_completion(
             }
             Some(Vec::from(result))
         } else {
-            None
-        }
-    } else if !TRIGGERS.is_match(lookahead) {
-        let pretext = rain_document.text.get(
-            rain_document.text.offset_at(&Position {
-                line: position.line,
-                character: 0,
-            })..rain_document.text.offset_at(&position),
-        )?;
-        let mut prefix = get_prefix(pretext, &TRIGGERS);
-        let is_quote = prefix.starts_with('\'');
-        if is_quote {
-            prefix = prefix.split_at(1).1.to_owned();
-        }
-        if NAMESPACE_PATTERN.is_match(&prefix) {
-            let offset = rain_document.text.offset_at(&position);
-            if let Some(namespace_node) = search_namespace(&prefix, &rain_document.namespace) {
-                result.extend(get_namespace_completions(
-                    namespace_node,
-                    documentation_format.clone(),
-                ));
+            let pretext = rain_document.text.get(
+                rain_document.text.offset_at(&Position {
+                    line: position.line,
+                    character: 0,
+                })..rain_document.text.offset_at(&position),
+            )?;
+            let mut prefix = get_prefix(pretext, &TRIGGERS);
+            let is_quote = prefix.starts_with('\'');
+            if is_quote {
+                prefix = prefix.split_at(1).1.to_owned();
             }
-            if !is_quote {
-                if let Some(am) = &rain_document.known_words {
-                    for v in &am.0 {
-                        result.push_front(CompletionItem {
-                            label: v.word.clone(),
-                            label_details: Some(CompletionItemLabelDetails {
-                                description: Some("opcode".to_owned()),
-                                detail: None,
-                            }),
-                            kind: Some(CompletionItemKind::FUNCTION),
-                            detail: Some(format!("opcode: {}", v.word)),
-                            insert_text: Some(v.word.clone()),
-                            documentation: Some(Documentation::MarkupContent(MarkupContent {
-                                kind: documentation_format.clone(),
-                                value: v.description.clone(),
-                            })),
-                            ..Default::default()
-                        })
+            if NAMESPACE_PATTERN.is_match(&prefix) {
+                let offset = rain_document.text.offset_at(&position);
+                if let Some(namespace_node) = search_namespace(&prefix, &rain_document.namespace) {
+                    result.extend(get_namespace_completions(
+                        namespace_node,
+                        documentation_format.clone(),
+                    ));
+                }
+                if !is_quote {
+                    if let Some(am) = &rain_document.known_words {
+                        for v in &am.0 {
+                            result.push_front(CompletionItem {
+                                label: v.word.clone(),
+                                label_details: Some(CompletionItemLabelDetails {
+                                    description: Some("opcode".to_owned()),
+                                    detail: None,
+                                }),
+                                kind: Some(CompletionItemKind::FUNCTION),
+                                detail: Some(format!("opcode: {}", v.word)),
+                                insert_text: Some(v.word.clone()),
+                                documentation: Some(Documentation::MarkupContent(MarkupContent {
+                                    kind: documentation_format.clone(),
+                                    value: v.description.clone(),
+                                })),
+                                ..Default::default()
+                            })
+                        }
+                    }
+                    if let Some(binding) = rain_document
+                        .bindings
+                        .iter()
+                        .find(|v| v.content_position[0] <= offset && v.content_position[1] > offset)
+                    {
+                        if let BindingItem::Exp(rainlang_doc) = &binding.item {
+                            result.extend(get_rainlang_src_alias_completions(
+                                offset,
+                                rainlang_doc,
+                                binding,
+                                &rain_document.text,
+                                documentation_format.clone(),
+                            ));
+                        }
                     }
                 }
-                if let Some(binding) = rain_document
-                    .bindings
-                    .iter()
-                    .find(|v| v.content_position[0] <= offset && v.content_position[1] > offset)
-                {
-                    if let BindingItem::Exp(rainlang_doc) = &binding.item {
-                        result.extend(get_rainlang_src_alias_completions(
-                            offset,
-                            rainlang_doc,
-                            binding,
-                            &rain_document.text,
-                            documentation_format.clone(),
-                        ));
-                    }
-                }
+                Some(Vec::from(result))
+            } else {
+                None
             }
-            return Some(Vec::from(result));
-        } else {
-            return None;
         }
     } else {
-        return None;
+        None
     }
 }
 
@@ -266,7 +265,7 @@ fn search_namespace<'a>(name: &str, namespace: &'a Namespace) -> Option<&'a Name
     }
 }
 
-/// Method to get the last set of chars from a char that match a given pattern
+/// Method to get the last set of chars that matches the given pattern
 fn get_prefix(text: &str, pattern: &Regex) -> String {
     let mut prefix = String::new();
     let mut iter = text.chars();
