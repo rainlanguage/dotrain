@@ -86,6 +86,7 @@ pub fn get_completion(
                     last = &temp
                 }
                 let _prefix = get_prefix(pretext, &TRIGGERS_PATH);
+                // auto complete local path with its equivelant hash that is stored in CAS
                 {
                     rain_document
                         .meta_store
@@ -128,6 +129,7 @@ pub fn get_completion(
                             }
                         })
                 }
+                // all cached meta hash in CAS
                 if META_COMPLETION.is_match(&last.0) {
                     rain_document
                         .meta_store
