@@ -9,6 +9,9 @@ pub const PRAGMA_KEYWORD: &str = "using-words-from";
 /// reserved keywords in rainlang
 pub const KEYWORDS: [&str; 1] = [PRAGMA_KEYWORD];
 
+/// front matter separator
+pub const FRONTMATTER_SEPARATOR: &str = "---";
+
 /// Illegal character pattern
 pub static ILLEGAL_CHAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^ -~\s]+").unwrap());
 
@@ -103,8 +106,6 @@ pub mod lint_patterns {
     pub static IGNORE_NEXT_LINE: Lazy<Regex> =
         Lazy::new(|| Regex::new(r"(:?*|\s)ignore-next-line(:?*|\s)").unwrap());
 }
-
-pub static FRONTMATTER_SEPARATOR: &str = "---";
 
 #[cfg(test)]
 mod tests {

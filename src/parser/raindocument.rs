@@ -283,9 +283,10 @@ impl RainDocument {
 
         // split front matter and rest of the text
         if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
+            let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
             self.front_matter = document[..splitter].to_owned();
-            self.body = document[(splitter + FRONTMATTER_SEPARATOR.len())..].to_owned();
-            fill_in(&mut document, [0, splitter + FRONTMATTER_SEPARATOR.len()])?;
+            self.body = document[body_start_offset..].to_owned();
+            fill_in(&mut document, [0, body_start_offset])?;
         };
 
         // check for illegal characters, ends parsing right away if found any
