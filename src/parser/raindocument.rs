@@ -241,13 +241,8 @@ impl RainDocument {
         import_depth: usize,
         known_words: Option<AuthoringMeta>,
     ) -> RainDocument {
-        let ms = if let Some(v) = meta_store {
-            v
-        } else {
-            Arc::new(RwLock::new(Store::default()))
-        };
         RainDocument {
-            meta_store: ms,
+            meta_store: meta_store.unwrap_or(Arc::new(RwLock::new(Store::default()))),
             text,
             front_matter_offset: 0,
             error: None,
