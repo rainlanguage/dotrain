@@ -249,9 +249,8 @@ pub fn get_completion(
         }
         if NAMESPACE_PATTERN.is_match(&prefix) {
             let offset = rain_document.text.offset_at(&position);
-            if prefix.contains('.') {
-                let ns_match = search_namespace(&prefix, &rain_document.namespace)?;
-                for (key, ns_item) in ns_match {
+            if let Some(namespace_items) = search_namespace(&prefix, &rain_document.namespace) {
+                for (key, ns_item) in namespace_items {
                     match ns_item {
                         NamespaceItem::Node(_node) => result.push_front(CompletionItem {
                             label: key.clone(),
@@ -322,112 +321,40 @@ pub fn get_completion(
                         },
                     }
                 }
-            } else {
-                if !is_quote {
-                    if let Some(am) = &rain_document.known_words {
-                        for v in &am.0 {
-                            result.push_front(CompletionItem {
-                                label: v.word.clone(),
-                                label_details: Some(CompletionItemLabelDetails {
-                                    description: Some("opcode".to_owned()),
-                                    detail: None,
-                                }),
-                                kind: Some(CompletionItemKind::FUNCTION),
-                                detail: Some(format!("opcode: {}", v.word)),
-                                insert_text: Some(v.word.clone()),
-                                documentation: Some(Documentation::MarkupContent(MarkupContent {
-                                    kind: documentation_format.clone(),
-                                    value: v.description.clone(),
-                                })),
-                                ..Default::default()
-                            })
-                        }
-                    }
-                    if let Some(binding) = rain_document
-                        .bindings
-                        .iter()
-                        .find(|v| v.content_position[0] <= offset && v.content_position[1] > offset)
-                    {
-                        if let BindingItem::Exp(rainlang_doc) = &binding.item {
-                            result.extend(get_rainlang_src_alias_completions(
-                                offset,
-                                rainlang_doc,
-                                binding,
-                                &rain_document.text,
-                                documentation_format.clone(),
-                            ));
-                        }
-                    }
-                }
-                for (key, ns_item) in &rain_document.namespace {
-                    match ns_item {
-                        NamespaceItem::Node(_ns) => result.push_back(CompletionItem {
-                            label: key.clone(),
+            }
+            if !is_quote {
+                if let Some(am) = &rain_document.known_words {
+                    for v in &am.0 {
+                        result.push_front(CompletionItem {
+                            label: v.word.clone(),
                             label_details: Some(CompletionItemLabelDetails {
-                                description: Some("namespace".to_owned()),
+                                description: Some("opcode".to_owned()),
                                 detail: None,
                             }),
-                            kind: Some(CompletionItemKind::FIELD),
-                            detail: Some(format!("namespace: {}", key)),
-                            insert_text: Some(key.clone()),
+                            kind: Some(CompletionItemKind::FUNCTION),
+                            detail: Some(format!("opcode: {}", v.word)),
+                            insert_text: Some(v.word.clone()),
+                            documentation: Some(Documentation::MarkupContent(MarkupContent {
+                                kind: documentation_format.clone(),
+                                value: v.description.clone(),
+                            })),
                             ..Default::default()
-                        }),
-                        NamespaceItem::Leaf(leaf) => match &leaf.element.item {
-                            BindingItem::Constant(c) => result.push_front(CompletionItem {
-                                label: key.clone(),
-                                label_details: Some(CompletionItemLabelDetails {
-                                    description: Some("binding".to_owned()),
-                                    detail: None,
-                                }),
-                                kind: Some(CompletionItemKind::CLASS),
-                                detail: Some(format!("constant binding: {}", key)),
-                                insert_text: Some(key.clone()),
-                                documentation: Some(Documentation::MarkupContent(MarkupContent {
-                                    kind: documentation_format.clone(),
-                                    value: c.value.clone(),
-                                })),
-                                ..Default::default()
-                            }),
-                            BindingItem::Elided(e) => result.push_front(CompletionItem {
-                                label: key.clone(),
-                                label_details: Some(CompletionItemLabelDetails {
-                                    description: Some("binding".to_owned()),
-                                    detail: None,
-                                }),
-                                kind: Some(CompletionItemKind::CLASS),
-                                detail: Some(format!("elided binding: {}", key)),
-                                insert_text: Some(key.clone()),
-                                documentation: Some(Documentation::MarkupContent(MarkupContent {
-                                    kind: documentation_format.clone(),
-                                    value: e.msg.clone(),
-                                })),
-                                ..Default::default()
-                            }),
-                            BindingItem::Exp(_e) => result.push_front(CompletionItem {
-                                label: key.clone(),
-                                label_details: Some(CompletionItemLabelDetails {
-                                    description: Some("binding".to_owned()),
-                                    detail: None,
-                                }),
-                                kind: Some(CompletionItemKind::CLASS),
-                                detail: Some(format!("expression binding: {}", key)),
-                                insert_text: Some(key.clone()),
-                                documentation: Some(Documentation::MarkupContent(MarkupContent {
-                                    kind: documentation_format.clone(),
-                                    value: match documentation_format {
-                                        MarkupKind::Markdown => {
-                                            ["```rainlang", leaf.element.content.trim(), "```"]
-                                                .join("\n")
-                                                .to_string()
-                                        }
-                                        MarkupKind::PlainText => {
-                                            leaf.element.content.trim().to_string()
-                                        }
-                                    },
-                                })),
-                                ..Default::default()
-                            }),
-                        },
+                        })
+                    }
+                }
+                if let Some(binding) = rain_document
+                    .bindings
+                    .iter()
+                    .find(|v| v.content_position[0] <= offset && v.content_position[1] > offset)
+                {
+                    if let BindingItem::Exp(rainlang_doc) = &binding.item {
+                        result.extend(get_rainlang_src_alias_completions(
+                            offset,
+                            rainlang_doc,
+                            binding,
+                            &rain_document.text,
+                            documentation_format.clone(),
+                        ));
                     }
                 }
             }
@@ -454,7 +381,6 @@ fn search_namespace<'a>(name: &str, namespace: &'a Namespace) -> Option<&'a Name
             if !v.0.is_empty() && !WORD_PATTERN.is_match(&v.0) {
                 return None;
             }
-            v
         }
         None => return None,
     };
