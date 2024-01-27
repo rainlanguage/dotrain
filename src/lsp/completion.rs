@@ -57,91 +57,10 @@ pub fn get_completion(
                     }) = &import.sequence
                     {
                         if WORD_PATTERN.is_match(&prefix) {
-                            for (key, ns_item) in &dotrain.namespace {
-                                match ns_item {
-                                    NamespaceItem::Node(_node) => {
-                                        result.push_front(CompletionItem {
-                                            label: key.clone(),
-                                            label_details: Some(CompletionItemLabelDetails {
-                                                description: Some("namespace".to_owned()),
-                                                detail: None,
-                                            }),
-                                            kind: Some(CompletionItemKind::FIELD),
-                                            detail: Some(format!("namespace: {}", key)),
-                                            insert_text: Some(key.clone()),
-                                            ..Default::default()
-                                        })
-                                    }
-                                    NamespaceItem::Leaf(leaf) => match &leaf.element.item {
-                                        BindingItem::Constant(c) => {
-                                            result.push_front(CompletionItem {
-                                                label: key.clone(),
-                                                label_details: Some(CompletionItemLabelDetails {
-                                                    description: Some("binding".to_owned()),
-                                                    detail: None,
-                                                }),
-                                                kind: Some(CompletionItemKind::CLASS),
-                                                detail: Some(format!("constant binding: {}", key)),
-                                                insert_text: Some(key.clone()),
-                                                documentation: Some(Documentation::MarkupContent(
-                                                    MarkupContent {
-                                                        kind: documentation_format.clone(),
-                                                        value: c.value.clone(),
-                                                    },
-                                                )),
-                                                ..Default::default()
-                                            })
-                                        }
-                                        BindingItem::Elided(e) => {
-                                            result.push_front(CompletionItem {
-                                                label: key.clone(),
-                                                label_details: Some(CompletionItemLabelDetails {
-                                                    description: Some("binding".to_owned()),
-                                                    detail: None,
-                                                }),
-                                                kind: Some(CompletionItemKind::CLASS),
-                                                detail: Some(format!("elided binding: {}", key)),
-                                                insert_text: Some(key.clone()),
-                                                documentation: Some(Documentation::MarkupContent(
-                                                    MarkupContent {
-                                                        kind: documentation_format.clone(),
-                                                        value: e.msg.clone(),
-                                                    },
-                                                )),
-                                                ..Default::default()
-                                            })
-                                        }
-                                        BindingItem::Exp(_e) => result.push_front(CompletionItem {
-                                            label: key.clone(),
-                                            label_details: Some(CompletionItemLabelDetails {
-                                                description: Some("binding".to_owned()),
-                                                detail: None,
-                                            }),
-                                            kind: Some(CompletionItemKind::CLASS),
-                                            detail: Some(format!("expression binding: {}", key)),
-                                            insert_text: Some(key.clone()),
-                                            documentation: Some(Documentation::MarkupContent(
-                                                MarkupContent {
-                                                    kind: documentation_format.clone(),
-                                                    value: match documentation_format {
-                                                        MarkupKind::Markdown => [
-                                                            "```rainlang",
-                                                            leaf.element.content.trim(),
-                                                            "```",
-                                                        ]
-                                                        .join("\n")
-                                                        .to_string(),
-                                                        MarkupKind::PlainText => {
-                                                            leaf.element.content.trim().to_string()
-                                                        }
-                                                    },
-                                                },
-                                            )),
-                                            ..Default::default()
-                                        }),
-                                    },
-                                }
-                            }
+                            result.extend(get_namespace_completions(
+                                &dotrain.namespace,
+                                documentation_format.clone(),
+                            ));
                         }
                     }
                 }
@@ -249,78 +168,11 @@ pub fn get_completion(
         }
         if NAMESPACE_PATTERN.is_match(&prefix) {
             let offset = rain_document.text.offset_at(&position);
-            if let Some(namespace_items) = search_namespace(&prefix, &rain_document.namespace) {
-                for (key, ns_item) in namespace_items {
-                    match ns_item {
-                        NamespaceItem::Node(_node) => result.push_front(CompletionItem {
-                            label: key.clone(),
-                            label_details: Some(CompletionItemLabelDetails {
-                                description: Some("namespace".to_owned()),
-                                detail: None,
-                            }),
-                            kind: Some(CompletionItemKind::FIELD),
-                            detail: Some(format!("namespace: {}", key)),
-                            insert_text: Some(key.clone()),
-                            ..Default::default()
-                        }),
-                        NamespaceItem::Leaf(leaf) => match &leaf.element.item {
-                            BindingItem::Constant(c) => result.push_front(CompletionItem {
-                                label: key.clone(),
-                                label_details: Some(CompletionItemLabelDetails {
-                                    description: Some("binding".to_owned()),
-                                    detail: None,
-                                }),
-                                kind: Some(CompletionItemKind::CLASS),
-                                detail: Some(format!("constant binding: {}", key)),
-                                insert_text: Some(key.clone()),
-                                documentation: Some(Documentation::MarkupContent(MarkupContent {
-                                    kind: documentation_format.clone(),
-                                    value: c.value.clone(),
-                                })),
-                                ..Default::default()
-                            }),
-                            BindingItem::Elided(e) => result.push_front(CompletionItem {
-                                label: key.clone(),
-                                label_details: Some(CompletionItemLabelDetails {
-                                    description: Some("binding".to_owned()),
-                                    detail: None,
-                                }),
-                                kind: Some(CompletionItemKind::CLASS),
-                                detail: Some(format!("elided binding: {}", key)),
-                                insert_text: Some(key.clone()),
-                                documentation: Some(Documentation::MarkupContent(MarkupContent {
-                                    kind: documentation_format.clone(),
-                                    value: e.msg.clone(),
-                                })),
-                                ..Default::default()
-                            }),
-                            BindingItem::Exp(_e) => result.push_front(CompletionItem {
-                                label: key.clone(),
-                                label_details: Some(CompletionItemLabelDetails {
-                                    description: Some("binding".to_owned()),
-                                    detail: None,
-                                }),
-                                kind: Some(CompletionItemKind::CLASS),
-                                detail: Some(format!("expression binding: {}", key)),
-                                insert_text: Some(key.clone()),
-                                documentation: Some(Documentation::MarkupContent(MarkupContent {
-                                    kind: documentation_format.clone(),
-                                    value: match documentation_format {
-                                        MarkupKind::Markdown => {
-                                            ["```rainlang", leaf.element.content.trim(), "```"]
-                                                .join("\n")
-                                                .to_string()
-                                        }
-                                        MarkupKind::PlainText => {
-                                            leaf.element.content.trim().to_string()
-                                        }
-                                    },
-                                })),
-                                ..Default::default()
-                            }),
-                        },
-                    }
-                }
+            if let Some(namespace_node) = search_namespace(&prefix, &rain_document.namespace) {
+                result.extend(get_namespace_completions(
+                    namespace_node,
+                    documentation_format.clone(),
+                ));
             }
             if !is_quote {
                 if let Some(am) = &rain_document.known_words {
@@ -426,6 +278,7 @@ fn get_prefix(text: &str, pattern: &Regex) -> String {
     prefix
 }
 
+/// get the rainlang source's lhs aliases completions
 fn get_rainlang_src_alias_completions(
     offset: usize,
     rainlang_doc: &RainlangDocument,
@@ -468,6 +321,84 @@ fn get_rainlang_src_alias_completions(
                     }
                 }
             }
+        }
+    }
+    result
+}
+
+// get completion items of a namespace root items
+fn get_namespace_completions(
+    namespace_node: &Namespace,
+    documentation_format: MarkupKind,
+) -> Vec<CompletionItem> {
+    let mut result = vec![];
+    for (key, ns_item) in namespace_node {
+        match ns_item {
+            NamespaceItem::Node(_node) => result.push(CompletionItem {
+                label: key.clone(),
+                label_details: Some(CompletionItemLabelDetails {
+                    description: Some("namespace".to_owned()),
+                    detail: None,
+                }),
+                kind: Some(CompletionItemKind::FIELD),
+                detail: Some(format!("namespace: {}", key)),
+                insert_text: Some(key.clone()),
+                ..Default::default()
+            }),
+            NamespaceItem::Leaf(leaf) => match &leaf.element.item {
+                BindingItem::Constant(c) => result.push(CompletionItem {
+                    label: key.clone(),
+                    label_details: Some(CompletionItemLabelDetails {
+                        description: Some("binding".to_owned()),
+                        detail: None,
+                    }),
+                    kind: Some(CompletionItemKind::CLASS),
+                    detail: Some(format!("constant binding: {}", key)),
+                    insert_text: Some(key.clone()),
+                    documentation: Some(Documentation::MarkupContent(MarkupContent {
+                        kind: documentation_format.clone(),
+                        value: c.value.clone(),
+                    })),
+                    ..Default::default()
+                }),
+                BindingItem::Elided(e) => result.push(CompletionItem {
+                    label: key.clone(),
+                    label_details: Some(CompletionItemLabelDetails {
+                        description: Some("binding".to_owned()),
+                        detail: None,
+                    }),
+                    kind: Some(CompletionItemKind::CLASS),
+                    detail: Some(format!("elided binding: {}", key)),
+                    insert_text: Some(key.clone()),
+                    documentation: Some(Documentation::MarkupContent(MarkupContent {
+                        kind: documentation_format.clone(),
+                        value: e.msg.clone(),
+                    })),
+                    ..Default::default()
+                }),
+                BindingItem::Exp(_e) => result.push(CompletionItem {
+                    label: key.clone(),
+                    label_details: Some(CompletionItemLabelDetails {
+                        description: Some("binding".to_owned()),
+                        detail: None,
+                    }),
+                    kind: Some(CompletionItemKind::CLASS),
+                    detail: Some(format!("expression binding: {}", key)),
+                    insert_text: Some(key.clone()),
+                    documentation: Some(Documentation::MarkupContent(MarkupContent {
+                        kind: documentation_format.clone(),
+                        value: match documentation_format {
+                            MarkupKind::Markdown => {
+                                ["```rainlang", leaf.element.content.trim(), "```"]
+                                    .join("\n")
+                                    .to_string()
+                            }
+                            MarkupKind::PlainText => leaf.element.content.trim().to_string(),
+                        },
+                    })),
+                    ..Default::default()
+                }),
+            },
         }
     }
     result
