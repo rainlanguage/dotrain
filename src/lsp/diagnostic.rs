@@ -1,6 +1,10 @@
+use once_cell::sync::Lazy;
 use regex::{Regex, Captures};
 use super::super::parser::{PositionAt, raindocument::RainDocument};
 use lsp_types::{Diagnostic, Range, DiagnosticSeverity, DiagnosticRelatedInformation, Location, Url};
+
+/// pattern for uppercase letters
+static UPPERCASE_LETTERS: Lazy<Regex> = Lazy::new(|| Regex::new(r"[A-Z]+").unwrap());
 
 /// Provides diagnostics for the given RainDocument by converting all problems to LSP diagnostics
 pub fn get_diagnostics(
@@ -8,7 +12,6 @@ pub fn get_diagnostics(
     uri: &Url,
     related_information: bool,
 ) -> Vec<Diagnostic> {
-    let reg = Regex::new(r"[A-Z]+").unwrap();
     let replacement =
         |caps: &Captures| -> String { " ".to_owned() + &caps[0].to_ascii_lowercase() };
     rain_document
@@ -25,7 +28,8 @@ pub fn get_diagnostics(
                 Some(lsp_types::NumberOrString::Number(v.code.to_i32())),
                 Some("rainlang".to_owned()),
                 if related_information {
-                    reg.replace_all(&format!("{:?}", v.code), &replacement)
+                    UPPERCASE_LETTERS
+                        .replace_all(&format!("{:?}", v.code), &replacement)
                         .trim()
                         .to_string()
                 } else {

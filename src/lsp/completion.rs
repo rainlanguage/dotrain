@@ -6,12 +6,12 @@ use lsp_types::{
     Range, TextEdit, CompletionItem, Position, MarkupKind, Documentation, MarkupContent,
     CompletionItemLabelDetails, CompletionItemKind, Url,
 };
-use crate::types::ast::ImportSequence;
+use crate::{types::ast::ImportSequence, RainlangDocument};
 
 use super::super::{
     parser::{OffsetAt, exclusive_parse, raindocument::RainDocument},
     types::{
-        ast::{Namespace, NamespaceItem, BindingItem, ParsedItem},
+        ast::{Namespace, NamespaceItem, BindingItem, ParsedItem, Binding},
         patterns::{
             WORD_PATTERN, WS_PATTERN, HEX_PATTERN, NAMESPACE_PATTERN, NAMESPACE_SEGMENT_PATTERN,
         },
@@ -56,7 +56,7 @@ pub fn get_completion(
                         dotrain: Some(dotrain),
                     }) = &import.sequence
                     {
-                        if !prefix.contains('.') {
+                        if WORD_PATTERN.is_match(&prefix) {
                             for (key, ns_item) in &dotrain.namespace {
                                 match ns_item {
                                     NamespaceItem::Node(_node) => {
@@ -154,10 +154,7 @@ pub fn get_completion(
                     }
                     &chunks[1]
                 } else if chunks.len() == 3 {
-                    if HEX_PATTERN.is_match(&chunks[0].0) {
-                        return None;
-                    }
-                    if HEX_PATTERN.is_match(&chunks[1].0) {
+                    if HEX_PATTERN.is_match(&chunks[0].0) || HEX_PATTERN.is_match(&chunks[1].0) {
                         return None;
                     }
                     &chunks[2]
@@ -351,66 +348,14 @@ pub fn get_completion(
                         .iter()
                         .find(|v| v.content_position[0] <= offset && v.content_position[1] > offset)
                     {
-                        if let BindingItem::Exp(exp) = &binding.item {
-                            if let Some(src) = exp.ast.iter().find(|v| {
-                                v.position[0] + binding.content_position[0] <= offset
-                                    && v.position[1] + binding.content_position[0] > offset
-                            }) {
-                                if let Some(last_line) = &src.lines.last() {
-                                    if let Some(item_str) =
-                                        rain_document.text.get(last_line.position[0]..offset)
-                                    {
-                                        if item_str.contains(':') {
-                                            for line in &src.lines {
-                                                if line.position[1]
-                                                    + binding.content_position[0]
-                                                    + 1
-                                                    < offset
-                                                {
-                                                    for alias in &line.aliases {
-                                                        if alias.name != "_" {
-                                                            result.push_front(CompletionItem {
-                                                                label: alias.name.clone(),
-                                                                label_details: Some(
-                                                                    CompletionItemLabelDetails {
-                                                                        description: Some(
-                                                                            "stack alias"
-                                                                                .to_owned(),
-                                                                        ),
-                                                                        detail: None,
-                                                                    },
-                                                                ),
-                                                                kind: Some(
-                                                                    CompletionItemKind::VARIABLE,
-                                                                ),
-                                                                detail: Some(format!(
-                                                                    "stack alias: {}",
-                                                                    alias.name
-                                                                )),
-                                                                insert_text: Some(
-                                                                    alias.name.clone(),
-                                                                ),
-                                                                documentation: Some(
-                                                                    Documentation::MarkupContent(
-                                                                        MarkupContent {
-                                                                            kind:
-                                                                                documentation_format
-                                                                                    .clone(),
-                                                                            value: "stack alias"
-                                                                                .to_owned(),
-                                                                        },
-                                                                    ),
-                                                                ),
-                                                                ..Default::default()
-                                                            })
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                        if let BindingItem::Exp(rainlang_doc) = &binding.item {
+                            result.extend(get_rainlang_src_alias_completions(
+                                offset,
+                                rainlang_doc,
+                                binding,
+                                &rain_document.text,
+                                documentation_format.clone(),
+                            ));
                         }
                     }
                 }
@@ -557,4 +502,51 @@ fn get_prefix(text: &str, pattern: &Regex) -> String {
         }
     }
     prefix
+}
+
+fn get_rainlang_src_alias_completions(
+    offset: usize,
+    rainlang_doc: &RainlangDocument,
+    binding: &Binding,
+    dotrain_text: &str,
+    documentation_format: MarkupKind,
+) -> Vec<CompletionItem> {
+    let mut result = vec![];
+    if let Some(src) = rainlang_doc.ast.iter().find(|v| {
+        v.position[0] + binding.content_position[0] <= offset
+            && v.position[1] + binding.content_position[0] > offset
+    }) {
+        if let Some(last_line) = &src.lines.last() {
+            if let Some(item_str) = dotrain_text.get(last_line.position[0]..offset) {
+                if item_str.contains(':') {
+                    for line in &src.lines {
+                        if line.position[1] + binding.content_position[0] + 1 < offset {
+                            for alias in &line.aliases {
+                                if alias.name != "_" {
+                                    result.push(CompletionItem {
+                                        label: alias.name.clone(),
+                                        label_details: Some(CompletionItemLabelDetails {
+                                            description: Some("stack alias".to_owned()),
+                                            detail: None,
+                                        }),
+                                        kind: Some(CompletionItemKind::VARIABLE),
+                                        detail: Some(format!("stack alias: {}", alias.name)),
+                                        insert_text: Some(alias.name.clone()),
+                                        documentation: Some(Documentation::MarkupContent(
+                                            MarkupContent {
+                                                kind: documentation_format.clone(),
+                                                value: "stack alias".to_owned(),
+                                            },
+                                        )),
+                                        ..Default::default()
+                                    })
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    result
 }

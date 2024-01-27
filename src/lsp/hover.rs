@@ -36,12 +36,13 @@ pub fn get_hover(
             None
         }
     } else {
-        for b in &rain_document.bindings {
-            if b.name_position[0] <= target_offset && b.name_position[1] > target_offset {
+        for binding in &rain_document.bindings {
+            if binding.name_position[0] <= target_offset && binding.name_position[1] > target_offset
+            {
                 return Some(Hover {
                     contents: HoverContents::Markup(MarkupContent {
                         kind: content_type,
-                        value: match b.item {
+                        value: match binding.item {
                             BindingItem::Exp(_) => "Expression Binding",
                             BindingItem::Constant(_) => {
                                 "Constant Binding (cannot be referenced as entrypoint)"
@@ -53,18 +54,18 @@ pub fn get_hover(
                         .to_owned(),
                     }),
                     range: Some(Range::new(
-                        rain_document.text.position_at(b.name_position[0]),
-                        rain_document.text.position_at(b.name_position[1]),
+                        rain_document.text.position_at(binding.name_position[0]),
+                        rain_document.text.position_at(binding.name_position[1]),
                     )),
                 });
-            } else if b.content_position[0] <= target_offset
-                && b.content_position[1] > target_offset
+            } else if binding.content_position[0] <= target_offset
+                && binding.content_position[1] > target_offset
             {
-                match &b.item {
-                    BindingItem::Exp(e) => {
+                match &binding.item {
+                    BindingItem::Exp(exp) => {
                         let mut nodes: Vec<&Node> = vec![];
                         let mut alias_nodes: Vec<Node> = vec![];
-                        e.ast.iter().for_each(|src| {
+                        exp.ast.iter().for_each(|src| {
                             src.lines.iter().for_each(|line| {
                                 for a in &line.aliases {
                                     alias_nodes.push(Node::Alias(a.clone()));
@@ -79,8 +80,8 @@ pub fn get_hover(
                         }
                         return search(
                             nodes,
-                            b.content_position[0],
-                            target_offset - b.content_position[0],
+                            binding.content_position[0],
+                            target_offset - binding.content_position[0],
                             content_type,
                             &rain_document.text,
                         );
@@ -92,8 +93,8 @@ pub fn get_hover(
                                 value: "constant value".to_owned(),
                             }),
                             range: Some(Range::new(
-                                rain_document.text.position_at(b.content_position[0]),
-                                rain_document.text.position_at(b.content_position[1]),
+                                rain_document.text.position_at(binding.content_position[0]),
+                                rain_document.text.position_at(binding.content_position[1]),
                             )),
                         })
                     }
@@ -104,8 +105,8 @@ pub fn get_hover(
                                 value: "elision msg".to_owned(),
                             }),
                             range: Some(Range::new(
-                                rain_document.text.position_at(b.content_position[0]),
-                                rain_document.text.position_at(b.content_position[1]),
+                                rain_document.text.position_at(binding.content_position[0]),
+                                rain_document.text.position_at(binding.content_position[1]),
                             )),
                         })
                     }
@@ -123,10 +124,10 @@ fn search(
     kind: MarkupKind,
     text: &str,
 ) -> Option<Hover> {
-    for n in nodes {
-        let p = n.position();
-        if p[0] <= target_offset && p[1] > target_offset {
-            match n {
+    for node in nodes {
+        let node_pos = node.position();
+        if node_pos[0] <= target_offset && node_pos[1] > target_offset {
+            match node {
                 Node::Opcode(op) => {
                     if op.parens[0] < target_offset && op.parens[1] > target_offset {
                         return search(
@@ -185,32 +186,32 @@ fn search(
                         });
                     }
                 }
-                Node::Literal(v) => {
+                Node::Literal(literal) => {
                     return Some(Hover {
                         contents: HoverContents::Markup(MarkupContent {
                             kind,
-                            value: if let Some(id) = &v.id {
+                            value: if let Some(id) = &literal.id {
                                 id.clone()
                             } else {
                                 "value".to_owned()
                             },
                         }),
                         range: Some(Range::new(
-                            text.position_at(v.position[0] + offset),
-                            text.position_at(v.position[1] + offset),
+                            text.position_at(literal.position[0] + offset),
+                            text.position_at(literal.position[1] + offset),
                         )),
                     });
                 }
-                Node::Alias(a) => {
+                Node::Alias(alias) => {
                     let mut value = "Stack Alias".to_owned();
-                    if a.name == "_" {
+                    if alias.name == "_" {
                         value.push_str(" Placeholder")
                     };
                     return Some(Hover {
                         contents: HoverContents::Markup(MarkupContent { kind, value }),
                         range: Some(Range::new(
-                            text.position_at(a.position[0] + offset),
-                            text.position_at(a.position[1] + offset),
+                            text.position_at(alias.position[0] + offset),
+                            text.position_at(alias.position[1] + offset),
                         )),
                     });
                 }
