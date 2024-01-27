@@ -467,11 +467,7 @@ fn search_namespace<'a>(name: &str, namespace: &'a Namespace) -> Option<&'a Name
             for segment in segments.range(1..) {
                 match result {
                     NamespaceItem::Node(node) => {
-                        if let Some(item) = node.get(&segment.0) {
-                            result = item;
-                        } else {
-                            return None;
-                        }
+                        result = node.get(&segment.0)?;
                     }
                     NamespaceItem::Leaf(_leaf) => {
                         return None;
