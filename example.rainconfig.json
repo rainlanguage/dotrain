@@ -1,0 +1,9 @@
+
+{
+  "include": ["./folder1", "./folder2"],
+  "subgraphs": [
+    "https://subgraph1-url",
+    "https://subgraph2-url",
+    "https://subgraph3-url"
+  ]
+}

@@ -30,6 +30,9 @@ pub(crate) mod error;
 pub(crate) mod parser;
 pub(crate) mod composer;
 
+#[cfg(feature = "cli")]
+pub mod cli;
+
 pub use lsp_types::Url;
 pub use rain_meta::Store;
 pub use parser::*;
