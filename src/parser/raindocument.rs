@@ -157,7 +157,7 @@ impl RainDocument {
 
     /// This instance's body (i.e. text minus front matter)
     pub fn body(&self) -> &str {
-        &self.text[self.front_matter_offset + FRONTMATTER_SEPARATOR.len()..]
+        &self.text[(self.front_matter_offset + FRONTMATTER_SEPARATOR.len())..]
     }
 
     /// This instance's top problems
