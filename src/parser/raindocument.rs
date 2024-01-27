@@ -531,31 +531,7 @@ impl RainDocument {
         };
         while let Some(first_piece) = config_pieces.next() {
             if let Some(complementary_piece) = config_pieces.next() {
-                if first_piece.0 == "." {
-                    if complementary_piece.0 == "!" {
-                        if imp_conf.groups.iter().any(|v| {
-                            if let Some(e) = &v.1 {
-                                v.0 .0 == first_piece.0 && e.0 == complementary_piece.0
-                            } else {
-                                false
-                            }
-                        }) {
-                            imp_conf.problems.push(
-                                ErrorCode::DuplicateImportStatement.to_problem(
-                                    vec![],
-                                    [first_piece.1[0], complementary_piece.1[1]],
-                                ),
-                            );
-                        }
-                    } else {
-                        imp_conf.problems.push(
-                            ErrorCode::UnexpectedToken.to_problem(vec![], complementary_piece.1),
-                        );
-                    }
-                    imp_conf
-                        .groups
-                        .push((first_piece.clone(), Some(complementary_piece.clone())));
-                } else if WORD_PATTERN.is_match(&first_piece.0) {
+                if WORD_PATTERN.is_match(&first_piece.0) {
                     if NUMERIC_PATTERN.is_match(&complementary_piece.0)
                         || complementary_piece.0 == "!"
                     {
@@ -1282,7 +1258,7 @@ mod tests {
 
     #[test]
     fn test_process_import_config_method() -> anyhow::Result<()> {
-        let text = " 'item1 renamed-item1 \n . ! \n\n\t item2 0x1234 \n";
+        let text = " 'item1 renamed-item1 \n  \n\n\t item2 0x1234 \n";
         let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
         let result = RainDocument::process_import_config(&mut config_items.iter_mut());
         let expected = ImportConfiguration {
@@ -1292,12 +1268,8 @@ mod tests {
                     Some(ParsedItem("renamed-item1".to_owned(), [8, 21])),
                 ),
                 (
-                    ParsedItem(".".to_owned(), [24, 25]),
-                    Some(ParsedItem("!".to_owned(), [26, 27])),
-                ),
-                (
-                    ParsedItem("item2".to_owned(), [32, 37]),
-                    Some(ParsedItem("0x1234".to_owned(), [38, 44])),
+                    ParsedItem("item2".to_owned(), [29, 34]),
+                    Some(ParsedItem("0x1234".to_owned(), [35, 41])),
                 ),
             ],
             problems: vec![],
