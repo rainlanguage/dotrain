@@ -288,13 +288,15 @@ pub(crate) fn to_u256(value: &str) -> Result<U256, Error> {
 pub(crate) fn is_consumable(items: &Vec<RainMetaDocumentV1Item>) -> bool {
     if !items.is_empty() {
         let mut dotrains = 0;
-        let mut dispairs = 0;
-        items.iter().for_each(|v| match v.magic {
-            KnownMagic::DotrainV1 => dotrains += 1,
-            KnownMagic::ExpressionDeployerV2BytecodeV1 => dispairs += 1,
-            _ => {}
-        });
-        !(dispairs > 1 || dotrains > 1 || dispairs + dotrains == 0)
+        for v in items {
+            if matches!(v.magic, KnownMagic::DotrainV1) {
+                dotrains += 1;
+            }
+            if dotrains > 1 {
+                return false;
+            }
+        }
+        !dotrains == 0
     } else {
         false
     }
