@@ -9,6 +9,9 @@ pub const PRAGMA_KEYWORD: &str = "using-words-from";
 /// reserved keywords in rainlang
 pub const KEYWORDS: [&str; 1] = [PRAGMA_KEYWORD];
 
+/// front matter separator
+pub const FRONTMATTER_SEPARATOR: &str = "---";
+
 /// Illegal character pattern
 pub static ILLEGAL_CHAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^ -~\s]+").unwrap());
 
