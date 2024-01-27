@@ -146,7 +146,7 @@ impl RainDocument {
     }
 
     /// This instance's current text
-    pub fn text(&self) -> &String {
+    pub fn text(&self) -> &str {
         &self.text
     }
 
