@@ -157,6 +157,9 @@ impl RainDocument {
 
     /// This instance's body (i.e. text minus front matter)
     pub fn body(&self) -> &str {
+        if self.front_matter_offset == 0 && !self.text.starts_with(FRONTMATTER_SEPARATOR) {
+            return &self.text;
+        }
         &self.text[(self.front_matter_offset + FRONTMATTER_SEPARATOR.len())..]
     }
 
@@ -277,13 +280,6 @@ impl RainDocument {
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
 
-        // split front matter and rest of the text
-        if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
-            self.front_matter_offset = splitter;
-            let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
-            fill_in(&mut document, [0, body_start_offset])?;
-        };
-
         // check for illegal characters, ends parsing right away if found any
         let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
         if !illegal_chars.is_empty() {
@@ -307,6 +303,13 @@ impl RainDocument {
             });
             fill_in(&mut document, parsed_comment.1)?;
         }
+
+        // split front matter and rest of the text
+        if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
+            self.front_matter_offset = splitter;
+            let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
+            fill_in(&mut document, [0, body_start_offset])?;
+        };
 
         // since exclusive_parse() is being used with 'include_empty_ends' arg set to true,
         // the first item of the parsed items should be ignored since it only contains the
