@@ -93,8 +93,7 @@ pub struct RainDocument {
         tsify(type = "string")
     )]
     pub(crate) text: String,
-    pub(crate) front_matter: String,
-    pub(crate) body: String,
+    pub(crate) front_matter_offset: usize,
     pub(crate) error: Option<String>,
     pub(crate) bindings: Vec<Binding>,
     pub(crate) imports: Vec<Import>,
@@ -152,13 +151,13 @@ impl RainDocument {
     }
 
     /// This instance's front matter
-    pub fn front_matter(&self) -> &String {
-        &self.front_matter
+    pub fn front_matter(&self) -> &str {
+        &self.text[0..self.front_matter_offset]
     }
 
     /// This instance's body (i.e. text minus front matter)
-    pub fn body(&self) -> &String {
-        &self.body
+    pub fn body(&self) -> &str {
+        &self.text[self.front_matter_offset + FRONTMATTER_SEPARATOR.len()..]
     }
 
     /// This instance's top problems
@@ -230,8 +229,7 @@ impl RainDocument {
             self.bindings.clear();
             self.namespace.clear();
             self.known_words = None;
-            self.front_matter = String::new();
-            self.body = String::new();
+            self.front_matter_offset = 0;
         }
     }
 }
@@ -251,8 +249,7 @@ impl RainDocument {
         RainDocument {
             meta_store: ms,
             text,
-            front_matter: String::new(),
-            body: String::new(),
+            front_matter_offset: 0,
             error: None,
             bindings: vec![],
             namespace: HashMap::new(),
@@ -275,17 +272,15 @@ impl RainDocument {
         self.bindings.clear();
         self.namespace.clear();
         self.known_words = None;
-        self.front_matter = String::new();
-        self.body = String::new();
+        self.front_matter_offset = 0;
 
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
 
         // split front matter and rest of the text
         if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
+            self.front_matter_offset = splitter;
             let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
-            self.front_matter = document[..splitter].to_owned();
-            self.body = document[body_start_offset..].to_owned();
             fill_in(&mut document, [0, body_start_offset])?;
         };
 
@@ -1224,8 +1219,7 @@ impl PartialEq for RainDocument {
     fn eq(&self, other: &Self) -> bool {
         self.import_depth == other.import_depth
             && self.text == other.text
-            && self.body == other.body
-            && self.front_matter == other.front_matter
+            && self.front_matter_offset == other.front_matter_offset
             && self.comments == other.comments
             && self.bindings == other.bindings
             && self.namespace == other.namespace
@@ -1644,17 +1638,7 @@ _: opcode-1(0xabcd 456);
 
         let expected_rain_document = RainDocument {
             text: text.to_owned(),
-            front_matter: "some front matter\n".to_owned(),
-            body: "
-/** this is test */
-@dispair 0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184
-
-#const-binding 4e18
-#elided-binding ! this elided, rebind before use
-#exp-binding
-_: opcode-1(0xabcd 456);
-"
-            .to_owned(),
+            front_matter_offset: 18,
             error: None,
             bindings: expected_bindings.clone(),
             imports: vec![],
