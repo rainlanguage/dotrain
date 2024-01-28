@@ -4,7 +4,7 @@ use alloy_primitives::hex;
 use std::collections::VecDeque;
 use lsp_types::{
     Range, TextEdit, CompletionItem, Position, MarkupKind, Documentation, MarkupContent,
-    CompletionItemLabelDetails, CompletionItemKind, Url,
+    CompletionItemLabelDetails, CompletionItemKind, Url, CompletionTextEdit,
 };
 use crate::{types::ast::ImportSequence, RainlangDocument};
 
@@ -112,19 +112,17 @@ pub fn get_completion(
                                             value: hex::encode_prefixed(v.1),
                                         },
                                     )),
-                                    text_edit: Some(lsp_types::CompletionTextEdit::Edit(
-                                        TextEdit {
-                                            new_text: hex::encode_prefixed(v.1),
-                                            range: Range::new(
-                                                Position {
-                                                    line: position.line,
-                                                    character: position.character
-                                                        - _prefix.len() as u32,
-                                                },
-                                                position,
-                                            ),
-                                        },
-                                    )),
+                                    text_edit: Some(CompletionTextEdit::Edit(TextEdit {
+                                        new_text: hex::encode_prefixed(v.1),
+                                        range: Range::new(
+                                            Position {
+                                                line: position.line,
+                                                character: position.character
+                                                    - _prefix.len() as u32,
+                                            },
+                                            position,
+                                        ),
+                                    })),
                                     ..Default::default()
                                 })
                             }

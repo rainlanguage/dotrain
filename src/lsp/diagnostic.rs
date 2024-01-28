@@ -1,7 +1,10 @@
 use once_cell::sync::Lazy;
 use regex::{Regex, Captures};
 use super::super::parser::{PositionAt, raindocument::RainDocument};
-use lsp_types::{Diagnostic, Range, DiagnosticSeverity, DiagnosticRelatedInformation, Location, Url};
+use lsp_types::{
+    Diagnostic, Range, DiagnosticSeverity, DiagnosticRelatedInformation, Location, Url,
+    NumberOrString,
+};
 
 /// pattern for uppercase letters
 static UPPERCASE_LETTERS: Lazy<Regex> = Lazy::new(|| Regex::new(r"[A-Z]+").unwrap());
@@ -25,7 +28,7 @@ pub fn get_diagnostics(
             Diagnostic::new(
                 range,
                 Some(DiagnosticSeverity::ERROR),
-                Some(lsp_types::NumberOrString::Number(v.code.to_i32())),
+                Some(NumberOrString::Number(v.code.to_i32())),
                 Some("rainlang".to_owned()),
                 if related_information {
                     UPPERCASE_LETTERS
