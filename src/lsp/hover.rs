@@ -21,7 +21,7 @@ pub fn get_hover(
                 contents: HoverContents::Markup(MarkupContent {
                     kind: content_type.clone(),
                     value: if import.sequence.is_some() {
-                        "This import contains: \n - RainDocument".to_owned()
+                        "imported .rain".to_owned()
                     } else {
                         String::new()
                     },
@@ -189,11 +189,10 @@ fn search(
                     return Some(Hover {
                         contents: HoverContents::Markup(MarkupContent {
                             kind,
-                            value: if let Some(id) = &literal.id {
-                                id.clone()
-                            } else {
-                                "value".to_owned()
-                            },
+                            value: literal
+                                .id
+                                .as_ref()
+                                .map_or("value".to_owned(), |id| id.clone()),
                         }),
                         range: Some(Range::new(
                             text.position_at(literal.position[0] + offset),

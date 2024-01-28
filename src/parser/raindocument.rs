@@ -117,9 +117,9 @@ impl RainDocument {
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
     ) -> RainDocument {
-        let mut rd = RainDocument::new(text, meta_store, 0, words);
-        rd.parse(true).await;
-        rd
+        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
+        rain_document.parse(true).await;
+        rain_document
     }
 
     /// Creates an instance and parses with remote meta search disabled (cached metas only)
@@ -128,9 +128,9 @@ impl RainDocument {
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
     ) -> RainDocument {
-        let mut rd = RainDocument::new(text, meta_store, 0, words);
-        block_on(rd.parse(false));
-        rd
+        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
+        block_on(rain_document.parse(false));
+        rain_document
     }
 
     /// Updates the text and parses right away with remote meta search disabled (cached metas only)

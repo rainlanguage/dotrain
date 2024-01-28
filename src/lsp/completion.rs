@@ -54,12 +54,12 @@ pub fn get_completion(
                 {
                     let prefix = get_prefix(pretext, &TRIGGERS);
                     if let Some(ImportSequence {
-                        dotrain: Some(dotrain),
+                        dotrain: Some(raindoc),
                     }) = &import.sequence
                     {
                         if WORD_PATTERN.is_match(&prefix) {
                             result.extend(get_namespace_completions(
-                                &dotrain.namespace,
+                                &raindoc.namespace,
                                 documentation_format.clone(),
                             ));
                         }

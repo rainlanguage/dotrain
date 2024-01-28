@@ -26,7 +26,7 @@ pub trait OffsetAt {
 
 impl PositionAt for &str {
     fn position_at(&self, offset: usize) -> Position {
-        let o = 0.max(offset.min(self.len()));
+        let effective_offset = 0.max(offset.min(self.len()));
         let mut line_offsets = vec![];
         let mut acc = 0;
         self.split_inclusive('\n').for_each(|v| {
@@ -38,12 +38,12 @@ impl PositionAt for &str {
         if high == 0 {
             return Position {
                 line: 0,
-                character: o as u32,
+                character: effective_offset as u32,
             };
         }
         while low < high {
             let mid = (low + high) / 2;
-            if line_offsets[mid] > o {
+            if line_offsets[mid] > effective_offset {
                 high = mid;
             } else {
                 low = mid + 1;
@@ -54,7 +54,7 @@ impl PositionAt for &str {
         let line = low - 1;
         Position {
             line: line as u32,
-            character: (o - line_offsets[line]) as u32,
+            character: (effective_offset - line_offsets[line]) as u32,
         }
     }
 }
@@ -82,7 +82,7 @@ impl OffsetAt for &str {
 
 impl PositionAt for String {
     fn position_at(&self, offset: usize) -> Position {
-        let o = 0.max(offset.min(self.len()));
+        let effective_offset = 0.max(offset.min(self.len()));
         let mut line_offsets = vec![];
         let mut acc = 0;
         self.split_inclusive('\n').for_each(|v| {
@@ -94,12 +94,12 @@ impl PositionAt for String {
         if high == 0 {
             return Position {
                 line: 0,
-                character: o as u32,
+                character: effective_offset as u32,
             };
         }
         while low < high {
             let mid = (low + high) / 2;
-            if line_offsets[mid] > o {
+            if line_offsets[mid] > effective_offset {
                 high = mid;
             } else {
                 low = mid + 1;
@@ -110,7 +110,7 @@ impl PositionAt for String {
         let line = low - 1;
         Position {
             line: line as u32,
-            character: (o - line_offsets[line]) as u32,
+            character: (effective_offset - line_offsets[line]) as u32,
         }
     }
 }

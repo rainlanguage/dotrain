@@ -423,11 +423,16 @@ impl NamespaceItem {
     }
 
     pub fn unwrap_elided_binding(&self) -> &String {
-        if let NamespaceItem::Leaf(n) = self {
-            match &n.element.item {
-                BindingItem::Elided(e) => &e.msg,
-                _ => panic!("not an elided binding"),
-            }
+        if let NamespaceItem::Leaf(NamespaceLeaf {
+            element:
+                Binding {
+                    item: BindingItem::Elided(e),
+                    ..
+                },
+            ..
+        }) = self
+        {
+            &e.msg
         } else {
             panic!("not an elided binding")
         }
@@ -447,11 +452,16 @@ impl NamespaceItem {
     }
 
     pub fn unwrap_constant_binding(&self) -> &String {
-        if let NamespaceItem::Leaf(n) = self {
-            match &n.element.item {
-                BindingItem::Constant(c) => &c.value,
-                _ => panic!("not a constant binding"),
-            }
+        if let NamespaceItem::Leaf(NamespaceLeaf {
+            element:
+                Binding {
+                    item: BindingItem::Constant(c),
+                    ..
+                },
+            ..
+        }) = self
+        {
+            &c.value
         } else {
             panic!("not a constant binding")
         }
@@ -471,11 +481,16 @@ impl NamespaceItem {
     }
 
     pub fn unwrap_exp_binding(&self) -> &RainlangDocument {
-        if let NamespaceItem::Leaf(n) = self {
-            match &n.element.item {
-                BindingItem::Exp(e) => e,
-                _ => panic!("not an exp binding"),
-            }
+        if let NamespaceItem::Leaf(NamespaceLeaf {
+            element:
+                Binding {
+                    item: BindingItem::Exp(e),
+                    ..
+                },
+            ..
+        }) = self
+        {
+            e
         } else {
             panic!("not an exp binding")
         }
