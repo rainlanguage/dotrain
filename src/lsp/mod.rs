@@ -1,4 +1,4 @@
-//! lsp mod (enabled as feature), provides method and functionalities for getting 
+//! lsp mod (enabled as feature), provides method and functionalities for getting
 //! language server protocol based services for given text document and/or [RainDocument]
 
 use rain_meta::Store;
