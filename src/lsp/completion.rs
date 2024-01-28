@@ -2,18 +2,20 @@ use regex::Regex;
 use once_cell::sync::Lazy;
 use alloy_primitives::hex;
 use std::collections::VecDeque;
+use crate::{types::ast::ImportSequence, RainlangDocument};
 use lsp_types::{
     Range, TextEdit, CompletionItem, Position, MarkupKind, Documentation, MarkupContent,
     CompletionItemLabelDetails, CompletionItemKind, Url, CompletionTextEdit,
 };
-use crate::{types::ast::ImportSequence, RainlangDocument};
-
-use super::super::{
-    parser::{OffsetAt, exclusive_parse, raindocument::RainDocument},
-    types::{
-        ast::{Namespace, NamespaceItem, BindingItem, ParsedItem, Binding},
-        patterns::{
-            WORD_PATTERN, WS_PATTERN, HEX_PATTERN, NAMESPACE_PATTERN, NAMESPACE_SEGMENT_PATTERN,
+use super::{
+    OffsetAt,
+    super::{
+        parser::{exclusive_parse, raindocument::RainDocument},
+        types::{
+            ast::{Namespace, NamespaceItem, BindingItem, ParsedItem, Binding},
+            patterns::{
+                WORD_PATTERN, WS_PATTERN, HEX_PATTERN, NAMESPACE_PATTERN, NAMESPACE_SEGMENT_PATTERN,
+            },
         },
     },
 };

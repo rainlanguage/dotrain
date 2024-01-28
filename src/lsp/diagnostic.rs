@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::{Regex, Captures};
-use super::super::parser::{PositionAt, raindocument::RainDocument};
+use super::{PositionAt, super::parser::raindocument::RainDocument};
 use lsp_types::{
     Diagnostic, Range, DiagnosticSeverity, DiagnosticRelatedInformation, Location, Url,
     NumberOrString,

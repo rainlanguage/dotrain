@@ -36,7 +36,6 @@ pub mod cli;
 #[cfg(feature = "lsp")]
 pub mod lsp;
 
-pub use lsp_types::Url;
 pub use rain_meta::Store;
 pub use parser::*;
 /// Provides all types and functionalities of Rain metadata

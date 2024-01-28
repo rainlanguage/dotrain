@@ -1,7 +1,10 @@
 use lsp_types::{Position, MarkupKind, Hover, HoverContents, Range, MarkupContent};
-use super::super::{
-    types::ast::{Node, BindingItem},
-    parser::{OffsetAt, PositionAt, raindocument::RainDocument},
+use super::{
+    OffsetAt, PositionAt,
+    super::{
+        types::ast::{Node, BindingItem},
+        parser::raindocument::RainDocument,
+    },
 };
 
 /// Provides hover item for the given RainDocument at the given Position

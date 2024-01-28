@@ -304,3 +304,176 @@ impl RainLanguageServices {
         )
     }
 }
+
+/// Trait for converting offset to lsp position (implemented for `&str` and `String`)
+pub trait PositionAt {
+    fn position_at(&self, offset: usize) -> Position;
+}
+
+/// Trait for converting lsp position to offset (implemented for `&str` and `String`)
+pub trait OffsetAt {
+    fn offset_at(&self, position: &Position) -> usize;
+}
+
+impl PositionAt for &str {
+    fn position_at(&self, offset: usize) -> Position {
+        let effective_offset = 0.max(offset.min(self.len()));
+        let mut line_offsets = vec![];
+        let mut acc = 0;
+        self.split_inclusive('\n').for_each(|v| {
+            line_offsets.push(acc);
+            acc += v.len();
+        });
+        let mut low = 0;
+        let mut high = line_offsets.len();
+        if high == 0 {
+            return Position {
+                line: 0,
+                character: effective_offset as u32,
+            };
+        }
+        while low < high {
+            let mid = (low + high) / 2;
+            if line_offsets[mid] > effective_offset {
+                high = mid;
+            } else {
+                low = mid + 1;
+            }
+        }
+        // low is the least x for which the line offset is larger than the current offset
+        // or array.length if no line offset is larger than the current offset
+        let line = low - 1;
+        Position {
+            line: line as u32,
+            character: (effective_offset - line_offsets[line]) as u32,
+        }
+    }
+}
+
+impl OffsetAt for &str {
+    fn offset_at(&self, position: &Position) -> usize {
+        let mut line_offsets = vec![];
+        let mut acc = 0;
+        self.split_inclusive('\n').for_each(|v| {
+            line_offsets.push(acc);
+            acc += v.len();
+        });
+        if position.line >= line_offsets.len() as u32 {
+            return self.len();
+        }
+        let line_offset = line_offsets[position.line as usize];
+        let next_line_offset = if position.line + 1 < line_offsets.len() as u32 {
+            line_offsets[position.line as usize + 1]
+        } else {
+            self.len()
+        };
+        line_offset.max((line_offset + position.character as usize).min(next_line_offset))
+    }
+}
+
+impl PositionAt for String {
+    fn position_at(&self, offset: usize) -> Position {
+        let effective_offset = 0.max(offset.min(self.len()));
+        let mut line_offsets = vec![];
+        let mut acc = 0;
+        self.split_inclusive('\n').for_each(|v| {
+            line_offsets.push(acc);
+            acc += v.len();
+        });
+        let mut low = 0;
+        let mut high = line_offsets.len();
+        if high == 0 {
+            return Position {
+                line: 0,
+                character: effective_offset as u32,
+            };
+        }
+        while low < high {
+            let mid = (low + high) / 2;
+            if line_offsets[mid] > effective_offset {
+                high = mid;
+            } else {
+                low = mid + 1;
+            }
+        }
+        // low is the least x for which the line offset is larger than the current offset
+        // or array.length if no line offset is larger than the current offset
+        let line = low - 1;
+        Position {
+            line: line as u32,
+            character: (effective_offset - line_offsets[line]) as u32,
+        }
+    }
+}
+
+impl OffsetAt for String {
+    fn offset_at(&self, position: &Position) -> usize {
+        let mut line_offsets = vec![];
+        let mut acc = 0;
+        self.split_inclusive('\n').for_each(|v| {
+            line_offsets.push(acc);
+            acc += v.len();
+        });
+        if position.line >= line_offsets.len() as u32 {
+            return self.len();
+        }
+        let line_offset = line_offsets[position.line as usize];
+        let next_line_offset = if position.line + 1 < line_offsets.len() as u32 {
+            line_offsets[position.line as usize + 1]
+        } else {
+            self.len()
+        };
+        line_offset.max((line_offset + position.character as usize).min(next_line_offset))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_position_at() -> anyhow::Result<()> {
+        let text = r"abcd
+        efgh
+        ijkl";
+
+        let pos1 = text.position_at(14);
+        let pos1_expected = Position {
+            line: 1,
+            character: 9,
+        };
+        assert_eq!(pos1, pos1_expected);
+
+        let pos2 = text.position_at(28);
+        let pos2_expected = Position {
+            line: 2,
+            character: 10,
+        };
+        assert_eq!(pos2, pos2_expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_offset_at() -> anyhow::Result<()> {
+        let text = r"abcd
+        efgh
+        ijkl";
+
+        let offset1 = text.offset_at(&Position {
+            line: 1,
+            character: 9,
+        });
+        let expected_offset1 = 14;
+        assert_eq!(offset1, expected_offset1);
+
+        let offset2 = text.offset_at(&Position {
+            line: 2,
+            character: 10,
+        });
+        let expected_offset2 = 28;
+        assert_eq!(offset2, expected_offset2);
+
+        Ok(())
+    }
+}

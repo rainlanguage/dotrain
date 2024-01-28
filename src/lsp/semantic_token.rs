@@ -1,9 +1,8 @@
 use std::collections::BTreeSet;
 use lsp_types::{SemanticTokensPartialResult, Position, SemanticToken};
-use super::super::{
-    error::ErrorCode,
-    types::ast::BindingItem,
-    parser::{OffsetAt, PositionAt, raindocument::RainDocument},
+use super::{
+    OffsetAt, PositionAt,
+    super::{error::ErrorCode, types::ast::BindingItem, parser::raindocument::RainDocument},
 };
 
 #[derive(Eq, PartialEq, Copy, Clone, PartialOrd, Ord, Debug)]
