@@ -26,7 +26,7 @@
 //! - `js-api`  includes wrappers around main structs and functionalities to provide an API through [mod@wasm_bindgen] (this feature is always enabled when building for wasm family targets)
 
 pub mod types;
-pub(crate) mod error;
+pub mod error;
 pub(crate) mod parser;
 pub(crate) mod composer;
 
@@ -34,14 +34,10 @@ pub(crate) mod composer;
 pub mod cli;
 
 #[cfg(feature = "lsp")]
-pub(crate) mod lsp;
+pub mod lsp;
 
 pub use lsp_types::Url;
 pub use rain_meta::Store;
 pub use parser::*;
-pub use error::*;
 /// Provides all types and functionalities of Rain metadata
 pub use rain_meta;
-
-#[cfg(feature = "lsp")]
-pub use lsp::*;
