@@ -5,29 +5,21 @@ use super::super::error::ErrorCode;
 use serde::{Serialize, Deserialize};
 use super::super::parser::{rainlangdocument::RainlangDocument, raindocument::RainDocument};
 
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[cfg(feature = "js-api")]
 use tsify::Tsify;
 
 /// Type for start and end indexes of an ast node in a text, inclusive at start and exclusive at the end
-#[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify::declare)]
+#[cfg_attr(feature = "js-api", tsify::declare)]
 pub type Offsets = [usize; 2];
 
 /// Type for result of matches found in a text
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ParsedItem(pub String, pub Offsets);
 
 /// Type for encountered problem within the text
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Problem {
     pub msg: String,
     pub position: Offsets,
@@ -37,29 +29,21 @@ pub struct Problem {
 /// Type for AST Value node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Literal {
     pub value: String,
     pub position: Offsets,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    #[cfg_attr(feature = "js-api", tsify(optional))]
     pub lhs_alias: Option<Vec<Alias>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    #[cfg_attr(feature = "js-api", tsify(optional))]
     pub id: Option<String>,
 }
 
 /// Type of an opcode's descriptive details
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct OpcodeDetails {
     pub name: String,
     pub description: String,
@@ -68,11 +52,7 @@ pub struct OpcodeDetails {
 
 /// Type of an individual opcode's operand arguments
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct OperandArgItem {
     pub value: String,
     pub name: String,
@@ -82,11 +62,7 @@ pub struct OperandArgItem {
 
 /// Type of an opcode's all operand arguments segment
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct OperandArg {
     pub position: Offsets,
     pub args: Vec<OperandArgItem>,
@@ -95,11 +71,7 @@ pub struct OperandArg {
 /// Type for AST Opcode node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Opcode {
     pub opcode: OpcodeDetails,
     pub operand: Option<u8>,
@@ -108,36 +80,28 @@ pub struct Opcode {
     pub parens: Offsets,
     pub inputs: Vec<Node>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    #[cfg_attr(feature = "js-api", tsify(optional))]
     pub lhs_alias: Option<Vec<Alias>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    #[cfg_attr(feature = "js-api", tsify(optional))]
     pub operand_args: Option<OperandArg>,
 }
 
 /// Type for AST Alias node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Alias {
     pub name: String,
     pub position: Offsets,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    #[cfg_attr(feature = "js-api", tsify(optional))]
     pub lhs_alias: Option<Vec<Alias>>,
 }
 
 /// Type of a parsed comment
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Comment {
     pub comment: String,
     pub position: Offsets,
@@ -145,11 +109,7 @@ pub struct Comment {
 
 /// Type of an import configurations (renames/rebindings)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ImportConfiguration {
     pub problems: Vec<Problem>,
     pub groups: Vec<(ParsedItem, Option<ParsedItem>)>,
@@ -157,28 +117,17 @@ pub struct ImportConfiguration {
 
 /// Type of an import meta sequence
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ImportSequence {
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(
-        any(feature = "js-api", target_family = "wasm"),
-        tsify(type = "IRainDocument", optional)
-    )]
+    #[cfg_attr(feature = "js-api", tsify(type = "IRainDocument", optional))]
     pub dotrain: Option<RainDocument>,
 }
 
 /// Type of import statements specified in a RainDocument
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Import {
     pub name: String,
     pub name_position: Offsets,
@@ -187,21 +136,17 @@ pub struct Import {
     pub position: Offsets,
     pub problems: Vec<Problem>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    #[cfg_attr(feature = "js-api", tsify(optional))]
     pub configuration: Option<ImportConfiguration>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify(optional))]
+    #[cfg_attr(feature = "js-api", tsify(optional))]
     pub sequence: Option<ImportSequence>,
 }
 
 /// Type of an AST node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub enum Node {
     Literal(Literal),
     Opcode(Opcode),
@@ -220,11 +165,7 @@ impl Node {
 
 /// Type of a Rainlang Line (delimited by ",")
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct RainlangLine {
     pub nodes: Vec<Node>,
     pub position: Offsets,
@@ -233,11 +174,7 @@ pub struct RainlangLine {
 
 /// Type of a Rainlang Source (delimited by ";")
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct RainlangSource {
     pub lines: Vec<RainlangLine>,
     pub position: Offsets,
@@ -245,31 +182,19 @@ pub struct RainlangSource {
 
 /// Type of a Rainlang parse tree
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct RainlangAST(Vec<RainlangSource>);
 
 /// Type of a elided binding
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ElidedBindingItem {
     pub msg: String,
 }
 
 /// Type of a constant binding
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct ConstantBindingItem {
     pub value: String,
 }
@@ -277,11 +202,7 @@ pub struct ConstantBindingItem {
 /// Type of an expression binding
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub enum BindingItem {
     Elided(ElidedBindingItem),
     Constant(ConstantBindingItem),
@@ -291,11 +212,7 @@ pub enum BindingItem {
 /// Type for a binding (named expressions)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct Binding {
     pub name: String,
     pub name_position: Offsets,
@@ -310,11 +227,7 @@ pub struct Binding {
 /// Type for a namespace leaf
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct NamespaceLeaf {
     pub hash: String,
     pub import_index: isize,
@@ -380,11 +293,7 @@ impl NamespaceLeaf {
 /// RainDocument's individual namespace item
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub enum NamespaceItem {
     Leaf(NamespaceLeaf),
     Node(Namespace),
@@ -498,5 +407,5 @@ impl NamespaceItem {
 }
 
 /// Type for a namespace in dotrain
-#[cfg_attr(any(feature = "js-api", target_family = "wasm"), tsify::declare)]
+#[cfg_attr(feature = "js-api", tsify::declare)]
 pub type Namespace = HashMap<String, NamespaceItem>;

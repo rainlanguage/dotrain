@@ -1,17 +1,23 @@
-//! lsp mod (enabled as feature), provides method and functionalities for getting
-//! language server protocol based services for given text document and/or [RainDocument]
+//! The Rain language server protocol ([LSP](https://microsoft.github.io/language-server-protocol/)) implementation (language services)
+//! written in rust and made available for NodeJs and broswers through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/)
+//! in Typescript/Javascript which makes it well suited for editors and IDEs (as it is used in Rainlang vscode and codemirror language extension).
+//! This includes all [LSP](https://microsoft.github.io/language-server-protocol/) (language services) related implementation that provide methods
+//! and functionalities for getting language server protocol based services for given text document and/or [RainDocument]
+//!
+//! - Dotrain lsp services are used for vscode and codemirror, see [rainlang-vscode](https://github.com/rainprotocol/rainlang-vscode) and [rainlang-codemirror](https://github.com/rainprotocol/rainlang-codemirror) repositories for more details.
+//! - Dotrain vscode extension can be found [here](https://marketplace.visualstudio.com/items?itemName=rainprotocol.rainlang-vscode).
 
-use rain_meta::Store;
 use std::sync::{Arc, RwLock};
-use super::parser::raindocument::RainDocument;
+use dotrain::{RainDocument, Store};
 use lsp_types::{
     Hover, Position, Diagnostic, MarkupKind, CompletionItem, TextDocumentItem,
     SemanticTokensPartialResult, Url,
 };
 
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[cfg(feature = "js-api")]
 use wasm_bindgen::prelude::*;
 
+pub use dotrain;
 pub use lsp_types;
 pub use hover::get_hover;
 pub use completion::get_completion;
@@ -45,9 +51,11 @@ position encodings will result in the same LSP provided Position value which is 
 
 ```rust
 use std::sync::{Arc, RwLock};
-use dotrain::{
-    RainLanguageServices, LanguageServiceParams, Url, Store, 
-    lsp_types::{TextDocumentItem, MarkupKind, Position}
+use dotrain_lsp::{
+    RainLanguageServices, 
+    LanguageServiceParams, 
+    dotrain::Store, 
+    lsp_types::{TextDocumentItem, MarkupKind, Position, Url}
 };
 
 // instaniate a shared locked Store
@@ -120,10 +128,7 @@ let hover = lang_services.do_hover(&text_document, position, content_format);
  ```
 "
 )]
-#[cfg_attr(
-    all(feature = "lsp", any(feature = "js-api", target_family = "wasm")),
-    wasm_bindgen(skip_typescript)
-)]
+#[cfg_attr(feature = "js-api", wasm_bindgen(skip_typescript))]
 pub struct RainLanguageServices {
     pub(crate) meta_store: Arc<RwLock<Store>>,
 }

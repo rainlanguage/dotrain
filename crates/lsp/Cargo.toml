@@ -1,0 +1,35 @@
+[package]
+name = "dotrain-lsp"
+version = "0.0.0"
+description = ".rain language server protocol services"
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[features]
+js-api = ["dotrain/js-api", "dep:js-sys", "dep:wasm-bindgen", "dep:serde-wasm-bindgen", "dep:wasm-bindgen-futures", "dep:tsify"]
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+lsp-types = "0.94.1"
+anyhow = { workspace = true }
+dotrain = { workspace = true }
+regex = { workspace = true }
+once_cell = { workspace = true }
+alloy-primitives = { workspace = true }
+
+# js-api
+js-sys = { version = "0.3.66", optional = true }
+wasm-bindgen = { version = "0.2.89", optional = true }
+serde-wasm-bindgen = { version = "0.6.1", optional = true }
+wasm-bindgen-futures = { version = "0.4.39", optional = true }
+tsify = { version = "0.4.5", default-features = false, features = ["js", "wasm-bindgen"], optional = true }
+
+[lints.clippy]
+all = "warn"
+
+[package.metadata.docs.rs]
+all-features = true

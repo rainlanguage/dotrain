@@ -1,14 +1,14 @@
 use super::types::ast::{Offsets, Problem};
 use serde_repr::{Serialize_repr, Deserialize_repr};
 
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[cfg(feature = "js-api")]
 use tsify::Tsify;
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[cfg(feature = "js-api")]
 use wasm_bindgen::prelude::*;
 
 /// All Error codes of RainlangDocument/RainDocument problem and LSP Diagnostics
 #[derive(Debug, Clone, PartialEq, Copy, Serialize_repr, Deserialize_repr)]
-#[cfg_attr(any(feature = "js-api", target_family = "wasm"), wasm_bindgen)]
+#[cfg_attr(feature = "js-api", wasm_bindgen)]
 #[repr(i32)]
 pub enum ErrorCode {
     IllegalChar = 0,
@@ -236,11 +236,7 @@ impl From<revm::primitives::EVMError<std::convert::Infallible>> for Error {
 
 /// Returned by RainDocument composing process if it failed
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub enum ComposeError {
     Reject(String),
     Problems(Vec<Problem>),
@@ -257,7 +253,7 @@ impl std::fmt::Display for ComposeError {
 
 impl std::error::Error for ComposeError {}
 
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[cfg(feature = "js-api")]
 impl From<ComposeError> for JsValue {
     fn from(value: ComposeError) -> Self {
         serde_wasm_bindgen::to_value(&value).unwrap_or(JsValue::NULL)

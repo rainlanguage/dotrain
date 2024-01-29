@@ -1,21 +1,18 @@
 use regex::Regex;
+use super::OffsetAt;
 use once_cell::sync::Lazy;
 use alloy_primitives::hex;
 use std::collections::VecDeque;
-use crate::{types::ast::ImportSequence, RainlangDocument};
 use lsp_types::{
     Range, TextEdit, CompletionItem, Position, MarkupKind, Documentation, MarkupContent,
     CompletionItemLabelDetails, CompletionItemKind, Url, CompletionTextEdit,
 };
-use super::{
-    OffsetAt,
-    super::{
-        parser::{exclusive_parse, raindocument::RainDocument},
-        types::{
-            ast::{Namespace, NamespaceItem, BindingItem, ParsedItem, Binding},
-            patterns::{
-                WORD_PATTERN, WS_PATTERN, HEX_PATTERN, NAMESPACE_PATTERN, NAMESPACE_SEGMENT_PATTERN,
-            },
+use dotrain::{
+    RainlangDocument, RainDocument, exclusive_parse,
+    types::{
+        ast::{Namespace, NamespaceItem, BindingItem, ParsedItem, Binding, ImportSequence},
+        patterns::{
+            WORD_PATTERN, WS_PATTERN, HEX_PATTERN, NAMESPACE_PATTERN, NAMESPACE_SEGMENT_PATTERN,
         },
     },
 };
@@ -31,22 +28,22 @@ pub fn get_completion(
     position: Position,
     documentation_format: MarkupKind,
 ) -> Option<Vec<CompletionItem>> {
-    let target_offset = rain_document.text.offset_at(&position);
+    let target_offset = rain_document.text().offset_at(&position);
     let lookahead = rain_document
-        .text
+        .text()
         .get(target_offset..target_offset + 1)
         .unwrap_or("");
 
     let mut result = VecDeque::new();
     if !TRIGGERS.is_match(lookahead) {
         if let Some(import) = rain_document
-            .imports
+            .imports()
             .iter()
             .find(|v| v.position[0] <= target_offset && v.position[1] >= target_offset)
         {
             let pretext = rain_document
-                .text
-                .get(import.position[0]..rain_document.text.offset_at(&position))?;
+                .text()
+                .get(import.position[0]..rain_document.text().offset_at(&position))?;
             let chunks = exclusive_parse(pretext, &WS_PATTERN, 0, false);
             if let Some(configurations) = &import.configuration {
                 if configurations
@@ -61,7 +58,7 @@ pub fn get_completion(
                     {
                         if WORD_PATTERN.is_match(&prefix) {
                             result.extend(get_namespace_completions(
-                                &raindoc.namespace,
+                                raindoc.namespace(),
                                 documentation_format.clone(),
                             ));
                         }
@@ -92,7 +89,7 @@ pub fn get_completion(
                 // completion items from local path with its equivelant hash that is stored in CAS
                 {
                     rain_document
-                        .meta_store
+                        .store()
                         .read()
                         .unwrap()
                         .dotrain_cache()
@@ -133,7 +130,7 @@ pub fn get_completion(
                 // all cached meta hash in CAS
                 if META_COMPLETION.is_match(&last.0) {
                     rain_document
-                        .meta_store
+                        .store()
                         .read()
                         .unwrap()
                         .cache()
@@ -155,11 +152,11 @@ pub fn get_completion(
             }
             Some(Vec::from(result))
         } else {
-            let pretext = rain_document.text.get(
-                rain_document.text.offset_at(&Position {
+            let pretext = rain_document.text().get(
+                rain_document.text().offset_at(&Position {
                     line: position.line,
                     character: 0,
-                })..rain_document.text.offset_at(&position),
+                })..rain_document.text().offset_at(&position),
             )?;
             let mut prefix = get_prefix(pretext, &TRIGGERS);
             let is_quote = prefix.starts_with('\'');
@@ -167,15 +164,15 @@ pub fn get_completion(
                 prefix = prefix.split_at(1).1.to_owned();
             }
             if NAMESPACE_PATTERN.is_match(&prefix) {
-                let offset = rain_document.text.offset_at(&position);
-                if let Some(namespace_node) = search_namespace(&prefix, &rain_document.namespace) {
+                let offset = rain_document.text().offset_at(&position);
+                if let Some(namespace_node) = search_namespace(&prefix, rain_document.namespace()) {
                     result.extend(get_namespace_completions(
                         namespace_node,
                         documentation_format.clone(),
                     ));
                 }
                 if !is_quote {
-                    if let Some(am) = &rain_document.known_words {
+                    if let Some(am) = &rain_document.known_words() {
                         for v in &am.0 {
                             result.push_front(CompletionItem {
                                 label: v.word.clone(),
@@ -195,7 +192,7 @@ pub fn get_completion(
                         }
                     }
                     if let Some(binding) = rain_document
-                        .bindings
+                        .bindings()
                         .iter()
                         .find(|v| v.content_position[0] <= offset && v.content_position[1] > offset)
                     {
@@ -204,7 +201,7 @@ pub fn get_completion(
                                 offset,
                                 rainlang_doc,
                                 binding,
-                                &rain_document.text,
+                                rain_document.text(),
                                 documentation_format.clone(),
                             ));
                         }
@@ -288,7 +285,7 @@ fn get_rainlang_src_alias_completions(
     documentation_format: MarkupKind,
 ) -> Vec<CompletionItem> {
     let mut result = vec![];
-    if let Some(src) = rainlang_doc.ast.iter().find(|v| {
+    if let Some(src) = rainlang_doc.ast().iter().find(|v| {
         v.position[0] + binding.content_position[0] <= offset
             && v.position[1] + binding.content_position[0] > offset
     }) {

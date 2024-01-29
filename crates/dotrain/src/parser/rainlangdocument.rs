@@ -8,7 +8,7 @@ use super::{
     line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
 };
 
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[cfg(feature = "js-api")]
 use tsify::Tsify;
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -29,11 +29,7 @@ struct RainlangState {
 ///
 /// RainlangDocument represents the parse tree of a Rainlang text which is used by the
 /// RainDocument and for providing LSP services.
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RainlangDocument {

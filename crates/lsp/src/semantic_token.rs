@@ -1,9 +1,7 @@
 use std::collections::BTreeSet;
+use super::{OffsetAt, PositionAt};
 use lsp_types::{SemanticTokensPartialResult, Position, SemanticToken};
-use super::{
-    OffsetAt, PositionAt,
-    super::{error::ErrorCode, types::ast::BindingItem, parser::raindocument::RainDocument},
-};
+use dotrain::{error::ErrorCode, types::ast::BindingItem, RainDocument};
 
 #[derive(Eq, PartialEq, Copy, Clone, PartialOrd, Ord, Debug)]
 struct OrdRange {
@@ -19,31 +17,33 @@ pub fn get_semantic_token(
     token_modifiers_len: usize,
 ) -> SemanticTokensPartialResult {
     let mut ranges: BTreeSet<OrdRange> = BTreeSet::new();
-    for binding in &rain_document.bindings {
+    for binding in rain_document.bindings() {
         match &binding.item {
             BindingItem::Exp(_) => {
                 binding.problems.iter().for_each(|p| {
                     if p.code == ErrorCode::ElidedBinding {
                         ranges.insert(OrdRange {
-                            start: rain_document.text.position_at(p.position[0]),
-                            end: rain_document.text.position_at(p.position[1]),
+                            start: rain_document.text().position_at(p.position[0]),
+                            end: rain_document.text().position_at(p.position[1]),
                         });
                     }
                 });
             }
             BindingItem::Elided(_) => {
                 let start = rain_document
-                    .text
+                    .text()
                     .position_at(binding.content_position[0] + 1);
-                let end = rain_document.text.position_at(binding.content_position[1]);
+                let end = rain_document
+                    .text()
+                    .position_at(binding.content_position[1]);
                 if start.line == end.line {
                     ranges.insert(OrdRange { start, end });
                 } else {
                     ranges.insert(OrdRange {
                         start,
-                        end: rain_document.text.position_at(
+                        end: rain_document.text().position_at(
                             rain_document
-                                .text
+                                .text()
                                 .offset_at(&Position::new(start.line + 1, 0))
                                 - 1,
                         ),
@@ -51,8 +51,8 @@ pub fn get_semantic_token(
                     for i in start.line + 1..end.line {
                         ranges.insert(OrdRange {
                             start: Position::new(i, 0),
-                            end: rain_document.text.position_at(
-                                rain_document.text.offset_at(&Position::new(i + 1, 0)) - 1,
+                            end: rain_document.text().position_at(
+                                rain_document.text().offset_at(&Position::new(i + 1, 0)) - 1,
                             ),
                         });
                     }
