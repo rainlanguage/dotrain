@@ -34,8 +34,8 @@ pub(crate) mod composer;
 pub mod cli;
 
 pub use lsp_types::Url;
-pub use rain_meta::Store;
+pub use rain_metadata::Store;
 pub use parser::*;
 pub use error::*;
 /// Provides all types and functionalities of Rain metadata
-pub use rain_meta;
+pub use rain_metadata;

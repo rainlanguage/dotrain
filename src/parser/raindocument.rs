@@ -4,7 +4,7 @@ use async_recursion::async_recursion;
 use topo_sort::{SortResults, TopoSort};
 use std::collections::{HashMap, VecDeque};
 use futures::{executor::block_on, future::join_all};
-use rain_meta::{
+use rain_metadata::{
     types::{dotrain::v1::DotrainMeta, authoring::v1::AuthoringMeta},
     Store, KnownMagic, RainMetaDocumentV1Item, search,
 };
@@ -1308,7 +1308,7 @@ mod tests {
 
     #[test]
     fn test_process_import_method() -> anyhow::Result<()> {
-        let mut meta_store = rain_meta::Store::new();
+        let mut meta_store = Store::new();
         let hash = "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184";
         let hash_bytes = alloy_primitives::hex::decode(hash).unwrap();
         meta_store.update_with(&hash_bytes, "meta2-bytes".as_bytes());
@@ -1531,7 +1531,7 @@ mod tests {
 
     #[test]
     fn test_parse_method() -> anyhow::Result<()> {
-        let store = rain_meta::Store::new();
+        let store = Store::new();
         let meta_store = Arc::new(RwLock::new(store));
 
         let text = r"some front matter
