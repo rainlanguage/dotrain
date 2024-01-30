@@ -1,4 +1,4 @@
-import { assert } from "chai";
+import * as assert from "assert";
 import { Position, Range } from "vscode-languageserver-types";
 
 export const testDotrain = `#value 0x123
@@ -19,13 +19,13 @@ export const assertError = async (f: any, s: string, e: string) => {
     try {
         await f();
     } catch (e: any) {
-        assert(
+        assert.ok(
             JSON.stringify(e).includes(s),
             `error string ${JSON.stringify(e)} does not include ${s}`,
         );
         didError = true;
     }
-    assert(didError, e);
+    assert.ok(didError, e);
 };
 
 /**

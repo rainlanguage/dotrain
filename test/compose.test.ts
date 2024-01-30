@@ -1,29 +1,30 @@
-import * as chai from "chai";
 import * as assert from "assert";
-import * as chaiAsPromised from "chai-as-promised";
 import { assertError } from "./utils";
 import { MetaStore, RainDocument, rainlang } from "../dist/cjs";
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-/** @ts-ignore */
-chai.use(chaiAsPromised);
-const expect: Chai.ExpectStatic = chai.expect;
+// // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// /** @ts-ignore */
+// chai.use(chaiAsPromised);
+// const expect: Chai.ExpectStatic = chai.expect;
 
 const ws = "                                                                   ";
 describe("RainDocument Compiler Tests", async function () {
     const metaStore = new MetaStore();
 
     it("should accept valid rainlang fragment `:;`", async () => {
-        return expect(
-            RainDocument.composeText(rainlang`${ws} #expression :;`, ["expression"], metaStore),
-        ).to.be.fulfilled.then((response: string) => {
-            assert.equal(response, ":;");
-        });
+        assert.equal(
+            await RainDocument.composeText(
+                rainlang`${ws} #expression :;`,
+                ["expression"],
+                metaStore,
+            ),
+            ":;",
+        );
     });
 
     it("should accept valid rainlang fragment `/* this is a comment */ :;`", async () => {
-        return expect(
-            RainDocument.composeText(
+        assert.equal(
+            await RainDocument.composeText(
                 rainlang`${ws}
         /* this is a comment */
         #expression
@@ -31,14 +32,13 @@ describe("RainDocument Compiler Tests", async function () {
                 ["expression"],
                 metaStore,
             ),
-        ).to.eventually.be.fulfilled.then((response: string) => {
-            assert.equal(response, ":;");
-        });
+            ":;",
+        );
     });
 
     it("should accept valid rainlang fragment `#exp1 :; #exp2 :;`", async () => {
-        return expect(
-            RainDocument.composeText(
+        assert.equal(
+            await RainDocument.composeText(
                 rainlang`${ws}
         #exp1
         :;
@@ -47,45 +47,41 @@ describe("RainDocument Compiler Tests", async function () {
                 ["exp1", "exp2"],
                 metaStore,
             ),
-        ).to.eventually.be.fulfilled.then((response: string) => {
-            assert.equal(response, ":;\n\n:;");
-        });
+            ":;\n\n:;",
+        );
     });
 
     it("should accept valid rainlang fragment `#expression _:int-add(10 20);`", async () => {
-        return expect(
-            RainDocument.composeText(
+        assert.equal(
+            await RainDocument.composeText(
                 rainlang`${ws} #expression _:int-add(10 20);`,
                 ["expression"],
                 metaStore,
             ),
-        ).to.eventually.be.fulfilled.then((response: string) => {
-            assert.equal(response, "_:int-add(10 20);");
-        });
+            "_:int-add(10 20);",
+        );
     });
 
     it("should accept valid rainlang fragment `_: int-add(10 20), _: block-timestamp();`", async () => {
-        return expect(
-            RainDocument.composeText(
+        assert.equal(
+            await RainDocument.composeText(
                 rainlang`${ws} #expression _: int-add(10 20), _: block-timestamp();`,
                 ["expression"],
                 metaStore,
             ),
-        ).to.eventually.be.fulfilled.then((response: string) => {
-            assert.equal(response, "_: int-add(10 20), _: block-timestamp();");
-        });
+            "_: int-add(10 20), _: block-timestamp();",
+        );
     });
 
     it("should accept valid rainlang fragment `#expression _ _: int-add(10 20) block-timestamp();`", async () => {
-        return expect(
-            RainDocument.composeText(
+        assert.equal(
+            await RainDocument.composeText(
                 rainlang`${ws} #expression _ _: int-add(10 20) block-timestamp();`,
                 ["expression"],
                 metaStore,
             ),
-        ).to.eventually.be.fulfilled.then((response: string) => {
-            assert.equal(response, "_ _: int-add(10 20) block-timestamp();");
-        });
+            "_ _: int-add(10 20) block-timestamp();",
+        );
     });
 
     it("should successfully compile an expression having multiple outputs", async () => {
@@ -109,12 +105,9 @@ describe("RainDocument Compiler Tests", async function () {
             _: int-add(s0 4),
             _: int-add(s1 5);
         `;
-        return expect(
-            RainDocument.composeText(expression, ["exp1", "exp2", "exp3", "exp4"], metaStore),
-        ).to.eventually.be.fulfilled.then((response: string) => {
-            assert.equal(
-                response,
-                `c0: 1,
+        assert.equal(
+            await RainDocument.composeText(expression, ["exp1", "exp2", "exp3", "exp4"], metaStore),
+            `c0: 1,
             c1: 2,
             condition: 1;
 
@@ -128,8 +121,7 @@ s0: 1,
 s0 s1: 1 2,
             _: int-add(s0 4),
             _: int-add(s1 5);`,
-            );
-        });
+        );
     });
 
     it("should throw error for invalid rainlang fragment `,`", async () => {
