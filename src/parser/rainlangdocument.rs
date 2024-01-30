@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use rain_meta::types::authoring::v1::AuthoringMeta;
+use rain_metadata::types::authoring::v1::AuthoringMeta;
 use super::{
     super::{
         error::{Error, ErrorCode},
@@ -787,7 +787,7 @@ impl RainlangDocument {
 mod tests {
     use super::*;
     use std::collections::HashMap;
-    use rain_meta::types::authoring::v1::AuthoringMetaItem;
+    use rain_metadata::types::authoring::v1::AuthoringMetaItem;
 
     #[test]
     fn test_process_opcode_method() -> anyhow::Result<()> {

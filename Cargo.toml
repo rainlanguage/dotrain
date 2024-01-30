@@ -41,7 +41,7 @@ async-recursion = "1.0.5"
 lsp-types = "0.94.1"
 getrandom = { version = "0.2.11", features = ["js", "js-sys"] }
 revm = { version = "3.5.0", default-features = false, features = ["serde", "std"] }
-rain-meta = { git = "https://github.com/rainprotocol/rain.metadata.git", rev = "42712f1469ff7943ba7abe324216c96b8e8c707a", default-features = false }
+rain-metadata = "0.0.2-alpha.2"
 
 # cli
 tracing = { version = "0.1.37", optional = true }

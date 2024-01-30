@@ -1,4 +1,4 @@
-use rain_meta::Store;
+use rain_metadata::Store;
 use std::{
     sync::{Arc, RwLock},
     collections::VecDeque,
@@ -417,14 +417,14 @@ impl ComposeError {
 mod tests {
     use super::*;
     use crate::error::ErrorCode;
-    use rain_meta::{
+    use rain_metadata::{
         types::authoring::v1::{AuthoringMetaItem, AuthoringMeta},
         NPE2Deployer,
     };
 
     #[test]
     fn test_compose() -> anyhow::Result<()> {
-        let mut store = rain_meta::Store::new();
+        let mut store = rain_metadata::Store::new();
         let authoring_meta = AuthoringMeta(vec![
             AuthoringMetaItem {
                 word: "opcode-1".to_owned(),

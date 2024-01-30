@@ -801,7 +801,7 @@ dependencies = [
  "lsp-types",
  "magic_string",
  "once_cell",
- "rain-meta",
+ "rain-metadata",
  "regex",
  "revm",
  "serde",
@@ -823,6 +823,12 @@ name = "dunce"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56ce8c6da7551ec6c462cbaf3bfbc75131ebbfa1c944aeaa9dab51ca1c5f0c3b"
+
+[[package]]
+name = "dyn-clone"
+version = "1.0.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "545b22097d44f8a9581187cdf93de7a71e4722bf51200cfaba810865b49a495d"
 
 [[package]]
 name = "ecdsa"
@@ -1936,14 +1942,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
 
 [[package]]
-name = "rain-meta"
-version = "1.0.0"
-source = "git+https://github.com/rainprotocol/rain.metadata.git?rev=42712f1469ff7943ba7abe324216c96b8e8c707a#42712f1469ff7943ba7abe324216c96b8e8c707a"
+name = "rain-metadata"
+version = "0.0.2-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae6fd96284c6c4cb18205c703826da75df9c01479b07ca6b1905a30dc78d54d2"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives 0.5.4",
  "alloy-sol-types",
  "anyhow",
+ "clap",
  "deflate",
  "futures",
  "graphql_client",
@@ -1952,11 +1960,15 @@ dependencies = [
  "once_cell",
  "regex",
  "reqwest",
+ "schemars",
  "serde",
  "serde_bytes",
  "serde_cbor",
  "serde_json",
  "strum",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
  "validator",
 ]
 
@@ -2275,6 +2287,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "schemars"
+version = "0.8.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45a28f4c49489add4ce10783f7911893516f15afe45d015608d41faca6bc4d29"
+dependencies = [
+ "dyn-clone",
+ "schemars_derive",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "schemars_derive"
+version = "0.8.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c767fd6fa65d9ccf9cf026122c1b555f2ef9a4f0cea69da4d7dbc3e258d30967"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde_derive_internals 0.26.0",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "sec1"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2412,6 +2448,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.48",
+]
+
+[[package]]
+name = "serde_derive_internals"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85bf8229e7920a9f636479437026331ce11aa132b4dde37d121944a44d6e5f3c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -2900,7 +2947,7 @@ checksum = "7a94b0f0954b3e59bfc2c246b4c8574390d94a4ad4ad246aaf2fb07d7dfd3b47"
 dependencies = [
  "proc-macro2",
  "quote",
- "serde_derive_internals",
+ "serde_derive_internals 0.28.0",
  "syn 2.0.48",
 ]
 

@@ -1,4 +1,4 @@
-use rain_meta::Store;
+use rain_metadata::Store;
 use std::{
     fs::read_to_string,
     sync::{Arc, RwLock},

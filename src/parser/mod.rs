@@ -2,7 +2,7 @@ use super::error::Error;
 use lsp_types::Position;
 use regex::{Match, Regex};
 use revm::primitives::U256;
-use rain_meta::{RainMetaDocumentV1Item, KnownMagic};
+use rain_metadata::{RainMetaDocumentV1Item, KnownMagic};
 use super::types::{
     ast::{ParsedItem, Offsets},
     patterns::{HEX_PATTERN, E_PATTERN, INT_PATTERN},
