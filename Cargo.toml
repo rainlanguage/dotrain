@@ -1,0 +1,28 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "CAL-1.0"
+homepage = "https://github.com/rainlanguage/dotrain"
+repository = "https://github.com/rainlanguage/dotrain"
+
+[workspace.dependencies]
+regex = "1.10.2"
+anyhow = "1.0.75"
+once_cell = "1.18.0"
+alloy-primitives = "0.5.0"
+topo_sort = "0.4.0"
+magic_string = "0.3.4"
+async-recursion = "1.0.5"
+lsp-types = "0.94.1"
+getrandom = { version = "0.2.11", features = ["js", "js-sys"] }
+revm = { version = "3.5.0", default-features = false, features = ["serde", "std"] }
+rain-metadata = "0.0.2-alpha.2"
+
+[workspace.dependencies.dotrain]
+path = "crates/dotrain"
+
+[lints.clippy]
+all = "warn"
