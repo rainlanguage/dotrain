@@ -17,6 +17,7 @@ node_modules
 target
 cache
 temp
+dist
 ./rainlang.api.json
 ./dotrain.api.json
 
