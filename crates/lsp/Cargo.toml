@@ -1,14 +1,21 @@
 [package]
 name = "dotrain-lsp"
 version = "0.0.0"
-description = ".rain language server protocol services"
+description = "Rain language server protocol services"
 edition.workspace = true
 license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
 [features]
-js-api = ["dotrain/js-api", "dep:js-sys", "dep:wasm-bindgen", "dep:serde-wasm-bindgen", "dep:wasm-bindgen-futures", "dep:tsify"]
+js-api = [
+  "dotrain/js-api", 
+  "dep:js-sys", 
+  "dep:wasm-bindgen", 
+  "dep:serde-wasm-bindgen", 
+  "dep:wasm-bindgen-futures", 
+  "dep:tsify"
+]
 
 [lib]
 crate-type = ["rlib", "cdylib"]

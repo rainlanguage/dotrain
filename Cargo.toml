@@ -5,15 +5,15 @@ resolver = "2"
 [workspace.package]
 edition = "2021"
 license = "CAL-1.0"
-homepage = "https://github.com/rainprotocol/dotrain"
-repository = "https://github.com/rainprotocol/dotrain"
+homepage = "https://github.com/rainlanguage/dotrain"
+repository = "https://github.com/rainlanguage/dotrain"
 
 [workspace.dependencies]
 regex = "1.10.2"
 anyhow = "1.0.75"
 once_cell = "1.18.0"
 alloy-primitives = "0.5.0"
-rain-meta = { git = "https://github.com/rainprotocol/rain.metadata.git", rev = "42712f1469ff7943ba7abe324216c96b8e8c707a", default-features = false }
+rain-meta = { git = "https://github.com/rainlanguage/rain.metadata.git", rev = "42712f1469ff7943ba7abe324216c96b8e8c707a", default-features = false }
 
 [workspace.dependencies.dotrain]
 path = "crates/dotrain"

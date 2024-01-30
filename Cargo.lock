@@ -1954,7 +1954,7 @@ checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
 [[package]]
 name = "rain-meta"
 version = "1.0.0"
-source = "git+https://github.com/rainprotocol/rain.metadata.git?rev=42712f1469ff7943ba7abe324216c96b8e8c707a#42712f1469ff7943ba7abe324216c96b8e8c707a"
+source = "git+https://github.com/rainlanguage/rain.metadata.git?rev=42712f1469ff7943ba7abe324216c96b8e8c707a#42712f1469ff7943ba7abe324216c96b8e8c707a"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives 0.5.4",
