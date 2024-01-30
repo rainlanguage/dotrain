@@ -70,7 +70,7 @@ pub async fn dispatch(dotrain: Dotrain) -> anyhow::Result<()> {
     match dotrain {
         Dotrain::Compose(cli) => {
             println!("{}", compose_target(cli).await?);
-        },
+        }
         Dotrain::Rainconfig(v) => match v {
             RainconfigInfo::Info => println!("{}", rainconfig::RAINCONFIG_DESCRIPTION),
             RainconfigInfo::PrintAll => {
@@ -82,7 +82,7 @@ pub async fn dispatch(dotrain: Dotrain) -> anyhow::Result<()> {
             RainconfigInfo::Subgraphs => {
                 println!("{}", rainconfig::RAINCONFIG_SUBGRAPHS_DESCRIPTION)
             }
-        }
+        },
     };
     Ok(())
 }
