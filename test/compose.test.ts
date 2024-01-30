@@ -2,11 +2,6 @@ import * as assert from "assert";
 import { assertError } from "./utils";
 import { MetaStore, RainDocument, rainlang } from "../dist/cjs";
 
-// // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// /** @ts-ignore */
-// chai.use(chaiAsPromised);
-// const expect: Chai.ExpectStatic = chai.expect;
-
 const ws = "                                                                   ";
 describe("RainDocument Compiler Tests", async function () {
     const metaStore = new MetaStore();
