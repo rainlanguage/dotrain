@@ -3,7 +3,7 @@ import { toRange } from "./utils";
 import { MetaStore, ErrorCode, RainLanguageServices, rainlang } from "../dist/cjs";
 import { Diagnostic, TextDocumentItem, DiagnosticSeverity } from "vscode-languageserver-types";
 
-const deployerHash = "                                                                   ";
+const ws = "                                                                   ";
 async function testDiagnostics(
     text: string,
     services: RainLanguageServices,
@@ -32,7 +32,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     const services = new RainLanguageServices(store);
 
     it('should error: found illegal character: "\\u00a2"', async () => {
-        await testDiagnostics(rainlang`${deployerHash} #exn _: add(¢ 2);`, services, [
+        await testDiagnostics(rainlang`${ws} #exn _: add(¢ 2);`, services, [
             {
                 message: "illegal character: \u00a2",
                 range: toRange(0, 80, 0, 80),
@@ -57,7 +57,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     it("should error: unexpected comment", async () => {
         await testDiagnostics(
-            rainlang`${deployerHash} #exn _ _: add(10 20) /* invalid comment */ mul(1 2);`,
+            rainlang`${ws} #exn _ _: add(10 20) /* invalid comment */ mul(1 2);`,
             services,
             [
                 {
@@ -72,7 +72,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it("should error: parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis", async () => {
-        await testDiagnostics(rainlang`${deployerHash} #exn x: ();`, services, [
+        await testDiagnostics(rainlang`${ws} #exn x: ();`, services, [
             {
                 message:
                     "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis",
@@ -85,7 +85,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it('should error: unexpected ")"', async () => {
-        await testDiagnostics(rainlang`${deployerHash} #exn x: );`, services, [
+        await testDiagnostics(rainlang`${ws} #exn x: );`, services, [
             {
                 message: 'unexpected ")"',
                 range: toRange(0, 76, 0, 77),
@@ -98,7 +98,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     it("should error: undefined word", async () => {
         await testDiagnostics(
-            rainlang`${deployerHash} #exn _: this-is-an-invalid-rain-expression;`,
+            rainlang`${ws} #exn _: this-is-an-invalid-rain-expression;`,
             services,
             [
                 {
@@ -113,23 +113,19 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it("should error: invalid argument pattern", async () => {
-        await testDiagnostics(
-            rainlang`${deployerHash} #exn x: int-add<error-argument>();`,
-            services,
-            [
-                {
-                    message: "invalid argument pattern: error-argument",
-                    range: toRange(0, 84, 0, 98),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.InvalidOperandArg,
-                    source: "rainlang",
-                },
-            ],
-        );
+        await testDiagnostics(rainlang`${ws} #exn x: int-add<error-argument>();`, services, [
+            {
+                message: "invalid argument pattern: error-argument",
+                range: toRange(0, 84, 0, 98),
+                severity: DiagnosticSeverity.Error,
+                code: ErrorCode.InvalidOperandArg,
+                source: "rainlang",
+            },
+        ]);
     });
 
     it("should error: invalid word pattern and unknown opcode", async () => {
-        await testDiagnostics(rainlang`${deployerHash} #exn _: read-mem_ory<1 1>();`, services, [
+        await testDiagnostics(rainlang`${ws} #exn _: read-mem_ory<1 1>();`, services, [
             {
                 message: "invalid word pattern: read-mem_ory",
                 range: toRange(0, 76, 0, 88),
@@ -141,7 +137,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it('should error: expected "("', async () => {
-        await testDiagnostics(rainlang`${deployerHash} #exn _ _: int-add<1 2 2>;`, services, [
+        await testDiagnostics(rainlang`${ws} #exn _ _: int-add<1 2 2>;`, services, [
             {
                 message: 'expected "("',
                 range: toRange(0, 78, 0, 85),
@@ -153,7 +149,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it('should error: expected ")"', async () => {
-        await testDiagnostics(rainlang`${deployerHash} #exn _ _: int-add<1 2 2>(;`, services, [
+        await testDiagnostics(rainlang`${ws} #exn _ _: int-add<1 2 2>(;`, services, [
             {
                 message: 'expected ")"',
                 range: toRange(0, 78, 0, 93),
@@ -166,7 +162,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     it("should error: invalid LHS alias: addval_as", async () => {
         await testDiagnostics(
-            rainlang`${deployerHash} #exn addval_as: int-add(1 20), x: addval_as;`,
+            rainlang`${ws} #exn addval_as: int-add(1 20), x: addval_as;`,
             services,
             [
                 {
@@ -182,7 +178,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     it("should error: value greater than 32 bytes in size", async () => {
         await testDiagnostics(
-            rainlang`${deployerHash} #exn _: int-add(1 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);`,
+            rainlang`${ws} #exn _: int-add(1 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);`,
             services,
             [
                 {
@@ -197,7 +193,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it("should error: undefined word: max-uint266", async () => {
-        await testDiagnostics(rainlang`${deployerHash} #exn x: max-uint266;`, services, [
+        await testDiagnostics(rainlang`${ws} #exn x: max-uint266;`, services, [
             {
                 message: "undefined word: max-uint266",
                 range: toRange(0, 76, 0, 87),
@@ -210,7 +206,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
 
     it('should error: "_notdefined" is not a valid rainlang word', async () => {
         await testDiagnostics(
-            rainlang`${deployerHash} #exn _: int-add(10 20); #exp1 x: _notdefined;`,
+            rainlang`${ws} #exn _: int-add(10 20); #exp1 x: _notdefined;`,
             services,
             [
                 {
@@ -225,7 +221,7 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it("should error: expected > and (", async () => {
-        await testDiagnostics(rainlang`${deployerHash} #exn _: int-add<1 2();`, services, [
+        await testDiagnostics(rainlang`${ws} #exn _: int-add<1 2();`, services, [
             {
                 message: 'expected ">"',
                 range: toRange(0, 83, 0, 89),

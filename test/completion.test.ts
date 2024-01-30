@@ -7,7 +7,7 @@ import {
     CompletionItemKind,
 } from "vscode-languageserver-types";
 
-const deployerHash = "                                                                   ";
+const ws = "                                                                   ";
 async function testCompletion(
     text: string,
     position: Position,
@@ -41,7 +41,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
             kind: CompletionItemKind.Class,
         });
         await testCompletion(
-            rainlang`${deployerHash} #expression _: `,
+            rainlang`${ws} #expression _: `,
             Position.create(0, 82),
             _allCompletions,
             services,
@@ -55,7 +55,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
             kind: CompletionItemKind.Class,
         });
         await testCompletion(
-            rainlang`${deployerHash} #exp _: int-ad`,
+            rainlang`${ws} #exp _: int-ad`,
             Position.create(0, 82),
             _allCompletions,
             services,
@@ -63,12 +63,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
     });
 
     it("should provide no suggestions if cursor is in middle of a word", async () => {
-        await testCompletion(
-            rainlang`${deployerHash} #exp _: add`,
-            Position.create(0, 77),
-            null,
-            services,
-        );
+        await testCompletion(rainlang`${ws} #exp _: add`, Position.create(0, 77), null, services);
     });
 
     it("should provide correct suggestions if leading character is non-word", async () => {
@@ -78,7 +73,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
             kind: CompletionItemKind.Class,
         });
         await testCompletion(
-            rainlang`${deployerHash} #exp _: add(1 2)`,
+            rainlang`${ws} #exp _: add(1 2)`,
             Position.create(0, 79),
             _allCompletions,
             services,
@@ -88,13 +83,9 @@ describe("LSP Code Completion Language Service Tests", async function () {
     it("should include lhs alias in suggestions", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
         await testCompletion(
-            rainlang`${deployerHash} #exp name: n`,
+            rainlang`${ws} #exp name: n`,
             Position.create(0, 80),
             [
-                // {
-                //     label: "name",
-                //     kind: CompletionItemKind.Variable,
-                // },
                 {
                     label: "exp",
                     kind: CompletionItemKind.Class,
@@ -106,7 +97,7 @@ describe("LSP Code Completion Language Service Tests", async function () {
     });
 
     it("should include root namespaces items in suggestions", async () => {
-        const _expression = rainlang`${deployerHash}
+        const _expression = rainlang`${ws}
 #row
 1
 
@@ -116,7 +107,7 @@ _: .`;
         const _ns = _dotrain.namespace;
         const items: CompletionItem[] = [];
         _ns.forEach((v, k) => {
-            items.push({
+            items.unshift({
                 label: k,
                 kind: !("element" in v)
                     ? CompletionItemKind.Field
@@ -134,7 +125,7 @@ _: .`;
     });
 
     it("should include correct namespaces items in suggestions", async () => {
-        const _expression = rainlang`${deployerHash}
+        const _expression = rainlang`${ws}
 #row
 1
 

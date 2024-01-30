@@ -3,7 +3,7 @@ import { toRange } from "./utils";
 import { MetaStore, RainLanguageServices, rainlang } from "../dist/cjs";
 import { Hover, Position, TextDocumentItem } from "vscode-languageserver-types";
 
-const deployerHash = "                                                                   ";
+const ws = "                                                                   ";
 async function testHover(
     text: string,
     position: Position,
@@ -19,7 +19,7 @@ describe("LSP Hover Language Service Tests", async function () {
     const store = new MetaStore();
 
     const services = new RainLanguageServices(store);
-    const expression = rainlang`${deployerHash} ${deployerHash}
+    const expression = rainlang`${ws} ${ws}
 #exp1
 total-sent-k: 0xc5a65bb3dc9abdd9c751e2fb0fb0ccc8929e1f040a273ce685f88ac4385396c8,
 batch-start-info-k: 0xac62de4eba19d5b81f845e169c63b25688d494f595bb85367ef190897e811aa9,
