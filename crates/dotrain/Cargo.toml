@@ -37,7 +37,7 @@ anyhow = { workspace = true }
 regex = { workspace = true }
 once_cell = { workspace = true }
 alloy-primitives = { workspace = true }
-rain-meta = { workspace = true }
+rain-metadata = { workspace = true }
 
 # cli
 tracing = { version = "0.1.37", optional = true }

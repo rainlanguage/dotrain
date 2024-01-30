@@ -29,7 +29,7 @@ pub(crate) mod composer;
 #[cfg(feature = "cli")]
 pub mod cli;
 
-pub use rain_meta::Store;
+pub use rain_metadata::Store;
 pub use parser::*;
 /// Provides all types and functionalities of Rain metadata
-pub use rain_meta;
+pub use rain_metadata;
