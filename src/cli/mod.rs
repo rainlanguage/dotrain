@@ -21,10 +21,18 @@ struct Cli {
     compose: DotrainCompose,
 }
 
+/// Compose
+#[derive(Subcommand)]
+pub enum Dotrain {
+    /// Compose a .rain file to rainlang
+    #[command(subcommand)]
+    Compose(Compose),
+}
+
 /// Subcommand entry point
-#[derive(Subcommand, Debug)]
+#[derive(Parser, Debug)]
 #[command(author, version, about = "Rain composer CLI binary to compose .rain files to rainlang", long_about = None)]
-pub struct DotrainCompose {
+pub struct Compose {
     /// Input .rain file path
     #[arg(short, long)]
     input: PathBuf,
