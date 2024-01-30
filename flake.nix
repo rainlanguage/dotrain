@@ -1,7 +1,7 @@
 {
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
-    rainix.url = "github:rainprotocol/rainix/dc51d8875334c47256082363184b8e7d74ec456e";
+    rainix.url = "github:rainprotocol/rainix";
   };
 
   outputs = { self, flake-utils, rainix }:
@@ -43,7 +43,35 @@
       defaultPackage = packages.build-bin;
 
       # For `nix develop`:
-      devShells = rainix.devShells.${system};
+      devShells = {
+        js = pkgs.mkShell {
+          nativeBuildInputs = [
+            rainix.rust-toolchain.${system}
+            rainix.rust-build-inputs.${system}
+            rainix.node-build-inputs.${system}
+          ] ++ (with pkgs; [ 
+            wasm-bindgen-cli
+            (writeShellScriptBin "flush" ''
+              rm -rf dist
+              rm -rf docs
+              rm -rf temp
+            '')
+            (writeShellScriptBin "hard-flush" ''
+              rm -rf dist
+              rm -rf docs
+              rm -rf temp
+              rm -rf target
+              rm -rf node_modules
+            '')
+            (writeShellScriptBin "hard-build" ''
+              hard-flush
+              npm install
+              npm run build
+            '')
+          ]);
+          shellHook = '' npm install '';
+        };
+      } // rainix.devShells.${system};
     }
   );
 }
