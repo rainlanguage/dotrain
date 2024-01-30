@@ -1,4 +1,4 @@
-use rain_meta::Store;
+use rain_metadata::Store;
 use serde::{Serialize, Deserialize};
 use std::{
     path::PathBuf,

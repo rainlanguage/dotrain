@@ -13,7 +13,13 @@ regex = "1.10.2"
 anyhow = "1.0.75"
 once_cell = "1.18.0"
 alloy-primitives = "0.5.0"
-rain-meta = { git = "https://github.com/rainlanguage/rain.metadata.git", rev = "42712f1469ff7943ba7abe324216c96b8e8c707a", default-features = false }
+topo_sort = "0.4.0"
+magic_string = "0.3.4"
+async-recursion = "1.0.5"
+lsp-types = "0.94.1"
+getrandom = { version = "0.2.11", features = ["js", "js-sys"] }
+revm = { version = "3.5.0", default-features = false, features = ["serde", "std"] }
+rain-metadata = "0.0.2-alpha.2"
 
 [workspace.dependencies.dotrain]
 path = "crates/dotrain"

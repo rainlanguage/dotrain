@@ -4,7 +4,7 @@ use async_recursion::async_recursion;
 use topo_sort::{SortResults, TopoSort};
 use std::collections::{HashMap, VecDeque};
 use futures::{executor::block_on, future::join_all};
-use rain_meta::{
+use rain_metadata::{
     types::{dotrain::v1::DotrainMeta, authoring::v1::AuthoringMeta},
     Store, KnownMagic, RainMetaDocumentV1Item, search,
 };
@@ -147,6 +147,9 @@ impl RainDocument {
 
     /// This instance's body (i.e. text minus front matter)
     pub fn body(&self) -> &str {
+        if self.front_matter_offset == 0 && !self.text.starts_with(FRONTMATTER_SEPARATOR) {
+            return &self.text;
+        }
         &self.text[(self.front_matter_offset + FRONTMATTER_SEPARATOR.len())..]
     }
 
@@ -262,13 +265,6 @@ impl RainDocument {
         let mut document = self.text.clone();
         let mut namespace: Namespace = HashMap::new();
 
-        // split front matter and rest of the text
-        if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
-            self.front_matter_offset = splitter;
-            let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
-            fill_in(&mut document, [0, body_start_offset])?;
-        };
-
         // check for illegal characters, ends parsing right away if found any
         let illegal_chars = inclusive_parse(&document, &ILLEGAL_CHAR, 0);
         if !illegal_chars.is_empty() {
@@ -292,6 +288,13 @@ impl RainDocument {
             });
             fill_in(&mut document, parsed_comment.1)?;
         }
+
+        // split front matter and rest of the text
+        if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
+            self.front_matter_offset = splitter;
+            let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
+            fill_in(&mut document, [0, body_start_offset])?;
+        };
 
         // since exclusive_parse() is being used with 'include_empty_ends' arg set to true,
         // the first item of the parsed items should be ignored since it only contains the
@@ -513,31 +516,7 @@ impl RainDocument {
         };
         while let Some(first_piece) = config_pieces.next() {
             if let Some(complementary_piece) = config_pieces.next() {
-                if first_piece.0 == "." {
-                    if complementary_piece.0 == "!" {
-                        if imp_conf.groups.iter().any(|v| {
-                            if let Some(e) = &v.1 {
-                                v.0 .0 == first_piece.0 && e.0 == complementary_piece.0
-                            } else {
-                                false
-                            }
-                        }) {
-                            imp_conf.problems.push(
-                                ErrorCode::DuplicateImportStatement.to_problem(
-                                    vec![],
-                                    [first_piece.1[0], complementary_piece.1[1]],
-                                ),
-                            );
-                        }
-                    } else {
-                        imp_conf.problems.push(
-                            ErrorCode::UnexpectedToken.to_problem(vec![], complementary_piece.1),
-                        );
-                    }
-                    imp_conf
-                        .groups
-                        .push((first_piece.clone(), Some(complementary_piece.clone())));
-                } else if WORD_PATTERN.is_match(&first_piece.0) {
+                if WORD_PATTERN.is_match(&first_piece.0) {
                     if NUMERIC_PATTERN.is_match(&complementary_piece.0)
                         || complementary_piece.0 == "!"
                     {
@@ -1264,7 +1243,7 @@ mod tests {
 
     #[test]
     fn test_process_import_config_method() -> anyhow::Result<()> {
-        let text = " 'item1 renamed-item1 \n . ! \n\n\t item2 0x1234 \n";
+        let text = " 'item1 renamed-item1 \n  \n\n\t item2 0x1234 \n";
         let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
         let result = RainDocument::process_import_config(&mut config_items.iter_mut());
         let expected = ImportConfiguration {
@@ -1274,12 +1253,8 @@ mod tests {
                     Some(ParsedItem("renamed-item1".to_owned(), [8, 21])),
                 ),
                 (
-                    ParsedItem(".".to_owned(), [24, 25]),
-                    Some(ParsedItem("!".to_owned(), [26, 27])),
-                ),
-                (
-                    ParsedItem("item2".to_owned(), [32, 37]),
-                    Some(ParsedItem("0x1234".to_owned(), [38, 44])),
+                    ParsedItem("item2".to_owned(), [29, 34]),
+                    Some(ParsedItem("0x1234".to_owned(), [35, 41])),
                 ),
             ],
             problems: vec![],
@@ -1318,7 +1293,7 @@ mod tests {
 
     #[test]
     fn test_process_import_method() -> anyhow::Result<()> {
-        let mut meta_store = rain_meta::Store::new();
+        let mut meta_store = Store::new();
         let hash = "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184";
         let hash_bytes = alloy_primitives::hex::decode(hash).unwrap();
         meta_store.update_with(&hash_bytes, "meta2-bytes".as_bytes());
@@ -1541,7 +1516,7 @@ mod tests {
 
     #[test]
     fn test_parse_method() -> anyhow::Result<()> {
-        let store = rain_meta::Store::new();
+        let store = Store::new();
         let meta_store = Arc::new(RwLock::new(store));
 
         let text = r"some front matter
