@@ -15,7 +15,7 @@ pub use rainconfig::*;
 
 /// CLI app entrypoint sruct
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about = "Dotrain cli app", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     dotrain: Dotrain,
@@ -27,6 +27,9 @@ pub enum Dotrain {
     /// Compose a .rain file to rainlang
     #[command(author, version, about = "Rain composer CLI binary to compose .rain files to rainlang", long_about = None)]
     Compose(Compose),
+    /// Prints 'rainconfig' info and description
+    #[command(subcommand)]
+    Rainconfig(RainconfigInfo),
 }
 
 /// Subcommand entry point
@@ -49,16 +52,6 @@ pub struct Compose {
     /// Only use local dotrain meta specified in rainconfig include field and dont search for them in subgraphs
     #[arg(short, long)]
     local_data_only: Option<bool>,
-    #[command(subcommand)]
-    subcmd: Option<SubCommands>,
-}
-
-/// Top level commands
-#[derive(Subcommand, Debug)]
-pub enum SubCommands {
-    /// Prints 'rainconfig' info and description
-    #[command(subcommand)]
-    RainconfigInfo(RainconfigInfo),
 }
 
 /// rainconfig available commands
@@ -78,23 +71,18 @@ pub enum RainconfigInfo {
 pub async fn dispatch(dotrain: Dotrain) -> anyhow::Result<()> {
     match dotrain {
         Dotrain::Compose(cli) => {
-            if let Some(subcmd) = cli.subcmd {
-                match subcmd {
-                    SubCommands::RainconfigInfo(v) => match v {
-                        RainconfigInfo::Info => println!("{}", rainconfig::RAINCONFIG_DESCRIPTION),
-                        RainconfigInfo::PrintAll => {
-                            println!("{}", ["- include", "- subgraphs"].join("\n"))
-                        }
-                        RainconfigInfo::Include => {
-                            println!("{}", rainconfig::RAINCONFIG_INCLUDE_DESCRIPTION)
-                        }
-                        RainconfigInfo::Subgraphs => {
-                            println!("{}", rainconfig::RAINCONFIG_SUBGRAPHS_DESCRIPTION)
-                        }
-                    },
-                }
-            } else {
-                println!("{}", compose_target(cli).await?);
+            println!("{}", compose_target(cli).await?);
+        },
+        Dotrain::Rainconfig(v) => match v {
+            RainconfigInfo::Info => println!("{}", rainconfig::RAINCONFIG_DESCRIPTION),
+            RainconfigInfo::PrintAll => {
+                println!("{}", ["- include", "- subgraphs"].join("\n"))
+            }
+            RainconfigInfo::Include => {
+                println!("{}", rainconfig::RAINCONFIG_INCLUDE_DESCRIPTION)
+            }
+            RainconfigInfo::Subgraphs => {
+                println!("{}", rainconfig::RAINCONFIG_SUBGRAPHS_DESCRIPTION)
             }
         }
     };
