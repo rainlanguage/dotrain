@@ -23,6 +23,7 @@ rain-metadata = "0.0.2-alpha.2"
 
 [workspace.dependencies.dotrain]
 path = "crates/dotrain"
+version = "6.0.0"
 
 [lints.clippy]
 all = "warn"
