@@ -15,17 +15,15 @@ pub use rainconfig::*;
 
 /// CLI app entrypoint sruct
 #[derive(Parser)]
-#[command(author, version, about = "Dotrain cli app", long_about = None)]
+#[command(author, version, about = "Dotrain cli", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     dotrain: Dotrain,
 }
 
-/// Compose
 #[derive(Subcommand)]
 pub enum Dotrain {
     /// Compose a .rain file to rainlang
-    #[command(author, version, about = "Rain composer CLI binary to compose .rain files to rainlang", long_about = None)]
     Compose(Compose),
     /// Prints 'rainconfig' info and description
     #[command(subcommand)]
