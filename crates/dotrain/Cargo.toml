@@ -1,6 +1,6 @@
 [package]
 name = "dotrain"
-version = "0.0.0"
+version = "6.0.0"
 description = ".rain to rainlang composer"
 edition.workspace = true
 license.workspace = true
