@@ -2,3 +2,6 @@
 
 pub mod ast;
 pub mod patterns;
+
+#[cfg(feature = "js-api")]
+mod impls;
