@@ -3,10 +3,10 @@ use std::{
     fs::read_to_string,
     sync::{Arc, RwLock},
 };
-use super::{rainconfig::RainConfigStruct, super::parser::raindocument::RainDocument, RainComposerCli};
+use super::{rainconfig::RainConfigStruct, super::parser::raindocument::RainDocument, Compose};
 
 /// Composes only the given .rain files based on provided options
-pub async fn compose_target(opts: RainComposerCli) -> anyhow::Result<String> {
+pub async fn compose_target(opts: Compose) -> anyhow::Result<String> {
     let force = opts.force.unwrap_or(false);
     let local_data_only = opts.local_data_only.unwrap_or(false);
     let store = if let Some(rainconfig_path) = &opts.config {
