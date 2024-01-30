@@ -8,16 +8,16 @@ use super::{
     line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
 };
 
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[cfg(feature = "js-api")]
 use tsify::Tsify;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 struct Parens {
     open: Vec<usize>,
     close: Vec<usize>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 struct RainlangState {
     nodes: Vec<Node>,
     aliases: Vec<Alias>,
@@ -25,29 +25,11 @@ struct RainlangState {
     depth: usize,
 }
 
-impl Default for RainlangState {
-    fn default() -> Self {
-        RainlangState {
-            nodes: vec![],
-            aliases: vec![],
-            parens: Parens {
-                open: vec![],
-                close: vec![],
-            },
-            depth: 0,
-        }
-    }
-}
-
 /// Data structure (parse tree) of a Rainlang text
 ///
 /// RainlangDocument represents the parse tree of a Rainlang text which is used by the
 /// RainDocument and for providing LSP services.
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    derive(Tsify),
-    tsify(into_wasm_abi, from_wasm_abi)
-)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RainlangDocument {
@@ -94,11 +76,7 @@ impl RainlangDocument {
         namespace: &Namespace,
         authoring_meta: Option<&AuthoringMeta>,
     ) -> RainlangDocument {
-        let mut am = &AuthoringMeta(vec![]);
-        if let Some(v) = authoring_meta {
-            am = v;
-        };
-        let mut rl = RainlangDocument {
+        let mut rainlang_doc = RainlangDocument {
             text,
             ast: vec![],
             problems: vec![],
@@ -106,8 +84,8 @@ impl RainlangDocument {
             error: None,
             state: RainlangState::default(),
         };
-        rl.parse(namespace, am);
-        rl
+        rainlang_doc.parse(namespace, authoring_meta.unwrap_or(&AuthoringMeta(vec![])));
+        rainlang_doc
     }
 
     pub(crate) fn new() -> Self {
@@ -154,32 +132,32 @@ impl RainlangDocument {
         };
 
         // parse and take out comments
-        for v in inclusive_parse(&document, &COMMENT_PATTERN, 0) {
-            if !v.0.ends_with("*/") {
+        for parsed_comment in inclusive_parse(&document, &COMMENT_PATTERN, 0) {
+            if !parsed_comment.0.ends_with("*/") {
                 self.problems
-                    .push(ErrorCode::UnexpectedEndOfComment.to_problem(vec![], v.1));
+                    .push(ErrorCode::UnexpectedEndOfComment.to_problem(vec![], parsed_comment.1));
             }
             self.comments.push(Comment {
-                comment: v.0.clone(),
-                position: v.1,
+                comment: parsed_comment.0.clone(),
+                position: parsed_comment.1,
             });
-            fill_in(&mut document, v.1)?;
+            fill_in(&mut document, parsed_comment.1)?;
         }
 
         // parse and take out pragma definitions
         // currently not part of ast
-        for v in inclusive_parse(&document, &PRAGMA_PATTERN, 0) {
+        for parsed_pragma in inclusive_parse(&document, &PRAGMA_PATTERN, 0) {
             // if not followed by a hex literal
-            if !PRAGMA_END_PATTERN.is_match(&v.0) {
+            if !PRAGMA_END_PATTERN.is_match(&parsed_pragma.0) {
                 self.problems
-                    .push(ErrorCode::ExpectedHexLiteral.to_problem(vec![], v.1));
+                    .push(ErrorCode::ExpectedHexLiteral.to_problem(vec![], parsed_pragma.1));
             }
             // if not at top, ie checking for a ":" before the pragma definition
-            if document[..v.1[0]].contains(':') {
+            if document[..parsed_pragma.1[0]].contains(':') {
                 self.problems
-                    .push(ErrorCode::UnexpectedPragma.to_problem(vec![], v.1));
+                    .push(ErrorCode::UnexpectedPragma.to_problem(vec![], parsed_pragma.1));
             }
-            fill_in(&mut document, v.1)?;
+            fill_in(&mut document, parsed_pragma.1)?;
         }
 
         let mut src_items: Vec<String> = vec![];

@@ -1,39 +1,17 @@
-[package]
-name = "dotrain"
-version = "0.0.0"
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
 edition = "2021"
-description = "Rain language server protocol implementation and .rain compiler"
 license = "CAL-1.0"
+homepage = "https://github.com/rainlanguage/dotrain"
+repository = "https://github.com/rainlanguage/dotrain"
 
-
-[features]
-lsp = []
-cli = ["dep:tracing", "dep:tracing-subscriber", "dep:clap", "dep:tokio"]
-js-api = ["dep:js-sys", "dep:wasm-bindgen", "dep:serde-wasm-bindgen", "dep:wasm-bindgen-futures", "dep:tsify"]
-
-
-[lib]
-name = "dotrain"
-crate-type = ["rlib", "cdylib"]
-
-
-[[bin]]
-name = "dotrain"
-path = "src/main.rs"
-required-features = ["cli"]
-
-
-[dependencies]
-serde = "1.0.192"
-serde_json = "1.0.108"
-serde_repr = "0.1.17"
-serde_bytes = "0.11.12"
+[workspace.dependencies]
 regex = "1.10.2"
 anyhow = "1.0.75"
-futures = "0.3.29"
 once_cell = "1.18.0"
-alloy-json-abi = "0.5.0"
-alloy-sol-types = "0.5.0"
 alloy-primitives = "0.5.0"
 topo_sort = "0.4.0"
 magic_string = "0.3.4"
@@ -43,30 +21,8 @@ getrandom = { version = "0.2.11", features = ["js", "js-sys"] }
 revm = { version = "3.5.0", default-features = false, features = ["serde", "std"] }
 rain-metadata = "0.0.2-alpha.2"
 
-# cli
-tracing = { version = "0.1.37", optional = true }
-tracing-subscriber = { version = "0.3.17", optional = true }
-clap = { version = "4.4.8", features = ["cargo", "derive"], optional = true }
-tokio = { version = "1.34.0", features = ["sync", "macros", "io-util", "rt", "time"], optional = true }
-
-# js-api
-js-sys = { version = "0.3.66", optional = true }
-wasm-bindgen = { version = "0.2.89", optional = true }
-serde-wasm-bindgen = { version = "0.6.1", optional = true }
-wasm-bindgen-futures = { version = "0.4.39", optional = true }
-tsify = { version = "0.4.5", default-features = false, features = ["js", "wasm-bindgen"], optional = true }
-
-# wasm
-[target.'cfg(target_family = "wasm")'.dependencies]
-js-sys = "0.3.66"
-wasm-bindgen = "0.2.89"
-serde-wasm-bindgen = "0.6.1"
-wasm-bindgen-futures = "0.4.39"
-tsify = { version = "0.4.5", default-features = false, features = ["js", "wasm-bindgen"] }
-
+[workspace.dependencies.dotrain]
+path = "crates/dotrain"
 
 [lints.clippy]
 all = "warn"
-
-[package.metadata.docs.rs]
-all-features = true

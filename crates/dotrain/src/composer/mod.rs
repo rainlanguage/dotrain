@@ -237,7 +237,7 @@ impl RainDocument {
                                     // first search in composing nodes list to see if the current dep
                                     // is already present and if so capture its index, if not repeat
                                     // the same process with newly found nested nodes, if still not present
-                                    // add this target to the nodes and add then capture its index
+                                    // add this target to the nodes and then capture its index
                                     let new_compse_target =
                                         ComposeTarget::create(leaf, binding, rainlang_doc);
                                     if let Some((index, _)) = &nodes

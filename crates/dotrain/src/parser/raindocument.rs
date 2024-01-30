@@ -17,9 +17,9 @@ use super::{
     exclusive_parse, inclusive_parse, fill_in, is_consumable, tracked_trim, line_number, to_u256,
 };
 
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[cfg(feature = "js-api")]
 use tsify::Tsify;
-#[cfg(any(feature = "js-api", target_family = "wasm"))]
+#[cfg(feature = "js-api")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
 /// Data structure of a parsed .rain text
@@ -79,19 +79,12 @@ let result = rain_document.compose(&entrypoints);
  ```
 "
 )]
-#[cfg_attr(
-    any(feature = "js-api", target_family = "wasm"),
-    wasm_bindgen,
-    derive(Tsify)
-)]
+#[cfg_attr(feature = "js-api", wasm_bindgen, derive(Tsify))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(rename(serialize = "IRainDocument"))]
 pub struct RainDocument {
-    #[cfg_attr(
-        any(feature = "js-api", target_family = "wasm"),
-        tsify(type = "string")
-    )]
+    #[cfg_attr(feature = "js-api", tsify(type = "string"))]
     pub(crate) text: String,
     pub(crate) front_matter_offset: usize,
     pub(crate) error: Option<String>,
@@ -103,10 +96,7 @@ pub struct RainDocument {
     pub(crate) namespace: Namespace,
     #[serde(skip)]
     pub(crate) meta_store: Arc<RwLock<Store>>,
-    #[cfg_attr(
-        any(feature = "js-api", target_family = "wasm"),
-        tsify(type = "IAuthoringMeta | undefined")
-    )]
+    #[cfg_attr(feature = "js-api", tsify(type = "IAuthoringMeta | undefined"))]
     pub(crate) known_words: Option<AuthoringMeta>,
 }
 
@@ -117,9 +107,9 @@ impl RainDocument {
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
     ) -> RainDocument {
-        let mut rd = RainDocument::new(text, meta_store, 0, words);
-        rd.parse(true).await;
-        rd
+        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
+        rain_document.parse(true).await;
+        rain_document
     }
 
     /// Creates an instance and parses with remote meta search disabled (cached metas only)
@@ -128,9 +118,9 @@ impl RainDocument {
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
     ) -> RainDocument {
-        let mut rd = RainDocument::new(text, meta_store, 0, words);
-        block_on(rd.parse(false));
-        rd
+        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
+        block_on(rain_document.parse(false));
+        rain_document
     }
 
     /// Updates the text and parses right away with remote meta search disabled (cached metas only)
@@ -244,13 +234,8 @@ impl RainDocument {
         import_depth: usize,
         known_words: Option<AuthoringMeta>,
     ) -> RainDocument {
-        let ms = if let Some(v) = meta_store {
-            v
-        } else {
-            Arc::new(RwLock::new(Store::default()))
-        };
         RainDocument {
-            meta_store: ms,
+            meta_store: meta_store.unwrap_or(Arc::new(RwLock::new(Store::default()))),
             text,
             front_matter_offset: 0,
             error: None,

@@ -74,12 +74,8 @@ impl RainConfigStruct {
 
     /// Build a Store instance from all specified configuraion in rainconfig
     pub fn build_store(&self) -> anyhow::Result<Arc<RwLock<Store>>> {
-        let temp: Vec<String> = vec![];
-        let subgraphs = if let Some(sgs) = &self.subgraphs {
-            sgs
-        } else {
-            &temp
-        };
+        let empty = vec![];
+        let subgraphs = self.subgraphs.as_ref().unwrap_or(&empty);
         let dotrains = self.process(true)?;
         let mut store = Store::default();
         store.add_subgraphs(subgraphs);
@@ -99,12 +95,8 @@ impl RainConfigStruct {
 
     /// Builds a Store instance from all specified configuraion in rainconfig by ignoring all erroneous path/items
     pub fn force_build_store(&self) -> anyhow::Result<Arc<RwLock<Store>>> {
-        let temp: Vec<String> = vec![];
-        let subgraphs = if let Some(sgs) = &self.subgraphs {
-            sgs
-        } else {
-            &temp
-        };
+        let empty = vec![];
+        let subgraphs = self.subgraphs.as_ref().unwrap_or(&empty);
         let dotrains = self.process(false)?;
         let mut store = Store::default();
         store.add_subgraphs(subgraphs);
