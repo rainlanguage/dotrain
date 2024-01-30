@@ -25,27 +25,6 @@
               "tabWidth": 4
           }
       ],
-      // "prettier/prettier": "error",
-      // "semi": ["error", "always"],
-      // "quotes": ["error", "single"],
-      // "indent": [
-      //     "error",
-      //     4,
-      //     { 
-      //         "VariableDeclarator": "first",
-      //         "flatTernaryExpressions": true,
-      //         "offsetTernaryExpressions": false
-      //     }
-      // ],
-      // "max-len": [
-      //     "error",
-      //     { 
-      //         "code": 100,
-      //         "ignoreStrings": true,
-      //         "ignoreComments": true,
-      //         "ignoreTemplateLiterals": true
-      //     }
-      // ],
       "no-cond-assign": "off",
       "no-empty-function": "off",
       "@typescript-eslint/no-unused-vars": "off",
