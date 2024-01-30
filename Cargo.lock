@@ -786,7 +786,7 @@ dependencies = [
 
 [[package]]
 name = "dotrain"
-version = "0.0.0"
+version = "6.0.0"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives 0.5.4",
@@ -818,7 +818,7 @@ dependencies = [
 
 [[package]]
 name = "dotrain-lsp"
-version = "0.0.0"
+version = "6.0.0"
 dependencies = [
  "alloy-primitives 0.5.4",
  "anyhow",
