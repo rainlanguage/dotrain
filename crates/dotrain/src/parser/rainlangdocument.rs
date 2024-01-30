@@ -420,7 +420,7 @@ impl RainlangDocument {
                     let is_quote = v.0.starts_with('\'');
                     if is_quote {
                         let quote = &v.0[1..];
-                        if let Some(b) = self.search_namespace(quote, v.1[0], namespace) {
+                        if let Some(b) = self.search_namespace(quote, v.1[0] + 1, namespace) {
                             match &b.item {
                                 BindingItem::Elided(e) => {
                                     let msg = e.msg.clone();
