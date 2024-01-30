@@ -4,6 +4,8 @@ import * as chaiAsPromised from "chai-as-promised";
 import { assertError } from "./utils";
 import { MetaStore, RainDocument, rainlang } from "../dist/cjs";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+/** @ts-ignore */
 chai.use(chaiAsPromised);
 const expect: Chai.ExpectStatic = chai.expect;
 
