@@ -18,20 +18,19 @@ pub use rainconfig::*;
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
-    compose: DotrainCompose,
+    dotrain: Dotrain,
 }
 
 /// Compose
 #[derive(Subcommand)]
 pub enum Dotrain {
     /// Compose a .rain file to rainlang
-    #[command(subcommand)]
+    #[command(author, version, about = "Rain composer CLI binary to compose .rain files to rainlang", long_about = None)]
     Compose(Compose),
 }
 
 /// Subcommand entry point
 #[derive(Parser, Debug)]
-#[command(author, version, about = "Rain composer CLI binary to compose .rain files to rainlang", long_about = None)]
 pub struct Compose {
     /// Input .rain file path
     #[arg(short, long)]
@@ -76,22 +75,28 @@ pub enum RainconfigInfo {
 }
 
 /// Dispatches the CLI call based on the given options and commands
-pub async fn dispatch(cli: RainComposerCli) -> anyhow::Result<()> {
-    if let Some(subcmd) = cli.subcmd {
-        match subcmd {
-            SubCommands::RainconfigInfo(v) => match v {
-                RainconfigInfo::Info => println!("{}", rainconfig::RAINCONFIG_DESCRIPTION),
-                RainconfigInfo::PrintAll => println!("{}", ["- include", "- subgraphs"].join("\n")),
-                RainconfigInfo::Include => {
-                    println!("{}", rainconfig::RAINCONFIG_INCLUDE_DESCRIPTION)
+pub async fn dispatch(dotrain: Dotrain) -> anyhow::Result<()> {
+    match dotrain {
+        Dotrain::Compose(cli) => {
+            if let Some(subcmd) = cli.subcmd {
+                match subcmd {
+                    SubCommands::RainconfigInfo(v) => match v {
+                        RainconfigInfo::Info => println!("{}", rainconfig::RAINCONFIG_DESCRIPTION),
+                        RainconfigInfo::PrintAll => {
+                            println!("{}", ["- include", "- subgraphs"].join("\n"))
+                        }
+                        RainconfigInfo::Include => {
+                            println!("{}", rainconfig::RAINCONFIG_INCLUDE_DESCRIPTION)
+                        }
+                        RainconfigInfo::Subgraphs => {
+                            println!("{}", rainconfig::RAINCONFIG_SUBGRAPHS_DESCRIPTION)
+                        }
+                    },
                 }
-                RainconfigInfo::Subgraphs => {
-                    println!("{}", rainconfig::RAINCONFIG_SUBGRAPHS_DESCRIPTION)
-                }
-            },
+            } else {
+                println!("{}", compose_target(cli).await?);
+            }
         }
-    } else {
-        println!("{}", compose_target(cli).await?);
     };
     Ok(())
 }
@@ -99,5 +104,5 @@ pub async fn dispatch(cli: RainComposerCli) -> anyhow::Result<()> {
 pub async fn main() -> anyhow::Result<()> {
     tracing::subscriber::set_global_default(tracing_subscriber::fmt::Subscriber::new())?;
     let cli = Cli::parse();
-    dispatch(cli.compose).await
+    dispatch(cli.dotrain).await
 }
