@@ -1,6 +1,7 @@
+use super::PositionAt;
 use once_cell::sync::Lazy;
+use dotrain::RainDocument;
 use regex::{Regex, Captures};
-use super::{PositionAt, super::parser::raindocument::RainDocument};
 use lsp_types::{
     Diagnostic, Range, DiagnosticSeverity, DiagnosticRelatedInformation, Location, Url,
     NumberOrString,
@@ -22,8 +23,8 @@ pub fn get_diagnostics(
         .iter()
         .map(|v| {
             let range = Range::new(
-                rain_document.text.position_at(v.position[0]),
-                rain_document.text.position_at(v.position[1]),
+                rain_document.text().position_at(v.position[0]),
+                rain_document.text().position_at(v.position[1]),
             );
             Diagnostic::new(
                 range,

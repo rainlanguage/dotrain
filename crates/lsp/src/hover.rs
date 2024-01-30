@@ -1,11 +1,9 @@
-use lsp_types::{Position, MarkupKind, Hover, HoverContents, Range, MarkupContent};
-use super::{
-    OffsetAt, PositionAt,
-    super::{
-        types::ast::{Node, BindingItem},
-        parser::raindocument::RainDocument,
-    },
+use super::{OffsetAt, PositionAt};
+use dotrain::{
+    RainDocument,
+    types::ast::{Node, BindingItem},
 };
+use lsp_types::{Position, MarkupKind, Hover, HoverContents, Range, MarkupContent};
 
 /// Provides hover item for the given RainDocument at the given Position
 pub fn get_hover(
@@ -13,9 +11,9 @@ pub fn get_hover(
     position: Position,
     content_type: MarkupKind,
 ) -> Option<Hover> {
-    let target_offset = rain_document.text.offset_at(&position);
+    let target_offset = rain_document.text().offset_at(&position);
     if let Some(import) = rain_document
-        .imports
+        .imports()
         .iter()
         .find(|v| v.position[0] <= target_offset && v.position[1] >= target_offset)
     {
@@ -30,15 +28,15 @@ pub fn get_hover(
                     },
                 }),
                 range: Some(Range::new(
-                    rain_document.text.position_at(import.position[0]),
-                    rain_document.text.position_at(import.position[1]),
+                    rain_document.text().position_at(import.position[0]),
+                    rain_document.text().position_at(import.position[1]),
                 )),
             })
         } else {
             None
         }
     } else {
-        for binding in &rain_document.bindings {
+        for binding in rain_document.bindings() {
             if binding.name_position[0] <= target_offset && binding.name_position[1] > target_offset
             {
                 return Some(Hover {
@@ -56,8 +54,8 @@ pub fn get_hover(
                         .to_owned(),
                     }),
                     range: Some(Range::new(
-                        rain_document.text.position_at(binding.name_position[0]),
-                        rain_document.text.position_at(binding.name_position[1]),
+                        rain_document.text().position_at(binding.name_position[0]),
+                        rain_document.text().position_at(binding.name_position[1]),
                     )),
                 });
             } else if binding.content_position[0] <= target_offset
@@ -67,7 +65,7 @@ pub fn get_hover(
                     BindingItem::Exp(exp) => {
                         let mut nodes: Vec<&Node> = vec![];
                         let mut alias_nodes: Vec<Node> = vec![];
-                        exp.ast.iter().for_each(|src| {
+                        exp.ast().iter().for_each(|src| {
                             src.lines.iter().for_each(|line| {
                                 for a in &line.aliases {
                                     alias_nodes.push(Node::Alias(a.clone()));
@@ -85,7 +83,7 @@ pub fn get_hover(
                             binding.content_position[0],
                             target_offset - binding.content_position[0],
                             content_type,
-                            &rain_document.text,
+                            rain_document.text(),
                         );
                     }
                     BindingItem::Constant(_) => {
@@ -95,8 +93,12 @@ pub fn get_hover(
                                 value: "constant value".to_owned(),
                             }),
                             range: Some(Range::new(
-                                rain_document.text.position_at(binding.content_position[0]),
-                                rain_document.text.position_at(binding.content_position[1]),
+                                rain_document
+                                    .text()
+                                    .position_at(binding.content_position[0]),
+                                rain_document
+                                    .text()
+                                    .position_at(binding.content_position[1]),
                             )),
                         })
                     }
@@ -107,8 +109,12 @@ pub fn get_hover(
                                 value: "elision msg".to_owned(),
                             }),
                             range: Some(Range::new(
-                                rain_document.text.position_at(binding.content_position[0]),
-                                rain_document.text.position_at(binding.content_position[1]),
+                                rain_document
+                                    .text()
+                                    .position_at(binding.content_position[0]),
+                                rain_document
+                                    .text()
+                                    .position_at(binding.content_position[1]),
                             )),
                         })
                     }
