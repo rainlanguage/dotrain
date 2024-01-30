@@ -14,9 +14,17 @@ pub use compose::*;
 pub use rainconfig::*;
 
 /// CLI app entrypoint sruct
-#[derive(Parser, Debug)]
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    compose: DotrainCompose,
+}
+
+/// Subcommand entry point
+#[derive(Subcommand, Debug)]
 #[command(author, version, about = "Rain composer CLI binary to compose .rain files to rainlang", long_about = None)]
-pub struct RainComposerCli {
+pub struct DotrainCompose {
     /// Input .rain file path
     #[arg(short, long)]
     input: PathBuf,
@@ -82,6 +90,6 @@ pub async fn dispatch(cli: RainComposerCli) -> anyhow::Result<()> {
 
 pub async fn main() -> anyhow::Result<()> {
     tracing::subscriber::set_global_default(tracing_subscriber::fmt::Subscriber::new())?;
-    let cli = RainComposerCli::parse();
-    dispatch(cli).await
+    let cli = Cli::parse();
+    dispatch(cli.compose).await
 }
