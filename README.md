@@ -1,5 +1,7 @@
-# **Dotrain/Rainlang - Standalone**
-The Rain language (dotrain and rainlang) standalone package written in typescript encapsulates language compiler/decompiler and language services (in [LSP specs](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/)). This is well suited for editors and IDE support, which can be intracted with directly through API and/or be used in tools like Slate and/or be utilized in any text editor that supports [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) such as vscode, monaco or codemirror.
+![](./assets/rainlang-banner.svg)
+
+# **Rain Language**
+The Rain language server protocol ([LSP](https://microsoft.github.io/language-server-protocol/)) implementation (language services) and .rain composer written in rust and made available for NodeJs and broswers through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/) in Typescript/Javascript which makes it well suited for editors and IDEs (as it is used in Rainlang vscode and codemirror language extension).
 - Dotrain specs can be found [here](https://github.com/rainprotocol/specs/blob/main/dotrain.md)
 - Rainlang specs can be found [here](https://github.com/rainprotocol/specs/blob/main/rainlang.md)
 - Dotrain has been implemented for vscode and codemirror, see [rainlang-vscode](https://github.com/rainprotocol/rainlang-vscode) and [rainlang-codemirror](https://github.com/rainprotocol/rainlang-codemirror) repositories for more details.
@@ -12,169 +14,140 @@ For more info and details, please read this [article](https://hackmd.io/@REJeq0M
 If you find an issue or you want to propose an improvement, please feel free to post it on: [issues](https://github.com/rainprotocol/rainlang/issues)
 
 
-## **Tutorial**
+# **Tutorial**
+## **Javascript/Typescript**
 To get started, install the package:
 ```bash
-npm install @rainprotocol/rainlang
+npm install @rainlanguage/dotrain
 ```
 or
 ```bash
-yarn add @rainprotocol/rainlang
+yarn add @rainlanguage/dotrain
 ```
 <br>
 
-
-### **Language Services**
-Rain Language Services provide validation of a Rain document and services like completion, hover, etc.
 ```typescript
-// importing
-import { getRainLanguageServices } from "@rainprotocol/rainlang";
+// imports
+import { TextDocumentItem } from "vscode-languageserver-types";
+import { RainLanguageServices, MetaStore } from "@rainlanguage/dotrain";
+
+// instantiate a MetaStore which is a in-memory CAS for Rain metadata
+const metaStore = new MetaStore();
+
+// some text document
+const textDocument = TextDocumentItem.create(
+  "file:///file-name.rain",
+  "rainlang",
+  0,
+  "some dotrain text"
+);
 
 // initiating the services (clientCapabilities and metaStore are optional arguments)
-const langServices = getRainLanguageServices({clientCapabilities, metaStore});
+const langServices = new RainLanguageServices(metaStore);
 
 // getting validation results (lsp Diagnostics)
-const diagnostics = await langServices.doValidate(myTextDocument);
+const diagnostics = await langServices.doValidate(textDocument);
+
+// instantiate a new RainDocument
+const rainDocument = await langServices.newRainDocument(textDocument)
+
+// compiling a RainDocument to get rainlang string
+const rainlangText = await rainDocument.compile(["entrypoint-1" , "entrypoint-2"]);
 ```
 <br>
 
-### **Compiler**
-- Compiling a `RainDocument` aka dotrain instances:
-```typescript
-// importing
-import { Compile } from "@rainprotocol/rainlang";
+## dotrain crate
+To get started, install the package:
+```bash
+cargo add dotrain
+```
 
-// compiling a RainDocument to get ExpressionConfig
-const expressionConfig = await Compile.RainDocument(myDocument, ["entrypoint-1" , "entrypoint-2"], options);
+### Features
+- `cli`: A [clap](https://docs.rs/clap/latest/clap/) based module (CLI app) for functionalities of this library, this features is required for building the **binary**
+- `js-api`: includes wrappers around main structs and functionalities to provide an API through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/) (this feature is always enabled when building for wasm family targets)
+
+<br>
+
+```rust
+use std::sync::{Arc, RwLock};
+use dotrain::{Store, RainDocument};
+
+let text = "some text".to_string();
+
+// instantiate arc locked Store
+let meta_store = Arc::new(RwLock::new(Store::default()));
+
+// instantiate
+let rain_document = RainDocument::new(text, Some(meta_store));
+
+// compiles this instance of RainDocument
+let rainlang_text = rain_document.compile(&vec!["entrypoint1", "entrypoint2"], None)?;
 ```
 <br>
 
-- Compiling `Rainlang` instances:
-```typescript
-// importing
-import { Compile } from "@rainprotocol/rainlang";
-
-// compiling a rainlang text to get ExpressionConfig
-const expressionConfig = await Compile.Rainlang(rainlangText, bytecodeSource, entrypoints, options);
+## dotrain_lsp crate
+To get started, install the package:
+```bash
+cargo add dotrain-lsp
 ```
 
-<br>
+### Features
+- `js-api`: includes wrappers around main structs and functionalities to provide an API through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/) (this feature is always enabled when building for wasm family targets)
+
+```rust
+use std::sync::{Arc, RwLock};
+use dotrain::{Store, RainLanguageServices, TextDocumentItem, LanguageServiceParams, RainDocument};
+
+// instantiate arc locked Store
+let meta_store = Arc::new(RwLock::new(Store::default()));
+
+// the following needs 'lsp' feature to be enabled
+let lang_params = LanguageServiceParams {
+  meta_store: Some(meta_store)
+}
+
+// a LSP TextdocumentItem
+let text_document = TextDocumentItem {
+  uri,
+  text,
+  version: 0,
+  language_id: "rainlang".to_string()
+}
+
+// instantiate RainLanguageServices
+let lang_services = RainLanguageServices::new(lang_params);
+
+// get LSP diagnostics of the given text document
+let diagnostics = lang_services.do_validate(&text_document, true);
+```
 
 ## CLI
-`npx` command to compile dotrain file(s) to `ExpressionConfig` in json format.
- - if on current repo:
+The CLI app can be built form the source (read next section) or be installed with the following command:
 ```bash
-node cli/dotrain [options] [command]
+cargo install dotrain
 ```
- - if the package is already installed:
+this will install the dotrain binary in your path which then can be used to compile .rain files and generate outputs.
+
+### Examples
+compiles a .rain file with specified entrypoints
 ```bash
-npx dotrain [options] [command]
+dotrain compose --input path/to/some.rain --entrypoints first --entrypoints second
 ```
- - if package is not installed (executing remotely): 
- `--yes` will accept the prompt to cache the package for execution
+optionally, path to `rainconfig.json` can be provided:
 ```bash
-npx @rainprotocol/rainlang [options] [command] --yes
+dotrain -c path/to/rainconfig.json
 ```
- or
+
+## **rainconfig**
+Configuration details for .rain composer (source files, meta store configurations, etc).
+Following command will print info about rainconfig and its fields:
 ```bash
-npx --p @rainprotocol/rainlang dotrain [options] [command] --yes
+dotrain rainconfig <COMMAND>
 ```
-<br>
-Command details:
-
-    Usage: dotrain [options] [command]
-
-    CLI command to run dotrain compiler.
-
-    Options:
-      -c, --config <path>  Path to the rainconfig json file(default is './rainconfig.json' or './.rainconfig.json' if not specified) that contains configurations, see './example.rainconfig.json' for more details.
-      -s, --silent         Print no std logs.
-      -V, --version        output the version number
-      -h, --help           display help for command
-
-    Commands:
-      compile [options]    compile a single .rain file.
-      rainconfig           show detailed information about rainconfig.json
-
-<br>
-Compile subcommand details (compiling specific file):
-
-    Usage: dotrain compile [options]
-
-    compile a single .rain file.
-
-    Options:
-      -e, --entrypoints <bindings...>  Entrypoints to compile
-      -i, --input <path>               Path to .rain file
-      -o, --output <path>              Path to output file, output format is .json
-      -l, --log                        Log the compilation result in terminal
-      -c, --config <path>              Path to the rainconfig json file(default is './rainconfig.json' or './.rainconfig.json' if not specified) that contains configurations, see './example.rainconfig.json' for more details.
-      -s, --silent                     Print no informative logs, except compilation results if --log is used
-      -h, --help                       display help for command
-
-<br>
-rainconfig information:
-
-    Description:
-    rainconfig.json provides configuration details and information required for .rain compiler.
-
-    usually it should be placed at the root directory of the working workspace and named as 
-    'rainconfig.json' or '.rainconfig.json', as by doing so it will automatically be read 
-    and having rainlang vscode extension, it will provide autocomplete and information on 
-    each field, however if this is not desired at times, it is possible to pass any path for 
-    rainconfig when using the dotrain command using --config option.
-
-    all fields in the rainconfig are optional and are as follows:
-
-    - src: Specifies list of .rain source files mappings for compilation, where specified 
-    .rain input files will get compiled and results written into output json file.
-
-    - include: Specifies a list of directories (files/folders) to be included and watched. 
-    'src' files are included by default and folders will be watched recursively for .rain files. 
-    These files will be available as dotrain meta in the cas so if their hash is specified in a
-    compilation target they will get resolved.
-
-    - subgraphs: Additional subgraph endpoint URLs to include when searching for metas of 
-    specified meta hashes in a rainlang document.
-
-    - meta: Lis of paths (or object of path and hash) of local meta files as binary or utf8 
-    encoded text file containing hex string starting with 0x. Binary meta files should go 
-    under 'meta.binary' field and hex meta files should go under 'meta.hex' field.
-
-<br>
-
-example of a config file content (see `./example.rainconfig.json`):
+Here is an example of a `rainconfig.json`:
 ```json
 {
   "include": ["./folder1", "./folder2"],
-  "src": [
-    {
-      "input": "./path/to/file1.rain",
-      "output": "./path/to/compiled-file1.json",
-      "entrypoints": ["entrypoint1", "entrypoint2"]
-    },
-    {
-      "input": "./path/to/file2.rain",
-      "output": "./path/to/compiled-file2.json",
-      "entrypoints": ["entrypoint1", "entrypoint2"]
-    }
-  ],
-  "meta": {
-    "binary": [
-      "./path/to/binary-meta", 
-      {
-        "path": "./path/to/another-binary-meta",
-        "hash": "0x123456789abcdef..."
-      }
-    ],
-    "hex": [
-      "./path/to/hex-meta", 
-      {
-        "path": "./path/to/another-hex-meta",
-        "hash": "0x123456789abcdef..."
-      }
-    ]
-  },
   "subgraphs": [
     "https://subgraph1-uril",
     "https://subgraph2-uril",
@@ -184,25 +157,26 @@ example of a config file content (see `./example.rainconfig.json`):
 ```
 
 ## **Developers**
-To get started, clone the repo and install the dependencies:
+## **Build From Source**
+To build from the source first clone this repo and make sure the following items are already installed:
+- [rust](https://www.rust-lang.org/learn/get-started)
+- [nodejs](https://nodejs.org/en) (only required for building the js/ts modules)
+- [wasm-bindgen-cli](https://rustwasm.github.io/docs/wasm-bindgen/reference/cli.html) (only required for building the js/ts modules)
+if you already have nixOS installed you can simply run the following command which pulls all the required binaries and packages into nix store and put them in your PATH:
 ```bash
-git clone https://github.com/rouzwelt/rainlang.git
-cd rainlang
-npm install
+nix-shell
 ```
-
-
-To build from source code:
+rust lib/bin can be built using `cargo build` command with desired features.
+for building the js modules simply run:
 ```bash
 npm run build
 ```
-
+This will build the rust library with `wasm32-unknown-unknown` target in release mode with `lsp` and `js-api` features enabled and then generates bindings using `wasm-bindgen-cli` into `./dist` directory by encoding the wasm binary into a json as importing json is native in js/ts and elimiates the need for using fetch/fs operations when loading the wasm module.
 
 To generate documents:
 ```bash
 npm run docgen
 ```
-
 
 To run tests:
 ```bash
