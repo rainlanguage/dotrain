@@ -51,7 +51,7 @@ const diagnostics = await langServices.doValidate(textDocument);
 const rainDocument = await langServices.newRainDocument(textDocument)
 
 // composing a RainDocument to get rainlang string
-const rainlangText = await rainDocument.compile(["entrypoint-1" , "entrypoint-2"]);
+const rainlangText = await rainDocument.compose(["entrypoint-1" , "entrypoint-2"]);
 ```
 <br>
 
@@ -80,7 +80,7 @@ let meta_store = Arc::new(RwLock::new(Store::default()));
 let rain_document = RainDocument::new(text, Some(meta_store));
 
 // compose this instance of RainDocument to get rainlang string
-let rainlang_text = rain_document.compile(&vec!["entrypoint1", "entrypoint2"], None)?;
+let rainlang_text = rain_document.compose(&vec!["entrypoint1", "entrypoint2"], None)?;
 ```
 <br>
 
@@ -133,7 +133,7 @@ cargo install dotrain
 this will install the dotrain binary in your path which then can be used to compose .rain files and generate outputs.
 
 ### Examples
-compiles a .rain file with specified entrypoints
+composes a .rain file with specified entrypoints
 ```bash
 dotrain compose --input path/to/some.rain --entrypoints first --entrypoints second
 ```
