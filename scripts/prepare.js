@@ -109,3 +109,8 @@ const wasmInstance = new WebAssembly.Instance(wasmModule, imports);
 wasm = wasmInstance.exports;`;
 esm = esm.replaceAll("imports.wbg", "imports.__wbindgen_placeholder__");
 fs.writeFileSync("./dist/esm/index.js", esm);
+
+fs.writeFileSync("./cjs.js", '"use strict";\n\nmodule.exports = require("./dist/cjs/index");\n');
+fs.writeFileSync("./cjs.d.ts", 'export * from "./dist/cjs/index";\n');
+fs.writeFileSync("./esm.js", 'export * from "./dist/esm/index";\n');
+fs.writeFileSync("./esm.d.ts", 'export * from "./dist/esm/index";\n');
