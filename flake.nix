@@ -37,6 +37,31 @@
             darwin.apple_sdk.frameworks.SystemConfiguration
           ];
         };
+
+        build-js-bindings = rainix.mkTask.${system} {
+          name = "build-js-bindings";
+          body = ''
+            set -euxo pipefail
+            npm run build
+          '';
+          additionalBuildInputs = [
+            pkgs.wasm-bindgen-cli
+            rainix.rust-toolchain.${system}
+            rainix.rust-build-inputs.${system}
+            rainix.node-build-inputs.${system}
+          ];
+        };
+
+        test-js-bindings = rainix.mkTask.${system} {
+          name = "test-js-bindings";
+          body = ''
+            set -euxo pipefail
+            npm test
+          '';
+          additionalBuildInputs = [
+            rainix.node-build-inputs.${system}
+          ];
+        };
       } // rainix.packages.${system};
 
       # # For `nix build` & `nix run`:
@@ -51,23 +76,6 @@
             rainix.node-build-inputs.${system}
           ] ++ (with pkgs; [ 
             wasm-bindgen-cli
-            (writeShellScriptBin "flush" ''
-              rm -rf dist
-              rm -rf docs
-              rm -rf temp
-            '')
-            (writeShellScriptBin "hard-flush" ''
-              rm -rf dist
-              rm -rf docs
-              rm -rf temp
-              rm -rf target
-              rm -rf node_modules
-            '')
-            (writeShellScriptBin "hard-build" ''
-              hard-flush
-              npm install
-              npm run build
-            '')
           ]);
           shellHook = '' npm install '';
         };
