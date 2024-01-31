@@ -20,10 +20,10 @@ temp
 dist
 ./rainlang.api.json
 ./dotrain.api.json
-./cjs.js
-./cjs.d.ts
-./esm.js
-./esm.d.ts
+/cjs.js
+/cjs.d.ts
+/esm.js
+/esm.d.ts
 
 .DS_Store
 src/.DS_Store
