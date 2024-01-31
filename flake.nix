@@ -42,6 +42,7 @@
           name = "build-js-bindings";
           body = ''
             set -euxo pipefail
+            npm install
             npm run build
           '';
           additionalBuildInputs = [
@@ -77,7 +78,6 @@
           ] ++ (with pkgs; [ 
             wasm-bindgen-cli
           ]);
-          shellHook = '' npm install '';
         };
       } // rainix.devShells.${system};
     }
