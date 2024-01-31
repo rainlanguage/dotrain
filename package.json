@@ -32,7 +32,7 @@
         "/example.rainconfig.json"
     ],
     "scripts": {
-        "prepack": "npm run build",
+        "prepare": "npm run build",
         "build": "rimraf ./dist && npm run build-wasm && npm run build-bindings && npm run lint-bindings",
         "build-wasm": "cargo build --target wasm32-unknown-unknown --lib --features 'js-api' -r",
         "node-bg": "wasm-bindgen --target nodejs ./target/wasm32-unknown-unknown/release/dotrain_lsp.wasm --out-dir ./temp/node",
