@@ -160,9 +160,9 @@ Here is an example of a `rainconfig.json`:
 {
   "include": ["./folder1", "./folder2"],
   "subgraphs": [
-    "https://subgraph1-uril",
-    "https://subgraph2-uril",
-    "https://subgraph3-uril"
+    "https://subgraph1-url",
+    "https://subgraph2-url",
+    "https://subgraph3-url"
   ]
 }
 ```
