@@ -63,6 +63,17 @@
             rainix.node-build-inputs.${system}
           ];
         };
+
+        js-bindings-docs = rainix.mkTask.${system} {
+          name = "js-bindings-docs";
+          body = ''
+            set -euxo pipefail
+            npm run docgen
+          '';
+          additionalBuildInputs = [
+            rainix.node-build-inputs.${system}
+          ];
+        };
       } // rainix.packages.${system};
 
       # # For `nix build` & `nix run`:

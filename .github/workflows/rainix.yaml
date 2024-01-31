@@ -7,6 +7,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         task: [rainix-rs-test, rainix-rs-artifacts]
+        js-task: [build-js-bindings, test-js-bindings, js-bindings-docs]
         include:
           # We don't need to do rust static analysis on multiple platforms
           - os: ubuntu-latest
@@ -28,8 +29,5 @@ jobs:
           ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
         run: nix run .#${{ matrix.task }}
 
-      - name: Build JS Bindings
-        run:  nix run .#build-js-bindings
-      
-      - name: Run JS Tests
-        run:  nix run .#test-js-bindings
+      - name: Run js task ${{ matrix.js-task }}
+        run:  nix run .#${{ matrix.js-task }}
