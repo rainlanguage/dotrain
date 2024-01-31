@@ -3,7 +3,7 @@ import { assertError } from "./utils";
 import { MetaStore, RainDocument, rainlang } from "../dist/cjs";
 
 const ws = "                                                                   ";
-describe("RainDocument Compiler Tests", async function () {
+describe("Dotrain to Rainlang Composing Tests", async function () {
     const metaStore = new MetaStore();
 
     it("should accept valid rainlang fragment `:;`", async () => {
