@@ -2,7 +2,7 @@ import * as assert from "assert";
 import { assertError } from "./utils";
 import { MetaStore, RainDocument, rainlang } from "../dist/cjs";
 
-const ws = "                                                                   ";
+const ws = " ".repeat(67);
 describe("Dotrain to Rainlang Composing Tests", async function () {
     const metaStore = new MetaStore();
 

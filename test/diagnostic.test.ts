@@ -3,7 +3,7 @@ import { toRange } from "./utils";
 import { MetaStore, ErrorCode, RainLanguageServices, rainlang } from "../dist/cjs";
 import { Diagnostic, TextDocumentItem, DiagnosticSeverity } from "vscode-languageserver-types";
 
-const ws = "                                                                   ";
+const ws = " ".repeat(67);
 async function testDiagnostics(
     text: string,
     services: RainLanguageServices,
