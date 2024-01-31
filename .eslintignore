@@ -1,0 +1,12 @@
+*.md
+yarn.lock
+node_modules
+.env
+docs
+tsconfig.json
+.DS_Store
+op.meta.schema.json
+LICENSE
+fixtures
+*.rain
+*.json

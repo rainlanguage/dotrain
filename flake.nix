@@ -37,13 +37,60 @@
             darwin.apple_sdk.frameworks.SystemConfiguration
           ];
         };
+
+        build-js-bindings = rainix.mkTask.${system} {
+          name = "build-js-bindings";
+          body = ''
+            set -euxo pipefail
+            npm install
+            npm run build
+          '';
+          additionalBuildInputs = [
+            pkgs.wasm-bindgen-cli
+            rainix.rust-toolchain.${system}
+            rainix.rust-build-inputs.${system}
+            rainix.node-build-inputs.${system}
+          ];
+        };
+
+        test-js-bindings = rainix.mkTask.${system} {
+          name = "test-js-bindings";
+          body = ''
+            set -euxo pipefail
+            npm test
+          '';
+          additionalBuildInputs = [
+            rainix.node-build-inputs.${system}
+          ];
+        };
+
+        js-bindings-docs = rainix.mkTask.${system} {
+          name = "js-bindings-docs";
+          body = ''
+            set -euxo pipefail
+            npm run docgen
+          '';
+          additionalBuildInputs = [
+            rainix.node-build-inputs.${system}
+          ];
+        };
       } // rainix.packages.${system};
 
       # # For `nix build` & `nix run`:
       defaultPackage = packages.build-bin;
 
       # For `nix develop`:
-      devShells = rainix.devShells.${system};
+      devShells = {
+        js = pkgs.mkShell {
+          nativeBuildInputs = [
+            rainix.rust-toolchain.${system}
+            rainix.rust-build-inputs.${system}
+            rainix.node-build-inputs.${system}
+          ] ++ (with pkgs; [ 
+            wasm-bindgen-cli
+          ]);
+        };
+      } // rainix.devShells.${system};
     }
   );
 }

@@ -29,6 +29,9 @@ mod completion;
 mod diagnostic;
 mod semantic_token;
 
+#[cfg(feature = "js-api")]
+pub mod js_api;
+
 /// Parameters for initiating Language Services
 #[derive(Debug, Clone)]
 pub struct LanguageServiceParams {

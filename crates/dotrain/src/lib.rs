@@ -29,6 +29,9 @@ pub(crate) mod composer;
 #[cfg(feature = "cli")]
 pub mod cli;
 
+#[cfg(feature = "js-api")]
+pub mod js_api;
+
 pub use rain_metadata::Store;
 pub use parser::*;
 /// Provides all types and functionalities of Rain metadata

@@ -96,7 +96,8 @@ pub struct RainDocument {
     pub(crate) namespace: Namespace,
     #[serde(skip)]
     pub(crate) meta_store: Arc<RwLock<Store>>,
-    #[cfg_attr(feature = "js-api", tsify(type = "IAuthoringMeta | undefined"))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "js-api", tsify(type = "IAuthoringMeta"))]
     pub(crate) known_words: Option<AuthoringMeta>,
 }
 
@@ -157,6 +158,7 @@ impl RainDocument {
     pub fn problems(&self) -> &Vec<Problem> {
         &self.problems
     }
+
     /// This instance's comments
     pub fn comments(&self) -> &Vec<Comment> {
         &self.comments
