@@ -107,7 +107,7 @@ _: .`;
         const _ns = _dotrain.namespace;
         const items: CompletionItem[] = [];
         _ns.forEach((v, k) => {
-            items.unshift({
+            items.push({
                 label: k,
                 kind: !("element" in v)
                     ? CompletionItemKind.Field
@@ -135,7 +135,7 @@ _: .r`;
         const _ns = _dotrain.namespace;
         const items: CompletionItem[] = [];
         _ns.forEach((v, k) => {
-            items.unshift({
+            items.push({
                 label: k,
                 kind: !("element" in v)
                     ? CompletionItemKind.Field

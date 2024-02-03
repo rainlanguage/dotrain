@@ -29,6 +29,10 @@ pub static NUMERIC_PATTERN: Lazy<Regex> =
 pub static STRING_LITERAL_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r#"^\"[\s\S]*?\"$"#).unwrap());
 
+/// literal pattern (numeric + string literal)
+pub static LITERAL_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$"#).unwrap());
+
 /// Hex pattern
 pub static HEX_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$").unwrap());
 

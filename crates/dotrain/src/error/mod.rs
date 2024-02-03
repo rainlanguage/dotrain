@@ -111,9 +111,9 @@ impl ErrorCode {
             Self::InvalidImport => "expected a valid name or hash".to_owned(),
             Self::InvalidEmptyBinding => "invalid empty expression".to_owned(),
             Self::InvalidEmptyLine => "invalid empty expression line".to_owned(),
-            Self::InvalidQuote => format!("invalid quote: {}, cannot quote constants", msg_items[0]),
+            Self::InvalidQuote => format!("invalid quote: {}, cannot quote literals", msg_items[0]),
             Self::InvalidOperandArg => format!("invalid argument pattern: {}", msg_items[0]),
-            Self::InvalidReference => format!("invalid reference to binding: {}, only constant bindings can be referenced", msg_items[0]),
+            Self::InvalidReference => format!("invalid reference to binding: {}, only literal bindings can be referenced", msg_items[0]),
             Self::InvalidRainDocument => "imported rain document contains top level errors".to_owned(),
             Self::InvalidNamespaceReference => format!("expected a node, {} is a namespace", msg_items[0]),
 

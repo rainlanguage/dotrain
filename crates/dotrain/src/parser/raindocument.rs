@@ -367,13 +367,16 @@ impl RainDocument {
 
         // parsing bindings
         let parsed_bindings = exclusive_parse(&document, &BINDING_PATTERN, 0, true);
+        let mut raw_exp_contents = VecDeque::new();
         ignore_first = true;
-        for parsed_binding in parsed_bindings {
+        for parsed_binding in &parsed_bindings {
             if ignore_first {
                 ignore_first = false;
                 continue;
             }
-            self.process_binding(&parsed_binding, &mut namespace);
+            if let Some(raw_content) = self.process_binding(parsed_binding, &mut namespace) {
+                raw_exp_contents.push_back(raw_content);
+            };
             fill_in(
                 &mut document,
                 [parsed_binding.1[0] - 1, parsed_binding.1[1]],
@@ -402,7 +405,7 @@ impl RainDocument {
             });
 
         // resolve dependencies for expression bindings
-        self.process_dependencies();
+        self.process_dependencies(raw_exp_contents);
 
         // try to set global words only if only there are rainlang bindings and current instance is
         // not an import itself. (only owned expression bindings will be parsed at this point).
@@ -500,9 +503,13 @@ impl RainDocument {
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
     fn is_constant(text: &str) -> Option<(String, bool)> {
         let items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        if items.len() == 1 && NUMERIC_PATTERN.is_match(&items[0].0) {
-            let is_out_of_range = to_u256(&items[0].0).is_err();
-            Some((items[0].0.clone(), is_out_of_range))
+        if items.len() == 1 && LITERAL_PATTERN.is_match(&items[0].0) {
+            if NUMERIC_PATTERN.is_match(&items[0].0) {
+                let is_out_of_range = to_u256(&items[0].0).is_err();
+                Some((items[0].0.clone(), is_out_of_range))
+            } else {
+                Some((items[0].0.clone(), false))
+            }
         } else {
             None
         }
@@ -519,7 +526,7 @@ impl RainDocument {
         while let Some(first_piece) = config_pieces.next() {
             if let Some(complementary_piece) = config_pieces.next() {
                 if WORD_PATTERN.is_match(&first_piece.0) {
-                    if NUMERIC_PATTERN.is_match(&complementary_piece.0)
+                    if LITERAL_PATTERN.is_match(&complementary_piece.0)
                         || complementary_piece.0 == "!"
                     {
                         if imp_conf.groups.iter().any(|v| {
@@ -923,7 +930,11 @@ impl RainDocument {
     }
 
     /// processes a binding item
-    fn process_binding(&mut self, parsed_binding: &ParsedItem, namespace: &mut Namespace) {
+    fn process_binding<'a>(
+        &mut self,
+        parsed_binding: &'a ParsedItem,
+        namespace: &mut Namespace,
+    ) -> Option<&'a str> {
         let position = parsed_binding.1;
         let name: String;
         let name_position: Offsets;
@@ -987,6 +998,7 @@ impl RainDocument {
                 .push(ErrorCode::InvalidEmptyBinding.to_problem(vec![&name], name_position));
         }
 
+        let mut is_exp = false;
         if !invalid_id && !dup_id {
             let item;
             if let Some(mut msg) = Self::is_elided(raw_content) {
@@ -1007,6 +1019,7 @@ impl RainDocument {
             } else {
                 // occupy the key with empty rainlang ast, later on will
                 // be replaced with parsed ast once global words are resolved
+                is_exp = true;
                 item = BindingItem::Exp(RainlangDocument::new());
             }
             let binding = Binding {
@@ -1028,6 +1041,11 @@ impl RainDocument {
                     element: binding,
                 }),
             );
+        }
+        if is_exp {
+            Some(raw_content)
+        } else {
+            None
         }
     }
 
@@ -1137,18 +1155,22 @@ impl RainDocument {
     }
 
     /// processes the expressions dependencies and checks for any possible circular dependecy
-    fn process_dependencies(&mut self) {
+    fn process_dependencies(&mut self, mut raw_contents: VecDeque<&str>) {
         let mut topo_sort: TopoSort<&str> = TopoSort::new();
         let deps_map: Vec<&mut Binding> = self
             .bindings
             .iter_mut()
             .filter_map(|binding| match binding.item {
                 BindingItem::Exp(_) => {
-                    for dep in DEP_PATTERN.find_iter(&binding.content) {
-                        let dep_as_string = dep.as_str().strip_prefix('\'').unwrap().to_owned();
-                        binding.dependencies.push(dep_as_string);
+                    if let Some(raw_content) = raw_contents.pop_front() {
+                        for dep in DEP_PATTERN.find_iter(raw_content) {
+                            let dep_as_string = dep.as_str().strip_prefix('\'').unwrap().to_owned();
+                            binding.dependencies.push(dep_as_string);
+                        }
+                        Some(binding)
+                    } else {
+                        None
                     }
-                    Some(binding)
                 }
                 _ => None,
             })
