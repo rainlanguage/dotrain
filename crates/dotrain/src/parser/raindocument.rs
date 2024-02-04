@@ -1162,6 +1162,7 @@ impl RainDocument {
 
     /// processes the expressions dependencies and checks for any possible circular dependecy
     fn process_dependencies(&mut self, mut raw_contents: VecDeque<&str>) {
+        let mut err = false;
         let mut topo_sort: TopoSort<&str> = TopoSort::new();
         let deps_map: Vec<&mut Binding> = self
             .bindings
@@ -1175,12 +1176,19 @@ impl RainDocument {
                         }
                         Some(binding)
                     } else {
+                        err = true;
                         None
                     }
                 }
                 _ => None,
             })
             .collect();
+
+        if err || !raw_contents.is_empty() {
+            self.problems
+                .push(ErrorCode::DepsResolvingFailed.to_problem(vec![], [0, 0]));
+            return;
+        }
 
         for edge in &deps_map {
             topo_sort.insert(
