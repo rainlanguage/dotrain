@@ -404,16 +404,15 @@ impl RainDocument {
                     .push(ErrorCode::UnexpectedToken.to_problem(vec![], v.1))
             });
 
-        // resolve dependencies for expression bindings
+        // resolve dependencies for rainlang bindings
         self.process_dependencies(raw_exp_contents);
 
-        // try to set global words only if only there are rainlang bindings and current instance is
-        // not an import itself. (only owned expression bindings will be parsed at this point).
-        // reason for not parsing imported/deeper expression bindings is because their ast provides
+        // try to parse rainlang bindings if only there is at least one and current instance is
+        // not an import itself, only owned rainlang bindings will be parsed at this point.
+        // reason for not parsing imported/deeper rainlang bindings is because their ast provides
         // no needed info at this point, they will get parsed once the dotrain is being composed with
         // specified entrypoints and they will be parsed only if they are part of the entrypoints or
         // their deps, see 'compile.rs'.
-        // also no need for global words for an instance that contains only constant/elided bindings
         if self.import_depth == 0
             && self
                 .bindings
