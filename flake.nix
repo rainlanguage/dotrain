@@ -43,7 +43,6 @@
           body = ''
             set -euxo pipefail
             npm install
-            npm run build
           '';
           additionalBuildInputs = [
             pkgs.wasm-bindgen-cli
