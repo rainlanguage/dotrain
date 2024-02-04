@@ -1014,15 +1014,12 @@ impl RainDocument {
                             ErrorCode::UnexpectedStringLiteral.to_problem(vec![], content_position),
                         );
                     }
-                } else {
-                    if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
-                        self.problems
-                            .push(ErrorCode::OddLenHex.to_problem(vec![], content_position));
-                    }
-                    if has_err {
-                        self.problems
-                            .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
-                    }
+                } else if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
+                    self.problems
+                        .push(ErrorCode::OddLenHex.to_problem(vec![], content_position));
+                } else if has_err {
+                    self.problems
+                        .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
                 }
                 item = BindingItem::Literal(LiteralBindingItem { value });
             } else {
