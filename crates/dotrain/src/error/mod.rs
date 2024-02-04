@@ -53,6 +53,7 @@ pub enum ErrorCode {
     UnexpectedComment = 0x307,
     UnexpectedPragma = 0x308,
     UnexpectedRename = 0x309,
+    UnexpectedStringLiteral = 0x310,
 
     ExpectedOpcode = 0x401,
     ExpectedRename = 0x402,
@@ -126,6 +127,7 @@ impl ErrorCode {
             Self::UnexpectedComment => "unexpected comment".to_owned(),
             Self::UnexpectedPragma => "unexpected pragma, must be at top".to_owned(),
             Self::UnexpectedRename => format!("unexpected rename, name '{}' already taken", msg_items[0]),
+            Self::UnexpectedStringLiteral => "unexpected end of string literal".to_owned(),
 
             Self::ExpectedOpcode => "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis".to_owned(),
             Self::ExpectedElisionOrRebinding => "expected rebinding or elision".to_owned(),

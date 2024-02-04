@@ -502,16 +502,16 @@ impl RainDocument {
 
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
     fn is_constant(text: &str) -> Option<(String, bool)> {
-        let items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        if items.len() == 1 && LITERAL_PATTERN.is_match(&items[0].0) {
-            if NUMERIC_PATTERN.is_match(&items[0].0) {
+        if STRING_LITERAL_PATTERN.is_match(text) {
+            Some((text.to_owned(), false))
+        } else {
+            let items = exclusive_parse(text, &WS_PATTERN, 0, false);
+            if items.len() == 1 && NUMERIC_PATTERN.is_match(&items[0].0) {
                 let is_out_of_range = to_u256(&items[0].0).is_err();
                 Some((items[0].0.clone(), is_out_of_range))
             } else {
-                Some((items[0].0.clone(), false))
+                None
             }
-        } else {
-            None
         }
     }
 
@@ -909,7 +909,7 @@ impl RainDocument {
                         } else {
                             let ns_item = new_imp_namespace.get_mut(key).unwrap();
                             if let NamespaceItem::Leaf(leaf) = ns_item {
-                                leaf.element.item = BindingItem::Constant(ConstantBindingItem {
+                                leaf.element.item = BindingItem::Literal(LiteralBindingItem {
                                     value: new_conf.0.clone(),
                                 })
                             } else {
@@ -1011,7 +1011,7 @@ impl RainDocument {
                     self.problems
                         .push(ErrorCode::OddLenHex.to_problem(vec![], content_position));
                 }
-                item = BindingItem::Constant(ConstantBindingItem { value });
+                item = BindingItem::Literal(LiteralBindingItem { value });
                 if is_out_of_range {
                     self.problems
                         .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
@@ -1366,7 +1366,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1385,7 +1385,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1411,7 +1411,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1430,7 +1430,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1461,7 +1461,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1480,7 +1480,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1512,7 +1512,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1563,7 +1563,7 @@ _: opcode-1(0xabcd 456);
                 position: [120, 139],
                 problems: vec![],
                 dependencies: vec![],
-                item: BindingItem::Constant(ConstantBindingItem {
+                item: BindingItem::Literal(LiteralBindingItem {
                     value: "4e18".to_owned(),
                 }),
             },
