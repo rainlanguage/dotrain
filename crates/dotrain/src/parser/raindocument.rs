@@ -501,14 +501,15 @@ impl RainDocument {
     }
 
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
-    fn is_constant(text: &str) -> Option<(String, bool)> {
-        if STRING_LITERAL_PATTERN.is_match(text) {
-            Some((text.to_owned(), false))
+    fn is_constant(text: &str) -> Option<(String, bool, bool)> {
+        if text.starts_with('"') {
+            let has_no_end = !STRING_LITERAL_PATTERN.is_match(text);
+            Some((text.to_owned(), true, has_no_end))
         } else {
             let items = exclusive_parse(text, &WS_PATTERN, 0, false);
             if items.len() == 1 && NUMERIC_PATTERN.is_match(&items[0].0) {
                 let is_out_of_range = to_u256(&items[0].0).is_err();
-                Some((items[0].0.clone(), is_out_of_range))
+                Some((items[0].0.clone(), false, is_out_of_range))
             } else {
                 None
             }
@@ -1006,16 +1007,25 @@ impl RainDocument {
                     msg = DEFAULT_ELISION.to_owned();
                 }
                 item = BindingItem::Elided(ElidedBindingItem { msg });
-            } else if let Some((value, is_out_of_range)) = Self::is_constant(raw_content) {
-                if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
-                    self.problems
-                        .push(ErrorCode::OddLenHex.to_problem(vec![], content_position));
+            } else if let Some((value, is_string_literal, has_err)) = Self::is_constant(raw_content)
+            {
+                if is_string_literal {
+                    if has_err {
+                        self.problems.push(
+                            ErrorCode::UnexpectedStringLiteral.to_problem(vec![], content_position),
+                        );
+                    }
+                } else {
+                    if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
+                        self.problems
+                            .push(ErrorCode::OddLenHex.to_problem(vec![], content_position));
+                    }
+                    if has_err {
+                        self.problems
+                            .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
+                    }
                 }
                 item = BindingItem::Literal(LiteralBindingItem { value });
-                if is_out_of_range {
-                    self.problems
-                        .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
-                }
             } else {
                 // occupy the key with empty rainlang ast, later on will
                 // be replaced with parsed ast once global words are resolved
@@ -1227,19 +1237,33 @@ mod tests {
     fn test_is_constant_method() -> anyhow::Result<()> {
         let text = " \n 1234 \n\t ";
         let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("1234".to_owned(), false)));
+        assert_eq!(result, Some(("1234".to_owned(), false, false)));
 
         let text = " \n 14e6";
         let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("14e6".to_owned(), false)));
+        assert_eq!(result, Some(("14e6".to_owned(), false, false)));
 
         let text = " \t 0x1234abcdef ";
         let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("0x1234abcdef".to_owned(), false)));
+        assert_eq!(result, Some(("0x1234abcdef".to_owned(), false, false)));
 
         let text = " \n 99999e99999 \n";
         let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("99999e99999".to_owned(), true)));
+        assert_eq!(result, Some(("99999e99999".to_owned(), false, true)));
+
+        let text = "\" some\n literal  \nvalue\t\n \"";
+        let result = RainDocument::is_constant(text);
+        assert_eq!(
+            result,
+            Some(("\" some\n literal  \nvalue\t\n \"".to_owned(), true, false))
+        );
+
+        let text = "\" some\n literal\n with no end ";
+        let result = RainDocument::is_constant(text);
+        assert_eq!(
+            result,
+            Some(("\" some\n literal\n with no end ".to_owned(), true, true))
+        );
 
         let text = " \n 999 234 \n";
         let result = RainDocument::is_constant(text);
