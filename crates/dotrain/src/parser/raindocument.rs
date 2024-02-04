@@ -1007,9 +1007,8 @@ impl RainDocument {
                     msg = DEFAULT_ELISION.to_owned();
                 }
                 item = BindingItem::Elided(ElidedBindingItem { msg });
-            } else if let Some((value, is_string_literal, has_err)) = Self::is_constant(raw_content)
-            {
-                if is_string_literal {
+            } else if let Some((value, is_str_literal, has_err)) = Self::is_constant(raw_content) {
+                if is_str_literal {
                     if has_err {
                         self.problems.push(
                             ErrorCode::UnexpectedStringLiteral.to_problem(vec![], content_position),
