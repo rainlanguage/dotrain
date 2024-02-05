@@ -124,6 +124,30 @@ impl RainDocument {
         rain_document
     }
 
+    /// Creates an instance and parses with remote meta search enabled
+    pub async fn create_with_rebinds_async(
+        text: String,
+        meta_store: Option<Arc<RwLock<Store>>>,
+        words: Option<AuthoringMeta>,
+        rebinds: Vec<(String, String)>,
+    ) -> Result<RainDocument, Error> {
+        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
+        rain_document.parse_with_rebinds(true, rebinds).await?;
+        Ok(rain_document)
+    }
+
+    /// Creates an instance and parses with remote meta search disabled (cached metas only) with rebinds
+    pub fn create_with_rebinds(
+        text: String,
+        meta_store: Option<Arc<RwLock<Store>>>,
+        words: Option<AuthoringMeta>,
+        rebinds: Vec<(String, String)>,
+    ) -> Result<RainDocument, Error> {
+        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
+        block_on(rain_document.parse_with_rebinds(false, rebinds))?;
+        Ok(rain_document)
+    }
+
     /// Updates the text and parses right away with remote meta search disabled (cached metas only)
     pub fn update(&mut self, new_text: String) {
         self.text = new_text;
@@ -227,6 +251,36 @@ impl RainDocument {
             self.front_matter_offset = 0;
         }
     }
+
+    /// Parses this instance's with rebindings, this method is only used by cli
+    #[async_recursion(?Send)]
+    pub(crate) async fn parse_with_rebinds(
+        &mut self,
+        enable_remote: bool,
+        rebinds: Vec<(String, String)>,
+    ) -> Result<(), Error> {
+        if NON_EMPTY_PATTERN.is_match(&self.text) {
+            if let Err(e) = self._parse(enable_remote, Some(rebinds)).await {
+                // exit with override error if encountered
+                if matches!(e, Error::InvalidOverride(_)) {
+                    return Err(e);
+                }
+                self.error = Some(e.to_string());
+                self.problems
+                    .push(ErrorCode::RuntimeError.to_problem(vec![&e.to_string()], [0, 0]));
+            }
+        } else {
+            self.error = None;
+            self.imports.clear();
+            self.problems.clear();
+            self.comments.clear();
+            self.bindings.clear();
+            self.namespace.clear();
+            self.known_words = None;
+            self.front_matter_offset = 0;
+        }
+        Ok(())
+    }
 }
 
 impl RainDocument {
@@ -249,36 +303,6 @@ impl RainDocument {
             problems: vec![],
             import_depth,
         }
-    }
-
-    /// Parses this instance's with rebindings, this method is only used by cli
-    #[async_recursion(?Send)]
-    pub(crate) async fn parse_with_rebinds(
-        &mut self,
-        enable_remote: bool,
-        rebinds: Option<Vec<(String, String)>>,
-    ) -> Result<(), Error> {
-        if NON_EMPTY_PATTERN.is_match(&self.text) {
-            if let Err(e) = self._parse(enable_remote, rebinds).await {
-                // exit with override error if encountered
-                if matches!(e, Error::InvalidOverride(_)) {
-                    return Err(e);
-                }
-                self.error = Some(e.to_string());
-                self.problems
-                    .push(ErrorCode::RuntimeError.to_problem(vec![&e.to_string()], [0, 0]));
-            }
-        } else {
-            self.error = None;
-            self.imports.clear();
-            self.problems.clear();
-            self.comments.clear();
-            self.bindings.clear();
-            self.namespace.clear();
-            self.known_words = None;
-            self.front_matter_offset = 0;
-        }
-        Ok(())
     }
 
     /// the main method that takes out and processes each section of a RainDocument

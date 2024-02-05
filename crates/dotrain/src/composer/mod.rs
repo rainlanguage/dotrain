@@ -656,7 +656,7 @@ _: opcode-2(some-name some-other-value);
         let mut rain_document =
             RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
         let rebinds = vec![("some-override-value".to_owned(), "567".to_owned())];
-        block_on(rain_document.parse_with_rebinds(false, Some(rebinds)))?;
+        block_on(rain_document.parse_with_rebinds(false, rebinds))?;
         let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
         let expected_rainlang = "_: opcode-1(0xabcd 456);
 
@@ -686,7 +686,7 @@ _: opcode-2(some-name some-other-value);
             ("some-override-value".to_owned(), "567".to_owned()),
             ("some-value".to_owned(), r#"0x123456"#.to_owned()),
         ];
-        block_on(rain_document.parse_with_rebinds(false, Some(rebinds)))?;
+        block_on(rain_document.parse_with_rebinds(false, rebinds))?;
         let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
         let expected_rainlang = r#"_: opcode-1(0xabcd 456);
 
