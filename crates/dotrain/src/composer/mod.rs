@@ -417,6 +417,7 @@ impl ComposeError {
 mod tests {
     use super::*;
     use crate::error::ErrorCode;
+    use crate::parser::Rebind;
     use futures::executor::block_on;
     use rain_metadata::{
         types::authoring::v1::{AuthoringMetaItem, AuthoringMeta},
@@ -686,7 +687,7 @@ _: opcode-2(some-name some-other-value);
 ";
         let mut rain_document =
             RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
-        let rebinds = vec![("some-override-value".to_owned(), "567".to_owned())];
+        let rebinds = vec![Rebind("some-override-value".to_owned(), "567".to_owned())];
         block_on(rain_document.parse_with_rebinds(false, rebinds))?;
         let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
         let expected_rainlang = "_: opcode-1(0xabcd 456);
@@ -714,8 +715,8 @@ _: opcode-2(some-name some-other-value);
         let mut rain_document =
             RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
         let rebinds = vec![
-            ("some-override-value".to_owned(), "567".to_owned()),
-            ("some-value".to_owned(), r#"0x123456"#.to_owned()),
+            Rebind("some-override-value".to_owned(), "567".to_owned()),
+            Rebind("some-value".to_owned(), r#"0x123456"#.to_owned()),
         ];
         block_on(rain_document.parse_with_rebinds(false, rebinds))?;
         let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
@@ -725,6 +726,38 @@ _: opcode-1<2>(0xabcd 456);
 
 some-name: opcode-2(0xabcd 0x123456 567),
 _: opcode-2(some-name 0xabcdef1234);"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
+
+        let dotrain_text = r"
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#exp-binding-1
+_: opcode-1(0xabcd 456);
+
+#exp-binding-2
+_: opcode-1<'exp-binding-3>(0xabcd 456);
+
+#exp-binding-3
+some-name: opcode-2(0xabcd some-value some-override-value),
+_: opcode-2(some-name some-other-value);
+";
+        let mut rain_document =
+            RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![
+            Rebind("some-override-value".to_owned(), "567".to_owned()),
+            Rebind("some-value".to_owned(), r#"0x123456"#.to_owned()),
+            Rebind("some-other-value".to_owned(), r#"" some new literal string ""#.to_owned()),
+        ];
+        block_on(rain_document.parse_with_rebinds(false, rebinds))?;
+        let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
+        let expected_rainlang = r#"_: opcode-1(0xabcd 456);
+
+_: opcode-1<2>(0xabcd 456);
+
+some-name: opcode-2(0xabcd 0x123456 567),
+_: opcode-2(some-name " some new literal string ");"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
         Ok(())

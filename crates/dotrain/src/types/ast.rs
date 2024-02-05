@@ -411,26 +411,6 @@ impl NamespaceItem {
             panic!("not an exp binding")
         }
     }
-
-    pub fn rebind_leaf(&mut self, value: String) -> Result<(), String> {
-        if let NamespaceItem::Leaf(leaf) = self {
-            match &leaf.element.item {
-                BindingItem::Elided(_) => {
-                    leaf.element.item = BindingItem::Constant(ConstantBindingItem { value });
-                    Ok(())
-                }
-                BindingItem::Constant(_) => {
-                    leaf.element.item = BindingItem::Constant(ConstantBindingItem { value });
-                    Ok(())
-                }
-                BindingItem::Exp(_e) => {
-                    Err("cannot rebind rainlang expression bindings".to_owned())
-                }
-            }
-        } else {
-            Err("not a leaf".to_owned())
-        }
-    }
 }
 
 /// Type for a namespace in dotrain

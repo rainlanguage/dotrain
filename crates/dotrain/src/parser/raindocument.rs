@@ -22,6 +22,11 @@ use tsify::Tsify;
 #[cfg(feature = "js-api")]
 use wasm_bindgen::prelude::wasm_bindgen;
 
+// Type for a runtime rebind
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
+pub struct Rebind(pub String, pub String);
+
 /// Data structure of a parsed .rain text
 ///
 /// RainDocument is the main implementation block that enables parsing of a .rain file contents
@@ -124,12 +129,12 @@ impl RainDocument {
         rain_document
     }
 
-    /// Creates an instance and parses with remote meta search enabled
+    /// Creates an instance and parses with remote meta search enabled with rebinds
     pub async fn create_with_rebinds_async(
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
-        rebinds: Vec<(String, String)>,
+        rebinds: Vec<Rebind>,
     ) -> Result<RainDocument, Error> {
         let mut rain_document = RainDocument::new(text, meta_store, 0, words);
         rain_document.parse_with_rebinds(true, rebinds).await?;
@@ -141,7 +146,7 @@ impl RainDocument {
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
-        rebinds: Vec<(String, String)>,
+        rebinds: Vec<Rebind>,
     ) -> Result<RainDocument, Error> {
         let mut rain_document = RainDocument::new(text, meta_store, 0, words);
         block_on(rain_document.parse_with_rebinds(false, rebinds))?;
@@ -158,6 +163,20 @@ impl RainDocument {
     pub async fn update_async(&mut self, new_text: String) {
         self.text = new_text;
         self.parse(true).await;
+    }
+
+    /// Updates the text and parses right away with remote meta search disabled (cached metas only) with rebinds
+    pub fn update_with_rebinds(&mut self, new_text: String, rebinds: Vec<Rebind>) -> Result<(), Error> {
+        self.text = new_text;
+        block_on(self.parse_with_rebinds(false, rebinds))?;
+        Ok(())
+    }
+
+    /// Updates the text and parses right away with remote meta search enabled with rebinds
+    pub async fn update_with_rebinds_async(&mut self, new_text: String, rebinds: Vec<Rebind>) -> Result<(), Error> {
+        self.text = new_text;
+        self.parse_with_rebinds(true, rebinds).await?;
+        Ok(())
     }
 
     /// This instance's current text
@@ -252,12 +271,12 @@ impl RainDocument {
         }
     }
 
-    /// Parses this instance's with rebindings, this method is only used by cli
+    /// Parses this instance's with rebindings
     #[async_recursion(?Send)]
     pub(crate) async fn parse_with_rebinds(
         &mut self,
         enable_remote: bool,
-        rebinds: Vec<(String, String)>,
+        rebinds: Vec<Rebind>,
     ) -> Result<(), Error> {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
             if let Err(e) = self._parse(enable_remote, Some(rebinds)).await {
@@ -312,7 +331,7 @@ impl RainDocument {
     async fn _parse(
         &mut self,
         remote_search: bool,
-        opts_rebinds: Option<Vec<(String, String)>>,
+        opts_rebinds: Option<Vec<Rebind>>,
     ) -> Result<(), Error> {
         self.imports.clear();
         self.problems.clear();
@@ -1280,13 +1299,13 @@ impl RainDocument {
 
     /// apply the overrides to the namespace
     fn apply_overrides(
-        rebinds: Vec<(String, String)>,
+        rebinds: Vec<Rebind>,
         namespace: &mut Namespace,
     ) -> Result<(), Error> {
-        for (key, raw_value) in rebinds {
+        for Rebind(key, raw_value) in rebinds {
             let value = raw_value.trim();
             if NAMESPACE_PATTERN.is_match(&key) {
-                if let Some((literal_value, has_err)) = Self::is_constant(value) {
+                if let Some((literal_value, _, has_err)) = Self::is_constant(value) {
                     if has_err {
                         return Err(Error::InvalidOverride(format!("invalid value: {}", value)));
                     }
@@ -1330,8 +1349,8 @@ impl RainDocument {
                                                     position: [0, 0],
                                                     problems: vec![],
                                                     dependencies: vec![],
-                                                    item: BindingItem::Constant(
-                                                        ConstantBindingItem {
+                                                    item: BindingItem::Literal(
+                                                        LiteralBindingItem {
                                                             value: literal_value.to_owned(),
                                                         },
                                                     ),
@@ -1361,10 +1380,10 @@ impl RainDocument {
                                                 key
                                             ))),
                                             BindingItem::Elided(_) => {
-                                                leaf.element.item = BindingItem::Constant(ConstantBindingItem { value: literal_value.to_owned() });
+                                                leaf.element.item = BindingItem::Literal(LiteralBindingItem { value: literal_value.to_owned() });
                                             },
-                                            BindingItem::Constant(_c) => {
-                                                leaf.element.item = BindingItem::Constant(ConstantBindingItem { value: literal_value.to_owned() });
+                                            BindingItem::Literal(_c) => {
+                                                leaf.element.item = BindingItem::Literal(LiteralBindingItem { value: literal_value.to_owned() });
                                             },
                                         };
                                         break;
@@ -1396,7 +1415,7 @@ impl RainDocument {
                                     position: [0, 0],
                                     problems: vec![],
                                     dependencies: vec![],
-                                    item: BindingItem::Constant(ConstantBindingItem {
+                                    item: BindingItem::Literal(LiteralBindingItem {
                                         value: value.to_owned(),
                                     }),
                                 },
