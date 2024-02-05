@@ -85,9 +85,8 @@ impl RainDocument {
         text: &str,
         entrypoints: &[&str],
         meta_store: Option<Arc<RwLock<Store>>>,
-        rebinds: Option<Vec<(String, String)>>,
     ) -> Result<String, ComposeError> {
-        RainDocument::create(text.to_string(), meta_store, None, rebinds).compose(entrypoints)
+        RainDocument::create(text.to_string(), meta_store, None).compose(entrypoints)
     }
 
     /// composes a given text as RainDocument into rainlang with remote meta search enabled for parsing
@@ -95,9 +94,8 @@ impl RainDocument {
         text: &str,
         entrypoints: &[&str],
         meta_store: Option<Arc<RwLock<Store>>>,
-        rebinds: Option<Vec<(String, String)>>,
     ) -> Result<String, ComposeError> {
-        RainDocument::create_async(text.to_string(), meta_store, None, rebinds)
+        RainDocument::create_async(text.to_string(), meta_store, None)
             .await
             .compose(entrypoints)
     }
@@ -419,6 +417,7 @@ impl ComposeError {
 mod tests {
     use super::*;
     use crate::error::ErrorCode;
+    use futures::executor::block_on;
     use rain_metadata::{
         types::authoring::v1::{AuthoringMetaItem, AuthoringMeta},
         NPE2Deployer,
@@ -464,7 +463,7 @@ mod tests {
 _: opcode-1(0xabcd 456);
 ";
         let rainlang_text =
-            RainDocument::compose_text(dotrain_text, &["exp-binding"], Some(meta_store.clone()), None)?;
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], Some(meta_store.clone()))?;
         let expected_rainlang = "_: opcode-1(0xabcd 456);";
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -480,7 +479,7 @@ _: opcode-1(0xabcd 456),
 some-name _: opcode-2(opcode-1(1 2) const-binding) 0xab34;
 ";
         let rainlang_text =
-            RainDocument::compose_text(dotrain_text, &["exp-binding"], Some(meta_store.clone()), None)?;
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], Some(meta_store.clone()))?;
         let expected_rainlang = "_: opcode-1(0xabcd 456),
 some-name _: opcode-2(opcode-1(1 2) 4e18) 0xab34;";
         assert_eq!(rainlang_text, expected_rainlang);
@@ -499,7 +498,7 @@ some-name _: 0xab34;
 _: opcode-2(0xabcd some-value);
 ";
         let rainlang_text =
-            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()), None)?;
+            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()))?;
         let expected_rainlang = "_: opcode-1<1>(0xabcd 456),
 some-name _: 0xab34;
 
@@ -525,8 +524,7 @@ _: opcode-2(0xabcd some-value);
         let rainlang_text = RainDocument::compose_text(
             dotrain_text,
             &["exp-binding-1", "exp-binding-2"],
-            Some(meta_store.clone()),
-            None
+            Some(meta_store.clone())
         )?;
         let expected_rainlang = "_: opcode-1(0xabcd 456),
 some-name _: 0xab34;
@@ -551,8 +549,7 @@ _: opcode-2(some-name some-other-value);
         let rainlang_text = RainDocument::compose_text(
             dotrain_text,
             &["exp-binding-1", "exp-binding-2"],
-            Some(meta_store.clone()),
-            None
+            Some(meta_store.clone())
         )?;
         let expected_rainlang = "_: opcode-1(0xabcd 456);
 
@@ -571,23 +568,9 @@ using-words-from 0x1234abced
 _: some-sub-parser-word<1 2>(some-value some-other-value);
 ";
         let rainlang_text =
-            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()), None)?;
+            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()))?;
         let expected_rainlang = "using-words-from 0x1234abced
 _: some-sub-parser-word<1 2>(4e18 0xabcdef1234);";
-        assert_eq!(rainlang_text, expected_rainlang);
-
-        let dotrain_text = r"
-#some-value 4e18
-#some-other-value 0xabcdef1234
-
-#exp-binding-1
-using-words-from 0x1234abced
-_: some-sub-parser-word<1 2>(some-value some-other-value some-tt);
-";
-        let rainlang_text =
-            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()), Some(vec![("some-tt".to_owned(), "555".to_owned())]))?;
-        let expected_rainlang = "using-words-from 0x1234abced
-_: some-sub-parser-word<1 2>(4e18 0xabcdef1234 555);";
         assert_eq!(rainlang_text, expected_rainlang);
 
         let dotrain_text = r"
@@ -608,8 +591,7 @@ _: opcode-1(0xabcd 456);
         let result = RainDocument::compose_text(
             dotrain_text,
             &["exp-binding-1", "exp-binding-2"],
-            Some(meta_store.clone()),
-            None
+            Some(meta_store.clone())
         );
         let expected_err = Err(ComposeError::Problems(vec![
             ErrorCode::OddLenHex.to_problem(vec![], [85, 98])
@@ -628,7 +610,7 @@ _: opcode-1(0xabcd 456);
 _: opcode-1(0xabcd elided);
 ";
         let result =
-            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()), None);
+            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()));
         let expected_err = Err(ComposeError::Problems(vec![
             ErrorCode::ElidedBinding.to_problem(vec!["this is elided"], [123, 129])
         ]));
@@ -643,11 +625,71 @@ _: opcode-1(0xabcd elided);
 _: opcode-1(0xabcd elided);
 ";
         let result =
-            RainDocument::compose_text(dotrain_text, &["exp-binding"], Some(meta_store.clone()), None);
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], Some(meta_store.clone()));
         let expected_err = Err(ComposeError::Reject(
             "undefined identifier: exp-binding".to_owned(),
         ));
         assert_eq!(result, expected_err);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_compose_with_rebinds() -> anyhow::Result<()> {
+        let store = rain_metadata::Store::new();
+        let meta_store = Arc::new(RwLock::new(store));
+
+        let dotrain_text = r"
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#exp-binding-1
+_: opcode-1(0xabcd 456);
+
+#exp-binding-2
+_: opcode-1<'exp-binding-3>(0xabcd 456);
+
+#exp-binding-3
+some-name: opcode-2(0xabcd some-value some-override-value),
+_: opcode-2(some-name some-other-value);
+";
+        let mut rain_document = RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![("some-override-value".to_owned(), "567".to_owned())];
+        block_on(rain_document.parse_with_rebinds(false, Some(rebinds)))?;
+        let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
+        let expected_rainlang = "_: opcode-1(0xabcd 456);
+
+_: opcode-1<2>(0xabcd 456);
+
+some-name: opcode-2(0xabcd 4e18 567),
+_: opcode-2(some-name 0xabcdef1234);";
+        assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r"
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#exp-binding-1
+_: opcode-1(0xabcd 456);
+
+#exp-binding-2
+_: opcode-1<'exp-binding-3>(0xabcd 456);
+
+#exp-binding-3
+some-name: opcode-2(0xabcd some-value some-override-value),
+_: opcode-2(some-name some-other-value);
+";
+        let mut rain_document = RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![("some-override-value".to_owned(), "567".to_owned()), ("some-value".to_owned(), r#"0x123456"#.to_owned())];
+        block_on(rain_document.parse_with_rebinds(false, Some(rebinds)))?;
+        let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
+        let expected_rainlang = r#"_: opcode-1(0xabcd 456);
+
+_: opcode-1<2>(0xabcd 456);
+
+some-name: opcode-2(0xabcd 0x123456 567),
+_: opcode-2(some-name 0xabcdef1234);"#;
+        assert_eq!(rainlang_text, expected_rainlang);
 
         Ok(())
     }

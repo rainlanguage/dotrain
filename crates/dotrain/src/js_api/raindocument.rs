@@ -15,13 +15,13 @@ impl RainDocument {
     /// Creates an instance with the given MetaStore and parses with remote meta search enabled
     #[wasm_bindgen(js_name = "createAsync")]
     pub async fn js_create_async(text: &str, meta_store: &MetaStore) -> RainDocument {
-        RainDocument::create_async(text.to_string(), Some(meta_store.0.clone()), None, None).await
+        RainDocument::create_async(text.to_string(), Some(meta_store.0.clone()), None).await
     }
 
     /// Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only)
     #[wasm_bindgen(js_name = "create")]
     pub fn js_create(text: &str, meta_store: &MetaStore) -> RainDocument {
-        RainDocument::create(text.to_string(), Some(meta_store.0.clone()), None, None)
+        RainDocument::create(text.to_string(), Some(meta_store.0.clone()), None)
     }
 
     #[wasm_bindgen(js_name = "fromInterface")]
@@ -42,13 +42,13 @@ impl RainDocument {
     /// Updates the text, uri, version and parses right away with remote meta search disabled (cached metas only)
     #[wasm_bindgen(js_name = "update")]
     pub fn js_update(&mut self, new_text: &str) {
-        self.update(new_text.to_string(), None)
+        self.update(new_text.to_string())
     }
 
     /// Updates the text, uri, version and parses right away with remote meta search enabled
     #[wasm_bindgen(js_name = "updateAsync")]
     pub async fn js_update_async(&mut self, new_text: &str) {
-        self.update_async(new_text.to_string(), None).await;
+        self.update_async(new_text.to_string()).await;
     }
 
     /// This instance's current text
@@ -142,13 +142,13 @@ impl RainDocument {
     /// Parses this instance's text with remote meta search enabled
     #[wasm_bindgen(js_name = "parseAsync")]
     pub async fn js_parse_async(&mut self) {
-        self.parse(true, None).await;
+        self.parse(true).await;
     }
 
     /// Parses this instance's text with remote meta search disabled (cached metas only)
     #[wasm_bindgen(js_name = "parse")]
     pub fn js_parse(&mut self) {
-        block_on(self.parse(false, None));
+        block_on(self.parse(false));
     }
 
     /// Compiles this instance
@@ -176,7 +176,6 @@ impl RainDocument {
                 .map(|v| v.as_str())
                 .collect::<Vec<&str>>(),
             Some(meta_store.0.clone()),
-            None
         )
         .await
     }
@@ -195,7 +194,6 @@ impl RainDocument {
                 .map(|v| v.as_str())
                 .collect::<Vec<&str>>(),
             Some(meta_store.0.clone()),
-            None
         )
     }
 }
