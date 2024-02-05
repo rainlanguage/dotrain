@@ -12,11 +12,10 @@ use serde_wasm_bindgen::{Error, to_value, from_value};
 use wasm_bindgen::{
     JsValue,
     convert::*,
-    prelude::*, 
+    prelude::*,
     describe::{WasmDescribeVector, inform, VECTOR, WasmDescribe},
     UnwrapThrowExt,
 };
-
 
 #[wasm_bindgen]
 impl RainDocument {
@@ -32,16 +31,37 @@ impl RainDocument {
         RainDocument::create(text.to_string(), Some(meta_store.0.clone()), None)
     }
 
-    /// Creates an instance with the given MetaStore and parses with remote meta search enabled
+    /// Creates an instance as createAsync() but with rebinds
     #[wasm_bindgen(js_name = "createWithRebindsAsync")]
-    pub async fn js_create_with_rebinds_async(text: &str, meta_store: &MetaStore, rebinds: Vec<Rebind>) -> RainDocument {
-        RainDocument::create_with_rebinds_async(text.to_string(), Some(meta_store.0.clone()), None, rebinds).await.unwrap_throw()
+    pub async fn js_create_with_rebinds_async(
+        text: &str,
+        meta_store: &MetaStore,
+        rebinds: Vec<Rebind>,
+    ) -> RainDocument {
+        RainDocument::create_with_rebinds_async(
+            text.to_string(),
+            Some(meta_store.0.clone()),
+            None,
+            rebinds,
+        )
+        .await
+        .unwrap_throw()
     }
 
-    /// Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only)
+    /// Creates an instance as create() but with rebinds
     #[wasm_bindgen(js_name = "createWithRebinds")]
-    pub fn js_create_with_rebinds(text: &str, meta_store: &MetaStore, rebinds: Vec<Rebind>) -> RainDocument {
-        RainDocument::create_with_rebinds(text.to_string(), Some(meta_store.0.clone()), None, rebinds).unwrap_throw()
+    pub fn js_create_with_rebinds(
+        text: &str,
+        meta_store: &MetaStore,
+        rebinds: Vec<Rebind>,
+    ) -> RainDocument {
+        RainDocument::create_with_rebinds(
+            text.to_string(),
+            Some(meta_store.0.clone()),
+            None,
+            rebinds,
+        )
+        .unwrap_throw()
     }
 
     #[wasm_bindgen(js_name = "fromInterface")]
@@ -59,28 +79,39 @@ impl RainDocument {
         }
     }
 
-    /// Updates the text, uri, version and parses right away with remote meta search disabled (cached metas only)
+    /// Updates the text and parses right away with remote meta search disabled (cached metas only)
     #[wasm_bindgen(js_name = "update")]
     pub fn js_update(&mut self, new_text: &str) {
         self.update(new_text.to_string())
     }
 
-    /// Updates the text, uri, version and parses right away with remote meta search enabled
+    /// Updates the text and parses right away with remote meta search enabled
     #[wasm_bindgen(js_name = "updateAsync")]
     pub async fn js_update_async(&mut self, new_text: &str) {
         self.update_async(new_text.to_string()).await;
     }
 
-    /// Updates the text, uri, version and parses right away with remote meta search disabled (cached metas only)
+    /// Updates the text as update() but with rebinds
     #[wasm_bindgen(js_name = "updateWithRebinds")]
-    pub async fn js_update_with_rebinds(&mut self, new_text: &str, rebinds: Vec<Rebind>) -> Result<(), String> {
-        self.update_with_rebinds(new_text.to_string(), rebinds).map_err(|e| e.to_string())
+    pub async fn js_update_with_rebinds(
+        &mut self,
+        new_text: &str,
+        rebinds: Vec<Rebind>,
+    ) -> Result<(), String> {
+        self.update_with_rebinds(new_text.to_string(), rebinds)
+            .map_err(|e| e.to_string())
     }
 
-    /// Updates the text, uri, version and parses right away with remote meta search enabled
+    /// Updates the text as updateAsync() but with rebinds
     #[wasm_bindgen(js_name = "updateWithRebindsAsync")]
-    pub async fn js_update_with_rebinds_async(&mut self, new_text: &str, rebinds: Vec<Rebind>) -> Result<(), String> {
-        self.update_with_rebinds_async(new_text.to_string(), rebinds).await.map_err(|e| e.to_string())
+    pub async fn js_update_with_rebinds_async(
+        &mut self,
+        new_text: &str,
+        rebinds: Vec<Rebind>,
+    ) -> Result<(), String> {
+        self.update_with_rebinds_async(new_text.to_string(), rebinds)
+            .await
+            .map_err(|e| e.to_string())
     }
 
     /// This instance's current text

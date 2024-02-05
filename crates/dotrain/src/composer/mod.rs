@@ -728,7 +728,6 @@ some-name: opcode-2(0xabcd 0x123456 567),
 _: opcode-2(some-name 0xabcdef1234);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
-
         let dotrain_text = r"
 #some-value 4e18
 #some-other-value 0xabcdef1234
@@ -748,7 +747,10 @@ _: opcode-2(some-name some-other-value);
         let rebinds = vec![
             Rebind("some-override-value".to_owned(), "567".to_owned()),
             Rebind("some-value".to_owned(), r#"0x123456"#.to_owned()),
-            Rebind("some-other-value".to_owned(), r#"" some new literal string ""#.to_owned()),
+            Rebind(
+                "some-other-value".to_owned(),
+                r#"" some new literal string ""#.to_owned(),
+            ),
         ];
         block_on(rain_document.parse_with_rebinds(false, rebinds))?;
         let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;

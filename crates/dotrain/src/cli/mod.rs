@@ -71,9 +71,7 @@ pub enum RainconfigInfo {
 }
 
 /// Parse a single key-value pair
-fn parse_key_val(
-    key_value_pair: &str,
-) -> Result<Rebind, Box<dyn Error + Send + Sync + 'static>> {
+fn parse_key_val(key_value_pair: &str) -> Result<Rebind, Box<dyn Error + Send + Sync + 'static>> {
     let pos = key_value_pair
         .find('=')
         .ok_or_else(|| format!("invalid key=value: no `=` found in `{key_value_pair}`"))?;

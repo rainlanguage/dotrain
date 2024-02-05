@@ -166,14 +166,22 @@ impl RainDocument {
     }
 
     /// Updates the text and parses right away with remote meta search disabled (cached metas only) with rebinds
-    pub fn update_with_rebinds(&mut self, new_text: String, rebinds: Vec<Rebind>) -> Result<(), Error> {
+    pub fn update_with_rebinds(
+        &mut self,
+        new_text: String,
+        rebinds: Vec<Rebind>,
+    ) -> Result<(), Error> {
         self.text = new_text;
         block_on(self.parse_with_rebinds(false, rebinds))?;
         Ok(())
     }
 
     /// Updates the text and parses right away with remote meta search enabled with rebinds
-    pub async fn update_with_rebinds_async(&mut self, new_text: String, rebinds: Vec<Rebind>) -> Result<(), Error> {
+    pub async fn update_with_rebinds_async(
+        &mut self,
+        new_text: String,
+        rebinds: Vec<Rebind>,
+    ) -> Result<(), Error> {
         self.text = new_text;
         self.parse_with_rebinds(true, rebinds).await?;
         Ok(())
@@ -1298,10 +1306,7 @@ impl RainDocument {
     }
 
     /// apply the overrides to the namespace
-    fn apply_overrides(
-        rebinds: Vec<Rebind>,
-        namespace: &mut Namespace,
-    ) -> Result<(), Error> {
+    fn apply_overrides(rebinds: Vec<Rebind>, namespace: &mut Namespace) -> Result<(), Error> {
         for Rebind(key, raw_value) in rebinds {
             let value = raw_value.trim();
             if NAMESPACE_PATTERN.is_match(&key) {
