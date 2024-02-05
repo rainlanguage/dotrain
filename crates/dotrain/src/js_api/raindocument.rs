@@ -287,6 +287,6 @@ impl VectorFromWasmAbi for Rebind {
 impl WasmDescribeVector for Rebind {
     fn describe_vector() {
         inform(VECTOR);
-        Problem::describe();
+        Rebind::describe();
     }
 }
