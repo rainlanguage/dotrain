@@ -344,7 +344,7 @@ fn get_namespace_completions(
                 ..Default::default()
             }),
             NamespaceItem::Leaf(leaf) => match &leaf.element.item {
-                BindingItem::Constant(c) => result.push(CompletionItem {
+                BindingItem::Literal(c) => result.push(CompletionItem {
                     label: key.clone(),
                     label_details: Some(CompletionItemLabelDetails {
                         description: Some("binding".to_owned()),

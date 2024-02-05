@@ -44,7 +44,7 @@ pub fn get_hover(
                         kind: content_type,
                         value: match binding.item {
                             BindingItem::Exp(_) => "Expression Binding",
-                            BindingItem::Constant(_) => {
+                            BindingItem::Literal(_) => {
                                 "Constant Binding (cannot be referenced as entrypoint)"
                             }
                             BindingItem::Elided(_) => {
@@ -86,7 +86,7 @@ pub fn get_hover(
                             rain_document.text(),
                         );
                     }
-                    BindingItem::Constant(_) => {
+                    BindingItem::Literal(_) => {
                         return Some(Hover {
                             contents: HoverContents::Markup(MarkupContent {
                                 kind: content_type,

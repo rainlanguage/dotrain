@@ -427,7 +427,7 @@ impl RainlangDocument {
                                     self.problems
                                         .push(ErrorCode::ElidedBinding.to_problem(vec![&msg], v.1));
                                 }
-                                BindingItem::Constant(_c) => {
+                                BindingItem::Literal(_c) => {
                                     self.problems
                                         .push(ErrorCode::InvalidQuote.to_problem(vec![quote], v.1));
                                 }
@@ -495,6 +495,33 @@ impl RainlangDocument {
             };
         let next_pos = [cursor, cursor + next.len()];
 
+        if next.starts_with('"') {
+            match remaining.find('"') {
+                Some(string_literal_end) => {
+                    let consumed = string_literal_end + next.len() + 1;
+                    self.update_state(Node::Literal(Literal {
+                        value: exp[0..consumed].to_owned(),
+                        position: [cursor, cursor + consumed],
+                        lhs_alias: None,
+                        id: None,
+                    }))?;
+                    return Ok(consumed);
+                }
+                None => {
+                    self.problems.push(
+                        ErrorCode::UnexpectedStringLiteral
+                            .to_problem(vec![], [cursor, cursor + exp.len()]),
+                    );
+                    self.update_state(Node::Literal(Literal {
+                        value: exp.to_owned(),
+                        position: [cursor, cursor + exp.len()],
+                        lhs_alias: None,
+                        id: None,
+                    }))?;
+                    return Ok(exp.len());
+                }
+            }
+        }
         if remaining.starts_with(['(', '<']) {
             let mut op = Opcode {
                 opcode: OpcodeDetails {
@@ -549,7 +576,7 @@ impl RainlangDocument {
         } else if next.contains('.') {
             if let Some(b) = self.search_namespace(next, cursor, namespace) {
                 match &b.item {
-                    BindingItem::Constant(c) => {
+                    BindingItem::Literal(c) => {
                         let value = c.value.to_owned();
                         self.update_state(Node::Literal(Literal {
                             id: Some(next.to_owned()),
@@ -621,7 +648,7 @@ impl RainlangDocument {
             } else if let Some(ns_type) = namespace.get(next) {
                 match ns_type {
                     NamespaceItem::Leaf(leaf) => match &leaf.element.item {
-                        BindingItem::Constant(c) => {
+                        BindingItem::Literal(c) => {
                             self.update_state(Node::Literal(Literal {
                                 value: c.value.clone(),
                                 position: next_pos,
@@ -1155,7 +1182,7 @@ mod tests {
             position: [1, 2],
             problems: vec![],
             dependencies: vec![],
-            item: BindingItem::Constant(ConstantBindingItem {
+            item: BindingItem::Literal(LiteralBindingItem {
                 value: "1234".to_owned(),
             }),
         };

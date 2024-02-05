@@ -121,7 +121,7 @@ let diagnostics = lang_services.do_validate(&text_document, true);
 ```
 
 ## CLI
-The CLI app can be built using nixOS (requires nixOs to be installed):
+The CLI app can be built using nix (requires nix package manager to be installed):
 ```bash
 nix build github:rainlanguage/dotrain
 ```
@@ -143,7 +143,7 @@ dotrain -c path/to/rainconfig.json --input path/to/some.rain --entrypoints first
 ```
 <br>
 
-Dotrain cli is also available in [Rain CLI app](https://github.com/rainlanguage/rain.cli) which can be easily run with nixOS:
+Dotrain cli is also available in [Rain CLI app](https://github.com/rainlanguage/rain.cli) which can be easily run with nix:
 ```bash
 nix run github:rainlanguage/rain.cli -- --help
 ```

@@ -425,13 +425,16 @@ impl RainDocument {
 
         // parsing bindings
         let parsed_bindings = exclusive_parse(&document, &BINDING_PATTERN, 0, true);
+        let mut raw_exp_contents = VecDeque::new();
         ignore_first = true;
-        for parsed_binding in parsed_bindings {
+        for parsed_binding in &parsed_bindings {
             if ignore_first {
                 ignore_first = false;
                 continue;
             }
-            self.process_binding(&parsed_binding, &mut namespace);
+            if let Some(raw_content) = self.process_binding(parsed_binding, &mut namespace) {
+                raw_exp_contents.push_back(raw_content);
+            };
             fill_in(
                 &mut document,
                 [parsed_binding.1[0] - 1, parsed_binding.1[1]],
@@ -464,16 +467,15 @@ impl RainDocument {
                     .push(ErrorCode::UnexpectedToken.to_problem(vec![], v.1))
             });
 
-        // resolve dependencies for expression bindings
-        self.process_dependencies();
+        // resolve dependencies for rainlang bindings
+        self.process_dependencies(raw_exp_contents);
 
-        // try to set global words only if only there are rainlang bindings and current instance is
-        // not an import itself. (only owned expression bindings will be parsed at this point).
-        // reason for not parsing imported/deeper expression bindings is because their ast provides
+        // try to parse rainlang bindings if only there is at least one and current instance is
+        // not an import itself, only owned rainlang bindings will be parsed at this point.
+        // reason for not parsing imported/deeper rainlang bindings is because their ast provides
         // no needed info at this point, they will get parsed once the dotrain is being composed with
         // specified entrypoints and they will be parsed only if they are part of the entrypoints or
         // their deps, see 'compile.rs'.
-        // also no need for global words for an instance that contains only constant/elided bindings
         if self.import_depth == 0
             && self
                 .bindings
@@ -561,13 +563,18 @@ impl RainDocument {
     }
 
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
-    fn is_constant(text: &str) -> Option<(String, bool)> {
-        let items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        if items.len() == 1 && NUMERIC_PATTERN.is_match(&items[0].0) {
-            let is_out_of_range = to_u256(&items[0].0).is_err();
-            Some((items[0].0.clone(), is_out_of_range))
+    fn is_constant(text: &str) -> Option<(String, bool, bool)> {
+        if text.starts_with('"') {
+            let has_no_end = !STRING_LITERAL_PATTERN.is_match(text);
+            Some((text.to_owned(), true, has_no_end))
         } else {
-            None
+            let items = exclusive_parse(text, &WS_PATTERN, 0, false);
+            if items.len() == 1 && NUMERIC_PATTERN.is_match(&items[0].0) {
+                let is_out_of_range = to_u256(&items[0].0).is_err();
+                Some((items[0].0.clone(), false, is_out_of_range))
+            } else {
+                None
+            }
         }
     }
 
@@ -582,7 +589,7 @@ impl RainDocument {
         while let Some(first_piece) = config_pieces.next() {
             if let Some(complementary_piece) = config_pieces.next() {
                 if WORD_PATTERN.is_match(&first_piece.0) {
-                    if NUMERIC_PATTERN.is_match(&complementary_piece.0)
+                    if LITERAL_PATTERN.is_match(&complementary_piece.0)
                         || complementary_piece.0 == "!"
                     {
                         if imp_conf.groups.iter().any(|v| {
@@ -965,7 +972,7 @@ impl RainDocument {
                         } else {
                             let ns_item = new_imp_namespace.get_mut(key).unwrap();
                             if let NamespaceItem::Leaf(leaf) = ns_item {
-                                leaf.element.item = BindingItem::Constant(ConstantBindingItem {
+                                leaf.element.item = BindingItem::Literal(LiteralBindingItem {
                                     value: new_conf.0.clone(),
                                 })
                             } else {
@@ -986,7 +993,11 @@ impl RainDocument {
     }
 
     /// processes a binding item
-    fn process_binding(&mut self, parsed_binding: &ParsedItem, namespace: &mut Namespace) {
+    fn process_binding<'a>(
+        &mut self,
+        parsed_binding: &'a ParsedItem,
+        namespace: &mut Namespace,
+    ) -> Option<&'a str> {
         let position = parsed_binding.1;
         let name: String;
         let name_position: Offsets;
@@ -1050,6 +1061,7 @@ impl RainDocument {
                 .push(ErrorCode::InvalidEmptyBinding.to_problem(vec![&name], name_position));
         }
 
+        let mut is_exp = false;
         if !invalid_id && !dup_id {
             let item;
             if let Some(mut msg) = Self::is_elided(raw_content) {
@@ -1057,19 +1069,25 @@ impl RainDocument {
                     msg = DEFAULT_ELISION.to_owned();
                 }
                 item = BindingItem::Elided(ElidedBindingItem { msg });
-            } else if let Some((value, is_out_of_range)) = Self::is_constant(raw_content) {
-                if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
+            } else if let Some((value, is_str_literal, has_err)) = Self::is_constant(raw_content) {
+                if is_str_literal {
+                    if has_err {
+                        self.problems.push(
+                            ErrorCode::UnexpectedStringLiteral.to_problem(vec![], content_position),
+                        );
+                    }
+                } else if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
                     self.problems
                         .push(ErrorCode::OddLenHex.to_problem(vec![], content_position));
-                }
-                item = BindingItem::Constant(ConstantBindingItem { value });
-                if is_out_of_range {
+                } else if has_err {
                     self.problems
                         .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
                 }
+                item = BindingItem::Literal(LiteralBindingItem { value });
             } else {
                 // occupy the key with empty rainlang ast, later on will
                 // be replaced with parsed ast once global words are resolved
+                is_exp = true;
                 item = BindingItem::Exp(RainlangDocument::new());
             }
             let binding = Binding {
@@ -1091,6 +1109,11 @@ impl RainDocument {
                     element: binding,
                 }),
             );
+        }
+        if is_exp {
+            Some(raw_content)
+        } else {
+            None
         }
     }
 
@@ -1200,22 +1223,34 @@ impl RainDocument {
     }
 
     /// processes the expressions dependencies and checks for any possible circular dependecy
-    fn process_dependencies(&mut self) {
+    fn process_dependencies(&mut self, mut raw_contents: VecDeque<&str>) {
+        let mut err = false;
         let mut topo_sort: TopoSort<&str> = TopoSort::new();
         let deps_map: Vec<&mut Binding> = self
             .bindings
             .iter_mut()
             .filter_map(|binding| match binding.item {
                 BindingItem::Exp(_) => {
-                    for dep in DEP_PATTERN.find_iter(&binding.content) {
-                        let dep_as_string = dep.as_str().strip_prefix('\'').unwrap().to_owned();
-                        binding.dependencies.push(dep_as_string);
+                    if let Some(raw_content) = raw_contents.pop_front() {
+                        for dep in DEP_PATTERN.find_iter(raw_content) {
+                            let dep_as_string = dep.as_str().strip_prefix('\'').unwrap().to_owned();
+                            binding.dependencies.push(dep_as_string);
+                        }
+                        Some(binding)
+                    } else {
+                        err = true;
+                        None
                     }
-                    Some(binding)
                 }
                 _ => None,
             })
             .collect();
+
+        if err || !raw_contents.is_empty() {
+            self.problems
+                .push(ErrorCode::DepsResolvingFailed.to_problem(vec![], [0, 0]));
+            return;
+        }
 
         for edge in &deps_map {
             topo_sort.insert(
@@ -1403,19 +1438,33 @@ mod tests {
     fn test_is_constant_method() -> anyhow::Result<()> {
         let text = " \n 1234 \n\t ";
         let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("1234".to_owned(), false)));
+        assert_eq!(result, Some(("1234".to_owned(), false, false)));
 
         let text = " \n 14e6";
         let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("14e6".to_owned(), false)));
+        assert_eq!(result, Some(("14e6".to_owned(), false, false)));
 
         let text = " \t 0x1234abcdef ";
         let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("0x1234abcdef".to_owned(), false)));
+        assert_eq!(result, Some(("0x1234abcdef".to_owned(), false, false)));
 
         let text = " \n 99999e99999 \n";
         let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("99999e99999".to_owned(), true)));
+        assert_eq!(result, Some(("99999e99999".to_owned(), false, true)));
+
+        let text = "\" some\n literal  \nvalue\t\n \"";
+        let result = RainDocument::is_constant(text);
+        assert_eq!(
+            result,
+            Some(("\" some\n literal  \nvalue\t\n \"".to_owned(), true, false))
+        );
+
+        let text = "\" some\n literal\n with no end ";
+        let result = RainDocument::is_constant(text);
+        assert_eq!(
+            result,
+            Some(("\" some\n literal\n with no end ".to_owned(), true, true))
+        );
 
         let text = " \n 999 234 \n";
         let result = RainDocument::is_constant(text);
@@ -1542,7 +1591,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1561,7 +1610,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1587,7 +1636,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1606,7 +1655,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1637,7 +1686,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1656,7 +1705,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1688,7 +1737,7 @@ mod tests {
                     position: [0, 10],
                     problems: vec![],
                     dependencies: vec![],
-                    item: BindingItem::Constant(ConstantBindingItem {
+                    item: BindingItem::Literal(LiteralBindingItem {
                         value: "3e18".to_owned(),
                     }),
                 },
@@ -1739,7 +1788,7 @@ _: opcode-1(0xabcd 456);
                 position: [120, 139],
                 problems: vec![],
                 dependencies: vec![],
-                item: BindingItem::Constant(ConstantBindingItem {
+                item: BindingItem::Literal(LiteralBindingItem {
                     value: "4e18".to_owned(),
                 }),
             },
