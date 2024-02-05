@@ -1,13 +1,20 @@
-use wasm_bindgen::prelude::*;
 use futures::executor::block_on;
 use super::{
     store::MetaStore,
     Namespace, IRainDocument, IAuthoringMeta,
     super::{
-        parser::raindocument::RainDocument,
+        parser::raindocument::{RainDocument, Rebind},
         error::ComposeError,
         types::ast::{Problem, Import, Comment, Binding},
     },
+};
+use serde_wasm_bindgen::{Error, to_value, from_value};
+use wasm_bindgen::{
+    JsValue,
+    convert::*,
+    prelude::*,
+    describe::{WasmDescribeVector, inform, VECTOR, WasmDescribe},
+    UnwrapThrowExt,
 };
 
 #[wasm_bindgen]
@@ -22,6 +29,39 @@ impl RainDocument {
     #[wasm_bindgen(js_name = "create")]
     pub fn js_create(text: &str, meta_store: &MetaStore) -> RainDocument {
         RainDocument::create(text.to_string(), Some(meta_store.0.clone()), None)
+    }
+
+    /// Creates an instance as createAsync() but with rebinds
+    #[wasm_bindgen(js_name = "createWithRebindsAsync")]
+    pub async fn js_create_with_rebinds_async(
+        text: &str,
+        meta_store: &MetaStore,
+        rebinds: Vec<Rebind>,
+    ) -> RainDocument {
+        RainDocument::create_with_rebinds_async(
+            text.to_string(),
+            Some(meta_store.0.clone()),
+            None,
+            rebinds,
+        )
+        .await
+        .unwrap_throw()
+    }
+
+    /// Creates an instance as create() but with rebinds
+    #[wasm_bindgen(js_name = "createWithRebinds")]
+    pub fn js_create_with_rebinds(
+        text: &str,
+        meta_store: &MetaStore,
+        rebinds: Vec<Rebind>,
+    ) -> RainDocument {
+        RainDocument::create_with_rebinds(
+            text.to_string(),
+            Some(meta_store.0.clone()),
+            None,
+            rebinds,
+        )
+        .unwrap_throw()
     }
 
     #[wasm_bindgen(js_name = "fromInterface")]
@@ -39,16 +79,39 @@ impl RainDocument {
         }
     }
 
-    /// Updates the text, uri, version and parses right away with remote meta search disabled (cached metas only)
+    /// Updates the text and parses right away with remote meta search disabled (cached metas only)
     #[wasm_bindgen(js_name = "update")]
     pub fn js_update(&mut self, new_text: &str) {
         self.update(new_text.to_string())
     }
 
-    /// Updates the text, uri, version and parses right away with remote meta search enabled
+    /// Updates the text and parses right away with remote meta search enabled
     #[wasm_bindgen(js_name = "updateAsync")]
     pub async fn js_update_async(&mut self, new_text: &str) {
         self.update_async(new_text.to_string()).await;
+    }
+
+    /// Updates the text as update() but with rebinds
+    #[wasm_bindgen(js_name = "updateWithRebinds")]
+    pub async fn js_update_with_rebinds(
+        &mut self,
+        new_text: &str,
+        rebinds: Vec<Rebind>,
+    ) -> Result<(), String> {
+        self.update_with_rebinds(new_text.to_string(), rebinds)
+            .map_err(|e| e.to_string())
+    }
+
+    /// Updates the text as updateAsync() but with rebinds
+    #[wasm_bindgen(js_name = "updateWithRebindsAsync")]
+    pub async fn js_update_with_rebinds_async(
+        &mut self,
+        new_text: &str,
+        rebinds: Vec<Rebind>,
+    ) -> Result<(), String> {
+        self.update_with_rebinds_async(new_text.to_string(), rebinds)
+            .await
+            .map_err(|e| e.to_string())
     }
 
     /// This instance's current text
@@ -195,5 +258,35 @@ impl RainDocument {
                 .collect::<Vec<&str>>(),
             Some(meta_store.0.clone()),
         )
+    }
+}
+
+impl VectorIntoWasmAbi for Rebind {
+    type Abi = <Box<[JsValue]> as IntoWasmAbi>::Abi;
+    fn vector_into_abi(vector: Box<[Self]>) -> Self::Abi {
+        js_value_vector_into_abi(vector)
+    }
+}
+impl From<Rebind> for JsValue {
+    fn from(value: Rebind) -> Self {
+        to_value(&value).unwrap_throw()
+    }
+}
+impl TryFromJsValue for Rebind {
+    type Error = Error;
+    fn try_from_js_value(value: JsValue) -> Result<Self, Self::Error> {
+        from_value(value)
+    }
+}
+impl VectorFromWasmAbi for Rebind {
+    type Abi = <Box<[JsValue]> as IntoWasmAbi>::Abi;
+    unsafe fn vector_from_abi(js: Self::Abi) -> Box<[Self]> {
+        js_value_vector_from_abi(js)
+    }
+}
+impl WasmDescribeVector for Rebind {
+    fn describe_vector() {
+        inform(VECTOR);
+        Problem::describe();
     }
 }

@@ -318,6 +318,13 @@ impl NamespaceItem {
         }
     }
 
+    pub fn unwrap_node_mut(&mut self) -> &mut Namespace {
+        match self {
+            NamespaceItem::Leaf(_) => panic!("not a node"),
+            NamespaceItem::Node(node) => node,
+        }
+    }
+
     pub fn is_elided_binding(&self) -> bool {
         matches!(
             self,
