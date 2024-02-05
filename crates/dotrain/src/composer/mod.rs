@@ -323,7 +323,7 @@ fn search_namespace<'a>(
             )),
             NamespaceItem::Leaf(leaf) => match &leaf.element.item {
                 BindingItem::Elided(e) => Err(format!("elided entrypoint: {}, {}", name, e.msg)),
-                BindingItem::Constant(_c) => Err(format!(
+                BindingItem::Literal(_c) => Err(format!(
                     "invalid entrypoint: {}, constants cannot be entrypoint",
                     name
                 )),
@@ -570,6 +570,37 @@ _: some-sub-parser-word<1 2>(some-value some-other-value);
             RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()))?;
         let expected_rainlang = "using-words-from 0x1234abced
 _: some-sub-parser-word<1 2>(4e18 0xabcdef1234);";
+        assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r#"
+#some-value 4e18
+#literal-binding "some literal value"
+
+#exp-binding-1
+using-words-from 0x1234abced
+abcd: " this is literal string ",
+_: some-sub-parser-word<1 2>(some-value literal-binding);
+"#;
+        let rainlang_text =
+            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()))?;
+        let expected_rainlang = r#"using-words-from 0x1234abced
+abcd: " this is literal string ",
+_: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r#"
+#some-value 4e18
+
+#exp-binding-1
+/* some comment with quote: dont't */
+using-words-from 0x1234abced
+_: some-sub-parser-word<1 2>(some-value 44);
+"#;
+        let rainlang_text =
+            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()))?;
+        let expected_rainlang = r#"/* some comment with quote: dont't */
+using-words-from 0x1234abced
+_: some-sub-parser-word<1 2>(4e18 44);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
         let dotrain_text = r"

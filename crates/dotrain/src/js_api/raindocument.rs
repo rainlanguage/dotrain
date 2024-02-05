@@ -151,9 +151,9 @@ impl RainDocument {
         block_on(self.parse(false));
     }
 
-    /// Compiles this instance
+    /// Composes this instance
     #[wasm_bindgen(js_name = "compose")]
-    pub fn js_compose(&self, entrypoints: Vec<String>) -> Result<String, ComposeError> {
+    pub async fn js_compose(&self, entrypoints: Vec<String>) -> Result<String, ComposeError> {
         self.compose(
             &entrypoints
                 .iter()
@@ -162,9 +162,9 @@ impl RainDocument {
         )
     }
 
-    /// Compiles a text as RainDocument with remote meta search enabled for parsing
+    /// Composes a text as RainDocument with remote meta search enabled for parsing
     #[wasm_bindgen(js_name = "composeTextAsync")]
-    pub async fn js_compile_text_async(
+    pub async fn js_compose_text_async(
         text: &str,
         entrypoints: Vec<String>,
         meta_store: &MetaStore,
@@ -180,9 +180,9 @@ impl RainDocument {
         .await
     }
 
-    /// Compiles a text as RainDocument with remote meta search disabled for parsing
+    /// Composes a text as RainDocument with remote meta search disabled for parsing
     #[wasm_bindgen(js_name = "composeText")]
-    pub async fn js_compile_text(
+    pub async fn js_compose_text(
         text: &str,
         entrypoints: Vec<String>,
         meta_store: &MetaStore,

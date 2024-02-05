@@ -195,7 +195,7 @@ pub struct ElidedBindingItem {
 /// Type of a constant binding
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
-pub struct ConstantBindingItem {
+pub struct LiteralBindingItem {
     pub value: String,
 }
 
@@ -205,7 +205,7 @@ pub struct ConstantBindingItem {
 #[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub enum BindingItem {
     Elided(ElidedBindingItem),
-    Constant(ConstantBindingItem),
+    Literal(LiteralBindingItem),
     Exp(RainlangDocument),
 }
 
@@ -257,14 +257,14 @@ impl NamespaceLeaf {
         matches!(
             self.element,
             Binding {
-                item: BindingItem::Constant(_),
+                item: BindingItem::Literal(_),
                 ..
             }
         )
     }
 
     pub fn unwrap_constant_binding(&self) -> &String {
-        if let BindingItem::Constant(c) = &self.element.item {
+        if let BindingItem::Literal(c) = &self.element.item {
             &c.value
         } else {
             panic!("not a constant binding")
@@ -352,7 +352,7 @@ impl NamespaceItem {
             self,
             NamespaceItem::Leaf(NamespaceLeaf {
                 element: Binding {
-                    item: BindingItem::Constant(_),
+                    item: BindingItem::Literal(_),
                     ..
                 },
                 ..
@@ -364,7 +364,7 @@ impl NamespaceItem {
         if let NamespaceItem::Leaf(NamespaceLeaf {
             element:
                 Binding {
-                    item: BindingItem::Constant(c),
+                    item: BindingItem::Literal(c),
                     ..
                 },
             ..

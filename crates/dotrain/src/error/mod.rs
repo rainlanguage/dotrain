@@ -25,6 +25,7 @@ pub enum ErrorCode {
     OccupiedNamespace = 11,
     OddLenHex = 12,
     CollidingNamespaceNodes = 13,
+    DepsResolvingFailed = 14,
 
     UndefinedWord = 0x101,
     UndefinedImport = 0x103,
@@ -53,6 +54,7 @@ pub enum ErrorCode {
     UnexpectedComment = 0x307,
     UnexpectedPragma = 0x308,
     UnexpectedRename = 0x309,
+    UnexpectedStringLiteral = 0x310,
 
     ExpectedOpcode = 0x401,
     ExpectedRename = 0x402,
@@ -98,6 +100,7 @@ impl ErrorCode {
             Self::OddLenHex => "odd length hex literal".to_owned(),
             Self::NoneTopLevelImport => "imports can only be stated at top level".to_owned(),
             Self::NativeParserError => msg_items[0].to_owned(),
+            Self::DepsResolvingFailed => "failed to resolve dependencies".to_owned(),
 
             Self::UndefinedWord => format!("undefined word: {}", msg_items[0]),
             Self::UndefinedImport => format!("cannot find any settlement for import: {}", msg_items[0]),
@@ -111,9 +114,9 @@ impl ErrorCode {
             Self::InvalidImport => "expected a valid name or hash".to_owned(),
             Self::InvalidEmptyBinding => "invalid empty expression".to_owned(),
             Self::InvalidEmptyLine => "invalid empty expression line".to_owned(),
-            Self::InvalidQuote => format!("invalid quote: {}, cannot quote constants", msg_items[0]),
+            Self::InvalidQuote => format!("invalid quote: {}, cannot quote literals", msg_items[0]),
             Self::InvalidOperandArg => format!("invalid argument pattern: {}", msg_items[0]),
-            Self::InvalidReference => format!("invalid reference to binding: {}, only constant bindings can be referenced", msg_items[0]),
+            Self::InvalidReference => format!("invalid reference to binding: {}, only literal bindings can be referenced", msg_items[0]),
             Self::InvalidRainDocument => "imported rain document contains top level errors".to_owned(),
             Self::InvalidNamespaceReference => format!("expected a node, {} is a namespace", msg_items[0]),
 
@@ -126,6 +129,7 @@ impl ErrorCode {
             Self::UnexpectedComment => "unexpected comment".to_owned(),
             Self::UnexpectedPragma => "unexpected pragma, must be at top".to_owned(),
             Self::UnexpectedRename => format!("unexpected rename, name '{}' already taken", msg_items[0]),
+            Self::UnexpectedStringLiteral => "unexpected end of string literal".to_owned(),
 
             Self::ExpectedOpcode => "parenthesis represent inputs of an opcode, but no opcode was found for this parenthesis".to_owned(),
             Self::ExpectedElisionOrRebinding => "expected rebinding or elision".to_owned(),
