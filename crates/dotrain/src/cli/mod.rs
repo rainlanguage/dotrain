@@ -41,7 +41,7 @@ pub struct Compose {
     #[arg(short, long)]
     entrypoint: Vec<String>,
     /// rebinds items with new literal values
-    #[arg(short, long, value_parser = parse_key_val::<String, String>)]
+    #[arg(short, long, value_parser = parse_key_val)]
     bind: Option<Vec<(String, String)>>,
     /// Path to the rainconfig json file that contains configurations,
     /// if provided will be used to when composing the .rain, see
@@ -70,17 +70,16 @@ pub enum RainconfigInfo {
 }
 
 /// Parse a single key-value pair
-fn parse_key_val<T, U>(s: &str) -> Result<(T, U), Box<dyn Error + Send + Sync + 'static>>
-where
-    T: std::str::FromStr,
-    T::Err: Error + Send + Sync + 'static,
-    U: std::str::FromStr,
-    U::Err: Error + Send + Sync + 'static,
-{
-    let pos = s
+fn parse_key_val(
+    key_value_pair: &str,
+) -> Result<(String, String), Box<dyn Error + Send + Sync + 'static>> {
+    let pos = key_value_pair
         .find('=')
-        .ok_or_else(|| format!("invalid key=value: no `=` found in `{s}`"))?;
-    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+        .ok_or_else(|| format!("invalid key=value: no `=` found in `{key_value_pair}`"))?;
+    Ok((
+        key_value_pair[..pos].to_owned(),
+        key_value_pair[pos + 1..].to_owned(),
+    ))
 }
 
 /// Dispatches the CLI call based on the given options and commands
