@@ -173,6 +173,7 @@ pub enum Error {
     NoDatabaseAttached,
     InvalidNumbericValue,
     InvalidExpressionDeployerData,
+    OverrideError(String),
     SerdeJsonError(serde_json::Error),
     AbiCoderError(alloy_sol_types::Error),
     ParseIntError(std::num::ParseIntError),
@@ -192,7 +193,9 @@ impl std::fmt::Display for Error {
             Error::NoDatabaseAttached => f.write_str("evm instance has no database attached"),
             Error::InvalidExpressionDeployerData => {
                 f.write_str("cannot reproduce the ExpressionDeployer from the given data")
+            
             }
+            Error::OverrideError(v) => write!(f, "{}", v),
             Error::AbiCoderError(v) => write!(f, "{}", v),
             Error::SerdeJsonError(v) => write!(f, "{}", v),
             Error::UintParseError(v) => write!(f, "{}", v),
@@ -207,6 +210,12 @@ impl std::error::Error for Error {}
 impl From<serde_json::Error> for Error {
     fn from(value: serde_json::Error) -> Self {
         Error::SerdeJsonError(value)
+    }
+}
+
+impl From<String> for Error {
+    fn from(value: String) -> Self {
+        Error::OverrideError(value)
     }
 }
 

@@ -164,6 +164,7 @@ impl RainLanguageServices {
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            None,
         )
     }
     /// Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
@@ -171,6 +172,7 @@ impl RainLanguageServices {
         RainDocument::create_async(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
+            None,
             None,
         )
         .await
@@ -186,6 +188,7 @@ impl RainLanguageServices {
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            None,
         );
         diagnostic::get_diagnostics(&rain_document, &text_document.uri, related_information)
     }
@@ -198,6 +201,7 @@ impl RainLanguageServices {
         let rain_document = RainDocument::create_async(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
+            None,
             None,
         )
         .await;
@@ -223,6 +227,7 @@ impl RainLanguageServices {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
+            None,
             None,
         );
         completion::get_completion(
@@ -259,6 +264,7 @@ impl RainLanguageServices {
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            None,
         );
         hover::get_hover(
             &rain_document,
@@ -290,6 +296,7 @@ impl RainLanguageServices {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
+            None,
             None,
         );
         get_semantic_token(

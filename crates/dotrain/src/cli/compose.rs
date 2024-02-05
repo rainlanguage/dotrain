@@ -27,11 +27,11 @@ pub async fn compose_target(opts: Compose) -> anyhow::Result<String> {
     let mut rain_document = RainDocument::new(text, Some(store.clone()), 0, None);
 
     // parse
-    rain_document.parse(!local_data_only).await;
+    rain_document.parse(!local_data_only, opts.bind).await;
 
     // generate rainlang
     let entrypoints = opts
-        .entrypoints
+        .entrypoint
         .iter()
         .map(|e| e.as_str())
         .collect::<Vec<&str>>();

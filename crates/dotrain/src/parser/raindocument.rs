@@ -46,7 +46,7 @@ let text = "some .rain text content".to_string();
 let meta_store = Arc::new(RwLock::new(Store::default()));
 
 // create a new instance that gets parsed right away
-let rain_document = RainDocument::create(text, Some(meta_store), None);
+let rain_document = RainDocument::create(text, Some(meta_store), None, None);
 
 // get all problems
 let problems = rain_document.all_problems();
@@ -107,9 +107,10 @@ impl RainDocument {
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
+        rebinds: Option<Vec<(String, String)>>,
     ) -> RainDocument {
         let mut rain_document = RainDocument::new(text, meta_store, 0, words);
-        rain_document.parse(true).await;
+        rain_document.parse(true, rebinds).await;
         rain_document
     }
 
@@ -118,22 +119,23 @@ impl RainDocument {
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
+        rebinds: Option<Vec<(String, String)>>,
     ) -> RainDocument {
         let mut rain_document = RainDocument::new(text, meta_store, 0, words);
-        block_on(rain_document.parse(false));
+        block_on(rain_document.parse(false, rebinds));
         rain_document
     }
 
     /// Updates the text and parses right away with remote meta search disabled (cached metas only)
-    pub fn update(&mut self, new_text: String) {
+    pub fn update(&mut self, new_text: String, rebinds: Option<Vec<(String, String)>>) {
         self.text = new_text;
-        block_on(self.parse(false));
+        block_on(self.parse(false, rebinds));
     }
 
     /// Updates the text and parses right away with remote meta search enabled
-    pub async fn update_async(&mut self, new_text: String) {
+    pub async fn update_async(&mut self, new_text: String, rebinds: Option<Vec<(String, String)>>) {
         self.text = new_text;
-        self.parse(true).await;
+        self.parse(true, rebinds).await;
     }
 
     /// This instance's current text
@@ -209,9 +211,9 @@ impl RainDocument {
 
     /// Parses this instance's text with remote meta search enabled
     #[async_recursion(?Send)]
-    pub async fn parse(&mut self, enable_remote: bool) {
+    pub async fn parse(&mut self, enable_remote: bool, rebinds: Option<Vec<(String, String)>>) {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
-            if let Err(e) = self._parse(enable_remote).await {
+            if let Err(e) = self._parse(enable_remote, rebinds).await {
                 self.error = Some(e.to_string());
                 self.problems
                     .push(ErrorCode::RuntimeError.to_problem(vec![&e.to_string()], [0, 0]));
@@ -255,7 +257,7 @@ impl RainDocument {
     /// text (comments, imports, etc) one after the other, builds the parse tree, builds
     /// the namespace and checks for dependency issues and resolves the global words
     #[async_recursion(?Send)]
-    async fn _parse(&mut self, remote_search: bool) -> Result<(), Error> {
+    async fn _parse(&mut self, remote_search: bool, opts_rebinds: Option<Vec<(String, String)>>) -> Result<(), Error> {
         self.imports.clear();
         self.problems.clear();
         self.comments.clear();
@@ -388,6 +390,11 @@ impl RainDocument {
                         .push(ErrorCode::NoneTopLevelImport.to_problem(vec![], imp.position))
                 }
             }
+        }
+
+        // apply overrides
+        if let Some(rebinds) = opts_rebinds {
+            Self::apply_overrides(rebinds, &mut namespace)?;
         }
 
         // assign the built namespace to this instance's main namespace
@@ -790,9 +797,9 @@ impl RainDocument {
                                 self.known_words.clone(),
                             );
                             if remote_search {
-                                dotrain.parse(true).await;
+                                dotrain.parse(true, None).await;
                             } else {
-                                dotrain.parse(false).await;
+                                dotrain.parse(false, None).await;
                             }
                             if !dotrain.problems.is_empty() {
                                 result.problems.push(
@@ -1179,6 +1186,96 @@ impl RainDocument {
             }
         }
     }
+
+    /// apply the overrides to the namespace
+    fn apply_overrides(rebinds: Vec<(String, String)>, namespace: &mut Namespace) -> Result<(), Error> {
+        for (key, raw_value) in rebinds {
+            let value = raw_value.trim();
+            if NAMESPACE_PATTERN.is_match(&key) {
+                if let Some((literal_value, has_err)) = Self::is_constant(value) {
+                    if has_err {
+                        return Err(Error::OverrideError(format!("invalid value: {}", value)));
+                    }
+                    let mut segments = VecDeque::from(exclusive_parse(&key, &NAMESPACE_SEGMENT_PATTERN, 0, true));
+                    if key.starts_with('.') {
+                        segments.pop_front();
+                    }
+                    if segments.len() > 32 {
+                        return Err(Error::OverrideError(format!("invalid key, namespace too deep: {}", key)));
+                    }
+                    if let Some(last) = segments.back() {
+                        if last.0.is_empty() {
+                            return Err(Error::OverrideError(format!("invalid key, expected to end with a node: {}", key)));
+                        }
+                    }
+
+                    if let Some(ns_item) = namespace.get_mut(&segments[0].0) {
+                        segments.push_back(ParsedItem(String::new(), [0, 0]));
+                        let mut result = ns_item;
+                        for (i, segment) in segments.range(1..).enumerate() {
+                            match result {
+                                NamespaceItem::Node(node) => {
+                                    if i == segments.len() - 3 && !node.contains_key(&segment.0) {
+                                        node.insert(segment.0.to_owned(), NamespaceItem::Leaf(NamespaceLeaf { hash: String::new(), import_index: -1, element: Binding { name: segment.0.to_owned(), name_position: [0, 0], content: value.to_owned(), content_position: [0, 0], position: [0, 0], problems: vec![], dependencies: vec![], item: BindingItem::Constant(ConstantBindingItem { value: literal_value.to_owned() }) } }));
+                                        break;
+                                    } else if i == segments.len() - 2 {
+                                        return Err(Error::OverrideError(format!("undefined identifier: {} in key: {}", segment.0, key)));
+                                    } else if let Some(item) = node.get_mut(&segment.0) {
+                                        result = item;
+                                    } else {
+                                        return Err(Error::OverrideError(format!("undefined identifier: {} in key: {}", segment.0, key)));
+                                    }
+                                }
+                                NamespaceItem::Leaf(leaf) => {
+                                    if i == segments.len() - 2 {
+                                        match &leaf.element.item {
+                                            BindingItem::Exp(_e) => return Err(Error::OverrideError(format!(
+                                                "invalid rebinding: {}, cannot rebind rainlang expression bindings",
+                                                key
+                                            ))),
+                                            BindingItem::Elided(_) => {
+                                                leaf.element.item = BindingItem::Constant(ConstantBindingItem { value: literal_value.to_owned() });
+                                            },
+                                            BindingItem::Constant(_c) => {
+                                                leaf.element.item = BindingItem::Constant(ConstantBindingItem { value: literal_value.to_owned() });
+                                            },
+                                        };
+                                        break;
+                                    } else {
+                                        return Err(Error::OverrideError(format!("undefined identifier: {} in key: {}", segment.0, key)));
+                                    }
+                                }
+                            }
+                        }
+                    } else if segments.len() > 1 {
+                        return Err(Error::OverrideError(format!("undefined namespace: {} in key: {}", segments[0].0, key)));
+                    } else {
+                        namespace.insert(key, NamespaceItem::Leaf(NamespaceLeaf { hash: String::new(), import_index: -1, element: Binding { name: segments[0].0.to_owned(), name_position: [0, 0], content: value.to_owned(), content_position: [0, 0], position: [0, 0], problems: vec![], dependencies: vec![], item: BindingItem::Constant(ConstantBindingItem { value: value.to_owned() }) } }));
+                    }
+                } else {
+                    return Err(Error::OverrideError(format!("invalid value: {}", value)));
+                }
+            } else {
+                return Err(Error::OverrideError(format!("invalid key: {}", key)));
+            }
+        }
+        Ok(())
+    }
+
+    fn get_mut_namespace<'a>(key: &str, name: &str, namespace: &'a mut NamespaceItem) -> Result<&'a mut NamespaceItem, Error> {
+        match namespace {
+            NamespaceItem::Node(node) => {
+                if let Some(item) = node.get_mut(name) {
+                    Ok(item)
+                } else {
+                    Err(Error::OverrideError(format!("undefined identifier: {} in key: {}", name, key)))
+                }
+            }
+            NamespaceItem::Leaf(_leaf) => {
+                Err(Error::OverrideError(format!("undefined identifier: {} in key: {}", name, key)))
+            }
+        }
+    }
 }
 
 impl PartialEq for RainDocument {
@@ -1531,7 +1628,7 @@ mod tests {
 #exp-binding
 _: opcode-1(0xabcd 456);
 ";
-        let rain_document = RainDocument::create(text.to_owned(), Some(meta_store.clone()), None);
+        let rain_document = RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
         let expected_bindings: Vec<Binding> = vec![
             Binding {
                 name: "const-binding".to_owned(),
