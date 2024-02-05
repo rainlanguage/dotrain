@@ -253,7 +253,11 @@ impl RainDocument {
 
     /// Parses this instance's with rebindings, this method is only used by cli
     #[async_recursion(?Send)]
-    pub(crate) async fn parse_with_rebinds(&mut self, enable_remote: bool, rebinds: Option<Vec<(String, String)>>) -> Result<(), Error> {
+    pub(crate) async fn parse_with_rebinds(
+        &mut self,
+        enable_remote: bool,
+        rebinds: Option<Vec<(String, String)>>,
+    ) -> Result<(), Error> {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
             if let Err(e) = self._parse(enable_remote, rebinds).await {
                 // exit with override error if encountered
@@ -281,7 +285,11 @@ impl RainDocument {
     /// text (comments, imports, etc) one after the other, builds the parse tree, builds
     /// the namespace and checks for dependency issues and resolves the global words
     #[async_recursion(?Send)]
-    async fn _parse(&mut self, remote_search: bool, opts_rebinds: Option<Vec<(String, String)>>) -> Result<(), Error> {
+    async fn _parse(
+        &mut self,
+        remote_search: bool,
+        opts_rebinds: Option<Vec<(String, String)>>,
+    ) -> Result<(), Error> {
         self.imports.clear();
         self.problems.clear();
         self.comments.clear();
@@ -1212,7 +1220,10 @@ impl RainDocument {
     }
 
     /// apply the overrides to the namespace
-    fn apply_overrides(rebinds: Vec<(String, String)>, namespace: &mut Namespace) -> Result<(), Error> {
+    fn apply_overrides(
+        rebinds: Vec<(String, String)>,
+        namespace: &mut Namespace,
+    ) -> Result<(), Error> {
         for (key, raw_value) in rebinds {
             let value = raw_value.trim();
             if NAMESPACE_PATTERN.is_match(&key) {
@@ -1220,16 +1231,23 @@ impl RainDocument {
                     if has_err {
                         return Err(Error::InvalidOverride(format!("invalid value: {}", value)));
                     }
-                    let mut segments = VecDeque::from(exclusive_parse(&key, &NAMESPACE_SEGMENT_PATTERN, 0, true));
+                    let mut segments =
+                        VecDeque::from(exclusive_parse(&key, &NAMESPACE_SEGMENT_PATTERN, 0, true));
                     if key.starts_with('.') {
                         segments.pop_front();
                     }
                     if segments.len() > 32 {
-                        return Err(Error::InvalidOverride(format!("invalid key, namespace too deep: {}", key)));
+                        return Err(Error::InvalidOverride(format!(
+                            "invalid key, namespace too deep: {}",
+                            key
+                        )));
                     }
                     if let Some(last) = segments.back() {
                         if last.0.is_empty() {
-                            return Err(Error::InvalidOverride(format!("invalid key, expected to end with a node: {}", key)));
+                            return Err(Error::InvalidOverride(format!(
+                                "invalid key, expected to end with a node: {}",
+                                key
+                            )));
                         }
                     }
 
@@ -1240,14 +1258,40 @@ impl RainDocument {
                             match result {
                                 NamespaceItem::Node(node) => {
                                     if i == segments.len() - 3 && !node.contains_key(&segment.0) {
-                                        node.insert(segment.0.to_owned(), NamespaceItem::Leaf(NamespaceLeaf { hash: String::new(), import_index: -1, element: Binding { name: segment.0.to_owned(), name_position: [0, 0], content: value.to_owned(), content_position: [0, 0], position: [0, 0], problems: vec![], dependencies: vec![], item: BindingItem::Constant(ConstantBindingItem { value: literal_value.to_owned() }) } }));
+                                        node.insert(
+                                            segment.0.to_owned(),
+                                            NamespaceItem::Leaf(NamespaceLeaf {
+                                                hash: String::new(),
+                                                import_index: -1,
+                                                element: Binding {
+                                                    name: segment.0.to_owned(),
+                                                    name_position: [0, 0],
+                                                    content: value.to_owned(),
+                                                    content_position: [0, 0],
+                                                    position: [0, 0],
+                                                    problems: vec![],
+                                                    dependencies: vec![],
+                                                    item: BindingItem::Constant(
+                                                        ConstantBindingItem {
+                                                            value: literal_value.to_owned(),
+                                                        },
+                                                    ),
+                                                },
+                                            }),
+                                        );
                                         break;
                                     } else if i == segments.len() - 2 {
-                                        return Err(Error::InvalidOverride(format!("undefined identifier: {} in key: {}", segment.0, key)));
+                                        return Err(Error::InvalidOverride(format!(
+                                            "undefined identifier: {} in key: {}",
+                                            segment.0, key
+                                        )));
                                     } else if let Some(item) = node.get_mut(&segment.0) {
                                         result = item;
                                     } else {
-                                        return Err(Error::InvalidOverride(format!("undefined identifier: {} in key: {}", segment.0, key)));
+                                        return Err(Error::InvalidOverride(format!(
+                                            "undefined identifier: {} in key: {}",
+                                            segment.0, key
+                                        )));
                                     }
                                 }
                                 NamespaceItem::Leaf(leaf) => {
@@ -1266,15 +1310,39 @@ impl RainDocument {
                                         };
                                         break;
                                     } else {
-                                        return Err(Error::InvalidOverride(format!("undefined identifier: {} in key: {}", segment.0, key)));
+                                        return Err(Error::InvalidOverride(format!(
+                                            "undefined identifier: {} in key: {}",
+                                            segment.0, key
+                                        )));
                                     }
                                 }
                             }
                         }
                     } else if segments.len() > 1 {
-                        return Err(Error::InvalidOverride(format!("undefined namespace: {} in key: {}", segments[0].0, key)));
+                        return Err(Error::InvalidOverride(format!(
+                            "undefined namespace: {} in key: {}",
+                            segments[0].0, key
+                        )));
                     } else {
-                        namespace.insert(key, NamespaceItem::Leaf(NamespaceLeaf { hash: String::new(), import_index: -1, element: Binding { name: segments[0].0.to_owned(), name_position: [0, 0], content: value.to_owned(), content_position: [0, 0], position: [0, 0], problems: vec![], dependencies: vec![], item: BindingItem::Constant(ConstantBindingItem { value: value.to_owned() }) } }));
+                        namespace.insert(
+                            key,
+                            NamespaceItem::Leaf(NamespaceLeaf {
+                                hash: String::new(),
+                                import_index: -1,
+                                element: Binding {
+                                    name: segments[0].0.to_owned(),
+                                    name_position: [0, 0],
+                                    content: value.to_owned(),
+                                    content_position: [0, 0],
+                                    position: [0, 0],
+                                    problems: vec![],
+                                    dependencies: vec![],
+                                    item: BindingItem::Constant(ConstantBindingItem {
+                                        value: value.to_owned(),
+                                    }),
+                                },
+                            }),
+                        );
                     }
                 } else {
                     return Err(Error::InvalidOverride(format!("invalid value: {}", value)));

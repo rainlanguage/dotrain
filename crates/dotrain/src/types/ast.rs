@@ -418,12 +418,14 @@ impl NamespaceItem {
                 BindingItem::Elided(_) => {
                     leaf.element.item = BindingItem::Constant(ConstantBindingItem { value });
                     Ok(())
-                },
+                }
                 BindingItem::Constant(_) => {
                     leaf.element.item = BindingItem::Constant(ConstantBindingItem { value });
                     Ok(())
-                },
-                BindingItem::Exp(_e) => Err("cannot rebind rainlang expression bindings".to_owned()),
+                }
+                BindingItem::Exp(_e) => {
+                    Err("cannot rebind rainlang expression bindings".to_owned())
+                }
             }
         } else {
             Err("not a leaf".to_owned())

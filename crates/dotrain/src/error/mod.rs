@@ -193,7 +193,6 @@ impl std::fmt::Display for Error {
             Error::NoDatabaseAttached => f.write_str("evm instance has no database attached"),
             Error::InvalidExpressionDeployerData => {
                 f.write_str("cannot reproduce the ExpressionDeployer from the given data")
-            
             }
             Error::InvalidOverride(v) => write!(f, "{}", v),
             Error::AbiCoderError(v) => write!(f, "{}", v),
