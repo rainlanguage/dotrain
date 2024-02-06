@@ -66,9 +66,9 @@ pub static BINDING_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new("#").unwrap())
 /// non-empty text pattern
 pub static NON_EMPTY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\s]").unwrap());
 
-/// operand arguments pattern
+/// operand arguments pattern (literal + namespace + quoted namespace)
 pub static OPERAND_ARG_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^[0-9]+$|^0x[a-fA-F0-9]+$|^'\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$").unwrap()
+    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^'?\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$"#).unwrap()
 });
 
 /// namespace segments delimitier pattern
@@ -293,7 +293,7 @@ mod tests {
         }
 
         // invalids
-        for i in [".sad-kjh", "Abd", "123abcd", "'Abcd.iuy1-oiu"] {
+        for i in ["._sad-kjh", "Abd", "123abcd", "'Abcd.iuy1-oiu"] {
             assert!(
                 !OPERAND_ARG_PATTERN.is_match(i),
                 "String '{}' considered valid.",

@@ -106,7 +106,7 @@ impl ErrorCode {
             Self::UndefinedImport => format!("cannot find any settlement for import: {}", msg_items[0]),
             Self::UndefinedQuote => format!("undefined quote: {}", msg_items[0]),
             Self::UndefinedIdentifier => format!("undefined identifier: {}", msg_items[0]),
-            Self::UndefinedNamespaceMember => format!("namespace has no member {}", msg_items[0]),
+            Self::UndefinedNamespaceMember => format!("namespace has no member: {}", msg_items[0]),
 
             Self::InvalidWordPattern => format!("invalid word pattern: {}", msg_items[0]),
             Self::InvalidExpression => "invalid expression line".to_owned(),

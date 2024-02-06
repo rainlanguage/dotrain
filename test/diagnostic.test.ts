@@ -115,10 +115,10 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     it("should error: invalid argument pattern", async () => {
         await testDiagnostics(rainlang`${ws} #exn x: int-add<error-argument>();`, services, [
             {
-                message: "invalid argument pattern: error-argument",
+                message: "namespace has no member: error-argument",
                 range: toRange(0, 84, 0, 98),
                 severity: DiagnosticSeverity.Error,
-                code: ErrorCode.InvalidOperandArg,
+                code: ErrorCode.UndefinedNamespaceMember,
                 source: "rainlang",
             },
         ]);
