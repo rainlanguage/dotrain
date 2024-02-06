@@ -361,7 +361,8 @@ fn build_sourcemap<'a>(
                         .args
                         .iter()
                         .filter_map(|v| {
-                            v.id.as_ref().map(|id| (v.value.as_str(), id.as_str(), v.position))
+                            v.id.as_ref()
+                                .map(|id| (v.value.as_str(), id.as_str(), v.position))
                         })
                         .collect()
                 } else {

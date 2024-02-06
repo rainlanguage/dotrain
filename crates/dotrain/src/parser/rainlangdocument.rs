@@ -443,8 +443,9 @@ impl RainlangDocument {
                                 }
                                 BindingItem::Literal(c) => {
                                     if is_quote {
-                                        self.problems
-                                            .push(ErrorCode::InvalidQuote.to_problem(vec![name], v.1));
+                                        self.problems.push(
+                                            ErrorCode::InvalidQuote.to_problem(vec![name], v.1),
+                                        );
                                     } else {
                                         value = c.value.clone();
                                     }
@@ -462,8 +463,7 @@ impl RainlangDocument {
                                         }
                                     } else {
                                         self.problems.push(
-                                            ErrorCode::InvalidReference
-                                                .to_problem(vec![name], v.1),
+                                            ErrorCode::InvalidReference.to_problem(vec![name], v.1),
                                         );
                                     }
                                 }
@@ -480,7 +480,7 @@ impl RainlangDocument {
                             name: "operand arg".to_owned(),
                             position: v.1,
                             description: String::new(),
-                            id: Some(v.0.clone())
+                            id: Some(v.0.clone()),
                         });
                     }
                 } else {
@@ -527,7 +527,10 @@ impl RainlangDocument {
                     operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
                 }
             } else {
-                operand_args.push(ParsedItem(item.0.to_owned(), [item.1[0] + offset, item.1[1] + offset]))
+                operand_args.push(ParsedItem(
+                    item.0.to_owned(),
+                    [item.1[0] + offset, item.1[1] + offset],
+                ))
             }
         }
         operand_args
@@ -970,14 +973,14 @@ mod tests {
                         name: "operand arg".to_owned(),
                         position: [9, 11],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                     OperandArgItem {
                         value: "56".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [12, 14],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                 ],
             }),
@@ -985,7 +988,8 @@ mod tests {
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
 
-        let exp = r#"<0xa5 "some string literal " some-literal-binding "some other string literal ">"#;
+        let exp =
+            r#"<0xa5 "some string literal " some-literal-binding "some other string literal ">"#;
         let mut op = Opcode {
             opcode: OpcodeDetails {
                 name: "opcode".to_owned(),
@@ -1022,29 +1026,29 @@ mod tests {
                         name: "operand arg".to_owned(),
                         position: [9, 13],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                     OperandArgItem {
                         value: r#""some string literal ""#.to_owned(),
                         name: "operand arg".to_owned(),
                         position: [14, 36],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                     OperandArgItem {
                         value: String::new(),
                         name: "operand arg".to_owned(),
                         position: [37, 57],
                         description: String::new(),
-                        id: Some("some-literal-binding".to_owned())
+                        id: Some("some-literal-binding".to_owned()),
                     },
                     OperandArgItem {
                         value: r#""some other string literal ""#.to_owned(),
                         name: "operand arg".to_owned(),
                         position: [58, 86],
                         description: String::new(),
-                        id: None
-                    }
+                        id: None,
+                    },
                 ],
             }),
         };
@@ -1088,28 +1092,28 @@ mod tests {
                         name: "operand arg".to_owned(),
                         position: [16, 17],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                     OperandArgItem {
                         value: "0xf2".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [18, 22],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                     OperandArgItem {
                         value: "69".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [23, 25],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                     OperandArgItem {
                         value: "32".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [28, 30],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                 ],
             }),
@@ -1164,14 +1168,14 @@ mod tests {
                         name: "operand arg".to_owned(),
                         position: [17, 19],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                     OperandArgItem {
                         value: "56".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [20, 22],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                 ],
             }),
@@ -1222,14 +1226,14 @@ mod tests {
                         name: "operand arg".to_owned(),
                         position: [97, 101],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                     OperandArgItem {
                         value: "87".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [104, 106],
                         description: String::new(),
-                        id: None
+                        id: None,
                     },
                 ],
             }),
