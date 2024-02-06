@@ -674,7 +674,7 @@ _: opcode-1(0xabcd elided);
         let result =
             RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()));
         let expected_err = Err(ComposeError::Problems(vec![
-            ErrorCode::ElidedBinding.to_problem(vec!["this is elided"], [123, 129])
+            ErrorCode::ElidedBinding.to_problem(vec!["elided", "this is elided"], [123, 129])
         ]));
         assert_eq!(result, expected_err);
 

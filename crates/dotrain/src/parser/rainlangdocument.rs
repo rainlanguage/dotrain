@@ -438,8 +438,9 @@ impl RainlangDocument {
                             match &b.item {
                                 BindingItem::Elided(e) => {
                                     let msg = e.msg.clone();
-                                    self.problems
-                                        .push(ErrorCode::ElidedBinding.to_problem(vec![&msg], v.1));
+                                    self.problems.push(
+                                        ErrorCode::ElidedBinding.to_problem(vec![name, &msg], v.1),
+                                    );
                                 }
                                 BindingItem::Literal(c) => {
                                     if is_quote {
@@ -648,7 +649,7 @@ impl RainlangDocument {
                     BindingItem::Elided(e) => {
                         let msg = e.msg.clone();
                         self.problems
-                            .push(ErrorCode::ElidedBinding.to_problem(vec![&msg], next_pos));
+                            .push(ErrorCode::ElidedBinding.to_problem(vec![next, &msg], next_pos));
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
                             position: next_pos,
@@ -717,8 +718,9 @@ impl RainlangDocument {
                             }))?;
                         }
                         BindingItem::Elided(e) => {
-                            self.problems
-                                .push(ErrorCode::ElidedBinding.to_problem(vec![&e.msg], next_pos));
+                            self.problems.push(
+                                ErrorCode::ElidedBinding.to_problem(vec![next, &e.msg], next_pos),
+                            );
                             self.update_state(Node::Alias(Alias {
                                 name: next.to_owned(),
                                 position: next_pos,
