@@ -131,6 +131,18 @@ impl RainDocument {
         rain_document
     }
 
+    /// Get the front matter without parsing the dotrain
+    pub fn get_front_matter(text: &str) -> Option<&str> {
+        // split front matter and rest of the text
+        if let Some(splitter) = text.find(FRONTMATTER_SEPARATOR) {
+            Some(&text[..splitter])
+        } else {
+            None
+        }
+    }
+}
+
+impl RainDocument {
     /// Updates the text and parses right away with remote meta search disabled (cached metas only)
     pub fn update(&mut self, new_text: String, rebinds: Option<Vec<Rebind>>) {
         self.text = new_text;
@@ -295,6 +307,18 @@ impl RainDocument {
             return Ok(());
         }
 
+        // split front matter and rest of the text
+        // exit if there is no front matter splitter found
+        if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
+            self.front_matter_offset = splitter;
+            let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
+            fill_in(&mut document, [0, body_start_offset])?;
+        } else {
+            self.problems
+                .push(ErrorCode::NoFrontMatterSplitter.to_problem(vec![], [0, 0]));
+            return Ok(());
+        };
+
         // parse comments
         for parsed_comment in inclusive_parse(&document, &COMMENT_PATTERN, 0).iter() {
             // if a comment is not ended
@@ -308,13 +332,6 @@ impl RainDocument {
             });
             fill_in(&mut document, parsed_comment.1)?;
         }
-
-        // split front matter and rest of the text
-        if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
-            self.front_matter_offset = splitter;
-            let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
-            fill_in(&mut document, [0, body_start_offset])?;
-        };
 
         // since exclusive_parse() is being used with 'include_empty_ends' arg set to true,
         // the first item of the parsed items should be ignored since it only contains the

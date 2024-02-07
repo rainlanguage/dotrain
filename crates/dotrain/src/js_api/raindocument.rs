@@ -40,6 +40,11 @@ impl RainDocument {
         RainDocument::create(text.to_string(), Some(meta_store.0.clone()), None, rebinds)
     }
 
+    #[wasm_bindgen(js_name = "getFrontMatter")]
+    pub fn js_get_front_matter(text: &str) -> Option<String> {
+        RainDocument::get_front_matter(text).map(|v| v.to_owned())
+    }
+
     #[wasm_bindgen(js_name = "fromInterface")]
     pub fn from_interface(value: &IRainDocument, meta_store: &MetaStore) -> RainDocument {
         let mut rd =

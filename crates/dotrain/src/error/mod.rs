@@ -26,6 +26,7 @@ pub enum ErrorCode {
     OddLenHex = 12,
     CollidingNamespaceNodes = 13,
     DepsResolvingFailed = 14,
+    NoFrontMatterSplitter = 15,
 
     UndefinedWord = 0x101,
     UndefinedImport = 0x103,
@@ -102,6 +103,7 @@ impl ErrorCode {
             Self::NoneTopLevelImport => "imports can only be stated at top level".to_owned(),
             Self::NativeParserError => msg_items[0].to_owned(),
             Self::DepsResolvingFailed => "failed to resolve dependencies".to_owned(),
+            Self::NoFrontMatterSplitter => "cannot find front matter splitter".to_owned(),
 
             Self::UndefinedWord => format!("undefined word: {}", msg_items[0]),
             Self::UndefinedImport => format!("cannot find any settlement for import: {}", msg_items[0]),
