@@ -308,7 +308,6 @@ impl RainDocument {
         }
 
         // split front matter and rest of the text
-        // exit if there is no front matter splitter found
         if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
             self.front_matter_offset = splitter;
             let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
@@ -316,7 +315,6 @@ impl RainDocument {
         } else {
             self.problems
                 .push(ErrorCode::NoFrontMatterSplitter.to_problem(vec![], [0, 0]));
-            return Ok(());
         };
 
         // parse comments

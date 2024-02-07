@@ -548,7 +548,7 @@ some-name _: 0xab34;
 _: opcode-2(0xabcd 4e18);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let dotrain_text = r"
+        let dotrain_text = r"---
 #some-value 4e18
 #some-other-value 0xabcdef1234
 
@@ -576,7 +576,7 @@ some-name: opcode-2(0xabcd 4e18),
 _: opcode-2(some-name 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let dotrain_text = r"
+        let dotrain_text = r"---
 #some-value 4e18
 #some-other-value 0xabcdef1234
 
@@ -594,7 +594,7 @@ _: some-sub-parser-word<1 2>(some-value some-other-value);
 _: some-sub-parser-word<1 2>(4e18 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let dotrain_text = r#"
+        let dotrain_text = r#"---
 #some-value 4e18
 #literal-binding "some literal value"
 
@@ -614,7 +614,7 @@ abcd: " this is literal string ",
 _: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let dotrain_text = r#"
+        let dotrain_text = r#"---
 #some-value 4e18
 
 #exp-binding-1
@@ -708,7 +708,7 @@ _: opcode-1(0xabcd elided);
         let store = rain_metadata::Store::new();
         let meta_store = Arc::new(RwLock::new(store));
 
-        let dotrain_text = r"
+        let dotrain_text = r"---
 #some-value 4e18
 #some-other-value 0xabcdef1234
 
@@ -735,7 +735,7 @@ some-name: opcode-2(0xabcd 4e18 567),
 _: opcode-2(some-name 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let dotrain_text = r"
+        let dotrain_text = r"---
 #some-value 4e18
 #some-other-value 0xabcdef1234
 
@@ -765,7 +765,7 @@ some-name: opcode-2(0xabcd 0x123456 567),
 _: opcode-2(some-name 0xabcdef1234);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let dotrain_text = r"
+        let dotrain_text = r"---
 #some-value 4e18
 #some-other-value 0xabcdef1234
 

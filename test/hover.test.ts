@@ -3,7 +3,7 @@ import { toRange } from "./utils";
 import { MetaStore, RainLanguageServices, rainlang } from "../dist/cjs";
 import { Hover, Position, TextDocumentItem } from "vscode-languageserver-types";
 
-const ws = " ".repeat(67);
+const ws = " ".repeat(64) + "---";
 async function testHover(
     text: string,
     position: Position,

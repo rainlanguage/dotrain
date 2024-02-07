@@ -7,7 +7,7 @@ import {
     CompletionItemKind,
 } from "vscode-languageserver-types";
 
-const ws = " ".repeat(67);
+const ws = " ".repeat(64) + "---";
 async function testCompletion(
     text: string,
     position: Position,
