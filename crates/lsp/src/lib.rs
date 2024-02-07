@@ -8,7 +8,7 @@
 //! - Dotrain vscode extension can be found [here](https://marketplace.visualstudio.com/items?itemName=rainprotocol.rainlang-vscode).
 
 use std::sync::{Arc, RwLock};
-use dotrain::{RainDocument, Store};
+use dotrain::{RainDocument, Store, Rebind};
 use lsp_types::{
     Hover, Position, Diagnostic, MarkupKind, CompletionItem, TextDocumentItem,
     SemanticTokensPartialResult, Url,
@@ -159,19 +159,21 @@ impl RainLanguageServices {
     }
 
     /// Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
-    pub fn new_rain_document(&self, text_document: &TextDocumentItem) -> RainDocument {
+    pub fn new_rain_document(&self, text_document: &TextDocumentItem, rebinds: Option<Vec<Rebind>>) -> RainDocument {
         RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            rebinds
         )
     }
     /// Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
-    pub async fn new_rain_document_async(&self, text_document: &TextDocumentItem) -> RainDocument {
+    pub async fn new_rain_document_async(&self, text_document: &TextDocumentItem, rebinds: Option<Vec<Rebind>>) -> RainDocument {
         RainDocument::create_async(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            rebinds
         )
         .await
     }
@@ -181,11 +183,13 @@ impl RainLanguageServices {
         &self,
         text_document: &TextDocumentItem,
         related_information: bool,
+        rebinds: Option<Vec<Rebind>>
     ) -> Vec<Diagnostic> {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            rebinds
         );
         diagnostic::get_diagnostics(&rain_document, &text_document.uri, related_information)
     }
@@ -194,11 +198,13 @@ impl RainLanguageServices {
         &self,
         text_document: &TextDocumentItem,
         related_information: bool,
+        rebinds: Option<Vec<Rebind>>
     ) -> Vec<Diagnostic> {
         let rain_document = RainDocument::create_async(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            rebinds
         )
         .await;
         diagnostic::get_diagnostics(&rain_document, &text_document.uri, related_information)
@@ -219,11 +225,13 @@ impl RainLanguageServices {
         text_document: &TextDocumentItem,
         position: Position,
         documentation_format: Option<MarkupKind>,
+        rebinds: Option<Vec<Rebind>>
     ) -> Option<Vec<CompletionItem>> {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            rebinds
         );
         completion::get_completion(
             &rain_document,
@@ -254,11 +262,13 @@ impl RainLanguageServices {
         text_document: &TextDocumentItem,
         position: Position,
         content_format: Option<MarkupKind>,
+        rebinds: Option<Vec<Rebind>>
     ) -> Option<Hover> {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            rebinds
         );
         hover::get_hover(
             &rain_document,
@@ -286,11 +296,13 @@ impl RainLanguageServices {
         text_document: &TextDocumentItem,
         semantic_token_types_index: u32,
         semantic_token_modifiers_len: usize,
+        rebinds: Option<Vec<Rebind>>
     ) -> SemanticTokensPartialResult {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
+            rebinds
         );
         get_semantic_token(
             &rain_document,

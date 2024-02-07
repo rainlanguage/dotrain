@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 use lsp_types::{TextDocumentItem as TDI, Position as Pos, MarkupKind, Url};
 use serde_wasm_bindgen::{to_value as to_js_value, from_value as from_js_value};
-use dotrain::{RainDocument, js_api::MetaStore};
+use dotrain::{RainDocument, js_api::MetaStore, Rebind};
 use super::{RainLanguageServices, LanguageServiceParams};
 
 #[wasm_bindgen]
@@ -72,21 +72,25 @@ export class RainLanguageServices {
   /**
    * Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
    * @param {TextDocumentItem} text_document
+   * @param {Rebind[] | undefined} rebinds
    * @returns {RainDocument}
    */
-  newRainDocument(text_document: TextDocumentItem): RainDocument;
+  newRainDocument(text_document: TextDocumentItem, rebinds?: Rebind[]): RainDocument;
   /**
    * Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
    * @param {TextDocumentItem} text_document
+   * @param {Rebind[] | undefined} rebinds
    * @returns {Promise<RainDocument>}
    */
-  newRainDocumentAsync(text_document: TextDocumentItem): Promise<RainDocument>;
+  newRainDocumentAsync(text_document: TextDocumentItem, rebinds?: Rebind[]): Promise<RainDocument>;
   /**
    * Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
    * @param {TextDocumentItem} text_document
+   * @param {boolean} related_information
+   * @param {Rebind[] | undefined} rebinds
    * @returns {(Diagnostic)[]}
    */
-  doValidate(text_document: TextDocumentItem, related_information: boolean): Diagnostic[];
+  doValidate(text_document: TextDocumentItem, related_information: boolean, rebinds?: Rebind[]): Diagnostic[];
   /**
    * Reports LSP diagnostics from RainDocument's all problems
    * @param {RainDocument} rain_document
@@ -99,20 +103,23 @@ export class RainLanguageServices {
    * Validates the document with remote meta search enabled when parsing and reports LSP diagnostics
    * @param {TextDocumentItem} text_document
    * @param {boolean} related_information
-   * @returns {Promise<any>}
+   * @param {Rebind[] | undefined} rebinds
+   * @returns {Promise<Diagnostic[]>}
    */
-  doValidateAsync(text_document: TextDocumentItem, related_information: boolean): Promise<Diagnostic[]>;
+  doValidateAsync(text_document: TextDocumentItem, related_information: boolean, rebinds?: Rebind[]): Promise<Diagnostic[]>;
   /**
    * Provides completion items at the given position
    * @param {TextDocumentItem} text_document
    * @param {Position} position
-   * @param {MarkupKind} documentation_format
+   * @param {MarkupKind | undefined} documentation_format
+   * @param {Rebind[] | undefined} rebinds
    * @returns {(CompletionItem)[] | undefined}
    */
   doComplete(
     text_document: TextDocumentItem, 
     position: Position, 
-    documentation_format?: MarkupKind
+    documentation_format?: MarkupKind,
+    rebinds?: Rebind[]
   ): CompletionItem[] | null;
   /**
    * Provides completion items at the given position
@@ -133,12 +140,14 @@ export class RainLanguageServices {
    * @param {TextDocumentItem} text_document
    * @param {Position} position
    * @param {MarkupKind} content_format
+   * @param {Rebind[] | undefined} rebinds
    * @returns {Hover | undefined}
    */
   doHover(
     text_document: TextDocumentItem, 
     position: Position, 
-    content_format?: MarkupKind
+    content_format?: MarkupKind,
+    rebinds?: Rebind[]
   ): Hover | null;
   /**
    * Provides hover for a RainDocument fragment at the given position
@@ -157,12 +166,14 @@ export class RainLanguageServices {
    * @param {TextDocumentItem} text_document
    * @param {number} semantic_token_types_index
    * @param {number} semantic_token_modifiers_len
+   * @param {Rebind[] | undefined} rebinds
    * @returns {SemanticTokensPartialResult}
    */
   semanticTokens(
     text_document: TextDocumentItem, 
     semantic_token_types_index: number, 
-    semantic_token_modifiers_len: number
+    semantic_token_modifiers_len: number,
+    rebinds?: Rebind[]
   ): SemanticTokensPartialResult;
   /**
    * Provides semantic tokens for RainDocument's elided fragments
@@ -196,9 +207,9 @@ impl RainLanguageServices {
 
     /// Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
     #[wasm_bindgen(js_name = "newRainDocument", skip_typescript)]
-    pub fn js_new_rain_document(&self, text_document: TextDocumentItem) -> RainDocument {
+    pub fn js_new_rain_document(&self, text_document: TextDocumentItem, rebinds: Option<Vec<Rebind>>) -> RainDocument {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        self.new_rain_document(&tdi)
+        self.new_rain_document(&tdi, rebinds)
     }
 
     /// Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
@@ -206,9 +217,10 @@ impl RainLanguageServices {
     pub async fn js_new_rain_document_async(
         &self,
         text_document: TextDocumentItem,
+        rebinds: Option<Vec<Rebind>>
     ) -> RainDocument {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        self.new_rain_document_async(&tdi).await
+        self.new_rain_document_async(&tdi, rebinds).await
     }
 
     /// Validates the document with remote meta search disabled when parsing and reports LSP diagnostics
@@ -217,9 +229,10 @@ impl RainLanguageServices {
         &self,
         text_document: TextDocumentItem,
         related_information: bool,
+        rebinds: Option<Vec<Rebind>>
     ) -> JsValue {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        to_js_value(&self.do_validate(&tdi, related_information)).unwrap_or(JsValue::NULL)
+        to_js_value(&self.do_validate(&tdi, related_information, rebinds)).unwrap_or(JsValue::NULL)
     }
 
     /// Reports LSP diagnostics from RainDocument's all problems
@@ -244,9 +257,10 @@ impl RainLanguageServices {
         &self,
         text_document: TextDocumentItem,
         related_information: bool,
+        rebinds: Option<Vec<Rebind>>
     ) -> JsValue {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        to_js_value(&self.do_validate_async(&tdi, related_information).await)
+        to_js_value(&self.do_validate_async(&tdi, related_information, rebinds).await)
             .unwrap_or(JsValue::NULL)
     }
 
@@ -257,6 +271,7 @@ impl RainLanguageServices {
         text_document: TextDocumentItem,
         position: Position,
         documentation_format: JsValue,
+        rebinds: Option<Vec<Rebind>>
     ) -> JsValue {
         let pos = from_js_value::<Pos>(position.obj).unwrap_throw();
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
@@ -265,6 +280,7 @@ impl RainLanguageServices {
             pos,
             serde_wasm_bindgen::from_value::<Option<MarkupKind>>(documentation_format)
                 .unwrap_or(None),
+            rebinds
         )
         .map_or(JsValue::NULL, |v| to_js_value(&v).unwrap_or(JsValue::NULL))
     }
@@ -296,6 +312,7 @@ impl RainLanguageServices {
         text_document: TextDocumentItem,
         position: Position,
         content_format: JsValue,
+        rebinds: Option<Vec<Rebind>>
     ) -> JsValue {
         let pos = from_js_value::<Pos>(position.obj).unwrap_throw();
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
@@ -303,6 +320,7 @@ impl RainLanguageServices {
             &tdi,
             pos,
             serde_wasm_bindgen::from_value::<Option<MarkupKind>>(content_format).unwrap_or(None),
+            rebinds
         )
         .map_or(JsValue::NULL, |v| to_js_value(&v).unwrap_or(JsValue::NULL))
     }
@@ -331,12 +349,14 @@ impl RainLanguageServices {
         text_document: TextDocumentItem,
         semantic_token_types_index: u32,
         semantic_token_modifiers_len: usize,
+        rebinds: Option<Vec<Rebind>>
     ) -> JsValue {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
         to_js_value(&self.semantic_tokens(
             &tdi,
             semantic_token_types_index,
             semantic_token_modifiers_len,
+            rebinds
         ))
         .unwrap_or(JsValue::NULL)
     }

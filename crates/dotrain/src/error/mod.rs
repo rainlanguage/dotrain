@@ -44,6 +44,7 @@ pub enum ErrorCode {
     InvalidEmptyBinding = 0x209,
     InvalidQuote = 0x210,
     InvalidOperandArg = 0x211,
+    InvalidSuppliedRebindings = 0x212,
 
     UnexpectedToken = 0x301,
     UnexpectedClosingParen = 0x302,
@@ -119,6 +120,7 @@ impl ErrorCode {
             Self::InvalidReference => format!("invalid reference to binding: {}, only literal bindings can be referenced", msg_items[0]),
             Self::InvalidRainDocument => "imported rain document contains top level errors".to_owned(),
             Self::InvalidNamespaceReference => format!("expected a node, {} is a namespace", msg_items[0]),
+            Self::InvalidSuppliedRebindings => format!("invalid supplied rebinding: {}", msg_items[0]),
 
             Self::UnexpectedToken => "unexpected token".to_owned(),
             Self::UnexpectedClosingParen => "unexpected \")\"".to_owned(),

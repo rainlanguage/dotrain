@@ -28,8 +28,8 @@ pub async fn compose_target(opts: Compose) -> anyhow::Result<String> {
 
     // parse with overrides and exit in case overrides had errors
     rain_document
-        .parse_with_rebinds(!local_data_only, opts.bind.unwrap_or_default())
-        .await?;
+        .parse(!local_data_only, opts.bind)
+        .await;
 
     // generate rainlang
     let entrypoints = opts
