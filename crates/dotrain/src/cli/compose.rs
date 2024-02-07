@@ -27,9 +27,7 @@ pub async fn compose_target(opts: Compose) -> anyhow::Result<String> {
     let mut rain_document = RainDocument::new(text, Some(store.clone()), 0, None);
 
     // parse with overrides and exit in case overrides had errors
-    rain_document
-        .parse(!local_data_only, opts.bind)
-        .await;
+    rain_document.parse(!local_data_only, opts.bind).await;
 
     // generate rainlang
     let entrypoints = opts

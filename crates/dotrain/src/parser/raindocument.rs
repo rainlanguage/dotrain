@@ -51,7 +51,7 @@ let text = "some .rain text content".to_string();
 let meta_store = Arc::new(RwLock::new(Store::default()));
 
 // create a new instance that gets parsed right away
-let rain_document = RainDocument::create(text, Some(meta_store), None);
+let rain_document = RainDocument::create(text, Some(meta_store), None, None);
 
 // get all problems
 let problems = rain_document.all_problems();
@@ -262,13 +262,14 @@ impl RainDocument {
 
     /// Parses this instance's text
     #[async_recursion(?Send)]
-    pub async fn parse(&mut self, enable_remote: bool, rebinds: Option<Vec<Rebind>>,) {
+    pub async fn parse(&mut self, enable_remote: bool, rebinds: Option<Vec<Rebind>>) {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
             if let Err(e) = self._parse(enable_remote, rebinds).await {
                 // exit with override error if encountered
                 if let Error::InvalidOverride(err_msg) = e {
-                    self.problems
-                        .push(ErrorCode::InvalidSuppliedRebindings.to_problem(vec![&err_msg], [0, 0]));
+                    self.problems.push(
+                        ErrorCode::InvalidSuppliedRebindings.to_problem(vec![&err_msg], [0, 0]),
+                    );
                 } else {
                     self.error = Some(e.to_string());
                     self.problems
@@ -1810,7 +1811,8 @@ mod tests {
 #exp-binding
 _: opcode-1(0xabcd 456);
 ";
-        let rain_document = RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
+        let rain_document =
+            RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
         let expected_bindings: Vec<Binding> = vec![
             Binding {
                 name: "const-binding".to_owned(),

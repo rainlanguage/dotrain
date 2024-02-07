@@ -81,18 +81,18 @@ let text_document = TextDocumentItem {
 };
 
 // create a new RainDocument instance
-let rain_document = lang_services.new_rain_document(&text_document);
+let rain_document = lang_services.new_rain_document(&text_document, None);
 
 // get LSP Diagnostics for a given TextDocumentItem
 let diagnostics_related_information = true;
-let diagnostics = lang_services.do_validate(&text_document, diagnostics_related_information);
+let diagnostics = lang_services.do_validate(&text_document, diagnostics_related_information, None);
 
 let position = Position {
     line: 0,
     character: 10
 };
 let content_format = Some(MarkupKind::PlainText);
-let hover = lang_services.do_hover(&text_document, position, content_format);
+let hover = lang_services.do_hover(&text_document, position, content_format, None);
 ```
 "#
 )]
@@ -159,21 +159,29 @@ impl RainLanguageServices {
     }
 
     /// Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
-    pub fn new_rain_document(&self, text_document: &TextDocumentItem, rebinds: Option<Vec<Rebind>>) -> RainDocument {
+    pub fn new_rain_document(
+        &self,
+        text_document: &TextDocumentItem,
+        rebinds: Option<Vec<Rebind>>,
+    ) -> RainDocument {
         RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
-            rebinds
+            rebinds,
         )
     }
     /// Instantiates a RainDocument with remote meta search enabled when parsing from the given TextDocumentItem
-    pub async fn new_rain_document_async(&self, text_document: &TextDocumentItem, rebinds: Option<Vec<Rebind>>) -> RainDocument {
+    pub async fn new_rain_document_async(
+        &self,
+        text_document: &TextDocumentItem,
+        rebinds: Option<Vec<Rebind>>,
+    ) -> RainDocument {
         RainDocument::create_async(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
-            rebinds
+            rebinds,
         )
         .await
     }
@@ -183,13 +191,13 @@ impl RainLanguageServices {
         &self,
         text_document: &TextDocumentItem,
         related_information: bool,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> Vec<Diagnostic> {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
-            rebinds
+            rebinds,
         );
         diagnostic::get_diagnostics(&rain_document, &text_document.uri, related_information)
     }
@@ -198,13 +206,13 @@ impl RainLanguageServices {
         &self,
         text_document: &TextDocumentItem,
         related_information: bool,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> Vec<Diagnostic> {
         let rain_document = RainDocument::create_async(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
-            rebinds
+            rebinds,
         )
         .await;
         diagnostic::get_diagnostics(&rain_document, &text_document.uri, related_information)
@@ -225,13 +233,13 @@ impl RainLanguageServices {
         text_document: &TextDocumentItem,
         position: Position,
         documentation_format: Option<MarkupKind>,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> Option<Vec<CompletionItem>> {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
-            rebinds
+            rebinds,
         );
         completion::get_completion(
             &rain_document,
@@ -262,13 +270,13 @@ impl RainLanguageServices {
         text_document: &TextDocumentItem,
         position: Position,
         content_format: Option<MarkupKind>,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> Option<Hover> {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
-            rebinds
+            rebinds,
         );
         hover::get_hover(
             &rain_document,
@@ -296,13 +304,13 @@ impl RainLanguageServices {
         text_document: &TextDocumentItem,
         semantic_token_types_index: u32,
         semantic_token_modifiers_len: usize,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> SemanticTokensPartialResult {
         let rain_document = RainDocument::create(
             text_document.text.clone(),
             Some(self.meta_store.clone()),
             None,
-            rebinds
+            rebinds,
         );
         get_semantic_token(
             &rain_document,

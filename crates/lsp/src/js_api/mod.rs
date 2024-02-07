@@ -207,7 +207,11 @@ impl RainLanguageServices {
 
     /// Instantiates a RainDocument with remote meta search disabled when parsing from the given TextDocumentItem
     #[wasm_bindgen(js_name = "newRainDocument", skip_typescript)]
-    pub fn js_new_rain_document(&self, text_document: TextDocumentItem, rebinds: Option<Vec<Rebind>>) -> RainDocument {
+    pub fn js_new_rain_document(
+        &self,
+        text_document: TextDocumentItem,
+        rebinds: Option<Vec<Rebind>>,
+    ) -> RainDocument {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
         self.new_rain_document(&tdi, rebinds)
     }
@@ -217,7 +221,7 @@ impl RainLanguageServices {
     pub async fn js_new_rain_document_async(
         &self,
         text_document: TextDocumentItem,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> RainDocument {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
         self.new_rain_document_async(&tdi, rebinds).await
@@ -229,7 +233,7 @@ impl RainLanguageServices {
         &self,
         text_document: TextDocumentItem,
         related_information: bool,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> JsValue {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
         to_js_value(&self.do_validate(&tdi, related_information, rebinds)).unwrap_or(JsValue::NULL)
@@ -257,11 +261,15 @@ impl RainLanguageServices {
         &self,
         text_document: TextDocumentItem,
         related_information: bool,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> JsValue {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
-        to_js_value(&self.do_validate_async(&tdi, related_information, rebinds).await)
-            .unwrap_or(JsValue::NULL)
+        to_js_value(
+            &self
+                .do_validate_async(&tdi, related_information, rebinds)
+                .await,
+        )
+        .unwrap_or(JsValue::NULL)
     }
 
     /// Provides completion items at the given position
@@ -271,7 +279,7 @@ impl RainLanguageServices {
         text_document: TextDocumentItem,
         position: Position,
         documentation_format: JsValue,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> JsValue {
         let pos = from_js_value::<Pos>(position.obj).unwrap_throw();
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
@@ -280,7 +288,7 @@ impl RainLanguageServices {
             pos,
             serde_wasm_bindgen::from_value::<Option<MarkupKind>>(documentation_format)
                 .unwrap_or(None),
-            rebinds
+            rebinds,
         )
         .map_or(JsValue::NULL, |v| to_js_value(&v).unwrap_or(JsValue::NULL))
     }
@@ -312,7 +320,7 @@ impl RainLanguageServices {
         text_document: TextDocumentItem,
         position: Position,
         content_format: JsValue,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> JsValue {
         let pos = from_js_value::<Pos>(position.obj).unwrap_throw();
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
@@ -320,7 +328,7 @@ impl RainLanguageServices {
             &tdi,
             pos,
             serde_wasm_bindgen::from_value::<Option<MarkupKind>>(content_format).unwrap_or(None),
-            rebinds
+            rebinds,
         )
         .map_or(JsValue::NULL, |v| to_js_value(&v).unwrap_or(JsValue::NULL))
     }
@@ -349,14 +357,14 @@ impl RainLanguageServices {
         text_document: TextDocumentItem,
         semantic_token_types_index: u32,
         semantic_token_modifiers_len: usize,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> JsValue {
         let tdi = from_js_value::<TDI>(text_document.obj).unwrap_throw();
         to_js_value(&self.semantic_tokens(
             &tdi,
             semantic_token_types_index,
             semantic_token_modifiers_len,
-            rebinds
+            rebinds,
         ))
         .unwrap_or(JsValue::NULL)
     }

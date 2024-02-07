@@ -21,13 +21,22 @@ use wasm_bindgen::{
 impl RainDocument {
     /// Creates an instance with the given MetaStore and parses with remote meta search enabled
     #[wasm_bindgen(js_name = "createAsync")]
-    pub async fn js_create_async(text: &str, meta_store: &MetaStore, rebinds: Option<Vec<Rebind>>) -> RainDocument {
-        RainDocument::create_async(text.to_string(), Some(meta_store.0.clone()), None, rebinds).await
+    pub async fn js_create_async(
+        text: &str,
+        meta_store: &MetaStore,
+        rebinds: Option<Vec<Rebind>>,
+    ) -> RainDocument {
+        RainDocument::create_async(text.to_string(), Some(meta_store.0.clone()), None, rebinds)
+            .await
     }
 
     /// Creates an instance with the given MetaStore and parses with remote meta search disabled (cached metas only)
     #[wasm_bindgen(js_name = "create")]
-    pub fn js_create(text: &str, meta_store: &MetaStore, rebinds: Option<Vec<Rebind>>) -> RainDocument {
+    pub fn js_create(
+        text: &str,
+        meta_store: &MetaStore,
+        rebinds: Option<Vec<Rebind>>,
+    ) -> RainDocument {
         RainDocument::create(text.to_string(), Some(meta_store.0.clone()), None, rebinds)
     }
 
@@ -231,7 +240,7 @@ impl RainDocument {
         text: &str,
         entrypoints: Vec<String>,
         meta_store: &MetaStore,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> Result<String, ComposeError> {
         RainDocument::compose_text_async(
             text,
@@ -240,7 +249,7 @@ impl RainDocument {
                 .map(|v| v.as_str())
                 .collect::<Vec<&str>>(),
             Some(meta_store.0.clone()),
-            rebinds
+            rebinds,
         )
         .await
     }
@@ -251,7 +260,7 @@ impl RainDocument {
         text: &str,
         entrypoints: Vec<String>,
         meta_store: &MetaStore,
-        rebinds: Option<Vec<Rebind>>
+        rebinds: Option<Vec<Rebind>>,
     ) -> Result<String, ComposeError> {
         RainDocument::compose_text(
             text,
@@ -260,7 +269,7 @@ impl RainDocument {
                 .map(|v| v.as_str())
                 .collect::<Vec<&str>>(),
             Some(meta_store.0.clone()),
-            rebinds
+            rebinds,
         )
     }
 }
