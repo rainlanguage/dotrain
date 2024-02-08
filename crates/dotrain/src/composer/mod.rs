@@ -639,6 +639,7 @@ _: some-sub-parser-word<1 2>(4e18 44);"#;
 
 /** below exp with front matter splitter syntax ---  */
 #exp-binding-1---
+/** some other comment with --- */
 _: opcode-1(0xabcd some-value---);
 ";
         let result = RainDocument::compose_text(
@@ -647,7 +648,8 @@ _: opcode-1(0xabcd some-value---);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = r"_: opcode-1(0xabcd 4e18);";
+        let expected_rainlang = r"/** some other comment with --- */
+_: opcode-1(0xabcd 4e18);";
         assert_eq!(result, expected_rainlang);
 
         let dotrain_text = r"
