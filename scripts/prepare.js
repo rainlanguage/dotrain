@@ -37,6 +37,7 @@ export * from "vscode-languageserver-protocol";
  */
 export declare function rainlang(stringChunks: TemplateStringsArray, ...vars: any[]): string;
 ` + dts;
+dts = dts.replaceAll("Promise<any>", "Promise<Diagnostic[]>");
 fs.writeFileSync("./dist/cjs/index.d.ts", dts);
 fs.writeFileSync("./dist/esm/index.d.ts", dts);
 
