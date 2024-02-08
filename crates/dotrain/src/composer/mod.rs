@@ -717,6 +717,43 @@ _: opcode-1(0xabcd elided);
         ]));
         assert_eq!(result, expected_err);
 
+        let dotrain_text = r"
+#some-value 4e18
+/* some comment with --- */
+
+#exp-binding-1
+_: opcode-1(0xabcd elided);
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1"],
+            Some(meta_store.clone()),
+            None,
+        );
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::UnexpectedToken.to_problem(vec![], [43, 45])
+        ]));
+        assert_eq!(result, expected_err);
+
+        let dotrain_text = r"
+#some-value 4e18
+
+/** below exp with --- word */
+#exp-binding-1---
+_: opcode-1(0xabcd elided);
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1"],
+            Some(meta_store.clone()),
+            None,
+        );
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::UnexpectedToken.to_problem(vec![], [42, 46]),
+            ErrorCode::UnexpectedToken.to_problem(vec![], [47, 49]),
+        ]));
+        assert_eq!(result, expected_err);
+
         Ok(())
     }
 
