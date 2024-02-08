@@ -18,17 +18,17 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     pub fn log(s: &str);
 
-    /// A wrapped JsValue representing typescript RainDocument interface in rust,
+    /// A wrapped JsValue representing typescript [RainDocument](crate::RainDocument) interface in rust,
     #[wasm_bindgen(typescript_type = "IRainDocument")]
     pub type IRainDocument;
 
     /// A wrapped JsValue representing typescript AuthoringMeta interface in rust,
-    /// it can be deserialized to rust AuthoringMeta using `serde-wasm-bindgen`
+    /// it can be deserialized to rust [AuthoringMeta](mod@rain_metadata::meta::types::authoring::v1::AuthoringMeta) using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "IAuthoringMeta")]
     pub type IAuthoringMeta;
 
     /// A wrapped JsValue representing typescript Namespace type in rust,
-    /// it can be deserialized to rust Namespace using `serde-wasm-bindgen`
+    /// it can be deserialized to rust [crate::types::ast::Namespace] using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "Namespace")]
     pub type Namespace;
 }

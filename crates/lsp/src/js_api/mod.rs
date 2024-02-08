@@ -7,31 +7,31 @@ use super::{RainLanguageServices, LanguageServiceParams};
 #[wasm_bindgen]
 extern "C" {
     /// A wrapped JsValue representing typescript LSP Position interface in rust,
-    /// it can be deserialized to rust `lsp_types` Position using `serde-wasm-bindgen`
+    /// it can be deserialized to rust [mod@lsp_types::Position] using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "Position")]
     pub type Position;
     /// A wrapped JsValue representing typescript LSP TextDocumentItem interface in rust,
-    /// it can be deserialized to rust `lsp_types` TextDocumentItem using `serde-wasm-bindgen`
+    /// it can be deserialized to rust [mod@lsp_types::TextDocumentItem] using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "TextDocumentItem")]
     pub type TextDocumentItem;
     /// A wrapped JsValue representing typescript LSP MarkupKind interface in rust,
-    /// it can be deserialized to rust `lsp_types` MarkupKind using `serde-wasm-bindgen`
+    /// it can be deserialized to rust [mod@lsp_types::MarkupKind] using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "MarkupKind")]
     pub type MarkupKind;
     /// A wrapped JsValue representing typescript LSP Diagnostic interface in rust,
-    /// it can be deserialized to rust `lsp_types` Diagnostic using `serde-wasm-bindgen`
+    /// it can be deserialized to rust [mod@lsp_types::Diagnostic] using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "Diagnostic")]
     pub type Diagnostic;
     /// A wrapped JsValue representing typescript LSP Hover interface in rust,
-    /// it can be deserialized to rust `lsp_types` Hover using `serde-wasm-bindgen`
+    /// it can be deserialized to rust [mod@lsp_types::Hover] using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "Hover")]
     pub type Hover;
     /// A wrapped JsValue representing typescript LSP CompletionItem interface in rust,
-    /// it can be deserialized to rust `lsp_types` CompletionItem using `serde-wasm-bindgen`
+    /// it can be deserialized to rust [mod@lsp_types::CompletionItem] using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "CompletionItem")]
     pub type CompletionItem;
     /// A wrapped JsValue representing typescript LSP SemanticTokensPartialResult interface in rust,
-    /// it can be deserialized to rust `lsp_types` SemanticTokensPartialResult using `serde-wasm-bindgen`
+    /// it can be deserialized to rust [mod@lsp_types::SemanticTokensPartialResult] using `serde-wasm-bindgen`
     #[wasm_bindgen(typescript_type = "SemanticTokensPartialResult")]
     pub type SemanticTokensPartialResult;
 }
