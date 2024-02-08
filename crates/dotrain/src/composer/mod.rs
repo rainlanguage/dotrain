@@ -700,6 +700,23 @@ _: opcode-1(0xabcd elided);
         ));
         assert_eq!(result, expected_err);
 
+        let dotrain_text = r"
+#some-value 4e18
+
+#exp-binding-1
+_: opcode-1(0xabcd elided);
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1"],
+            Some(meta_store.clone()),
+            None,
+        );
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::NoFrontMatterSplitter.to_problem(vec![], [0, 0]),
+        ]));
+        assert_eq!(result, expected_err);
+
         Ok(())
     }
 
