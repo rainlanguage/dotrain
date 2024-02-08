@@ -637,14 +637,18 @@ using-words-from 0x1234abced
 abcd: " this is literal string ",
 _: some-sub-parser-word<some-value " some literal as operand ">(some-value literal-binding);
 "#;
-        let rainlang_text =
-            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()))?;
+        let rainlang_text = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1"],
+            Some(meta_store.clone()),
+            None,
+        )?;
         let expected_rainlang = r#"using-words-from 0x1234abced
 abcd: " this is literal string ",
 _: some-sub-parser-word<4e18 " some literal as operand ">(4e18 "some literal value");"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
-        let dotrain_text = r#"
+        let dotrain_text = r#"---
 #some-value 4e18
 
 #exp-binding-1
