@@ -633,6 +633,23 @@ using-words-from 0x1234abced
 _: some-sub-parser-word<1 2>(4e18 44);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
+        let dotrain_text = r"some front matter
+---
+#some-value--- 4e18
+
+/** below exp with front matter splitter syntax ---  */
+#exp-binding-1---
+_: opcode-1(0xabcd some-value---);
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1---"],
+            Some(meta_store.clone()),
+            None,
+        )?;
+        let expected_rainlang = r"_: opcode-1(0xabcd 4e18);";
+        assert_eq!(result, expected_rainlang);
+
         let dotrain_text = r"
         some 
         front 
