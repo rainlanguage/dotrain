@@ -18,7 +18,8 @@ async function testCompletion(
         TextDocumentItem.create("file:///completion.test.rain", "rainlang", 1, text),
         position,
     );
-    if (expectedCompletions === null) assert.ok(actualCompletions === null);
+
+    if (expectedCompletions === null) assert.ok(actualCompletions === undefined);
     else {
         assert.ok(actualCompletions?.length == expectedCompletions?.length);
         expectedCompletions.forEach((item, i) => {

@@ -131,7 +131,7 @@ let hover = lang_services.do_hover(&text_document, position, content_format, Non
  ```
 "
 )]
-#[cfg_attr(feature = "js-api", wasm_bindgen(skip_typescript))]
+#[cfg_attr(feature = "js-api", wasm_bindgen)]
 pub struct RainLanguageServices {
     pub(crate) meta_store: Arc<RwLock<Store>>,
 }

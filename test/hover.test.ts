@@ -8,7 +8,7 @@ async function testHover(
     text: string,
     position: Position,
     services: RainLanguageServices,
-): Promise<Hover | null> {
+): Promise<Hover | undefined> {
     return services.doHover(
         TextDocumentItem.create("file:///hover.test.rain", "rainlang", 1, text),
         position,
