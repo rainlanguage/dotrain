@@ -1,6 +1,6 @@
 use super::error::Error;
 use regex::{Match, Regex};
-use revm::primitives::U256;
+use alloy_primitives::U256;
 use rain_metadata::{RainMetaDocumentV1Item, KnownMagic};
 use super::types::{
     ast::{ParsedItem, Offsets},

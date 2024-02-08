@@ -32,7 +32,6 @@ topo_sort = "0.4.0"
 magic_string = "0.3.4"
 async-recursion = "1.0.5"
 getrandom = { version = "0.2.11", features = ["js", "js-sys"] }
-revm = { version = "3.5.0", default-features = false, features = ["serde", "std"] }
 anyhow = { workspace = true }
 regex = { workspace = true }
 once_cell = { workspace = true }

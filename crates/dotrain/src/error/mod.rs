@@ -186,7 +186,6 @@ pub enum Error {
     AbiCoderError(alloy_sol_types::Error),
     ParseIntError(std::num::ParseIntError),
     UintParseError(alloy_primitives::ruint::ParseError),
-    EVMError(revm::primitives::EVMError<std::convert::Infallible>),
 }
 
 impl std::fmt::Display for Error {
@@ -207,7 +206,6 @@ impl std::fmt::Display for Error {
             Error::SerdeJsonError(v) => write!(f, "{}", v),
             Error::UintParseError(v) => write!(f, "{}", v),
             Error::ParseIntError(v) => write!(f, "{}", v),
-            Error::EVMError(v) => write!(f, "{}", v),
         }
     }
 }
@@ -241,12 +239,6 @@ impl From<alloy_primitives::ruint::ParseError> for Error {
 impl From<std::num::ParseIntError> for Error {
     fn from(value: std::num::ParseIntError) -> Self {
         Error::ParseIntError(value)
-    }
-}
-
-impl From<revm::primitives::EVMError<std::convert::Infallible>> for Error {
-    fn from(value: revm::primitives::EVMError<std::convert::Infallible>) -> Self {
-        Error::EVMError(value)
     }
 }
 
