@@ -738,19 +738,20 @@ _: opcode-1(0xabcd elided);
         let dotrain_text = r"
 #some-value 4e18
 
-/** below exp with --- word */
+/** below exp with front matter splitter syntax */
 #exp-binding-1---
 _: opcode-1(0xabcd elided);
 ";
         let result = RainDocument::compose_text(
             dotrain_text,
-            &["exp-binding-1"],
+            &["exp-binding-1---"],
             Some(meta_store.clone()),
             None,
         );
         let expected_err = Err(ComposeError::Problems(vec![
-            ErrorCode::UnexpectedToken.to_problem(vec![], [42, 46]),
-            ErrorCode::UnexpectedToken.to_problem(vec![], [47, 49]),
+            ErrorCode::UnexpectedToken.to_problem(vec![], [88, 90]),
+            ErrorCode::UnexpectedToken.to_problem(vec![], [91, 106]),
+            ErrorCode::UnexpectedToken.to_problem(vec![], [107, 115]),
         ]));
         assert_eq!(result, expected_err);
 
