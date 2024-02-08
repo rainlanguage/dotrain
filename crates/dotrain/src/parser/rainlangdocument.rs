@@ -410,59 +410,86 @@ impl RainlangDocument {
         if let Some(operand_close_index) = exp.find('>') {
             let slices = exp[1..].split_at(operand_close_index - 1);
             remaining = operand_close_index + 1;
-            let operand_args = inclusive_parse(slices.0, &ANY_PATTERN, cursor + 1);
+            let operand_args = self.parse_operand_args(slices.0, cursor + 1);
             op.operand_args = Some(OperandArg {
                 position: [cursor, cursor + slices.0.len() + 2],
                 args: vec![],
             });
+            let mut operand_args_items = vec![];
             for v in operand_args {
                 if OPERAND_ARG_PATTERN.is_match(&v.0) {
-                    let is_quote = v.0.starts_with('\'');
-                    if is_quote {
-                        let quote = &v.0[1..];
-                        if let Some(b) = self.search_namespace(quote, v.1[0] + 1, namespace) {
+                    if LITERAL_PATTERN.is_match(&v.0) {
+                        operand_args_items.push(OperandArgItem {
+                            value: v.0.clone(),
+                            name: "operand arg".to_owned(),
+                            position: v.1,
+                            description: String::new(),
+                            id: None,
+                        });
+                    } else {
+                        let is_quote = v.0.starts_with('\'');
+                        let (name, offset) = if is_quote {
+                            (&v.0[1..], v.1[0] + 1)
+                        } else {
+                            (v.0.as_str(), v.1[0])
+                        };
+                        let mut value = String::new();
+                        if let Some(b) = self.search_namespace(name, offset, namespace) {
                             match &b.item {
                                 BindingItem::Elided(e) => {
                                     let msg = e.msg.clone();
-                                    self.problems
-                                        .push(ErrorCode::ElidedBinding.to_problem(vec![&msg], v.1));
+                                    self.problems.push(
+                                        ErrorCode::ElidedBinding.to_problem(vec![name, &msg], v.1),
+                                    );
                                 }
-                                BindingItem::Literal(_c) => {
-                                    self.problems
-                                        .push(ErrorCode::InvalidQuote.to_problem(vec![quote], v.1));
-                                }
-                                _ => {
-                                    if b.problems
-                                        .iter()
-                                        .any(|v| v.code == ErrorCode::CircularDependency)
-                                    {
+                                BindingItem::Literal(c) => {
+                                    if is_quote {
                                         self.problems.push(
-                                            ErrorCode::CircularDependencyQuote
-                                                .to_problem(vec![], v.1),
+                                            ErrorCode::InvalidQuote.to_problem(vec![name], v.1),
+                                        );
+                                    } else {
+                                        value = c.value.clone();
+                                    }
+                                }
+                                BindingItem::Exp(_e) => {
+                                    if is_quote {
+                                        if b.problems
+                                            .iter()
+                                            .any(|v| v.code == ErrorCode::CircularDependency)
+                                        {
+                                            self.problems.push(
+                                                ErrorCode::CircularDependencyQuote
+                                                    .to_problem(vec![], v.1),
+                                            );
+                                        }
+                                    } else {
+                                        self.problems.push(
+                                            ErrorCode::InvalidReference.to_problem(vec![name], v.1),
                                         );
                                     }
                                 }
                             };
+                        } else if is_quote {
+                            self.problems
+                                .push(ErrorCode::UndefinedQuote.to_problem(vec![name], v.1));
                         } else {
                             self.problems
-                                .push(ErrorCode::UndefinedQuote.to_problem(vec![quote], v.1));
+                                .push(ErrorCode::UndefinedIdentifier.to_problem(vec![name], v.1));
                         }
+                        operand_args_items.push(OperandArgItem {
+                            value,
+                            name: "operand arg".to_owned(),
+                            position: v.1,
+                            description: String::new(),
+                            id: Some(v.0.clone()),
+                        });
                     }
-                    op.operand_args.as_mut().unwrap().args.push(OperandArgItem {
-                        value: if is_quote {
-                            v.0[1..].to_string()
-                        } else {
-                            v.0.clone()
-                        },
-                        name: "operand arg".to_owned(),
-                        position: v.1,
-                        description: String::new(),
-                    });
                 } else {
                     self.problems
                         .push(ErrorCode::InvalidOperandArg.to_problem(vec![&v.0], v.1));
                 }
             }
+            op.operand_args.as_mut().unwrap().args = operand_args_items;
         } else {
             self.problems.push(
                 ErrorCode::ExpectedClosingAngleBracket
@@ -474,6 +501,40 @@ impl RainlangDocument {
             });
         }
         remaining
+    }
+
+    fn parse_operand_args(&mut self, text: &str, offset: usize) -> Vec<ParsedItem> {
+        let mut operand_args = vec![];
+        let mut parsed_items = inclusive_parse(text, &ANY_PATTERN, 0);
+        let mut iter = parsed_items.iter_mut();
+        while let Some(item) = iter.next() {
+            if item.0.starts_with('"') {
+                let start = item.1[0];
+                let mut end = text.len();
+                let mut has_no_end = true;
+                #[allow(clippy::while_let_on_iterator)]
+                while let Some(end_item) = iter.next() {
+                    if end_item.0.ends_with('"') {
+                        has_no_end = false;
+                        end = end_item.1[1];
+                        break;
+                    }
+                }
+                let pos = [start + offset, end + offset];
+                if has_no_end {
+                    self.problems
+                        .push(ErrorCode::UnexpectedStringLiteral.to_problem(vec![], pos));
+                } else {
+                    operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
+                }
+            } else {
+                operand_args.push(ParsedItem(
+                    item.0.to_owned(),
+                    [item.1[0] + offset, item.1[1] + offset],
+                ))
+            }
+        }
+        operand_args
     }
 
     /// parses an upcoming word to the corresponding AST node
@@ -588,7 +649,7 @@ impl RainlangDocument {
                     BindingItem::Elided(e) => {
                         let msg = e.msg.clone();
                         self.problems
-                            .push(ErrorCode::ElidedBinding.to_problem(vec![&msg], next_pos));
+                            .push(ErrorCode::ElidedBinding.to_problem(vec![next, &msg], next_pos));
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
                             position: next_pos,
@@ -657,8 +718,9 @@ impl RainlangDocument {
                             }))?;
                         }
                         BindingItem::Elided(e) => {
-                            self.problems
-                                .push(ErrorCode::ElidedBinding.to_problem(vec![&e.msg], next_pos));
+                            self.problems.push(
+                                ErrorCode::ElidedBinding.to_problem(vec![next, &e.msg], next_pos),
+                            );
                             self.update_state(Node::Alias(Alias {
                                 name: next.to_owned(),
                                 position: next_pos,
@@ -913,12 +975,14 @@ mod tests {
                         name: "operand arg".to_owned(),
                         position: [9, 11],
                         description: String::new(),
+                        id: None,
                     },
                     OperandArgItem {
                         value: "56".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [12, 14],
                         description: String::new(),
+                        id: None,
                     },
                 ],
             }),
@@ -926,7 +990,8 @@ mod tests {
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
 
-        let exp = "<0xa5>";
+        let exp =
+            r#"<0xa5 "some string literal " some-literal-binding "some other string literal ">"#;
         let mut op = Opcode {
             opcode: OpcodeDetails {
                 name: "opcode".to_owned(),
@@ -956,13 +1021,37 @@ mod tests {
             inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
-                position: [8, 14],
-                args: vec![OperandArgItem {
-                    value: "0xa5".to_owned(),
-                    name: "operand arg".to_owned(),
-                    position: [9, 13],
-                    description: String::new(),
-                }],
+                position: [8, 87],
+                args: vec![
+                    OperandArgItem {
+                        value: "0xa5".to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [9, 13],
+                        description: String::new(),
+                        id: None,
+                    },
+                    OperandArgItem {
+                        value: r#""some string literal ""#.to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [14, 36],
+                        description: String::new(),
+                        id: None,
+                    },
+                    OperandArgItem {
+                        value: String::new(),
+                        name: "operand arg".to_owned(),
+                        position: [37, 57],
+                        description: String::new(),
+                        id: Some("some-literal-binding".to_owned()),
+                    },
+                    OperandArgItem {
+                        value: r#""some other string literal ""#.to_owned(),
+                        name: "operand arg".to_owned(),
+                        position: [58, 86],
+                        description: String::new(),
+                        id: None,
+                    },
+                ],
             }),
         };
         assert_eq!(consumed_count, exp.len());
@@ -1005,24 +1094,28 @@ mod tests {
                         name: "operand arg".to_owned(),
                         position: [16, 17],
                         description: String::new(),
+                        id: None,
                     },
                     OperandArgItem {
                         value: "0xf2".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [18, 22],
                         description: String::new(),
+                        id: None,
                     },
                     OperandArgItem {
                         value: "69".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [23, 25],
                         description: String::new(),
+                        id: None,
                     },
                     OperandArgItem {
                         value: "32".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [28, 30],
                         description: String::new(),
+                        id: None,
                     },
                 ],
             }),
@@ -1077,12 +1170,14 @@ mod tests {
                         name: "operand arg".to_owned(),
                         position: [17, 19],
                         description: String::new(),
+                        id: None,
                     },
                     OperandArgItem {
                         value: "56".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [20, 22],
                         description: String::new(),
+                        id: None,
                     },
                 ],
             }),
@@ -1133,12 +1228,14 @@ mod tests {
                         name: "operand arg".to_owned(),
                         position: [97, 101],
                         description: String::new(),
+                        id: None,
                     },
                     OperandArgItem {
                         value: "87".to_owned(),
                         name: "operand arg".to_owned(),
                         position: [104, 106],
                         description: String::new(),
+                        id: None,
                     },
                 ],
             }),

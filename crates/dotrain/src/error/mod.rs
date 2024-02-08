@@ -93,7 +93,7 @@ impl ErrorCode {
             Self::DeepImport => "import too deep".to_owned(),
             Self::DeepNamespace => "namespace path too deep".to_owned(),
             Self::CorruptMeta => "corrupt meta".to_owned(),
-            Self::ElidedBinding => msg_items[0].to_owned(),
+            Self::ElidedBinding => format!("elided binding '{}': {}", msg_items[0], msg_items[1]),
             Self::InconsumableMeta => "import contains inconsumable meta".to_owned(),
             Self::OccupiedNamespace => "cannot import into an occupied namespace".to_owned(),
             Self::CollidingNamespaceNodes => "namespace nodes colliding".to_owned(),
@@ -106,7 +106,7 @@ impl ErrorCode {
             Self::UndefinedImport => format!("cannot find any settlement for import: {}", msg_items[0]),
             Self::UndefinedQuote => format!("undefined quote: {}", msg_items[0]),
             Self::UndefinedIdentifier => format!("undefined identifier: {}", msg_items[0]),
-            Self::UndefinedNamespaceMember => format!("namespace has no member {}", msg_items[0]),
+            Self::UndefinedNamespaceMember => format!("namespace has no member: {}", msg_items[0]),
 
             Self::InvalidWordPattern => format!("invalid word pattern: {}", msg_items[0]),
             Self::InvalidExpression => "invalid expression line".to_owned(),

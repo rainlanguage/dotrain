@@ -58,6 +58,7 @@ pub struct OperandArgItem {
     pub name: String,
     pub position: Offsets,
     pub description: String,
+    pub id: Option<String>,
 }
 
 /// Type of an opcode's all operand arguments segment

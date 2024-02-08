@@ -8,7 +8,7 @@ use super::{
     error::ComposeError,
     parser::{RainlangDocument, RainDocument, exclusive_parse},
     types::{
-        patterns::{WORD_PATTERN, NUMERIC_PATTERN, NAMESPACE_SEGMENT_PATTERN},
+        patterns::{WORD_PATTERN, NAMESPACE_SEGMENT_PATTERN},
         ast::{
             Offsets, Problem, Node, Namespace, NamespaceItem, NamespaceLeaf, Binding, BindingItem,
             Import,
@@ -356,31 +356,45 @@ fn build_sourcemap<'a>(
                 }
             }
             Node::Opcode(opcode) => {
-                let quotes = if let Some(operand_args) = &opcode.operand_args {
+                let ref_args = if let Some(operand_args) = &opcode.operand_args {
                     operand_args
                         .args
                         .iter()
-                        .filter(|v| !NUMERIC_PATTERN.is_match(&v.value))
+                        .filter_map(|v| {
+                            v.id.as_ref()
+                                .map(|id| (v.value.as_str(), id.as_str(), v.position))
+                        })
                         .collect()
                 } else {
                     vec![]
                 };
-                if !quotes.is_empty() {
-                    if deps_indexes.is_empty() {
+                if !ref_args.is_empty() {
+                    if deps_indexes.is_empty() && ref_args.iter().any(|v| v.1.starts_with('\'')) {
                         return Err("cannot resolve dependecies".to_owned());
                     }
-                    for quote in quotes {
-                        if let Some(dep_index) = deps_indexes.pop_front() {
+                    for arg in ref_args {
+                        if arg.1.starts_with('\'') {
+                            if let Some(dep_index) = deps_indexes.pop_front() {
+                                generator
+                                    .overwrite(
+                                        arg.2[0] as i64,
+                                        arg.2[1] as i64,
+                                        &dep_index.to_string(),
+                                        OverwriteOptions::default(),
+                                    )
+                                    .or(Err("could not build sourcemap".to_owned()))?;
+                            } else {
+                                return Err("cannot resolve dependecies".to_owned());
+                            }
+                        } else {
                             generator
                                 .overwrite(
-                                    quote.position[0] as i64,
-                                    quote.position[1] as i64,
-                                    &dep_index.to_string(),
+                                    arg.2[0] as i64,
+                                    arg.2[1] as i64,
+                                    arg.0,
                                     OverwriteOptions::default(),
                                 )
                                 .or(Err("could not build sourcemap".to_owned()))?;
-                        } else {
-                            return Err("cannot resolve dependecies".to_owned());
                         }
                     }
                 }
@@ -592,6 +606,22 @@ _: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
 
         let dotrain_text = r#"
 #some-value 4e18
+#literal-binding "some literal value"
+
+#exp-binding-1
+using-words-from 0x1234abced
+abcd: " this is literal string ",
+_: some-sub-parser-word<some-value " some literal as operand ">(some-value literal-binding);
+"#;
+        let rainlang_text =
+            RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()))?;
+        let expected_rainlang = r#"using-words-from 0x1234abced
+abcd: " this is literal string ",
+_: some-sub-parser-word<4e18 " some literal as operand ">(4e18 "some literal value");"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r#"
+#some-value 4e18
 
 #exp-binding-1
 /* some comment with quote: dont't */
@@ -644,7 +674,7 @@ _: opcode-1(0xabcd elided);
         let result =
             RainDocument::compose_text(dotrain_text, &["exp-binding-1"], Some(meta_store.clone()));
         let expected_err = Err(ComposeError::Problems(vec![
-            ErrorCode::ElidedBinding.to_problem(vec!["this is elided"], [123, 129])
+            ErrorCode::ElidedBinding.to_problem(vec!["elided", "this is elided"], [123, 129])
         ]));
         assert_eq!(result, expected_err);
 
