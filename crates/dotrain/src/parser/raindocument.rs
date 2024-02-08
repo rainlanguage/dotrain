@@ -51,7 +51,7 @@ let text = "some .rain text content".to_string();
 let meta_store = Arc::new(RwLock::new(Store::default()));
 
 // create a new instance that gets parsed right away
-let rain_document = RainDocument::create(text, Some(meta_store), None);
+let rain_document = RainDocument::create(text, Some(meta_store), None, None);
 
 // get all problems
 let problems = rain_document.all_problems();
@@ -112,9 +112,10 @@ impl RainDocument {
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
+        rebinds: Option<Vec<Rebind>>,
     ) -> RainDocument {
         let mut rain_document = RainDocument::new(text, meta_store, 0, words);
-        rain_document.parse(true).await;
+        rain_document.parse(true, rebinds).await;
         rain_document
     }
 
@@ -123,68 +124,35 @@ impl RainDocument {
         text: String,
         meta_store: Option<Arc<RwLock<Store>>>,
         words: Option<AuthoringMeta>,
+        rebinds: Option<Vec<Rebind>>,
     ) -> RainDocument {
         let mut rain_document = RainDocument::new(text, meta_store, 0, words);
-        block_on(rain_document.parse(false));
+        block_on(rain_document.parse(false, rebinds));
         rain_document
     }
 
-    /// Creates an instance and parses with remote meta search enabled with rebinds
-    pub async fn create_with_rebinds_async(
-        text: String,
-        meta_store: Option<Arc<RwLock<Store>>>,
-        words: Option<AuthoringMeta>,
-        rebinds: Vec<Rebind>,
-    ) -> Result<RainDocument, Error> {
-        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
-        rain_document.parse_with_rebinds(true, rebinds).await?;
-        Ok(rain_document)
+    /// Get the front matter without parsing the dotrain
+    pub fn get_front_matter(text: &str) -> Option<&str> {
+        // split front matter and rest of the text
+        if let Some(splitter) = text.find(FRONTMATTER_SEPARATOR) {
+            Some(&text[..splitter])
+        } else {
+            None
+        }
     }
+}
 
-    /// Creates an instance and parses with remote meta search disabled (cached metas only) with rebinds
-    pub fn create_with_rebinds(
-        text: String,
-        meta_store: Option<Arc<RwLock<Store>>>,
-        words: Option<AuthoringMeta>,
-        rebinds: Vec<Rebind>,
-    ) -> Result<RainDocument, Error> {
-        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
-        block_on(rain_document.parse_with_rebinds(false, rebinds))?;
-        Ok(rain_document)
-    }
-
+impl RainDocument {
     /// Updates the text and parses right away with remote meta search disabled (cached metas only)
-    pub fn update(&mut self, new_text: String) {
+    pub fn update(&mut self, new_text: String, rebinds: Option<Vec<Rebind>>) {
         self.text = new_text;
-        block_on(self.parse(false));
+        block_on(self.parse(false, rebinds));
     }
 
     /// Updates the text and parses right away with remote meta search enabled
-    pub async fn update_async(&mut self, new_text: String) {
+    pub async fn update_async(&mut self, new_text: String, rebinds: Option<Vec<Rebind>>) {
         self.text = new_text;
-        self.parse(true).await;
-    }
-
-    /// Updates the text and parses right away with remote meta search disabled (cached metas only) with rebinds
-    pub fn update_with_rebinds(
-        &mut self,
-        new_text: String,
-        rebinds: Vec<Rebind>,
-    ) -> Result<(), Error> {
-        self.text = new_text;
-        block_on(self.parse_with_rebinds(false, rebinds))?;
-        Ok(())
-    }
-
-    /// Updates the text and parses right away with remote meta search enabled with rebinds
-    pub async fn update_with_rebinds_async(
-        &mut self,
-        new_text: String,
-        rebinds: Vec<Rebind>,
-    ) -> Result<(), Error> {
-        self.text = new_text;
-        self.parse_with_rebinds(true, rebinds).await?;
-        Ok(())
+        self.parse(true, rebinds).await;
     }
 
     /// This instance's current text
@@ -260,41 +228,19 @@ impl RainDocument {
 
     /// Parses this instance's text
     #[async_recursion(?Send)]
-    pub async fn parse(&mut self, enable_remote: bool) {
+    pub async fn parse(&mut self, enable_remote: bool, rebinds: Option<Vec<Rebind>>) {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
-            if let Err(e) = self._parse(enable_remote, None).await {
-                self.error = Some(e.to_string());
-                self.problems
-                    .push(ErrorCode::RuntimeError.to_problem(vec![&e.to_string()], [0, 0]));
-            }
-        } else {
-            self.error = None;
-            self.imports.clear();
-            self.problems.clear();
-            self.comments.clear();
-            self.bindings.clear();
-            self.namespace.clear();
-            self.known_words = None;
-            self.front_matter_offset = 0;
-        }
-    }
-
-    /// Parses this instance's with rebindings
-    #[async_recursion(?Send)]
-    pub(crate) async fn parse_with_rebinds(
-        &mut self,
-        enable_remote: bool,
-        rebinds: Vec<Rebind>,
-    ) -> Result<(), Error> {
-        if NON_EMPTY_PATTERN.is_match(&self.text) {
-            if let Err(e) = self._parse(enable_remote, Some(rebinds)).await {
+            if let Err(e) = self._parse(enable_remote, rebinds).await {
                 // exit with override error if encountered
-                if matches!(e, Error::InvalidOverride(_)) {
-                    return Err(e);
+                if let Error::InvalidOverride(err_msg) = e {
+                    self.problems.push(
+                        ErrorCode::InvalidSuppliedRebindings.to_problem(vec![&err_msg], [0, 0]),
+                    );
+                } else {
+                    self.error = Some(e.to_string());
+                    self.problems
+                        .push(ErrorCode::RuntimeError.to_problem(vec![&e.to_string()], [0, 0]));
                 }
-                self.error = Some(e.to_string());
-                self.problems
-                    .push(ErrorCode::RuntimeError.to_problem(vec![&e.to_string()], [0, 0]));
             }
         } else {
             self.error = None;
@@ -306,7 +252,6 @@ impl RainDocument {
             self.known_words = None;
             self.front_matter_offset = 0;
         }
-        Ok(())
     }
 }
 
@@ -362,6 +307,16 @@ impl RainDocument {
             return Ok(());
         }
 
+        // split front matter and rest of the text
+        if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
+            self.front_matter_offset = splitter;
+            let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
+            fill_in(&mut document, [0, body_start_offset])?;
+        } else {
+            self.problems
+                .push(ErrorCode::NoFrontMatterSplitter.to_problem(vec![], [0, 0]));
+        };
+
         // parse comments
         for parsed_comment in inclusive_parse(&document, &COMMENT_PATTERN, 0).iter() {
             // if a comment is not ended
@@ -375,13 +330,6 @@ impl RainDocument {
             });
             fill_in(&mut document, parsed_comment.1)?;
         }
-
-        // split front matter and rest of the text
-        if let Some(splitter) = document.find(FRONTMATTER_SEPARATOR) {
-            self.front_matter_offset = splitter;
-            let body_start_offset = splitter + FRONTMATTER_SEPARATOR.len();
-            fill_in(&mut document, [0, body_start_offset])?;
-        };
 
         // since exclusive_parse() is being used with 'include_empty_ends' arg set to true,
         // the first item of the parsed items should be ignored since it only contains the
@@ -887,9 +835,9 @@ impl RainDocument {
                                 self.known_words.clone(),
                             );
                             if remote_search {
-                                dotrain.parse(true).await;
+                                dotrain.parse(true, None).await;
                             } else {
-                                dotrain.parse(false).await;
+                                dotrain.parse(false, None).await;
                             }
                             if !dotrain.problems.is_empty() {
                                 result.problems.push(
@@ -1802,7 +1750,8 @@ mod tests {
 #exp-binding
 _: opcode-1(0xabcd 456);
 ";
-        let rain_document = RainDocument::create(text.to_owned(), Some(meta_store.clone()), None);
+        let rain_document =
+            RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
         let expected_bindings: Vec<Binding> = vec![
             Binding {
                 name: "const-binding".to_owned(),

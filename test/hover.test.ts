@@ -3,12 +3,12 @@ import { toRange } from "./utils";
 import { MetaStore, RainLanguageServices, rainlang } from "../dist/cjs";
 import { Hover, Position, TextDocumentItem } from "vscode-languageserver-types";
 
-const ws = " ".repeat(67);
+const ws = " ".repeat(64) + "---";
 async function testHover(
     text: string,
     position: Position,
     services: RainLanguageServices,
-): Promise<Hover | null> {
+): Promise<Hover | undefined> {
     return services.doHover(
         TextDocumentItem.create("file:///hover.test.rain", "rainlang", 1, text),
         position,

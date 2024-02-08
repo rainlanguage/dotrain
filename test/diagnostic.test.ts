@@ -3,7 +3,7 @@ import { toRange } from "./utils";
 import { MetaStore, ErrorCode, RainLanguageServices, rainlang } from "../dist/cjs";
 import { Diagnostic, TextDocumentItem, DiagnosticSeverity } from "vscode-languageserver-types";
 
-const ws = " ".repeat(67);
+const ws = " ".repeat(64) + "---";
 async function testDiagnostics(
     text: string,
     services: RainLanguageServices,
@@ -44,10 +44,10 @@ describe("LSP Diagnostics Language Service Tests", async function () {
     });
 
     it("should error: unexpected end of comment", async () => {
-        await testDiagnostics("/* invalid comment  _: add(10 2);", services, [
+        await testDiagnostics("---/* invalid comment  _: add(10 2);", services, [
             {
                 message: "unexpected end of comment",
-                range: toRange(0, 0, 0, 33),
+                range: toRange(0, 3, 0, 36),
                 severity: DiagnosticSeverity.Error,
                 code: ErrorCode.UnexpectedEndOfComment,
                 source: "rainlang",
