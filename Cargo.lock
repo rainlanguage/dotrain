@@ -622,7 +622,7 @@ dependencies = [
 
 [[package]]
 name = "dotrain"
-version = "6.0.1-alpha.4"
+version = "6.0.1-alpha.5"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives",
@@ -653,7 +653,7 @@ dependencies = [
 
 [[package]]
 name = "dotrain-lsp"
-version = "6.0.1-alpha.4"
+version = "6.0.1-alpha.5"
 dependencies = [
  "alloy-primitives",
  "anyhow",
