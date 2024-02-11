@@ -374,7 +374,8 @@ impl RainlangDocument {
                                         self.dependencies.push(name.to_owned());
                                     } else {
                                         self.problems.push(
-                                            ErrorCode::InvalidReference.to_problem(vec![name], v.1),
+                                            ErrorCode::InvalidReferenceAll
+                                                .to_problem(vec![name], v.1),
                                         );
                                     }
                                 }
@@ -567,8 +568,9 @@ impl RainlangDocument {
                         }))?;
                     }
                     BindingItem::Exp(_e) => {
-                        self.problems
-                            .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
+                        self.problems.push(
+                            ErrorCode::InvalidReferenceLiteral.to_problem(vec![next], next_pos),
+                        );
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
                             position: next_pos,
@@ -576,8 +578,9 @@ impl RainlangDocument {
                         }))?;
                     }
                     BindingItem::Quote(_q) => {
-                        self.problems
-                            .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
+                        self.problems.push(
+                            ErrorCode::InvalidReferenceLiteral.to_problem(vec![next], next_pos),
+                        );
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
                             position: next_pos,
@@ -647,8 +650,9 @@ impl RainlangDocument {
                             }))?;
                         }
                         BindingItem::Exp(_e) => {
-                            self.problems
-                                .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
+                            self.problems.push(
+                                ErrorCode::InvalidReferenceLiteral.to_problem(vec![next], next_pos),
+                            );
                             self.update_state(Node::Alias(Alias {
                                 name: next.to_owned(),
                                 position: next_pos,
@@ -656,8 +660,9 @@ impl RainlangDocument {
                             }))?;
                         }
                         BindingItem::Quote(_q) => {
-                            self.problems
-                                .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
+                            self.problems.push(
+                                ErrorCode::InvalidReferenceLiteral.to_problem(vec![next], next_pos),
+                            );
                             self.update_state(Node::Alias(Alias {
                                 name: next.to_owned(),
                                 position: next_pos,
