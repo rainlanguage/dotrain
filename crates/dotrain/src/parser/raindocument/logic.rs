@@ -1019,14 +1019,14 @@ impl RainDocument {
                     item = BindingItem::Literal(LiteralBindingItem {
                         value: literal_value,
                     });
-                } else if let Some((re_quote, rest)) = Self::is_quote(value, 0) {
+                } else if let Some((quote, rest)) = Self::is_quote(value, 0) {
                     if !rest.is_empty() {
                         return Err(Error::InvalidOverride(format!(
                             "invalid rebind value: {}",
                             value
                         )));
                     }
-                    item = BindingItem::Quote(QuoteBindingItem { quote: re_quote });
+                    item = BindingItem::Quote(QuoteBindingItem { quote });
                 } else {
                     return Err(Error::InvalidOverride(format!(
                         "invalid rebind value: {}",
@@ -1094,7 +1094,9 @@ impl RainDocument {
                                                     vec![&key, &elided_msg],
                                                     leaf.element.name_position,
                                                 )]
-                                            } else if matches!(p.0, ErrorCode::CircularDependency) {
+                                            } else if matches!(p.0, ErrorCode::CircularDependency)
+                                                || matches!(p.0, ErrorCode::DeepQuote)
+                                            {
                                                 vec![p
                                                     .0
                                                     .to_problem(vec![], leaf.element.name_position)]
@@ -1152,11 +1154,11 @@ impl RainDocument {
                                             &mut vec![key.as_str(), q.quote.as_str()],
                                             &mut levels,
                                         ) {
-                                            if let Some(elided_msg) = p.1 {
-                                                vec![p
-                                                    .0
-                                                    .to_problem(vec![&key, &elided_msg], [0, 0])]
-                                            } else if matches!(p.0, ErrorCode::CircularDependency) {
+                                            if let Some(msg) = p.1 {
+                                                vec![p.0.to_problem(vec![&key, &msg], [0, 0])]
+                                            } else if matches!(p.0, ErrorCode::CircularDependency)
+                                                || matches!(p.0, ErrorCode::DeepQuote)
+                                            {
                                                 vec![p.0.to_problem(vec![], [0, 0])]
                                             } else {
                                                 vec![p.0.to_problem(vec![&key], [0, 0])]
@@ -1236,6 +1238,9 @@ impl RainDocument {
                                                     } else if matches!(
                                                         p.0,
                                                         ErrorCode::CircularDependency
+                                                    ) || matches!(
+                                                        p.0,
+                                                        ErrorCode::DeepQuote
                                                     ) {
                                                         vec![p.0.to_problem(
                                                             vec![],
