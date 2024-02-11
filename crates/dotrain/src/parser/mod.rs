@@ -227,28 +227,41 @@ pub(crate) fn deep_read_quote<'a>(
     namespace: &'a Namespace,
     quote_chain: &mut Vec<&'a str>,
     limit: &mut isize,
-) -> Result<&'a str, (ErrorCode, Option<String>)> {
+    position: Offsets,
+    original_key: &'a str,
+) -> Result<&'a str, Problem> {
     *limit -= 1;
     if *limit >= 0 {
         if let Some(b) = search_binding_ref(name, namespace) {
             match &b.item {
-                BindingItem::Elided(e) => Err((ErrorCode::ElidedBinding, Some(e.msg.clone()))),
-                BindingItem::Literal(_c) => Err((ErrorCode::InvalidLiteralQuote, None)),
+                BindingItem::Elided(e) => {
+                    Err(ErrorCode::ElidedBinding.to_problem(vec![original_key, &e.msg], position))
+                }
+                BindingItem::Literal(_c) => {
+                    Err(ErrorCode::InvalidLiteralQuote.to_problem(vec![original_key], position))
+                }
                 BindingItem::Quote(q) => {
                     if quote_chain.contains(&q.quote.as_str()) {
-                        Err((ErrorCode::CircularDependency, None))
+                        Err(ErrorCode::CircularDependency.to_problem(vec![], position))
                     } else {
                         quote_chain.push(&q.quote);
-                        deep_read_quote(&q.quote, namespace, quote_chain, limit)
+                        deep_read_quote(
+                            &q.quote,
+                            namespace,
+                            quote_chain,
+                            limit,
+                            position,
+                            original_key,
+                        )
                     }
                 }
                 BindingItem::Exp(_e) => Ok(name),
             }
         } else {
-            Err((ErrorCode::UndefinedQuote, None))
+            Err(ErrorCode::UndefinedQuote.to_problem(vec![original_key], position))
         }
     } else {
-        Err((ErrorCode::DeepQuote, None))
+        Err(ErrorCode::DeepQuote.to_problem(vec![], position))
     }
 }
 

@@ -964,7 +964,11 @@ impl RainDocument {
                 if leaf.import_index == -1 {
                     if let BindingItem::Quote(quote) = &leaf.element.item {
                         if key == &quote.quote {
-                            errs.push((key.to_owned(), (ErrorCode::CircularDependency, None)));
+                            errs.push((
+                                key.to_owned(),
+                                ErrorCode::CircularDependency
+                                    .to_problem(vec![], leaf.element.name_position),
+                            ));
                         } else {
                             // restrict quotes to only 1 levels
                             let mut limit = 1;
@@ -974,6 +978,8 @@ impl RainDocument {
                                 &self.namespace,
                                 &mut quote_chain,
                                 &mut limit,
+                                leaf.element.name_position,
+                                key,
                             ) {
                                 errs.push((key.to_owned(), e));
                             };
@@ -984,19 +990,7 @@ impl RainDocument {
         }
         for (key, err) in errs {
             if let NamespaceItem::Leaf(leaf) = self.namespace.get_mut(&key).unwrap() {
-                if let Some(elided_msg) = err.1 {
-                    leaf.element.problems = vec![err
-                        .0
-                        .to_problem(vec![&key, &elided_msg], leaf.element.name_position)];
-                } else if matches!(err.0, ErrorCode::CircularDependency)
-                    || matches!(err.0, ErrorCode::DeepQuote)
-                {
-                    leaf.element.problems =
-                        vec![err.0.to_problem(vec![], leaf.element.name_position)];
-                } else {
-                    leaf.element.problems =
-                        vec![err.0.to_problem(vec![&key], leaf.element.name_position)];
-                }
+                leaf.element.problems = vec![err];
             }
         }
     }
@@ -1082,21 +1076,10 @@ impl RainDocument {
                                         namespace,
                                         &mut vec![key.as_str(), q.quote.as_str()],
                                         &mut limit,
+                                        leaf.element.name_position,
+                                        key.as_str(),
                                     ) {
-                                        problems = if let Some(elided_msg) = p.1 {
-                                            vec![p.0.to_problem(
-                                                vec![&key, &elided_msg],
-                                                leaf.element.name_position,
-                                            )]
-                                        } else if matches!(p.0, ErrorCode::CircularDependency)
-                                            || matches!(p.0, ErrorCode::DeepQuote)
-                                        {
-                                            vec![p.0.to_problem(vec![], leaf.element.name_position)]
-                                        } else {
-                                            vec![p
-                                                .0
-                                                .to_problem(vec![&key], leaf.element.name_position)]
-                                        }
+                                        problems = vec![p];
                                     }
                                 };
                                 if let BindingItem::Exp(_e) = &leaf.element.item {
@@ -1154,16 +1137,10 @@ impl RainDocument {
                                             node,
                                             &mut vec![key.as_str(), q.quote.as_str()],
                                             &mut limit,
+                                            [0, 0],
+                                            key.as_str(),
                                         ) {
-                                            if let Some(msg) = p.1 {
-                                                vec![p.0.to_problem(vec![&key, &msg], [0, 0])]
-                                            } else if matches!(p.0, ErrorCode::CircularDependency)
-                                                || matches!(p.0, ErrorCode::DeepQuote)
-                                            {
-                                                vec![p.0.to_problem(vec![], [0, 0])]
-                                            } else {
-                                                vec![p.0.to_problem(vec![&key], [0, 0])]
-                                            }
+                                            vec![p]
                                         } else {
                                             vec![]
                                         }
@@ -1213,24 +1190,10 @@ impl RainDocument {
                                             parent_node.unwrap(),
                                             &mut vec![key.as_str(), q.quote.as_str()],
                                             &mut limit,
+                                            leaf.element.name_position,
+                                            key.as_str(),
                                         ) {
-                                            if let Some(elided_msg) = p.1 {
-                                                vec![p.0.to_problem(
-                                                    vec![&key, &elided_msg],
-                                                    leaf.element.name_position,
-                                                )]
-                                            } else if matches!(p.0, ErrorCode::CircularDependency)
-                                                || matches!(p.0, ErrorCode::DeepQuote)
-                                            {
-                                                vec![p
-                                                    .0
-                                                    .to_problem(vec![], leaf.element.name_position)]
-                                            } else {
-                                                vec![p.0.to_problem(
-                                                    vec![&key],
-                                                    leaf.element.name_position,
-                                                )]
-                                            }
+                                            vec![p]
                                         } else {
                                             vec![]
                                         }
