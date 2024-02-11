@@ -224,7 +224,6 @@ impl RainDocument {
     pub async fn parse(&mut self, enable_remote: bool, rebinds: Option<Vec<Rebind>>) {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
             if let Err(e) = self._parse(enable_remote, rebinds).await {
-                // exit with override error if encountered
                 if let Error::InvalidOverride(err_msg) = e {
                     self.problems.push(
                         ErrorCode::InvalidSuppliedRebindings.to_problem(vec![&err_msg], [0, 0]),
