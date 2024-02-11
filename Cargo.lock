@@ -643,7 +643,6 @@ dependencies = [
  "serde_json",
  "serde_repr",
  "tokio",
- "topo_sort",
  "tracing",
  "tracing-subscriber",
  "tsify",
@@ -2283,12 +2282,6 @@ dependencies = [
  "toml_datetime",
  "winnow",
 ]
-
-[[package]]
-name = "topo_sort"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "156552d3c80df430aaac98c605a4e0eb7da8d06029cce2d40b4a6b095a34b37e"
 
 [[package]]
 name = "tower-service"
