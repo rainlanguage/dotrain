@@ -17,7 +17,7 @@ pub enum ErrorCode {
     NoFrontMatterSplitter = 3,
     DeepImport = 4,
     DeepNamespace = 5,
-    DepsResolvingFailed = 6,
+    DeepQuote = 6,
     ElidedBinding = 7,
     NoneTopLevelImport = 8,
     NativeParserError = 9,
@@ -25,7 +25,7 @@ pub enum ErrorCode {
     OccupiedNamespace = 11,
     OddLenHex = 12,
     CollidingNamespaceNodes = 13,
-    DeepQuote = 14,
+    DepsResolvingFailed = 14,
 
     UndefinedWord = 0x101,
     UndefinedImport = 0x103,
@@ -80,7 +80,6 @@ pub enum ErrorCode {
     DuplicateImport = 0x704,
 
     CorruptMeta = 0x801,
-    CorruptQuote = 0x802,
     CorruptQuoteBinding = 0x803,
 }
 
@@ -96,6 +95,7 @@ impl ErrorCode {
             Self::CircularDependency => "circular dependency".to_owned(),
             Self::DeepImport => "import too deep".to_owned(),
             Self::DeepNamespace => "namespace path too deep".to_owned(),
+            Self::DeepQuote => "quote too deep".to_owned(),
             Self::ElidedBinding => format!("elided binding '{}': {}", msg_items[0], msg_items[1]),
             Self::InconsumableMeta => "import contains inconsumable meta".to_owned(),
             Self::OccupiedNamespace => "cannot import into an occupied namespace".to_owned(),
@@ -105,7 +105,6 @@ impl ErrorCode {
             Self::NativeParserError => msg_items[0].to_owned(),
             Self::DepsResolvingFailed => "failed to resolve dependencies".to_owned(),
             Self::NoFrontMatterSplitter => "cannot find front matter splitter".to_owned(),
-            Self::DeepQuote => "quote too deep".to_owned(),
 
             Self::UndefinedWord => format!("undefined word: {}", msg_items[0]),
             Self::UndefinedImport => format!("cannot find any settlement for import: {}", msg_items[0]),
@@ -160,7 +159,6 @@ impl ErrorCode {
             Self::DuplicateImport => "duplicate import".to_owned(),
 
             Self::CorruptMeta => "corrupt meta".to_owned(),
-            Self::CorruptQuote => "detected corruption at this quote's path".to_owned(),
             Self::CorruptQuoteBinding => "detected corruption at this binding's path".to_owned(),
         };
         Problem {
