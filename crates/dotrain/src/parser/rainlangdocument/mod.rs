@@ -295,7 +295,7 @@ mod tests {
                         binding_id: None,
                     },
                     OperandArgItem {
-                        value: Some(String::new()),
+                        value: None,
                         name: "operand arg".to_owned(),
                         position: [37, 57],
                         description: String::new(),

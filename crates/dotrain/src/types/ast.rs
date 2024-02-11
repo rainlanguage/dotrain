@@ -229,7 +229,6 @@ pub struct Binding {
     pub content_position: Offsets,
     pub position: Offsets,
     pub problems: Vec<Problem>,
-    // pub dependencies: Vec<String>,
     pub item: BindingItem,
 }
 
