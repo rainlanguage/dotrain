@@ -967,13 +967,13 @@ impl RainDocument {
                             errs.push((key.to_owned(), (ErrorCode::CircularDependency, None)));
                         } else {
                             // restrict quotes to only 1 levels
-                            let mut levels = 1;
+                            let mut limit = 1;
                             let mut quote_chain = vec![key.as_str(), quote.quote.as_str()];
                             if let Err(e) = deep_read_quote(
                                 &quote.quote,
                                 &self.namespace,
                                 &mut quote_chain,
-                                &mut levels,
+                                &mut limit,
                             ) {
                                 errs.push((key.to_owned(), e));
                             };
@@ -1007,7 +1007,7 @@ impl RainDocument {
         namespace: &mut Namespace,
     ) -> Result<(), Error> {
         // restrict quotes to only 1 levels
-        let mut levels = 1;
+        let mut limit = 1;
 
         for Rebind(key, raw_value) in rebinds {
             let value = raw_value.trim();
@@ -1094,7 +1094,7 @@ impl RainDocument {
                                             &q.quote,
                                             namespace,
                                             &mut vec![key.as_str(), q.quote.as_str()],
-                                            &mut levels,
+                                            &mut limit,
                                         ) {
                                             problems = if let Some(elided_msg) = p.1 {
                                                 vec![p.0.to_problem(
@@ -1158,7 +1158,7 @@ impl RainDocument {
                                             &q.quote,
                                             node,
                                             &mut vec![key.as_str(), q.quote.as_str()],
-                                            &mut levels,
+                                            &mut limit,
                                         ) {
                                             if let Some(msg) = p.1 {
                                                 vec![p.0.to_problem(vec![&key, &msg], [0, 0])]
@@ -1233,7 +1233,7 @@ impl RainDocument {
                                                     &q.quote,
                                                     parent_node.unwrap(),
                                                     &mut vec![key.as_str(), q.quote.as_str()],
-                                                    &mut levels,
+                                                    &mut limit,
                                                 ) {
                                                     if let Some(elided_msg) = p.1 {
                                                         vec![p.0.to_problem(

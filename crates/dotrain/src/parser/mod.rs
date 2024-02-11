@@ -179,7 +179,7 @@ pub(crate) fn is_consumable(items: &Vec<RainMetaDocumentV1Item>) -> bool {
     }
 }
 
-/// Search in namespaces for a name
+/// Search in namespaces for a binding
 pub(crate) fn search_binding_ref<'a>(query: &str, namespace: &'a Namespace) -> Option<&'a Binding> {
     let mut segments: &[ParsedItem] = &exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, 0, true);
     if query.starts_with('.') {
@@ -221,14 +221,15 @@ pub(crate) fn search_binding_ref<'a>(query: &str, namespace: &'a Namespace) -> O
     }
 }
 
+// reads quotes recursively up until it is ended by not quote or the level limit is reached
 pub(crate) fn deep_read_quote<'a>(
     name: &'a str,
     namespace: &'a Namespace,
     quote_chain: &mut Vec<&'a str>,
-    levels: &mut isize,
+    limit: &mut isize,
 ) -> Result<&'a str, (ErrorCode, Option<String>)> {
-    *levels -= 1;
-    if *levels >= 0 {
+    *limit -= 1;
+    if *limit >= 0 {
         if let Some(b) = search_binding_ref(name, namespace) {
             match &b.item {
                 BindingItem::Elided(e) => Err((ErrorCode::ElidedBinding, Some(e.msg.clone()))),
@@ -238,7 +239,7 @@ pub(crate) fn deep_read_quote<'a>(
                         Err((ErrorCode::CircularDependency, None))
                     } else {
                         quote_chain.push(&q.quote);
-                        deep_read_quote(&q.quote, namespace, quote_chain, levels)
+                        deep_read_quote(&q.quote, namespace, quote_chain, limit)
                     }
                 }
                 BindingItem::Exp(_e) => Ok(name),
