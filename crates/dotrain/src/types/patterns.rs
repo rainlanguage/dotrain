@@ -72,7 +72,8 @@ pub static OPERAND_ARG_PATTERN: Lazy<Regex> = Lazy::new(|| {
 });
 
 /// quote pattern
-pub static QUOTE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^'\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$").unwrap());
+pub static QUOTE_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^'\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$").unwrap());
 
 /// namespace segments delimitier pattern
 pub static NAMESPACE_SEGMENT_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\.").unwrap());

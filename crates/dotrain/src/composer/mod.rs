@@ -42,10 +42,10 @@ impl<'a> ComposeTarget<'a> {
         leaf: &'a NamespaceLeaf,
         binding: &'a Binding,
         rainlang_doc: RainlangDocument,
-        ns: &'a Namespace
+        namespace: &'a Namespace,
     ) -> Self {
         ComposeTarget {
-            namespace: ns,
+            namespace,
             hash: &leaf.hash,
             import_index: leaf.import_index,
             element: ComposeTargetElement {
@@ -139,7 +139,12 @@ impl RainDocument {
                                 &self.imports,
                             ));
                         } else {
-                            nodes.push(ComposeTarget::create(leaf, binding, rainlang_doc, parent_node));
+                            nodes.push(ComposeTarget::create(
+                                leaf,
+                                binding,
+                                rainlang_doc,
+                                parent_node,
+                            ));
                         }
                     }
                 }
@@ -156,7 +161,12 @@ impl RainDocument {
         // validate each node dep path
         for (index, _) in deps_indexes.iter().enumerate() {
             let chain = vec![index as u8];
-            validate_dep_path(index, &deps_indexes, &chain).map_err(|_| ComposeError::Reject(format!("detected circular dependncy: {}", nodes[index].element.name)))?;
+            validate_dep_path(index, &deps_indexes, &chain).map_err(|_| {
+                ComposeError::Reject(format!(
+                    "detected circular dependncy: {}",
+                    nodes[index].element.name
+                ))
+            })?;
         }
 
         // represents sourcemap details of each composing node
@@ -247,8 +257,12 @@ impl RainDocument {
                                     // is already present and if so capture its index, if not repeat
                                     // the same process with newly found nested nodes, if still not present
                                     // add this target to the nodes and then capture its index
-                                    let new_compse_target =
-                                        ComposeTarget::create(leaf, binding, rainlang_doc, parent_node);
+                                    let new_compse_target = ComposeTarget::create(
+                                        leaf,
+                                        binding,
+                                        rainlang_doc,
+                                        parent_node,
+                                    );
                                     if let Some((index, _)) = &nodes
                                         .iter()
                                         .enumerate()
@@ -350,7 +364,7 @@ fn search_namespace<'a>(
                     name
                 )),
                 BindingItem::Exp(_e) => Ok((parent, leaf, &leaf.element)),
-                BindingItem::Quote(q) => search_namespace(&q.quote, namespace)
+                BindingItem::Quote(q) => search_namespace(&q.quote, namespace),
             },
         }
     } else {
@@ -384,7 +398,8 @@ fn build_sourcemap<'a>(
                         .args
                         .iter()
                         .filter_map(|v| {
-                            v.binding_id.as_ref()
+                            v.binding_id
+                                .as_ref()
                                 .map(|(id, typ)| (v.value.as_deref(), id.as_str(), typ, v.position))
                         })
                         .collect()
@@ -392,7 +407,8 @@ fn build_sourcemap<'a>(
                     vec![]
                 };
                 if !args_details.is_empty() {
-                    if deps_indexes.is_empty() && args_details.iter().any(|v| v.1.starts_with('\'')) {
+                    if deps_indexes.is_empty() && args_details.iter().any(|v| v.1.starts_with('\''))
+                    {
                         return Err("cannot resolve dependecies".to_owned());
                     }
                     for arg in args_details {

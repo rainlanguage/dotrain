@@ -180,12 +180,8 @@ pub(crate) fn is_consumable(items: &Vec<RainMetaDocumentV1Item>) -> bool {
 }
 
 /// Search in namespaces for a name
-pub(crate) fn search_binding_ref<'a>(
-    query: &str,
-    namespace: &'a Namespace,
-) -> Option<&'a Binding> {
-    let mut segments: &[ParsedItem] =
-        &exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, 0, true);
+pub(crate) fn search_binding_ref<'a>(query: &str, namespace: &'a Namespace) -> Option<&'a Binding> {
+    let mut segments: &[ParsedItem] = &exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, 0, true);
     if query.starts_with('.') {
         segments = &segments[1..];
     }
@@ -217,9 +213,7 @@ pub(crate) fn search_binding_ref<'a>(
             }
         }
         match result {
-            NamespaceItem::Node(_node) => {
-                None
-            }
+            NamespaceItem::Node(_node) => None,
             NamespaceItem::Leaf(leaf) => Some(&leaf.element),
         }
     } else {
@@ -227,17 +221,18 @@ pub(crate) fn search_binding_ref<'a>(
     }
 }
 
-pub(crate) fn deep_read_quote<'a>(name: &'a str, namespace: &'a Namespace, quote_chain: &mut Vec<&'a str>, levels: &mut isize) -> Result<&'a str, (ErrorCode, Option<String>)> {
+pub(crate) fn deep_read_quote<'a>(
+    name: &'a str,
+    namespace: &'a Namespace,
+    quote_chain: &mut Vec<&'a str>,
+    levels: &mut isize,
+) -> Result<&'a str, (ErrorCode, Option<String>)> {
     *levels -= 1;
     if *levels >= 0 {
         if let Some(b) = search_binding_ref(name, namespace) {
             match &b.item {
-                BindingItem::Elided(e) => {
-                    Err((ErrorCode::ElidedBinding, Some(e.msg.clone())))
-                }
-                BindingItem::Literal(_c) => {
-                    Err((ErrorCode::InvalidLiteralQuote, None))
-                }
+                BindingItem::Elided(e) => Err((ErrorCode::ElidedBinding, Some(e.msg.clone()))),
+                BindingItem::Literal(_c) => Err((ErrorCode::InvalidLiteralQuote, None)),
                 BindingItem::Quote(q) => {
                     if quote_chain.contains(&q.quote.as_str()) {
                         Err((ErrorCode::CircularDependency, None))
@@ -246,9 +241,7 @@ pub(crate) fn deep_read_quote<'a>(name: &'a str, namespace: &'a Namespace, quote
                         deep_read_quote(&q.quote, namespace, quote_chain, levels)
                     }
                 }
-                BindingItem::Exp(_e) => {
-                    Ok(name)
-                }
+                BindingItem::Exp(_e) => Ok(name),
             }
         } else {
             Err((ErrorCode::UndefinedQuote, None))
@@ -257,15 +250,6 @@ pub(crate) fn deep_read_quote<'a>(name: &'a str, namespace: &'a Namespace, quote
         Err((ErrorCode::DeepQuote, None))
     }
 }
-
-// /// Search in namespaces for a name
-// fn search_namespace_mut<'a>(
-//     query: &str,
-//     namespace: &'a mut Namespace,
-// ) -> Option<&'a mut Binding> {
-//     let mut x = search_namespace_ref(query, namespace)?;
-//     Some(x.borrow_mut())
-// }
 
 #[cfg(test)]
 mod tests {

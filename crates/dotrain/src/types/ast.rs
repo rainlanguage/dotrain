@@ -215,7 +215,7 @@ pub enum BindingItem {
     Elided(ElidedBindingItem),
     Literal(LiteralBindingItem),
     Exp(RainlangDocument),
-    Quote(QuoteBindingItem)
+    Quote(QuoteBindingItem),
 }
 
 /// Type for a binding (named expressions)

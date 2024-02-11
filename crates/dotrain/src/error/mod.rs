@@ -26,7 +26,7 @@ pub enum ErrorCode {
     OddLenHex = 12,
     CollidingNamespaceNodes = 13,
     DeepQuote = 14,
-    
+
     UndefinedWord = 0x101,
     UndefinedImport = 0x103,
     UndefinedQuote = 0x104,
@@ -82,7 +82,6 @@ pub enum ErrorCode {
     CorruptMeta = 0x801,
     CorruptQuote = 0x802,
     CorruptQuoteBinding = 0x803,
-
 }
 
 impl ErrorCode {

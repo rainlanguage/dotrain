@@ -1,15 +1,14 @@
 use rain_metadata::types::authoring::v1::AuthoringMeta;
+use super::*;
 use super::super::{
     super::{
         error::{Error, ErrorCode},
         types::patterns::*,
     },
-    line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256
+    line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
 };
-use super::*;
 
 impl RainlangDocument {
-
     /// The main workhorse that parses the text to build the parse tree and collect problems
     pub(super) fn _parse(
         &mut self,
@@ -349,7 +348,8 @@ impl RainlangDocument {
                                 BindingItem::Literal(c) => {
                                     if is_quote {
                                         self.problems.push(
-                                            ErrorCode::InvalidLiteralQuote.to_problem(vec![name], v.1),
+                                            ErrorCode::InvalidLiteralQuote
+                                                .to_problem(vec![name], v.1),
                                         );
                                     } else {
                                         value = Some(c.value.clone());

@@ -1,19 +1,14 @@
 use async_recursion::async_recursion;
 use std::collections::{HashMap, VecDeque};
 use futures::future::join_all;
-use rain_metadata::{
-    types::dotrain::v1::DotrainMeta,
-    KnownMagic, RainMetaDocumentV1Item, search,
-};
-
-use super::super::{
-    super::{
-        error::{Error, ErrorCode},
-        types::patterns::*,
-    }, 
-    deep_read_quote, exclusive_parse, fill_in, inclusive_parse, is_consumable, line_number, rainlangdocument::RainlangDocument, to_u256, tracked_trim
-};
+use rain_metadata::{types::dotrain::v1::DotrainMeta, KnownMagic, RainMetaDocumentV1Item, search};
 use super::*;
+use super::super::{
+    super::error::{Error, ErrorCode},
+    deep_read_quote, exclusive_parse, fill_in, inclusive_parse, is_consumable, line_number,
+    rainlangdocument::RainlangDocument,
+    to_u256, tracked_trim,
+};
 
 impl RainDocument {
     /// the main method that takes out and processes each section of a RainDocument
@@ -314,7 +309,7 @@ impl RainDocument {
             if let Some(complementary_piece) = config_pieces.next() {
                 if WORD_PATTERN.is_match(&first_piece.0) {
                     if LITERAL_PATTERN.is_match(&complementary_piece.0)
-                        || complementary_piece.0 == "!" 
+                        || complementary_piece.0 == "!"
                         || QUOTE_PATTERN.is_match(&complementary_piece.0)
                     {
                         if imp_conf.groups.iter().any(|v| {
@@ -399,7 +394,11 @@ impl RainDocument {
 
     /// processes an import statement
     #[async_recursion(?Send)]
-    pub(super) async fn process_import(&self, statement: &ParsedItem, remote_search: bool) -> Import {
+    pub(super) async fn process_import(
+        &self,
+        statement: &ParsedItem,
+        remote_search: bool,
+    ) -> Import {
         let at_pos: Offsets = [statement.1[0] - 1, statement.1[0] - 1];
         let mut result = Import {
             name: ".".to_owned(),
@@ -815,7 +814,7 @@ impl RainDocument {
                         .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
                 }
                 item = BindingItem::Literal(LiteralBindingItem { value });
-            } else if let Some((quote, rest)) = Self::is_quote(raw_content, content_position[0]) { 
+            } else if let Some((quote, rest)) = Self::is_quote(raw_content, content_position[0]) {
                 for unexpected_token in rest {
                     self.problems
                         .push(ErrorCode::UnexpectedToken.to_problem(vec![], unexpected_token.1));
@@ -969,7 +968,12 @@ impl RainDocument {
                         } else {
                             let mut levels = 32;
                             let mut quote_chain = vec![key.as_str(), quote.quote.as_str()];
-                            if let Err(e) = deep_read_quote(&quote.quote, &self.namespace, &mut quote_chain, &mut levels) {
+                            if let Err(e) = deep_read_quote(
+                                &quote.quote,
+                                &self.namespace,
+                                &mut quote_chain,
+                                &mut levels,
+                            ) {
                                 errs.push((key.to_owned(), e));
                             };
                         }
@@ -980,34 +984,54 @@ impl RainDocument {
         for (key, err) in errs {
             if let NamespaceItem::Leaf(leaf) = self.namespace.get_mut(&key).unwrap() {
                 if let Some(elided_msg) = err.1 {
-                    leaf.element.problems = vec![err.0.to_problem(vec![&key, &elided_msg], leaf.element.name_position)];
-                } else if matches!(err.0, ErrorCode::CircularDependency) || matches!(err.0, ErrorCode::DeepQuote) {
-                    leaf.element.problems = vec![err.0.to_problem(vec![], leaf.element.name_position)];
+                    leaf.element.problems = vec![err
+                        .0
+                        .to_problem(vec![&key, &elided_msg], leaf.element.name_position)];
+                } else if matches!(err.0, ErrorCode::CircularDependency)
+                    || matches!(err.0, ErrorCode::DeepQuote)
+                {
+                    leaf.element.problems =
+                        vec![err.0.to_problem(vec![], leaf.element.name_position)];
                 } else {
-                    leaf.element.problems = vec![err.0.to_problem(vec![&key], leaf.element.name_position)];
+                    leaf.element.problems =
+                        vec![err.0.to_problem(vec![&key], leaf.element.name_position)];
                 }
             }
         }
     }
 
     /// apply the overrides to the namespace
-    pub(super) fn apply_overrides(rebinds: Vec<Rebind>, namespace: &mut Namespace) -> Result<(), Error> {
+    pub(super) fn apply_overrides(
+        rebinds: Vec<Rebind>,
+        namespace: &mut Namespace,
+    ) -> Result<(), Error> {
         for Rebind(key, raw_value) in rebinds {
             let value = raw_value.trim();
             if NAMESPACE_PATTERN.is_match(&key) {
                 let item;
                 if let Some((literal_value, _, has_err)) = Self::is_literal(value) {
                     if has_err {
-                        return Err(Error::InvalidOverride(format!("invalid rebind value: {}", value)));
+                        return Err(Error::InvalidOverride(format!(
+                            "invalid rebind value: {}",
+                            value
+                        )));
                     }
-                    item = BindingItem::Literal(LiteralBindingItem { value: literal_value });
+                    item = BindingItem::Literal(LiteralBindingItem {
+                        value: literal_value,
+                    });
                 } else if let Some((re_quote, rest)) = Self::is_quote(value, 0) {
                     if !rest.is_empty() {
-                        return Err(Error::InvalidOverride(format!("invalid rebind value: {}", value)));
+                        return Err(Error::InvalidOverride(format!(
+                            "invalid rebind value: {}",
+                            value
+                        )));
                     }
                     item = BindingItem::Quote(QuoteBindingItem { quote: re_quote });
                 } else {
-                    return Err(Error::InvalidOverride(format!("invalid rebind value: {}", value)));
+                    return Err(Error::InvalidOverride(format!(
+                        "invalid rebind value: {}",
+                        value
+                    )));
                 }
 
                 let mut segments =
@@ -1040,39 +1064,51 @@ impl RainDocument {
                                     segments[0].0, key
                                 )));
                             }
-                            NamespaceItem::Leaf(leaf) => {
-                                match &leaf.element.item {
-                                    BindingItem::Exp(_e) => {
-                                        let typ = if matches!(item, BindingItem::Literal(_)) {
-                                            "literals"
-                                        } else {
-                                            "quotes"
-                                        };
-                                        return Err(Error::InvalidOverride(format!(
+                            NamespaceItem::Leaf(leaf) => match &leaf.element.item {
+                                BindingItem::Exp(_e) => {
+                                    let typ = if matches!(item, BindingItem::Literal(_)) {
+                                        "literals"
+                                    } else {
+                                        "quotes"
+                                    };
+                                    return Err(Error::InvalidOverride(format!(
                                             "invalid rebinding: {}, cannot rebind rainlang expression bindings to {}",
                                             typ,
                                             key
                                         )));
-                                    },
-                                    BindingItem::Quote(_) => {
-                                        if let BindingItem::Quote(q) = &item {
-                                            let mut levels = 32;
-                                            if key == q.quote {
-                                                problems = vec![ErrorCode::CircularDependency.to_problem(vec![], leaf.element.name_position)]
-                                            } else if let Err(p) = deep_read_quote(&q.quote, namespace, &mut vec![key.as_str(), q.quote.as_str()], &mut levels) {
-                                                problems = if let Some(elided_msg) = p.1 {
-                                                    vec![p.0.to_problem(vec![&key, &elided_msg], leaf.element.name_position)]
-                                                } else if matches!(p.0, ErrorCode::CircularDependency) {
-                                                    vec![p.0.to_problem(vec![], leaf.element.name_position)]
-                                                } else {
-                                                    vec![p.0.to_problem(vec![&key], leaf.element.name_position)]
-                                                }
+                                }
+                                BindingItem::Quote(_) => {
+                                    if let BindingItem::Quote(q) = &item {
+                                        let mut levels = 32;
+                                        if key == q.quote {
+                                            problems = vec![ErrorCode::CircularDependency
+                                                .to_problem(vec![], leaf.element.name_position)]
+                                        } else if let Err(p) = deep_read_quote(
+                                            &q.quote,
+                                            namespace,
+                                            &mut vec![key.as_str(), q.quote.as_str()],
+                                            &mut levels,
+                                        ) {
+                                            problems = if let Some(elided_msg) = p.1 {
+                                                vec![p.0.to_problem(
+                                                    vec![&key, &elided_msg],
+                                                    leaf.element.name_position,
+                                                )]
+                                            } else if matches!(p.0, ErrorCode::CircularDependency) {
+                                                vec![p
+                                                    .0
+                                                    .to_problem(vec![], leaf.element.name_position)]
+                                            } else {
+                                                vec![p.0.to_problem(
+                                                    vec![&key],
+                                                    leaf.element.name_position,
+                                                )]
                                             }
                                         }
                                     }
-                                    _ => {}
                                 }
-                            }
+                                _ => {}
+                            },
                         }
                     };
                     if let Some(NamespaceItem::Leaf(leaf)) = namespace.get_mut(&segments[0].0) {
@@ -1108,10 +1144,18 @@ impl RainDocument {
                                     let problems = if let BindingItem::Quote(q) = &item {
                                         let mut levels = 32;
                                         if key == q.quote {
-                                            vec![ErrorCode::CircularDependency.to_problem(vec![], [0, 0])]
-                                        } else if let Err(p) = deep_read_quote(&q.quote, node, &mut vec![key.as_str(), q.quote.as_str()], &mut levels) {
+                                            vec![ErrorCode::CircularDependency
+                                                .to_problem(vec![], [0, 0])]
+                                        } else if let Err(p) = deep_read_quote(
+                                            &q.quote,
+                                            node,
+                                            &mut vec![key.as_str(), q.quote.as_str()],
+                                            &mut levels,
+                                        ) {
                                             if let Some(elided_msg) = p.1 {
-                                                vec![p.0.to_problem(vec![&key, &elided_msg], [0, 0])]
+                                                vec![p
+                                                    .0
+                                                    .to_problem(vec![&key, &elided_msg], [0, 0])]
                                             } else if matches!(p.0, ErrorCode::CircularDependency) {
                                                 vec![p.0.to_problem(vec![], [0, 0])]
                                             } else {
@@ -1168,20 +1212,40 @@ impl RainDocument {
                                                 "invalid rebinding: {}, cannot rebind rainlang expression bindings to {}",
                                                 typ,
                                                 key
-                                            )))
-                                        },
+                                            )));
+                                        }
                                         BindingItem::Quote(_old_quote) => {
                                             if let BindingItem::Quote(q) = &item {
                                                 let mut levels = 32;
                                                 leaf.element.problems = if key == q.quote {
-                                                    vec![ErrorCode::CircularDependency.to_problem(vec![], leaf.element.name_position)]
-                                                } else if let Err(p) = deep_read_quote(&q.quote, parent_node.unwrap(), &mut vec![key.as_str(), q.quote.as_str()], &mut levels) {
+                                                    vec![ErrorCode::CircularDependency.to_problem(
+                                                        vec![],
+                                                        leaf.element.name_position,
+                                                    )]
+                                                } else if let Err(p) = deep_read_quote(
+                                                    &q.quote,
+                                                    parent_node.unwrap(),
+                                                    &mut vec![key.as_str(), q.quote.as_str()],
+                                                    &mut levels,
+                                                ) {
                                                     if let Some(elided_msg) = p.1 {
-                                                        vec![p.0.to_problem(vec![&key, &elided_msg], leaf.element.name_position)]
-                                                    } else if matches!(p.0, ErrorCode::CircularDependency) {
-                                                        vec![p.0.to_problem(vec![], leaf.element.name_position)]
+                                                        vec![p.0.to_problem(
+                                                            vec![&key, &elided_msg],
+                                                            leaf.element.name_position,
+                                                        )]
+                                                    } else if matches!(
+                                                        p.0,
+                                                        ErrorCode::CircularDependency
+                                                    ) {
+                                                        vec![p.0.to_problem(
+                                                            vec![],
+                                                            leaf.element.name_position,
+                                                        )]
                                                     } else {
-                                                        vec![p.0.to_problem(vec![&key], leaf.element.name_position)]
+                                                        vec![p.0.to_problem(
+                                                            vec![&key],
+                                                            leaf.element.name_position,
+                                                        )]
                                                     }
                                                 } else {
                                                     vec![]
@@ -1189,7 +1253,7 @@ impl RainDocument {
                                             };
                                             leaf.element.item = item;
                                         }
-                                        _ => leaf.element.item = item
+                                        _ => leaf.element.item = item,
                                     };
                                     break;
                                 } else {
@@ -1208,7 +1272,10 @@ impl RainDocument {
                     )));
                 }
             } else {
-                return Err(Error::InvalidOverride(format!("invalid rebind key: {}", key)));
+                return Err(Error::InvalidOverride(format!(
+                    "invalid rebind key: {}",
+                    key
+                )));
             }
         }
         Ok(())
