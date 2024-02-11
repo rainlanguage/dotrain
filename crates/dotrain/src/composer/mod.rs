@@ -962,7 +962,35 @@ _: opcode-1<exp-binding-2>(0xabcd 456);
             None,
         );
         let expected_err = Err(ComposeError::Problems(vec![
-            ErrorCode::CorruptQuoteBinding.to_problem(vec![], [112, 125])
+            ErrorCode::CircularDependency.to_problem(vec![], [112, 125])
+        ]));
+        assert_eq!(result, expected_err);
+
+        let dotrain_text = r"---
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#main
+_: opcode-3(0xabcd 456);
+
+#exp-binding-1
+_: opcode-1<exp-binding-2>(0xabcd 456);
+
+#exp-binding-2 'exp-binding-3
+
+#exp-binding-3 'exp-binding-4
+
+#exp-binding-4
+_: opcode(1 2);
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1", "main"],
+            Some(meta_store.clone()),
+            None,
+        );
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::DeepQuote.to_problem(vec![], [112, 125])
         ]));
         assert_eq!(result, expected_err);
 
@@ -1101,6 +1129,45 @@ _: opcode(1 2);
 
 _: opcode(1 2);"#;
         assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r"---
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#exp-binding-1
+_: opcode-1(0xabcd 456);
+";
+        let mut rain_document =
+            RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![Rebind(
+            "deep.some-override-value".to_owned(),
+            "567".to_owned(),
+        )];
+        block_on(rain_document.parse(false, Some(rebinds)));
+        let result = rain_document.compose(&["exp-binding-1"]);
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::InvalidSuppliedRebindings
+                .to_problem(vec!["rebind too deep: deep.some-override-value"], [0, 0]),
+        ]));
+        assert_eq!(result, expected_err);
+
+        let dotrain_text = r"---
+#exp-binding-1
+_: opcode-1(0xabcd 456);
+";
+        let mut rain_document =
+            RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![Rebind(
+            "deep.some-quote-binding".to_owned(),
+            "'some-quote".to_owned(),
+        )];
+        block_on(rain_document.parse(false, Some(rebinds)));
+        let result = rain_document.compose(&["exp-binding-1"]);
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::InvalidSuppliedRebindings
+                .to_problem(vec!["rebind too deep: deep.some-quote-binding"], [0, 0]),
+        ]));
+        assert_eq!(result, expected_err);
 
         Ok(())
     }

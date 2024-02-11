@@ -26,6 +26,7 @@ pub enum ErrorCode {
     OddLenHex = 12,
     CollidingNamespaceNodes = 13,
     DepsResolvingFailed = 14,
+    CorruptMeta = 15,
 
     UndefinedWord = 0x101,
     UndefinedImport = 0x103,
@@ -78,9 +79,6 @@ pub enum ErrorCode {
     DuplicateIdentifier = 0x702,
     DuplicateImportStatement = 0x703,
     DuplicateImport = 0x704,
-
-    CorruptMeta = 0x801,
-    CorruptQuoteBinding = 0x803,
 }
 
 impl ErrorCode {
@@ -105,6 +103,7 @@ impl ErrorCode {
             Self::NativeParserError => msg_items[0].to_owned(),
             Self::DepsResolvingFailed => "failed to resolve dependencies".to_owned(),
             Self::NoFrontMatterSplitter => "cannot find front matter splitter".to_owned(),
+            Self::CorruptMeta => "corrupt meta".to_owned(),
 
             Self::UndefinedWord => format!("undefined word: {}", msg_items[0]),
             Self::UndefinedImport => format!("cannot find any settlement for import: {}", msg_items[0]),
@@ -157,9 +156,6 @@ impl ErrorCode {
             Self::DuplicateIdentifier => "duplicate identifier".to_owned(),
             Self::DuplicateImportStatement => "duplicate import statement".to_owned(),
             Self::DuplicateImport => "duplicate import".to_owned(),
-
-            Self::CorruptMeta => "corrupt meta".to_owned(),
-            Self::CorruptQuoteBinding => "detected corruption at this binding's path".to_owned(),
         };
         Problem {
             msg,

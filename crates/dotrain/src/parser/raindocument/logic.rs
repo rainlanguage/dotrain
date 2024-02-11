@@ -990,7 +990,7 @@ impl RainDocument {
         }
         for (key, err) in errs {
             if let NamespaceItem::Leaf(leaf) = self.namespace.get_mut(&key).unwrap() {
-                leaf.element.problems = vec![err];
+                leaf.element.problems = vec![err.clone()];
             }
         }
     }

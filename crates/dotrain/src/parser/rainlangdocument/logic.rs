@@ -357,11 +357,16 @@ impl RainlangDocument {
                                 }
                                 BindingItem::Quote(_q) => {
                                     is_quote_binding = true;
-                                    if !b.problems.is_empty() {
-                                        self.problems.push(
-                                            ErrorCode::CorruptQuoteBinding.to_problem(vec![], v.1),
-                                        );
-                                    }
+                                    let problems: Vec<Problem> = b
+                                        .problems
+                                        .iter()
+                                        .map(|p| Problem {
+                                            msg: p.msg.clone(),
+                                            position: v.1,
+                                            code: p.code,
+                                        })
+                                        .collect();
+                                    self.problems.extend(problems);
                                     self.dependencies.push(name.to_owned());
                                 }
                                 BindingItem::Exp(_e) => {
