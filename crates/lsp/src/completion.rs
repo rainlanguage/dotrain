@@ -396,6 +396,21 @@ fn get_namespace_completions(
                     })),
                     ..Default::default()
                 }),
+                BindingItem::Quote(q) => result.push(CompletionItem {
+                    label: key.clone(),
+                    label_details: Some(CompletionItemLabelDetails {
+                        description: Some("binding".to_owned()),
+                        detail: None,
+                    }),
+                    kind: Some(CompletionItemKind::CLASS),
+                    detail: Some(format!("quote binding: {}", key)),
+                    insert_text: Some(key.clone()),
+                    documentation: Some(Documentation::MarkupContent(MarkupContent {
+                        kind: documentation_format.clone(),
+                        value: q.quote.clone(),
+                    })),
+                    ..Default::default()
+                }),
             },
         }
     }

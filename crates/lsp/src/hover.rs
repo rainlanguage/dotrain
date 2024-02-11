@@ -50,6 +50,9 @@ pub fn get_hover(
                             BindingItem::Elided(_) => {
                                 "Elided Binding (cannot be referenced as entrypoint)"
                             }
+                            BindingItem::Quote(_) => {
+                                "Quote Binding (cannot be referenced as entrypoint)"
+                            }
                         }
                         .to_owned(),
                     }),
@@ -103,6 +106,22 @@ pub fn get_hover(
                         })
                     }
                     BindingItem::Elided(_) => {
+                        return Some(Hover {
+                            contents: HoverContents::Markup(MarkupContent {
+                                kind: content_type,
+                                value: "quote".to_owned(),
+                            }),
+                            range: Some(Range::new(
+                                rain_document
+                                    .text()
+                                    .position_at(binding.content_position[0]),
+                                rain_document
+                                    .text()
+                                    .position_at(binding.content_position[1]),
+                            )),
+                        })
+                    }
+                    BindingItem::Quote(_) => {
                         return Some(Hover {
                             contents: HoverContents::Markup(MarkupContent {
                                 kind: content_type,
