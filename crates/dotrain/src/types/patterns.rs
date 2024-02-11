@@ -68,8 +68,11 @@ pub static NON_EMPTY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\s]").un
 
 /// operand arguments pattern (literal + namespace + quoted namespace)
 pub static OPERAND_ARG_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^'?\.?[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$"#).unwrap()
+    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#).unwrap()
 });
+
+/// quote pattern
+pub static QUOTE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^'\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$").unwrap());
 
 /// namespace segments delimitier pattern
 pub static NAMESPACE_SEGMENT_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\.").unwrap());

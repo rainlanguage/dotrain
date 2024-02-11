@@ -54,11 +54,11 @@ pub struct OpcodeDetails {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct OperandArgItem {
-    pub value: String,
+    pub value: Option<String>,
     pub name: String,
     pub position: Offsets,
     pub description: String,
-    pub id: Option<String>,
+    pub binding_id: Option<(String, bool)>,
 }
 
 /// Type of an opcode's all operand arguments segment
@@ -200,6 +200,13 @@ pub struct LiteralBindingItem {
     pub value: String,
 }
 
+/// Type of a quote binding
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
+pub struct QuoteBindingItem {
+    pub quote: String,
+}
+
 /// Type of an expression binding
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -208,6 +215,7 @@ pub enum BindingItem {
     Elided(ElidedBindingItem),
     Literal(LiteralBindingItem),
     Exp(RainlangDocument),
+    Quote(QuoteBindingItem)
 }
 
 /// Type for a binding (named expressions)
@@ -221,7 +229,7 @@ pub struct Binding {
     pub content_position: Offsets,
     pub position: Offsets,
     pub problems: Vec<Problem>,
-    pub dependencies: Vec<String>,
+    // pub dependencies: Vec<String>,
     pub item: BindingItem,
 }
 
@@ -287,6 +295,24 @@ impl NamespaceLeaf {
             e
         } else {
             panic!("not an exp binding")
+        }
+    }
+
+    pub fn is_quote_binding(&self) -> bool {
+        matches!(
+            self.element,
+            Binding {
+                item: BindingItem::Quote(_),
+                ..
+            }
+        )
+    }
+
+    pub fn unwrap_quote_binding(&self) -> &QuoteBindingItem {
+        if let BindingItem::Quote(q) = &self.element.item {
+            q
+        } else {
+            panic!("not a quote binding")
         }
     }
 }
@@ -410,6 +436,35 @@ impl NamespaceItem {
             e
         } else {
             panic!("not an exp binding")
+        }
+    }
+
+    pub fn is_quote_binding(&self) -> bool {
+        matches!(
+            self,
+            NamespaceItem::Leaf(NamespaceLeaf {
+                element: Binding {
+                    item: BindingItem::Quote(_),
+                    ..
+                },
+                ..
+            })
+        )
+    }
+
+    pub fn unwrap_quote_binding(&self) -> &QuoteBindingItem {
+        if let NamespaceItem::Leaf(NamespaceLeaf {
+            element:
+                Binding {
+                    item: BindingItem::Quote(q),
+                    ..
+                },
+            ..
+        }) = self
+        {
+            q
+        } else {
+            panic!("not a quote binding")
         }
     }
 }

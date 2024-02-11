@@ -25,13 +25,13 @@ pub(crate) struct ComposeTargetElement<'a> {
     pub(crate) content_position: Offsets,
     pub(crate) position: Offsets,
     pub(crate) problems: &'a [Problem],
-    pub(crate) dependencies: &'a [String],
     pub(crate) item: RainlangDocument,
 }
 
 /// a composing target
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct ComposeTarget<'a> {
+    pub(crate) namespace: &'a Namespace,
     pub(crate) hash: &'a str,
     pub(crate) import_index: isize,
     pub(crate) element: ComposeTargetElement<'a>,
@@ -42,8 +42,10 @@ impl<'a> ComposeTarget<'a> {
         leaf: &'a NamespaceLeaf,
         binding: &'a Binding,
         rainlang_doc: RainlangDocument,
+        ns: &'a Namespace
     ) -> Self {
         ComposeTarget {
+            namespace: ns,
             hash: &leaf.hash,
             import_index: leaf.import_index,
             element: ComposeTargetElement {
@@ -53,7 +55,6 @@ impl<'a> ComposeTarget<'a> {
                 content_position: binding.content_position,
                 position: binding.position,
                 problems: &binding.problems,
-                dependencies: &binding.dependencies,
                 item: rainlang_doc,
             },
         }
@@ -138,7 +139,7 @@ impl RainDocument {
                                 &self.imports,
                             ));
                         } else {
-                            nodes.push(ComposeTarget::create(leaf, binding, rainlang_doc));
+                            nodes.push(ComposeTarget::create(leaf, binding, rainlang_doc, parent_node));
                         }
                     }
                 }
@@ -151,6 +152,12 @@ impl RainDocument {
         // resolve deps of deps recursively and return the array of deps indexes that
         // will be used to replace with dep identifiers in the text
         let mut deps_indexes = self.resolve_deps(&mut nodes)?;
+
+        // validate each node dep path
+        for (index, _) in deps_indexes.iter().enumerate() {
+            let chain = vec![index as u8];
+            validate_dep_path(index, &deps_indexes, &chain).map_err(|_| ComposeError::Reject(format!("detected circular dependncy: {}", nodes[index].element.name)))?;
+        }
 
         // represents sourcemap details of each composing node
         let mut sourcemaps: Vec<ComposeSourcemap> = vec![];
@@ -214,8 +221,8 @@ impl RainDocument {
             let mut new_nested_nodes = vec![];
             for node in nodes[ignore_offset..].iter() {
                 let mut this_node_deps_indexes = VecDeque::new();
-                for dep in node.element.dependencies {
-                    match search_namespace(dep, &self.namespace) {
+                for dep in &node.element.item.dependencies {
+                    match search_namespace(dep, node.namespace) {
                         Ok((parent_node, leaf, binding)) => {
                             if !binding.problems.is_empty() {
                                 return Err(ComposeError::from_problems(
@@ -241,7 +248,7 @@ impl RainDocument {
                                     // the same process with newly found nested nodes, if still not present
                                     // add this target to the nodes and then capture its index
                                     let new_compse_target =
-                                        ComposeTarget::create(leaf, binding, rainlang_doc);
+                                        ComposeTarget::create(leaf, binding, rainlang_doc, parent_node);
                                     if let Some((index, _)) = &nodes
                                         .iter()
                                         .enumerate()
@@ -277,6 +284,19 @@ impl RainDocument {
         }
         Ok(deps_indexes)
     }
+}
+
+fn validate_dep_path(index: usize, deps: &VecDeque<VecDeque<u8>>, path: &[u8]) -> Result<(), ()> {
+    for dep in &deps[index] {
+        let mut current_path = path.to_vec();
+        if current_path.contains(dep) {
+            return Err(());
+        } else {
+            current_path.push(*dep);
+            validate_dep_path(*dep as usize, deps, &current_path)?;
+        }
+    }
+    Ok(())
 }
 
 /// Searchs in a Namespace for a given name
@@ -330,6 +350,7 @@ fn search_namespace<'a>(
                     name
                 )),
                 BindingItem::Exp(_e) => Ok((parent, leaf, &leaf.element)),
+                BindingItem::Quote(q) => search_namespace(&q.quote, namespace)
             },
         }
     } else {
@@ -358,29 +379,29 @@ fn build_sourcemap<'a>(
                 }
             }
             Node::Opcode(opcode) => {
-                let ref_args = if let Some(operand_args) = &opcode.operand_args {
+                let args_details = if let Some(operand_args) = &opcode.operand_args {
                     operand_args
                         .args
                         .iter()
                         .filter_map(|v| {
-                            v.id.as_ref()
-                                .map(|id| (v.value.as_str(), id.as_str(), v.position))
+                            v.binding_id.as_ref()
+                                .map(|(id, typ)| (v.value.as_deref(), id.as_str(), typ, v.position))
                         })
                         .collect()
                 } else {
                     vec![]
                 };
-                if !ref_args.is_empty() {
-                    if deps_indexes.is_empty() && ref_args.iter().any(|v| v.1.starts_with('\'')) {
+                if !args_details.is_empty() {
+                    if deps_indexes.is_empty() && args_details.iter().any(|v| v.1.starts_with('\'')) {
                         return Err("cannot resolve dependecies".to_owned());
                     }
-                    for arg in ref_args {
-                        if arg.1.starts_with('\'') {
+                    for arg in args_details {
+                        if arg.1.starts_with('\'') || *arg.2 {
                             if let Some(dep_index) = deps_indexes.pop_front() {
                                 generator
                                     .overwrite(
-                                        arg.2[0] as i64,
-                                        arg.2[1] as i64,
+                                        arg.3[0] as i64,
+                                        arg.3[1] as i64,
                                         &dep_index.to_string(),
                                         OverwriteOptions::default(),
                                     )
@@ -388,15 +409,17 @@ fn build_sourcemap<'a>(
                             } else {
                                 return Err("cannot resolve dependecies".to_owned());
                             }
-                        } else {
+                        } else if let Some(val) = arg.0 {
                             generator
                                 .overwrite(
-                                    arg.2[0] as i64,
-                                    arg.2[1] as i64,
-                                    arg.0,
+                                    arg.3[0] as i64,
+                                    arg.3[1] as i64,
+                                    val,
                                     OverwriteOptions::default(),
                                 )
                                 .or(Err("could not build sourcemap".to_owned()))?;
+                        } else {
+                            return Err("cannot resolve dependecies".to_owned());
                         }
                     }
                 }

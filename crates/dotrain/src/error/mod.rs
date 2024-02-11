@@ -14,10 +14,10 @@ pub enum ErrorCode {
     IllegalChar = 0,
     RuntimeError = 1,
     CircularDependency = 2,
-    CircularDependencyQuote = 3,
+    NoFrontMatterSplitter = 3,
     DeepImport = 4,
     DeepNamespace = 5,
-    CorruptMeta = 6,
+    DepsResolvingFailed = 6,
     ElidedBinding = 7,
     NoneTopLevelImport = 8,
     NativeParserError = 9,
@@ -25,9 +25,8 @@ pub enum ErrorCode {
     OccupiedNamespace = 11,
     OddLenHex = 12,
     CollidingNamespaceNodes = 13,
-    DepsResolvingFailed = 14,
-    NoFrontMatterSplitter = 15,
-
+    DeepQuote = 14,
+    
     UndefinedWord = 0x101,
     UndefinedImport = 0x103,
     UndefinedQuote = 0x104,
@@ -43,7 +42,7 @@ pub enum ErrorCode {
     InvalidRainDocument = 0x207,
     InvalidImport = 0x208,
     InvalidEmptyBinding = 0x209,
-    InvalidQuote = 0x210,
+    InvalidLiteralQuote = 0x210,
     InvalidOperandArg = 0x211,
     InvalidSuppliedRebindings = 0x212,
 
@@ -79,6 +78,11 @@ pub enum ErrorCode {
     DuplicateIdentifier = 0x702,
     DuplicateImportStatement = 0x703,
     DuplicateImport = 0x704,
+
+    CorruptMeta = 0x801,
+    CorruptQuote = 0x802,
+    CorruptQuoteBinding = 0x803,
+
 }
 
 impl ErrorCode {
@@ -90,11 +94,9 @@ impl ErrorCode {
         let msg = match self {
             Self::IllegalChar => format!("illegal character: {}", msg_items[0]),
             Self::RuntimeError => msg_items[0].to_owned(),
-            Self::CircularDependencyQuote => "quoted binding has circular dependency".to_owned(),
             Self::CircularDependency => "circular dependency".to_owned(),
             Self::DeepImport => "import too deep".to_owned(),
             Self::DeepNamespace => "namespace path too deep".to_owned(),
-            Self::CorruptMeta => "corrupt meta".to_owned(),
             Self::ElidedBinding => format!("elided binding '{}': {}", msg_items[0], msg_items[1]),
             Self::InconsumableMeta => "import contains inconsumable meta".to_owned(),
             Self::OccupiedNamespace => "cannot import into an occupied namespace".to_owned(),
@@ -104,6 +106,7 @@ impl ErrorCode {
             Self::NativeParserError => msg_items[0].to_owned(),
             Self::DepsResolvingFailed => "failed to resolve dependencies".to_owned(),
             Self::NoFrontMatterSplitter => "cannot find front matter splitter".to_owned(),
+            Self::DeepQuote => "quote too deep".to_owned(),
 
             Self::UndefinedWord => format!("undefined word: {}", msg_items[0]),
             Self::UndefinedImport => format!("cannot find any settlement for import: {}", msg_items[0]),
@@ -117,7 +120,7 @@ impl ErrorCode {
             Self::InvalidImport => "expected a valid name or hash".to_owned(),
             Self::InvalidEmptyBinding => "invalid empty expression".to_owned(),
             Self::InvalidEmptyLine => "invalid empty expression line".to_owned(),
-            Self::InvalidQuote => format!("invalid quote: {}, cannot quote literals", msg_items[0]),
+            Self::InvalidLiteralQuote => format!("invalid quote: {}, cannot quote literals", msg_items[0]),
             Self::InvalidOperandArg => format!("invalid argument pattern: {}", msg_items[0]),
             Self::InvalidReference => format!("invalid reference to binding: {}, only literal bindings can be referenced", msg_items[0]),
             Self::InvalidRainDocument => "imported rain document contains top level errors".to_owned(),
@@ -156,6 +159,10 @@ impl ErrorCode {
             Self::DuplicateIdentifier => "duplicate identifier".to_owned(),
             Self::DuplicateImportStatement => "duplicate import statement".to_owned(),
             Self::DuplicateImport => "duplicate import".to_owned(),
+
+            Self::CorruptMeta => "corrupt meta".to_owned(),
+            Self::CorruptQuote => "detected corruption at this quote's path".to_owned(),
+            Self::CorruptQuoteBinding => "detected corruption at this binding's path".to_owned(),
         };
         Problem {
             msg,

@@ -1,10 +1,10 @@
-use super::error::Error;
 use regex::{Match, Regex};
 use alloy_primitives::U256;
+use super::error::{Error, ErrorCode};
 use rain_metadata::{RainMetaDocumentV1Item, KnownMagic};
 use super::types::{
-    ast::{ParsedItem, Offsets},
-    patterns::{HEX_PATTERN, E_PATTERN, INT_PATTERN},
+    ast::*,
+    patterns::{HEX_PATTERN, E_PATTERN, INT_PATTERN, NAMESPACE_SEGMENT_PATTERN, WORD_PATTERN},
 };
 
 pub(crate) mod raindocument;
@@ -178,6 +178,94 @@ pub(crate) fn is_consumable(items: &Vec<RainMetaDocumentV1Item>) -> bool {
         false
     }
 }
+
+/// Search in namespaces for a name
+pub(crate) fn search_binding_ref<'a>(
+    query: &str,
+    namespace: &'a Namespace,
+) -> Option<&'a Binding> {
+    let mut segments: &[ParsedItem] =
+        &exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, 0, true);
+    if query.starts_with('.') {
+        segments = &segments[1..];
+    }
+    if segments.len() > 32 {
+        return None;
+    }
+    if segments[segments.len() - 1].0.is_empty() {
+        return None;
+    }
+    if segments.iter().any(|v| !WORD_PATTERN.is_match(&v.0)) {
+        return None;
+    }
+
+    if let Some(namespace_item) = namespace.get(&segments[0].0) {
+        let mut result = namespace_item;
+        let iter = segments[1..].iter();
+        for segment in iter {
+            match result {
+                NamespaceItem::Node(node) => {
+                    if let Some(namespace_item) = node.get(&segment.0) {
+                        result = namespace_item;
+                    } else {
+                        return None;
+                    }
+                }
+                _ => {
+                    return None;
+                }
+            }
+        }
+        match result {
+            NamespaceItem::Node(_node) => {
+                None
+            }
+            NamespaceItem::Leaf(leaf) => Some(&leaf.element),
+        }
+    } else {
+        None
+    }
+}
+
+pub(crate) fn deep_read_quote<'a>(name: &'a str, namespace: &'a Namespace, quote_chain: &mut Vec<&'a str>, levels: &mut isize) -> Result<&'a str, (ErrorCode, Option<String>)> {
+    *levels -= 1;
+    if *levels >= 0 {
+        if let Some(b) = search_binding_ref(name, namespace) {
+            match &b.item {
+                BindingItem::Elided(e) => {
+                    Err((ErrorCode::ElidedBinding, Some(e.msg.clone())))
+                }
+                BindingItem::Literal(_c) => {
+                    Err((ErrorCode::InvalidLiteralQuote, None))
+                }
+                BindingItem::Quote(q) => {
+                    if quote_chain.contains(&q.quote.as_str()) {
+                        Err((ErrorCode::CircularDependency, None))
+                    } else {
+                        quote_chain.push(&q.quote);
+                        deep_read_quote(&q.quote, namespace, quote_chain, levels)
+                    }
+                }
+                BindingItem::Exp(_e) => {
+                    Ok(name)
+                }
+            }
+        } else {
+            Err((ErrorCode::UndefinedQuote, None))
+        }
+    } else {
+        Err((ErrorCode::DeepQuote, None))
+    }
+}
+
+// /// Search in namespaces for a name
+// fn search_namespace_mut<'a>(
+//     query: &str,
+//     namespace: &'a mut Namespace,
+// ) -> Option<&'a mut Binding> {
+//     let mut x = search_namespace_ref(query, namespace)?;
+//     Some(x.borrow_mut())
+// }
 
 #[cfg(test)]
 mod tests {
