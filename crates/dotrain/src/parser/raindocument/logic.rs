@@ -1072,8 +1072,34 @@ impl RainDocument {
                                     segments[0].0, key
                                 )));
                             }
-                            NamespaceItem::Leaf(leaf) => match &leaf.element.item {
-                                BindingItem::Exp(_e) => {
+                            NamespaceItem::Leaf(leaf) => {
+                                if let BindingItem::Quote(q) = &item {
+                                    if key == q.quote {
+                                        problems = vec![ErrorCode::CircularDependency
+                                            .to_problem(vec![], leaf.element.name_position)]
+                                    } else if let Err(p) = deep_read_quote(
+                                        &q.quote,
+                                        namespace,
+                                        &mut vec![key.as_str(), q.quote.as_str()],
+                                        &mut limit,
+                                    ) {
+                                        problems = if let Some(elided_msg) = p.1 {
+                                            vec![p.0.to_problem(
+                                                vec![&key, &elided_msg],
+                                                leaf.element.name_position,
+                                            )]
+                                        } else if matches!(p.0, ErrorCode::CircularDependency)
+                                            || matches!(p.0, ErrorCode::DeepQuote)
+                                        {
+                                            vec![p.0.to_problem(vec![], leaf.element.name_position)]
+                                        } else {
+                                            vec![p
+                                                .0
+                                                .to_problem(vec![&key], leaf.element.name_position)]
+                                        }
+                                    }
+                                };
+                                if let BindingItem::Exp(_e) = &leaf.element.item {
                                     let typ = if matches!(item, BindingItem::Literal(_)) {
                                         "literals"
                                     } else {
@@ -1083,41 +1109,10 @@ impl RainDocument {
                                             "invalid rebinding: {}, cannot rebind rainlang expression bindings to {}",
                                             typ,
                                             key
-                                        )));
+                                        ))
+                                    );
                                 }
-                                BindingItem::Quote(_) => {
-                                    if let BindingItem::Quote(q) = &item {
-                                        if key == q.quote {
-                                            problems = vec![ErrorCode::CircularDependency
-                                                .to_problem(vec![], leaf.element.name_position)]
-                                        } else if let Err(p) = deep_read_quote(
-                                            &q.quote,
-                                            namespace,
-                                            &mut vec![key.as_str(), q.quote.as_str()],
-                                            &mut limit,
-                                        ) {
-                                            problems = if let Some(elided_msg) = p.1 {
-                                                vec![p.0.to_problem(
-                                                    vec![&key, &elided_msg],
-                                                    leaf.element.name_position,
-                                                )]
-                                            } else if matches!(p.0, ErrorCode::CircularDependency)
-                                                || matches!(p.0, ErrorCode::DeepQuote)
-                                            {
-                                                vec![p
-                                                    .0
-                                                    .to_problem(vec![], leaf.element.name_position)]
-                                            } else {
-                                                vec![p.0.to_problem(
-                                                    vec![&key],
-                                                    leaf.element.name_position,
-                                                )]
-                                            }
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            },
+                            }
                         }
                     };
                     if let Some(NamespaceItem::Leaf(leaf)) = namespace.get_mut(&segments[0].0) {
@@ -1209,6 +1204,39 @@ impl RainDocument {
                             }
                             NamespaceItem::Leaf(leaf) => {
                                 if i == segments.len() - 2 {
+                                    let problems = if let BindingItem::Quote(q) = &item {
+                                        if key == q.quote {
+                                            vec![ErrorCode::CircularDependency
+                                                .to_problem(vec![], leaf.element.name_position)]
+                                        } else if let Err(p) = deep_read_quote(
+                                            &q.quote,
+                                            parent_node.unwrap(),
+                                            &mut vec![key.as_str(), q.quote.as_str()],
+                                            &mut limit,
+                                        ) {
+                                            if let Some(elided_msg) = p.1 {
+                                                vec![p.0.to_problem(
+                                                    vec![&key, &elided_msg],
+                                                    leaf.element.name_position,
+                                                )]
+                                            } else if matches!(p.0, ErrorCode::CircularDependency)
+                                                || matches!(p.0, ErrorCode::DeepQuote)
+                                            {
+                                                vec![p
+                                                    .0
+                                                    .to_problem(vec![], leaf.element.name_position)]
+                                            } else {
+                                                vec![p.0.to_problem(
+                                                    vec![&key],
+                                                    leaf.element.name_position,
+                                                )]
+                                            }
+                                        } else {
+                                            vec![]
+                                        }
+                                    } else {
+                                        vec![]
+                                    };
                                     match &leaf.element.item {
                                         BindingItem::Exp(_e) => {
                                             let typ = if matches!(item, BindingItem::Literal(_)) {
@@ -1222,48 +1250,12 @@ impl RainDocument {
                                                 key
                                             )));
                                         }
-                                        BindingItem::Quote(_old_quote) => {
-                                            if let BindingItem::Quote(q) = &item {
-                                                leaf.element.problems = if key == q.quote {
-                                                    vec![ErrorCode::CircularDependency.to_problem(
-                                                        vec![],
-                                                        leaf.element.name_position,
-                                                    )]
-                                                } else if let Err(p) = deep_read_quote(
-                                                    &q.quote,
-                                                    parent_node.unwrap(),
-                                                    &mut vec![key.as_str(), q.quote.as_str()],
-                                                    &mut limit,
-                                                ) {
-                                                    if let Some(elided_msg) = p.1 {
-                                                        vec![p.0.to_problem(
-                                                            vec![&key, &elided_msg],
-                                                            leaf.element.name_position,
-                                                        )]
-                                                    } else if matches!(
-                                                        p.0,
-                                                        ErrorCode::CircularDependency
-                                                    ) || matches!(
-                                                        p.0,
-                                                        ErrorCode::DeepQuote
-                                                    ) {
-                                                        vec![p.0.to_problem(
-                                                            vec![],
-                                                            leaf.element.name_position,
-                                                        )]
-                                                    } else {
-                                                        vec![p.0.to_problem(
-                                                            vec![&key],
-                                                            leaf.element.name_position,
-                                                        )]
-                                                    }
-                                                } else {
-                                                    vec![]
-                                                };
-                                            };
+                                        _ => {
+                                            if matches!(item, BindingItem::Quote(_)) {
+                                                leaf.element.problems = problems;
+                                            }
                                             leaf.element.item = item;
                                         }
-                                        _ => leaf.element.item = item,
                                     };
                                     break;
                                 } else {
