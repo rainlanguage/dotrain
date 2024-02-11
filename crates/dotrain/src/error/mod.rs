@@ -180,12 +180,9 @@ pub enum Error {
     FailedToParse,
     OutOfCharBoundry,
     StateUpdateFailed,
-    NoDatabaseAttached,
     InvalidNumbericValue,
-    InvalidExpressionDeployerData,
     InvalidOverride(String),
     SerdeJsonError(serde_json::Error),
-    AbiCoderError(alloy_sol_types::Error),
     ParseIntError(std::num::ParseIntError),
     UintParseError(alloy_primitives::ruint::ParseError),
 }
@@ -199,12 +196,7 @@ impl std::fmt::Display for Error {
             Error::InvalidNumbericValue => {
                 f.write_str("does not follow rain numeric pattern and range")
             }
-            Error::NoDatabaseAttached => f.write_str("evm instance has no database attached"),
-            Error::InvalidExpressionDeployerData => {
-                f.write_str("cannot reproduce the ExpressionDeployer from the given data")
-            }
             Error::InvalidOverride(v) => write!(f, "{}", v),
-            Error::AbiCoderError(v) => write!(f, "{}", v),
             Error::SerdeJsonError(v) => write!(f, "{}", v),
             Error::UintParseError(v) => write!(f, "{}", v),
             Error::ParseIntError(v) => write!(f, "{}", v),
@@ -223,12 +215,6 @@ impl From<serde_json::Error> for Error {
 impl From<String> for Error {
     fn from(value: String) -> Self {
         Error::InvalidOverride(value)
-    }
-}
-
-impl From<alloy_sol_types::Error> for Error {
-    fn from(value: alloy_sol_types::Error) -> Self {
-        Error::AbiCoderError(value)
     }
 }
 
