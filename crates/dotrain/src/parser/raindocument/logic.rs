@@ -966,7 +966,8 @@ impl RainDocument {
                         if key == &quote.quote {
                             errs.push((key.to_owned(), (ErrorCode::CircularDependency, None)));
                         } else {
-                            let mut levels = 32;
+                            // restrict quotes to only 1 levels
+                            let mut levels = 1;
                             let mut quote_chain = vec![key.as_str(), quote.quote.as_str()];
                             if let Err(e) = deep_read_quote(
                                 &quote.quote,
@@ -1005,6 +1006,9 @@ impl RainDocument {
         rebinds: Vec<Rebind>,
         namespace: &mut Namespace,
     ) -> Result<(), Error> {
+        // restrict quotes to only 1 levels
+        let mut levels = 1;
+
         for Rebind(key, raw_value) in rebinds {
             let value = raw_value.trim();
             if NAMESPACE_PATTERN.is_match(&key) {
@@ -1053,6 +1057,10 @@ impl RainDocument {
                         )));
                     }
                 }
+                // restrict rebinds to only 1 levels
+                if segments.len() > 1 {
+                    return Err(Error::InvalidOverride(format!("rebind too deep: {}", key)));
+                }
 
                 if segments.len() == 1 {
                     let mut problems = vec![];
@@ -1079,7 +1087,6 @@ impl RainDocument {
                                 }
                                 BindingItem::Quote(_) => {
                                     if let BindingItem::Quote(q) = &item {
-                                        let mut levels = 32;
                                         if key == q.quote {
                                             problems = vec![ErrorCode::CircularDependency
                                                 .to_problem(vec![], leaf.element.name_position)]
@@ -1144,7 +1151,6 @@ impl RainDocument {
                             NamespaceItem::Node(node) => {
                                 if i == segments.len() - 3 && !node.contains_key(&segment.0) {
                                     let problems = if let BindingItem::Quote(q) = &item {
-                                        let mut levels = 32;
                                         if key == q.quote {
                                             vec![ErrorCode::CircularDependency
                                                 .to_problem(vec![], [0, 0])]
@@ -1218,7 +1224,6 @@ impl RainDocument {
                                         }
                                         BindingItem::Quote(_old_quote) => {
                                             if let BindingItem::Quote(q) = &item {
-                                                let mut levels = 32;
                                                 leaf.element.problems = if key == q.quote {
                                                     vec![ErrorCode::CircularDependency.to_problem(
                                                         vec![],
