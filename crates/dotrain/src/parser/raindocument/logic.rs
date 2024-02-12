@@ -134,16 +134,13 @@ impl RainDocument {
 
         // parsing bindings
         let parsed_bindings = exclusive_parse(&document, &BINDING_PATTERN, 0, true);
-        let mut raw_exp_contents = VecDeque::new();
         ignore_first = true;
         for parsed_binding in &parsed_bindings {
             if ignore_first {
                 ignore_first = false;
                 continue;
             }
-            if let Some(raw_content) = self.process_binding(parsed_binding, &mut namespace) {
-                raw_exp_contents.push_back(raw_content);
-            };
+            self.process_binding(parsed_binding, &mut namespace);
             fill_in(
                 &mut document,
                 [parsed_binding.1[0] - 1, parsed_binding.1[1]],
