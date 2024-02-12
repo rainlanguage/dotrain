@@ -957,34 +957,6 @@ impl RainDocument {
         }
     }
 
-    pub(super) fn validate_quote_bindings(&mut self) {
-        let mut errs = vec![];
-        for (key, value) in &self.namespace {
-            if let NamespaceItem::Leaf(leaf) = &value {
-                if leaf.import_index == -1 {
-                    if let BindingItem::Quote(quote) = &leaf.element.item {
-                        let mut limit = 1;
-                        let mut result = Self::validate_quote(
-                            &self.namespace,
-                            quote,
-                            key,
-                            leaf.element.name_position,
-                            &mut limit,
-                        );
-                        if !result.is_empty() {
-                            errs.push((key.to_owned(), result.pop().unwrap()));
-                        }
-                    }
-                }
-            }
-        }
-        for (key, err) in errs {
-            if let NamespaceItem::Leaf(leaf) = self.namespace.get_mut(&key).unwrap() {
-                leaf.element.problems = vec![err.clone()];
-            }
-        }
-    }
-
     /// apply the overrides to the namespace
     pub(super) fn apply_overrides(
         rebinds: Vec<Rebind>,
@@ -1212,6 +1184,34 @@ impl RainDocument {
             }
         }
         Ok(())
+    }
+
+    pub(super) fn validate_quote_bindings(&mut self) {
+        let mut errs = vec![];
+        for (key, value) in &self.namespace {
+            if let NamespaceItem::Leaf(leaf) = &value {
+                if leaf.import_index == -1 {
+                    if let BindingItem::Quote(quote) = &leaf.element.item {
+                        let mut limit = 1;
+                        let mut result = Self::validate_quote(
+                            &self.namespace,
+                            quote,
+                            key,
+                            leaf.element.name_position,
+                            &mut limit,
+                        );
+                        if !result.is_empty() {
+                            errs.push((key.to_owned(), result.pop().unwrap()));
+                        }
+                    }
+                }
+            }
+        }
+        for (key, err) in errs {
+            if let NamespaceItem::Leaf(leaf) = self.namespace.get_mut(&key).unwrap() {
+                leaf.element.problems = vec![err.clone()];
+            }
+        }
     }
 
     fn validate_quote(
