@@ -434,7 +434,7 @@ impl RainlangDocument {
                 let pos = [start + offset, end + offset];
                 if has_no_end {
                     self.problems
-                        .push(ErrorCode::UnexpectedStringLiteral.to_problem(vec![], pos));
+                        .push(ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], pos));
                 } else {
                     operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
                 }
@@ -481,7 +481,34 @@ impl RainlangDocument {
                 }
                 None => {
                     self.problems.push(
-                        ErrorCode::UnexpectedStringLiteral
+                        ErrorCode::UnexpectedStringLiteralEnd
+                            .to_problem(vec![], [cursor, cursor + exp.len()]),
+                    );
+                    self.update_state(Node::Literal(Literal {
+                        value: exp.to_owned(),
+                        position: [cursor, cursor + exp.len()],
+                        lhs_alias: None,
+                        id: None,
+                    }))?;
+                    return Ok(exp.len());
+                }
+            }
+        }
+        if next.starts_with('[') {
+            match remaining.find(']') {
+                Some(sub_parser_end) => {
+                    let consumed = sub_parser_end + next.len() + 1;
+                    self.update_state(Node::Literal(Literal {
+                        value: exp[0..consumed].to_owned(),
+                        position: [cursor, cursor + consumed],
+                        lhs_alias: None,
+                        id: None,
+                    }))?;
+                    return Ok(consumed);
+                }
+                None => {
+                    self.problems.push(
+                        ErrorCode::UnexpectedSubParserEnd
                             .to_problem(vec![], [cursor, cursor + exp.len()]),
                     );
                     self.update_state(Node::Literal(Literal {

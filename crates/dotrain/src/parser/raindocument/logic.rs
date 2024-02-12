@@ -802,7 +802,8 @@ impl RainDocument {
                 if is_str_literal {
                     if has_err {
                         self.problems.push(
-                            ErrorCode::UnexpectedStringLiteral.to_problem(vec![], content_position),
+                            ErrorCode::UnexpectedStringLiteralEnd
+                                .to_problem(vec![], content_position),
                         );
                     }
                 } else if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {

@@ -703,6 +703,7 @@ _: some-sub-parser-word<4e18 " some literal as operand ">(4e18 "some literal val
 #exp-binding-1
 /* some comment with quote: dont't */
 using-words-from 0x1234abced
+_: [some-sub-parser 123 4 kjh],
 _: some-sub-parser-word<1 2>(some-value 44);
 "#;
         let rainlang_text = RainDocument::compose_text(
@@ -713,6 +714,7 @@ _: some-sub-parser-word<1 2>(some-value 44);
         )?;
         let expected_rainlang = r#"/* some comment with quote: dont't */
 using-words-from 0x1234abced
+_: [some-sub-parser 123 4 kjh],
 _: some-sub-parser-word<1 2>(4e18 44);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
