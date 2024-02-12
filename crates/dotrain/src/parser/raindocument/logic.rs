@@ -963,26 +963,16 @@ impl RainDocument {
             if let NamespaceItem::Leaf(leaf) = &value {
                 if leaf.import_index == -1 {
                     if let BindingItem::Quote(quote) = &leaf.element.item {
-                        if key == &quote.quote {
-                            errs.push((
-                                key.to_owned(),
-                                ErrorCode::CircularDependency
-                                    .to_problem(vec![], leaf.element.name_position),
-                            ));
-                        } else {
-                            // restrict quotes to only 1 levels
-                            let mut limit = 1;
-                            let mut quote_chain = vec![key.as_str(), quote.quote.as_str()];
-                            if let Err(e) = deep_read_quote(
-                                &quote.quote,
-                                &self.namespace,
-                                &mut quote_chain,
-                                &mut limit,
-                                leaf.element.name_position,
-                                key,
-                            ) {
-                                errs.push((key.to_owned(), e));
-                            };
+                        let mut limit = 1;
+                        let mut result = get_quote_problem(
+                            &self.namespace,
+                            quote,
+                            key,
+                            leaf.element.name_position,
+                            &mut limit,
+                        );
+                        if !result.is_empty() {
+                            errs.push((key.to_owned(), result.pop().unwrap()));
                         }
                     }
                 }
