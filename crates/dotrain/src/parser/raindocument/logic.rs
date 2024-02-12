@@ -1068,19 +1068,13 @@ impl RainDocument {
                             }
                             NamespaceItem::Leaf(leaf) => {
                                 if let BindingItem::Quote(q) = &item {
-                                    if key == q.quote {
-                                        problems = vec![ErrorCode::CircularDependency
-                                            .to_problem(vec![], leaf.element.name_position)]
-                                    } else if let Err(p) = deep_read_quote(
-                                        &q.quote,
+                                    problems = get_quote_problem(
                                         namespace,
-                                        &mut vec![key.as_str(), q.quote.as_str()],
-                                        &mut limit,
-                                        leaf.element.name_position,
+                                        q,
                                         key.as_str(),
-                                    ) {
-                                        problems = vec![p];
-                                    }
+                                        leaf.element.name_position,
+                                        &mut limit,
+                                    );
                                 };
                                 if let BindingItem::Exp(_e) = &leaf.element.item {
                                     let typ = if matches!(item, BindingItem::Literal(_)) {
@@ -1129,21 +1123,7 @@ impl RainDocument {
                             NamespaceItem::Node(node) => {
                                 if i == segments.len() - 3 && !node.contains_key(&segment.0) {
                                     let problems = if let BindingItem::Quote(q) = &item {
-                                        if key == q.quote {
-                                            vec![ErrorCode::CircularDependency
-                                                .to_problem(vec![], [0, 0])]
-                                        } else if let Err(p) = deep_read_quote(
-                                            &q.quote,
-                                            node,
-                                            &mut vec![key.as_str(), q.quote.as_str()],
-                                            &mut limit,
-                                            [0, 0],
-                                            key.as_str(),
-                                        ) {
-                                            vec![p]
-                                        } else {
-                                            vec![]
-                                        }
+                                        get_quote_problem(node, q, key.as_str(), [0, 0], &mut limit)
                                     } else {
                                         vec![]
                                     };
@@ -1182,21 +1162,13 @@ impl RainDocument {
                             NamespaceItem::Leaf(leaf) => {
                                 if i == segments.len() - 2 {
                                     let problems = if let BindingItem::Quote(q) = &item {
-                                        if key == q.quote {
-                                            vec![ErrorCode::CircularDependency
-                                                .to_problem(vec![], leaf.element.name_position)]
-                                        } else if let Err(p) = deep_read_quote(
-                                            &q.quote,
+                                        get_quote_problem(
                                             parent_node.unwrap(),
-                                            &mut vec![key.as_str(), q.quote.as_str()],
-                                            &mut limit,
-                                            leaf.element.name_position,
+                                            q,
                                             key.as_str(),
-                                        ) {
-                                            vec![p]
-                                        } else {
-                                            vec![]
-                                        }
+                                            leaf.element.name_position,
+                                            &mut limit,
+                                        )
                                     } else {
                                         vec![]
                                     };
@@ -1259,5 +1231,28 @@ impl PartialEq for RainDocument {
             && self.known_words == other.known_words
             && self.problems == other.problems
             && self.error == other.error
+    }
+}
+
+fn get_quote_problem(
+    namespace: &Namespace,
+    q: &QuoteBindingItem,
+    key: &str,
+    position: Offsets,
+    limit: &mut isize,
+) -> Vec<Problem> {
+    if key == q.quote {
+        vec![ErrorCode::CircularDependency.to_problem(vec![], position)]
+    } else if let Err(p) = deep_read_quote(
+        &q.quote,
+        namespace,
+        &mut vec![key, q.quote.as_str()],
+        limit,
+        position,
+        key,
+    ) {
+        vec![p]
+    } else {
+        vec![]
     }
 }
