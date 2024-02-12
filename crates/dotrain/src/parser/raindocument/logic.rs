@@ -964,7 +964,7 @@ impl RainDocument {
                 if leaf.import_index == -1 {
                     if let BindingItem::Quote(quote) = &leaf.element.item {
                         let mut limit = 1;
-                        let mut result = get_quote_problem(
+                        let mut result = Self::validate_quote(
                             &self.namespace,
                             quote,
                             key,
@@ -1058,7 +1058,7 @@ impl RainDocument {
                             }
                             NamespaceItem::Leaf(leaf) => {
                                 if let BindingItem::Quote(q) = &item {
-                                    problems = get_quote_problem(
+                                    problems = Self::validate_quote(
                                         namespace,
                                         q,
                                         key.as_str(),
@@ -1113,7 +1113,13 @@ impl RainDocument {
                             NamespaceItem::Node(node) => {
                                 if i == segments.len() - 3 && !node.contains_key(&segment.0) {
                                     let problems = if let BindingItem::Quote(q) = &item {
-                                        get_quote_problem(node, q, key.as_str(), [0, 0], &mut limit)
+                                        Self::validate_quote(
+                                            node,
+                                            q,
+                                            key.as_str(),
+                                            [0, 0],
+                                            &mut limit,
+                                        )
                                     } else {
                                         vec![]
                                     };
@@ -1152,7 +1158,7 @@ impl RainDocument {
                             NamespaceItem::Leaf(leaf) => {
                                 if i == segments.len() - 2 {
                                     let problems = if let BindingItem::Quote(q) = &item {
-                                        get_quote_problem(
+                                        Self::validate_quote(
                                             parent_node.unwrap(),
                                             q,
                                             key.as_str(),
@@ -1207,6 +1213,29 @@ impl RainDocument {
         }
         Ok(())
     }
+
+    fn validate_quote(
+        namespace: &Namespace,
+        q: &QuoteBindingItem,
+        key: &str,
+        position: Offsets,
+        limit: &mut isize,
+    ) -> Vec<Problem> {
+        if key == q.quote {
+            vec![ErrorCode::CircularDependency.to_problem(vec![], position)]
+        } else if let Err(p) = deep_read_quote(
+            &q.quote,
+            namespace,
+            &mut vec![key, q.quote.as_str()],
+            limit,
+            position,
+            key,
+        ) {
+            vec![p]
+        } else {
+            vec![]
+        }
+    }
 }
 
 impl PartialEq for RainDocument {
@@ -1221,28 +1250,5 @@ impl PartialEq for RainDocument {
             && self.known_words == other.known_words
             && self.problems == other.problems
             && self.error == other.error
-    }
-}
-
-fn get_quote_problem(
-    namespace: &Namespace,
-    q: &QuoteBindingItem,
-    key: &str,
-    position: Offsets,
-    limit: &mut isize,
-) -> Vec<Problem> {
-    if key == q.quote {
-        vec![ErrorCode::CircularDependency.to_problem(vec![], position)]
-    } else if let Err(p) = deep_read_quote(
-        &q.quote,
-        namespace,
-        &mut vec![key, q.quote.as_str()],
-        limit,
-        position,
-        key,
-    ) {
-        vec![p]
-    } else {
-        vec![]
     }
 }
