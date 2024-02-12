@@ -14,7 +14,8 @@ impl RainDocument {
     /// the main method that takes out and processes each section of a RainDocument
     /// text (comments, imports, etc) one after the other, builds the parse tree, builds
     /// the namespace and checks for dependency issues and resolves the global words
-    #[async_recursion(?Send)]
+    #[cfg_attr(target_family = "wasm", async_recursion(?Send))]
+    #[cfg_attr(not(target_family = "wasm"), async_recursion)]
     pub(super) async fn _parse(
         &mut self,
         remote_search: bool,
@@ -390,7 +391,8 @@ impl RainDocument {
     }
 
     /// processes an import statement
-    #[async_recursion(?Send)]
+    #[cfg_attr(target_family = "wasm", async_recursion(?Send))]
+    #[cfg_attr(not(target_family = "wasm"), async_recursion)]
     pub(super) async fn process_import(
         &self,
         statement: &ParsedItem,

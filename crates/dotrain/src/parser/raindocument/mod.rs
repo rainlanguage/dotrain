@@ -220,7 +220,8 @@ impl RainDocument {
     }
 
     /// Parses this instance's text
-    #[async_recursion(?Send)]
+    #[cfg_attr(target_family = "wasm", async_recursion(?Send))]
+    #[cfg_attr(not(target_family = "wasm"), async_recursion)]
     pub async fn parse(&mut self, enable_remote: bool, rebinds: Option<Vec<Rebind>>) {
         if NON_EMPTY_PATTERN.is_match(&self.text) {
             if let Err(e) = self._parse(enable_remote, rebinds).await {
