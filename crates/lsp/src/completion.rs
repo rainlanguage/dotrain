@@ -29,6 +29,9 @@ pub fn get_completion(
     documentation_format: MarkupKind,
 ) -> Option<Vec<CompletionItem>> {
     let target_offset = rain_document.text().offset_at(&position);
+    if target_offset < rain_document.front_matter_offset() + 3 {
+        return None;
+    }
     let lookahead = rain_document
         .text()
         .get(target_offset..target_offset + 1)

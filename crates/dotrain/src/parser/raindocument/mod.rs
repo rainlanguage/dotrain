@@ -166,6 +166,11 @@ impl RainDocument {
         &self.text[(self.front_matter_offset + FRONTMATTER_SEPARATOR.len())..]
     }
 
+    /// This instance's front matter offset
+    pub fn front_matter_offset(&self) -> usize {
+        self.front_matter_offset
+    }
+
     /// This instance's top problems
     pub fn problems(&self) -> &Vec<Problem> {
         &self.problems
