@@ -118,7 +118,7 @@ pub fn tracked_trim(s: &str) -> (&str, usize, usize) {
 }
 
 /// Calculates the line number of the given position in the given text
-pub(crate) fn line_number(text: &str, pos: usize) -> usize {
+pub fn line_number(text: &str, pos: usize) -> usize {
     let lines: Vec<_> = text.split_inclusive('\n').collect();
     let lines_count = lines.len();
     if pos >= text.len() {

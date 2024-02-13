@@ -5,7 +5,7 @@ use super::super::{
         error::{Error, ErrorCode},
         types::patterns::*,
     },
-    line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
+    inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
 };
 
 impl RainlangDocument {
@@ -188,19 +188,6 @@ impl RainlangDocument {
             }
         }
 
-        // ignore next line lint
-        for v in self.comments.iter() {
-            if lint_patterns::IGNORE_NEXT_LINE.is_match(&v.comment) {
-                if let Some(line) = self.ast.iter().flat_map(|e| &e.lines).find(|&e| {
-                    line_number(&self.text, e.position[0])
-                        == line_number(&self.text, v.position[1]) + 1
-                }) {
-                    self.problems.retain(|e| {
-                        !(e.position[0] >= line.position[0] && e.position[1] <= line.position[1])
-                    })
-                }
-            }
-        }
         Ok(())
     }
 

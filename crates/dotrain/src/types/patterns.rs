@@ -106,17 +106,6 @@ pub static PRAGMA_END_PATTERN: Lazy<Regex> =
 /// the default elided binding msg
 pub static DEFAULT_ELISION: &str = "elided binding, requires rebinding";
 
-/// Lint patterns for RainDocument/RainlangDocument,
-/// these patterns should be wrapped in a [COMMENT_PATTERN](super::COMMENT_PATTERN) when used
-pub mod lint_patterns {
-    use regex::Regex;
-    use once_cell::sync::Lazy;
-
-    /// ignores next line diagnostics
-    pub static IGNORE_NEXT_LINE: Lazy<Regex> =
-        Lazy::new(|| Regex::new(r"(:?*|\s)ignore-next-line(:?*|\s)").unwrap());
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -5,7 +5,7 @@ use rain_metadata::{types::dotrain::v1::DotrainMeta, KnownMagic, RainMetaDocumen
 use super::*;
 use super::super::{
     super::error::{Error, ErrorCode},
-    deep_read_quote, exclusive_parse, fill_in, inclusive_parse, is_consumable, line_number,
+    deep_read_quote, exclusive_parse, fill_in, inclusive_parse, is_consumable,
     rainlangdocument::RainlangDocument,
     to_u256, tracked_trim,
 };
@@ -183,12 +183,7 @@ impl RainDocument {
         // no needed info at this point, they will get parsed once the dotrain is being composed with
         // specified entrypoints and they will be parsed only if they are part of the entrypoints or
         // their deps, see 'compile.rs'.
-        if self.import_depth == 0
-            && self
-                .bindings
-                .iter()
-                .any(|b| matches!(b.item, BindingItem::Exp(_)))
-        {
+        if self.import_depth == 0 {
             for binding in &mut self.bindings {
                 // parse the rainlang binding to ast and repopulate the
                 // binding.item and corresponding namespace with it
@@ -220,21 +215,6 @@ impl RainDocument {
                             element: binding.clone(),
                         }),
                     );
-                }
-            }
-        }
-
-        // apply 'ignore next line' lint for matching found problems
-        for cm in &self.comments {
-            if lint_patterns::IGNORE_NEXT_LINE.is_match(&cm.comment) {
-                let line = line_number(&self.text, cm.position[1]);
-                while let Some((i, _)) = self
-                    .problems
-                    .iter()
-                    .enumerate()
-                    .find(|p| line_number(&self.text, p.1.position[0]) == line + 1)
-                {
-                    self.problems.remove(i);
                 }
             }
         }
