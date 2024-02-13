@@ -345,14 +345,14 @@ impl RainlangDocument {
                                         ErrorCode::ElidedBinding.to_problem(vec![name, &msg], v.1),
                                     );
                                 }
-                                BindingItem::Literal(c) => {
+                                BindingItem::Literal(l) => {
                                     if is_quote {
                                         self.problems.push(
                                             ErrorCode::InvalidLiteralQuote
                                                 .to_problem(vec![name], v.1),
                                         );
                                     } else {
-                                        value = Some(c.value.clone());
+                                        value = Some(l.value.clone());
                                     }
                                 }
                                 BindingItem::Quote(_q) => {
@@ -435,6 +435,25 @@ impl RainlangDocument {
                 if has_no_end {
                     self.problems
                         .push(ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], pos));
+                } else {
+                    operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
+                }
+            } else if item.0.starts_with('[') && (item.0 == "]" || !item.0.ends_with(']')) {
+                let start = item.1[0];
+                let mut end = text.len();
+                let mut has_no_end = true;
+                #[allow(clippy::while_let_on_iterator)]
+                while let Some(end_item) = iter.next() {
+                    if end_item.0.ends_with(']') {
+                        has_no_end = false;
+                        end = end_item.1[1];
+                        break;
+                    }
+                }
+                let pos = [start + offset, end + offset];
+                if has_no_end {
+                    self.problems
+                        .push(ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], pos));
                 } else {
                     operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
                 }
@@ -637,7 +656,8 @@ impl RainlangDocument {
                 lhs_alias: None,
                 id: None,
             }))?;
-        } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_PATTERN.is_match(next) {
+        } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_LITERAL_PATTERN.is_match(next)
+        {
             self.update_state(Node::Literal(Literal {
                 value: next.to_owned(),
                 position: next_pos,

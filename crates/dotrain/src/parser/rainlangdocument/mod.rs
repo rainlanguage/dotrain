@@ -314,7 +314,7 @@ mod tests {
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
 
-        let exp = "<1\n0xf2\n69   32>";
+        let exp = "<1\n0xf2\n69   32 [some sub parser literal]>";
         let mut op = Opcode {
             opcode: OpcodeDetails {
                 name: "opc".to_owned(),
@@ -344,7 +344,7 @@ mod tests {
             inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
-                position: [15, 31],
+                position: [15, 57],
                 args: vec![
                     OperandArgItem {
                         value: Some("1".to_owned()),
@@ -371,6 +371,13 @@ mod tests {
                         value: Some("32".to_owned()),
                         name: "operand arg".to_owned(),
                         position: [28, 30],
+                        description: String::new(),
+                        binding_id: None,
+                    },
+                    OperandArgItem {
+                        value: Some("[some sub parser literal]".to_owned()),
+                        name: "operand arg".to_owned(),
+                        position: [31, 56],
                         description: String::new(),
                         binding_id: None,
                     },

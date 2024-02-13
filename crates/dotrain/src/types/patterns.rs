@@ -29,9 +29,14 @@ pub static NUMERIC_PATTERN: Lazy<Regex> =
 pub static STRING_LITERAL_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r#"^\"[\s\S]*?\"$"#).unwrap());
 
-/// literal pattern (numeric + string literal)
-pub static LITERAL_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$"#).unwrap());
+/// sub parser literal pattern
+pub static SUB_PARSER_LITERAL_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r#"^\[[\s\S]*?\]$"#).unwrap());
+
+/// literal pattern (numeric + string literal + sub parser)
+pub static LITERAL_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$"#).unwrap()
+});
 
 /// Hex pattern
 pub static HEX_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$").unwrap());
@@ -68,7 +73,7 @@ pub static NON_EMPTY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\s]").un
 
 /// operand arguments pattern (literal + namespace + quoted namespace)
 pub static OPERAND_ARG_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#).unwrap()
+    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$|^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#).unwrap()
 });
 
 /// quote pattern
@@ -89,9 +94,6 @@ pub static ANY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\S+").unwrap());
 
 /// rainlang lhs pattern
 pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*$|^_$").unwrap());
-
-/// sub parser pattern
-pub static SUB_PARSER_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^\[[\s\S]*?\]$"#).unwrap());
 
 /// pragma pattern (keyword + ws + hex)
 pub static PRAGMA_PATTERN: Lazy<Regex> =
@@ -351,7 +353,7 @@ mod tests {
         // invalids
         for i in ["{123 jhgsdf}", "jkshdfksd kjshdfi ]", "(khku dtdyt 654)"] {
             assert!(
-                !SUB_PARSER_PATTERN.is_match(i),
+                !SUB_PARSER_LITERAL_PATTERN.is_match(i),
                 "String '{}' considered valid.",
                 i
             );
@@ -363,7 +365,7 @@ mod tests {
             "[kjsdf 89435 #$^&$ )_)_}{}]",
         ] {
             assert!(
-                SUB_PARSER_PATTERN.is_match(i),
+                SUB_PARSER_LITERAL_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
                 i
             );

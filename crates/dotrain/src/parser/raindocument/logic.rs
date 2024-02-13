@@ -270,15 +270,18 @@ impl RainDocument {
     }
 
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
-    pub(super) fn is_literal(text: &str) -> Option<(String, bool, bool)> {
+    pub(super) fn is_literal(text: &str) -> Option<(String, usize, bool)> {
         if text.starts_with('"') {
             let has_no_end = !STRING_LITERAL_PATTERN.is_match(text);
-            Some((text.to_owned(), true, has_no_end))
+            Some((text.to_owned(), 0, has_no_end))
+        } else if text.starts_with('[') {
+            let has_no_end = !SUB_PARSER_LITERAL_PATTERN.is_match(text);
+            Some((text.to_owned(), 1, has_no_end))
         } else {
             let items = exclusive_parse(text, &WS_PATTERN, 0, false);
             if items.len() == 1 && NUMERIC_PATTERN.is_match(&items[0].0) {
                 let is_out_of_range = to_u256(&items[0].0).is_err();
-                Some((items[0].0.clone(), false, is_out_of_range))
+                Some((items[0].0.clone(), 2, is_out_of_range))
             } else {
                 None
             }
@@ -298,13 +301,61 @@ impl RainDocument {
     // processes configurations of an import statement
     pub(super) fn process_import_config(
         config_pieces: &mut std::slice::IterMut<'_, ParsedItem>,
+        original_text: &str,
     ) -> ImportConfiguration {
         let mut imp_conf = ImportConfiguration {
             groups: vec![],
             problems: vec![],
         };
         while let Some(first_piece) = config_pieces.next() {
-            if let Some(complementary_piece) = config_pieces.next() {
+            if let Some(mut complementary_piece) = config_pieces.next() {
+                let mut temp: ParsedItem;
+                // to build the complementary piece if it is a string literal with whitespaces
+                if complementary_piece.0.starts_with('"')
+                    && (complementary_piece.0 == "\"" || !complementary_piece.0.ends_with('"'))
+                {
+                    let start = complementary_piece.1[0];
+                    let mut end = 0;
+                    let mut has_no_end = true;
+                    #[allow(clippy::while_let_on_iterator)]
+                    while let Some(end_item) = config_pieces.next() {
+                        end = end_item.1[1];
+                        if end_item.0.ends_with('"') {
+                            has_no_end = false;
+                            break;
+                        }
+                    }
+                    temp = ParsedItem(original_text[start..end].to_owned(), [start, end]);
+                    complementary_piece = &mut temp;
+                    if has_no_end {
+                        imp_conf.problems.push(
+                            ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], [start, end]),
+                        );
+                    }
+                }
+                // to build the complementary piece if it is a sub parser literal with whitespaces
+                if complementary_piece.0.starts_with('[')
+                    && (complementary_piece.0 == "]" || !complementary_piece.0.ends_with(']'))
+                {
+                    let start = complementary_piece.1[0];
+                    let mut end = 0;
+                    let mut has_no_end = true;
+                    #[allow(clippy::while_let_on_iterator)]
+                    while let Some(end_item) = config_pieces.next() {
+                        end = end_item.1[1];
+                        if end_item.0.ends_with(']') {
+                            has_no_end = false;
+                            break;
+                        }
+                    }
+                    temp = ParsedItem(original_text[start..end].to_owned(), [start, end]);
+                    complementary_piece = &mut temp;
+                    if has_no_end {
+                        imp_conf.problems.push(
+                            ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], [start, end]),
+                        );
+                    }
+                }
                 if WORD_PATTERN.is_match(&first_piece.0) {
                     if LITERAL_PATTERN.is_match(&complementary_piece.0)
                         || complementary_piece.0 == "!"
@@ -466,6 +517,7 @@ impl RainDocument {
             if !pieces[config_pieces_start_index..].is_empty() {
                 result.configuration = Some(Self::process_import_config(
                     &mut pieces[config_pieces_start_index..].iter_mut(),
+                    &self.text,
                 ));
             };
         } else {
@@ -798,12 +850,18 @@ impl RainDocument {
                     msg = DEFAULT_ELISION.to_owned();
                 }
                 item = BindingItem::Elided(ElidedBindingItem { msg });
-            } else if let Some((value, is_str_literal, has_err)) = Self::is_literal(raw_content) {
-                if is_str_literal {
+            } else if let Some((value, typ, has_err)) = Self::is_literal(raw_content) {
+                if typ == 0 {
                     if has_err {
                         self.problems.push(
                             ErrorCode::UnexpectedStringLiteralEnd
                                 .to_problem(vec![], content_position),
+                        );
+                    }
+                } else if typ == 1 {
+                    if has_err {
+                        self.problems.push(
+                            ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], content_position),
                         );
                     }
                 } else if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {

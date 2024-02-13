@@ -287,32 +287,50 @@ mod tests {
     fn test_is_constant_method() -> anyhow::Result<()> {
         let text = " \n 1234 \n\t ";
         let result = RainDocument::is_literal(text);
-        assert_eq!(result, Some(("1234".to_owned(), false, false)));
+        assert_eq!(result, Some(("1234".to_owned(), 2, false)));
 
         let text = " \n 14e6";
         let result = RainDocument::is_literal(text);
-        assert_eq!(result, Some(("14e6".to_owned(), false, false)));
+        assert_eq!(result, Some(("14e6".to_owned(), 2, false)));
 
         let text = " \t 0x1234abcdef ";
         let result = RainDocument::is_literal(text);
-        assert_eq!(result, Some(("0x1234abcdef".to_owned(), false, false)));
+        assert_eq!(result, Some(("0x1234abcdef".to_owned(), 2, false)));
 
         let text = " \n 99999e99999 \n";
         let result = RainDocument::is_literal(text);
-        assert_eq!(result, Some(("99999e99999".to_owned(), false, true)));
+        assert_eq!(result, Some(("99999e99999".to_owned(), 2, true)));
 
         let text = "\" some\n literal  \nvalue\t\n \"";
         let result = RainDocument::is_literal(text);
         assert_eq!(
             result,
-            Some(("\" some\n literal  \nvalue\t\n \"".to_owned(), true, false))
+            Some(("\" some\n literal  \nvalue\t\n \"".to_owned(), 0, false))
         );
 
         let text = "\" some\n literal\n with no end ";
         let result = RainDocument::is_literal(text);
         assert_eq!(
             result,
-            Some(("\" some\n literal\n with no end ".to_owned(), true, true))
+            Some(("\" some\n literal\n with no end ".to_owned(), 0, true))
+        );
+
+        let text = "[some \n \t sub parser literal   ]";
+        let result = RainDocument::is_literal(text);
+        assert_eq!(
+            result,
+            Some(("[some \n \t sub parser literal   ]".to_owned(), 1, false))
+        );
+
+        let text = "[some \n \t sub parser literal  with no \n end";
+        let result = RainDocument::is_literal(text);
+        assert_eq!(
+            result,
+            Some((
+                "[some \n \t sub parser literal  with no \n end".to_owned(),
+                1,
+                true
+            ))
         );
 
         let text = " \n 999 234 \n";
@@ -343,7 +361,7 @@ mod tests {
     fn test_process_import_config_method() -> anyhow::Result<()> {
         let text = " 'item1 renamed-item1 \n  \n\n\t item2 0x1234 \n";
         let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        let result = RainDocument::process_import_config(&mut config_items.iter_mut());
+        let result = RainDocument::process_import_config(&mut config_items.iter_mut(), text);
         let expected = ImportConfiguration {
             groups: vec![
                 (
@@ -359,9 +377,45 @@ mod tests {
         };
         assert_eq!(result, expected);
 
+        let text = " 'item1 renamed-item1 \n  \n\n\t item2 \" some string literal\" \n\t item3 [ some sub parser literal ]  item4 [another-sub-parser-literal] item5 \n 4e18 \n";
+        let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
+        let result = RainDocument::process_import_config(&mut config_items.iter_mut(), text);
+        let expected = ImportConfiguration {
+            groups: vec![
+                (
+                    ParsedItem("'item1".to_owned(), [1, 7]),
+                    Some(ParsedItem("renamed-item1".to_owned(), [8, 21])),
+                ),
+                (
+                    ParsedItem("item2".to_owned(), [29, 34]),
+                    Some(ParsedItem("\" some string literal\"".to_owned(), [35, 57])),
+                ),
+                (
+                    ParsedItem("item3".to_owned(), [61, 66]),
+                    Some(ParsedItem(
+                        "[ some sub parser literal ]".to_owned(),
+                        [67, 94],
+                    )),
+                ),
+                (
+                    ParsedItem("item4".to_owned(), [96, 101]),
+                    Some(ParsedItem(
+                        "[another-sub-parser-literal]".to_owned(),
+                        [102, 130],
+                    )),
+                ),
+                (
+                    ParsedItem("item5".to_owned(), [131, 136]),
+                    Some(ParsedItem("4e18".to_owned(), [139, 143])),
+                ),
+            ],
+            problems: vec![],
+        };
+        assert_eq!(result, expected);
+
         let text = "'item1 renamed-item1 . ";
         let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        let result = RainDocument::process_import_config(&mut config_items.iter_mut());
+        let result = RainDocument::process_import_config(&mut config_items.iter_mut(), text);
         let expected = ImportConfiguration {
             groups: vec![
                 (
@@ -376,7 +430,7 @@ mod tests {
 
         let text = "Bad-name 0x1234";
         let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        let result = RainDocument::process_import_config(&mut config_items.iter_mut());
+        let result = RainDocument::process_import_config(&mut config_items.iter_mut(), text);
         let expected = ImportConfiguration {
             groups: vec![(
                 ParsedItem("Bad-name".to_owned(), [0, 8]),
