@@ -1,114 +1,16 @@
-use serde::{Serialize, Deserialize};
 use rain_metadata::types::authoring::v1::AuthoringMeta;
-use super::{
+use super::*;
+use super::super::{
     super::{
         error::{Error, ErrorCode},
-        types::{ast::*, patterns::*},
+        types::patterns::*,
     },
-    line_number, inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
+    inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
 };
 
-#[cfg(feature = "js-api")]
-use tsify::Tsify;
-
-#[derive(Debug, Clone, PartialEq, Default)]
-struct Parens {
-    open: Vec<usize>,
-    close: Vec<usize>,
-}
-
-#[derive(Debug, Clone, PartialEq, Default)]
-struct RainlangState {
-    nodes: Vec<Node>,
-    aliases: Vec<Alias>,
-    parens: Parens,
-    depth: usize,
-}
-
-/// Data structure (parse tree) of a Rainlang text
-///
-/// RainlangDocument represents the parse tree of a Rainlang text which is used by the
-/// RainDocument and for providing LSP services.
-#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RainlangDocument {
-    pub(crate) text: String,
-    pub(crate) ast: Vec<RainlangSource>,
-    pub(crate) problems: Vec<Problem>,
-    pub(crate) comments: Vec<Comment>,
-    pub(crate) error: Option<String>,
-    #[serde(skip)]
-    state: RainlangState,
-}
-
 impl RainlangDocument {
-    /// The error msg if parsing had resulted in an runtime error
-    pub fn runtime_error(&self) -> Option<String> {
-        self.error.clone()
-    }
-
-    /// This instance's text
-    pub fn text(&self) -> &String {
-        &self.text
-    }
-
-    /// This instance's parse tree (AST)
-    pub fn ast(&self) -> &Vec<RainlangSource> {
-        &self.ast
-    }
-
-    /// This instance's problems
-    pub fn problems(&self) -> &Vec<Problem> {
-        &self.problems
-    }
-
-    /// This instance's comments
-    pub fn comments(&self) -> &Vec<Comment> {
-        &self.comments
-    }
-}
-
-impl RainlangDocument {
-    /// Creates a new instance
-    pub(crate) fn create(
-        text: String,
-        namespace: &Namespace,
-        authoring_meta: Option<&AuthoringMeta>,
-    ) -> RainlangDocument {
-        let mut rainlang_doc = RainlangDocument {
-            text,
-            ast: vec![],
-            problems: vec![],
-            comments: vec![],
-            error: None,
-            state: RainlangState::default(),
-        };
-        rainlang_doc.parse(namespace, authoring_meta.unwrap_or(&AuthoringMeta(vec![])));
-        rainlang_doc
-    }
-
-    pub(crate) fn new() -> Self {
-        RainlangDocument {
-            text: String::new(),
-            ast: vec![],
-            problems: vec![],
-            comments: vec![],
-            error: None,
-            state: RainlangState::default(),
-        }
-    }
-
-    fn parse(&mut self, namespace: &Namespace, authoring_meta: &AuthoringMeta) {
-        if let Err(e) = self._parse(namespace, authoring_meta) {
-            self.error = Some(e.to_string());
-            self.problems
-                .push(ErrorCode::RuntimeError.to_problem(vec![&e.to_string()], [0, 0]));
-        };
-    }
-
     /// The main workhorse that parses the text to build the parse tree and collect problems
-    fn _parse(
+    pub(super) fn _parse(
         &mut self,
         namespace: &Namespace,
         authoring_meta: &AuthoringMeta,
@@ -286,24 +188,11 @@ impl RainlangDocument {
             }
         }
 
-        // ignore next line lint
-        for v in self.comments.iter() {
-            if lint_patterns::IGNORE_NEXT_LINE.is_match(&v.comment) {
-                if let Some(line) = self.ast.iter().flat_map(|e| &e.lines).find(|&e| {
-                    line_number(&self.text, e.position[0])
-                        == line_number(&self.text, v.position[1]) + 1
-                }) {
-                    self.problems.retain(|e| {
-                        !(e.position[0] >= line.position[0] && e.position[1] <= line.position[1])
-                    })
-                }
-            }
-        }
         Ok(())
     }
 
     /// resets the parse state
-    fn reset_state(&mut self) {
+    pub(super) fn reset_state(&mut self) {
         self.state.depth = 0;
         self.state.nodes.clear();
         self.state.aliases.clear();
@@ -312,7 +201,7 @@ impl RainlangDocument {
     }
 
     /// Method to update the parse state
-    fn update_state(&mut self, node: Node) -> Result<(), Error> {
+    pub(super) fn update_state(&mut self, node: Node) -> Result<(), Error> {
         let mut nodes = &mut self.state.nodes;
         for _ in 0..self.state.depth {
             let len = nodes.len();
@@ -326,7 +215,7 @@ impl RainlangDocument {
     }
 
     /// Consumes items (separated by defnied boundries) in the text
-    fn process_rhs(
+    pub(super) fn process_rhs(
         &mut self,
         text: &str,
         offset: usize,
@@ -370,7 +259,7 @@ impl RainlangDocument {
     }
 
     /// resolves the Opcode AST type once its corresponding closing paren has been consumed
-    fn process_opcode(&mut self) -> Result<(), Error> {
+    pub(super) fn process_opcode(&mut self) -> Result<(), Error> {
         self.state.parens.open.pop();
         let end_position = self.state.parens.close.pop().ok_or(Error::FailedToParse)?;
 
@@ -399,7 +288,7 @@ impl RainlangDocument {
     }
 
     /// handles operand arguments
-    fn process_operand(
+    pub(super) fn process_operand(
         &mut self,
         exp: &str,
         cursor: usize,
@@ -420,11 +309,11 @@ impl RainlangDocument {
                 if OPERAND_ARG_PATTERN.is_match(&v.0) {
                     if LITERAL_PATTERN.is_match(&v.0) {
                         operand_args_items.push(OperandArgItem {
-                            value: v.0.clone(),
+                            value: Some(v.0.clone()),
                             name: "operand arg".to_owned(),
                             position: v.1,
                             description: String::new(),
-                            id: None,
+                            binding_id: None,
                         });
                     } else {
                         let is_quote = v.0.starts_with('\'');
@@ -433,7 +322,8 @@ impl RainlangDocument {
                         } else {
                             (v.0.as_str(), v.1[0])
                         };
-                        let mut value = String::new();
+                        let mut is_quote_binding = false;
+                        let mut value = None;
                         if let Some(b) = self.search_namespace(name, offset, namespace) {
                             match &b.item {
                                 BindingItem::Elided(e) => {
@@ -442,29 +332,37 @@ impl RainlangDocument {
                                         ErrorCode::ElidedBinding.to_problem(vec![name, &msg], v.1),
                                     );
                                 }
-                                BindingItem::Literal(c) => {
+                                BindingItem::Literal(l) => {
                                     if is_quote {
                                         self.problems.push(
-                                            ErrorCode::InvalidQuote.to_problem(vec![name], v.1),
+                                            ErrorCode::InvalidLiteralQuote
+                                                .to_problem(vec![name], v.1),
                                         );
                                     } else {
-                                        value = c.value.clone();
+                                        value = Some(l.value.clone());
                                     }
+                                }
+                                BindingItem::Quote(_q) => {
+                                    is_quote_binding = true;
+                                    let problems: Vec<Problem> = b
+                                        .problems
+                                        .iter()
+                                        .map(|p| Problem {
+                                            msg: p.msg.clone(),
+                                            position: v.1,
+                                            code: p.code,
+                                        })
+                                        .collect();
+                                    self.problems.extend(problems);
+                                    self.dependencies.push(name.to_owned());
                                 }
                                 BindingItem::Exp(_e) => {
                                     if is_quote {
-                                        if b.problems
-                                            .iter()
-                                            .any(|v| v.code == ErrorCode::CircularDependency)
-                                        {
-                                            self.problems.push(
-                                                ErrorCode::CircularDependencyQuote
-                                                    .to_problem(vec![], v.1),
-                                            );
-                                        }
+                                        self.dependencies.push(name.to_owned());
                                     } else {
                                         self.problems.push(
-                                            ErrorCode::InvalidReference.to_problem(vec![name], v.1),
+                                            ErrorCode::InvalidReferenceAll
+                                                .to_problem(vec![name], v.1),
                                         );
                                     }
                                 }
@@ -481,7 +379,7 @@ impl RainlangDocument {
                             name: "operand arg".to_owned(),
                             position: v.1,
                             description: String::new(),
-                            id: Some(v.0.clone()),
+                            binding_id: Some((v.0.clone(), is_quote_binding)),
                         });
                     }
                 } else {
@@ -503,12 +401,12 @@ impl RainlangDocument {
         remaining
     }
 
-    fn parse_operand_args(&mut self, text: &str, offset: usize) -> Vec<ParsedItem> {
+    pub(super) fn parse_operand_args(&mut self, text: &str, offset: usize) -> Vec<ParsedItem> {
         let mut operand_args = vec![];
         let mut parsed_items = inclusive_parse(text, &ANY_PATTERN, 0);
         let mut iter = parsed_items.iter_mut();
         while let Some(item) = iter.next() {
-            if item.0.starts_with('"') {
+            if item.0.starts_with('"') && (item.0 == "\"" || !item.0.ends_with('"')) {
                 let start = item.1[0];
                 let mut end = text.len();
                 let mut has_no_end = true;
@@ -523,7 +421,26 @@ impl RainlangDocument {
                 let pos = [start + offset, end + offset];
                 if has_no_end {
                     self.problems
-                        .push(ErrorCode::UnexpectedStringLiteral.to_problem(vec![], pos));
+                        .push(ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], pos));
+                } else {
+                    operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
+                }
+            } else if item.0.starts_with('[') && (item.0 == "]" || !item.0.ends_with(']')) {
+                let start = item.1[0];
+                let mut end = text.len();
+                let mut has_no_end = true;
+                #[allow(clippy::while_let_on_iterator)]
+                while let Some(end_item) = iter.next() {
+                    if end_item.0.ends_with(']') {
+                        has_no_end = false;
+                        end = end_item.1[1];
+                        break;
+                    }
+                }
+                let pos = [start + offset, end + offset];
+                if has_no_end {
+                    self.problems
+                        .push(ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], pos));
                 } else {
                     operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
                 }
@@ -538,7 +455,7 @@ impl RainlangDocument {
     }
 
     /// parses an upcoming word to the corresponding AST node
-    fn consume(
+    pub(super) fn consume(
         &mut self,
         text: &str,
         cursor: usize,
@@ -556,7 +473,7 @@ impl RainlangDocument {
             };
         let next_pos = [cursor, cursor + next.len()];
 
-        if next.starts_with('"') {
+        if next.starts_with('"') && (next == "\"" || !next.ends_with('"')) {
             match remaining.find('"') {
                 Some(string_literal_end) => {
                     let consumed = string_literal_end + next.len() + 1;
@@ -570,7 +487,34 @@ impl RainlangDocument {
                 }
                 None => {
                     self.problems.push(
-                        ErrorCode::UnexpectedStringLiteral
+                        ErrorCode::UnexpectedStringLiteralEnd
+                            .to_problem(vec![], [cursor, cursor + exp.len()]),
+                    );
+                    self.update_state(Node::Literal(Literal {
+                        value: exp.to_owned(),
+                        position: [cursor, cursor + exp.len()],
+                        lhs_alias: None,
+                        id: None,
+                    }))?;
+                    return Ok(exp.len());
+                }
+            }
+        }
+        if next.starts_with('[') && (next == "]" || !next.ends_with(']')) {
+            match remaining.find(']') {
+                Some(sub_parser_end) => {
+                    let consumed = sub_parser_end + next.len() + 1;
+                    self.update_state(Node::Literal(Literal {
+                        value: exp[0..consumed].to_owned(),
+                        position: [cursor, cursor + consumed],
+                        lhs_alias: None,
+                        id: None,
+                    }))?;
+                    return Ok(consumed);
+                }
+                None => {
+                    self.problems.push(
+                        ErrorCode::UnexpectedSubParserEnd
                             .to_problem(vec![], [cursor, cursor + exp.len()]),
                     );
                     self.update_state(Node::Literal(Literal {
@@ -657,8 +601,19 @@ impl RainlangDocument {
                         }))?;
                     }
                     BindingItem::Exp(_e) => {
-                        self.problems
-                            .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
+                        self.problems.push(
+                            ErrorCode::InvalidReferenceLiteral.to_problem(vec![next], next_pos),
+                        );
+                        self.update_state(Node::Alias(Alias {
+                            name: next.to_owned(),
+                            position: next_pos,
+                            lhs_alias: None,
+                        }))?;
+                    }
+                    BindingItem::Quote(_q) => {
+                        self.problems.push(
+                            ErrorCode::InvalidReferenceLiteral.to_problem(vec![next], next_pos),
+                        );
                         self.update_state(Node::Alias(Alias {
                             name: next.to_owned(),
                             position: next_pos,
@@ -688,7 +643,8 @@ impl RainlangDocument {
                 lhs_alias: None,
                 id: None,
             }))?;
-        } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_PATTERN.is_match(next) {
+        } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_LITERAL_PATTERN.is_match(next)
+        {
             self.update_state(Node::Literal(Literal {
                 value: next.to_owned(),
                 position: next_pos,
@@ -728,8 +684,19 @@ impl RainlangDocument {
                             }))?;
                         }
                         BindingItem::Exp(_e) => {
-                            self.problems
-                                .push(ErrorCode::InvalidReference.to_problem(vec![next], next_pos));
+                            self.problems.push(
+                                ErrorCode::InvalidReferenceLiteral.to_problem(vec![next], next_pos),
+                            );
+                            self.update_state(Node::Alias(Alias {
+                                name: next.to_owned(),
+                                position: next_pos,
+                                lhs_alias: None,
+                            }))?;
+                        }
+                        BindingItem::Quote(_q) => {
+                            self.problems.push(
+                                ErrorCode::InvalidReferenceLiteral.to_problem(vec![next], next_pos),
+                            );
                             self.update_state(Node::Alias(Alias {
                                 name: next.to_owned(),
                                 position: next_pos,
@@ -770,7 +737,7 @@ impl RainlangDocument {
     }
 
     /// Search in namespaces for a name
-    fn search_namespace<'a>(
+    pub(super) fn search_namespace<'a>(
         &'a mut self,
         query: &str,
         offset: usize,
@@ -847,479 +814,5 @@ impl RainlangDocument {
             );
             None
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::HashMap;
-    use rain_metadata::types::authoring::v1::AuthoringMetaItem;
-
-    #[test]
-    fn test_process_opcode_method() -> anyhow::Result<()> {
-        let mut rl = RainlangDocument::new();
-        rl.state.depth = 1;
-        rl.state.parens.close = vec![13];
-        let value_node = Node::Literal(Literal {
-            value: "12".to_owned(),
-            position: [3, 4],
-            lhs_alias: None,
-            id: None,
-        });
-        let op_node = Node::Opcode(Opcode {
-            opcode: OpcodeDetails {
-                name: "add".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [8, 0],
-            inputs: vec![
-                Node::Literal(Literal {
-                    value: "1".to_owned(),
-                    position: [9, 10],
-                    lhs_alias: None,
-                    id: None,
-                }),
-                Node::Literal(Literal {
-                    value: "2".to_owned(),
-                    position: [11, 12],
-                    lhs_alias: None,
-                    id: None,
-                }),
-            ],
-            lhs_alias: None,
-            operand_args: None,
-        });
-        rl.state.nodes = vec![value_node.clone(), op_node];
-        rl.process_opcode()?;
-
-        let expected_op_node = Node::Opcode(Opcode {
-            opcode: OpcodeDetails {
-                name: "add".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 14],
-            parens: [8, 13],
-            inputs: vec![
-                Node::Literal(Literal {
-                    value: "1".to_owned(),
-                    position: [9, 10],
-                    lhs_alias: None,
-                    id: None,
-                }),
-                Node::Literal(Literal {
-                    value: "2".to_owned(),
-                    position: [11, 12],
-                    lhs_alias: None,
-                    id: None,
-                }),
-            ],
-            lhs_alias: None,
-            operand_args: None,
-        });
-        let expected_state = RainlangState {
-            nodes: vec![value_node, expected_op_node],
-            depth: 1,
-            ..Default::default()
-        };
-        assert_eq!(rl.state, expected_state);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_process_operand_method() -> anyhow::Result<()> {
-        let mut rl = RainlangDocument::new();
-        let namespace = HashMap::new();
-        let exp = "<12 56>";
-        let mut op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: None,
-        };
-
-        let consumed_count = rl.process_operand(exp, 8, &mut op, &namespace);
-        let expected_op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: Some(OperandArg {
-                position: [8, 15],
-                args: vec![
-                    OperandArgItem {
-                        value: "12".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [9, 11],
-                        description: String::new(),
-                        id: None,
-                    },
-                    OperandArgItem {
-                        value: "56".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [12, 14],
-                        description: String::new(),
-                        id: None,
-                    },
-                ],
-            }),
-        };
-        assert_eq!(consumed_count, exp.len());
-        assert_eq!(op, expected_op);
-
-        let exp =
-            r#"<0xa5 "some string literal " some-literal-binding "some other string literal ">"#;
-        let mut op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opcode".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: None,
-        };
-
-        let consumed_count = rl.process_operand(exp, 8, &mut op, &namespace);
-        let expected_op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opcode".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: Some(OperandArg {
-                position: [8, 87],
-                args: vec![
-                    OperandArgItem {
-                        value: "0xa5".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [9, 13],
-                        description: String::new(),
-                        id: None,
-                    },
-                    OperandArgItem {
-                        value: r#""some string literal ""#.to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [14, 36],
-                        description: String::new(),
-                        id: None,
-                    },
-                    OperandArgItem {
-                        value: String::new(),
-                        name: "operand arg".to_owned(),
-                        position: [37, 57],
-                        description: String::new(),
-                        id: Some("some-literal-binding".to_owned()),
-                    },
-                    OperandArgItem {
-                        value: r#""some other string literal ""#.to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [58, 86],
-                        description: String::new(),
-                        id: None,
-                    },
-                ],
-            }),
-        };
-        assert_eq!(consumed_count, exp.len());
-        assert_eq!(op, expected_op);
-
-        let exp = "<1\n0xf2\n69   32>";
-        let mut op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: None,
-        };
-
-        let consumed_count = rl.process_operand(exp, 15, &mut op, &namespace);
-        let expected_op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: Some(OperandArg {
-                position: [15, 31],
-                args: vec![
-                    OperandArgItem {
-                        value: "1".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [16, 17],
-                        description: String::new(),
-                        id: None,
-                    },
-                    OperandArgItem {
-                        value: "0xf2".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [18, 22],
-                        description: String::new(),
-                        id: None,
-                    },
-                    OperandArgItem {
-                        value: "69".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [23, 25],
-                        description: String::new(),
-                        id: None,
-                    },
-                    OperandArgItem {
-                        value: "32".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [28, 30],
-                        description: String::new(),
-                        id: None,
-                    },
-                ],
-            }),
-        };
-        assert_eq!(consumed_count, exp.len());
-        assert_eq!(op, expected_op);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_consume_method() -> anyhow::Result<()> {
-        let mut rl = RainlangDocument::new();
-        let namespace = HashMap::new();
-        let authoring_meta = AuthoringMeta(vec![
-            AuthoringMetaItem {
-                word: "opcode".to_owned(),
-                operand_parser_offset: 0,
-                description: String::new(),
-            },
-            AuthoringMetaItem {
-                word: "another-opcode".to_owned(),
-                operand_parser_offset: 0,
-                description: String::new(),
-            },
-            AuthoringMetaItem {
-                word: "another-opcode-2".to_owned(),
-                operand_parser_offset: 0,
-                description: String::new(),
-            },
-        ]);
-
-        let text = "opcode<12 56>(";
-        let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta)?;
-        let mut expected_state_nodes = vec![Node::Opcode(Opcode {
-            opcode: OpcodeDetails {
-                name: "opcode".to_owned(),
-                description: String::new(),
-                position: [10, 16],
-            },
-            operand: None,
-            output: None,
-            position: [10, 0],
-            parens: [23, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: Some(OperandArg {
-                position: [16, 23],
-                args: vec![
-                    OperandArgItem {
-                        value: "12".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [17, 19],
-                        description: String::new(),
-                        id: None,
-                    },
-                    OperandArgItem {
-                        value: "56".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [20, 22],
-                        description: String::new(),
-                        id: None,
-                    },
-                ],
-            }),
-        })];
-        assert_eq!(consumed_count, text.len());
-        assert_eq!(rl.state.nodes, expected_state_nodes);
-
-        let text = "another-opcode(12 0x123abced)";
-        rl.state.depth -= 1;
-        let consumed_count = rl.consume(text, 24, &namespace, &authoring_meta)?;
-        expected_state_nodes.push(Node::Opcode(Opcode {
-            opcode: OpcodeDetails {
-                name: "another-opcode".to_owned(),
-                description: String::new(),
-                position: [24, 38],
-            },
-            operand: None,
-            output: None,
-            position: [24, 0],
-            parens: [38, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: None,
-        }));
-        assert_eq!(consumed_count, "another-opcode(".len());
-        assert_eq!(rl.state.nodes, expected_state_nodes);
-
-        let text = "another-opcode-2<\n  0x1f\n  87>(\n  0xabcef1234\n)";
-        rl.state.depth -= 1;
-        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta)?;
-        expected_state_nodes.push(Node::Opcode(Opcode {
-            opcode: OpcodeDetails {
-                name: "another-opcode-2".to_owned(),
-                description: String::new(),
-                position: [77, 93],
-            },
-            operand: None,
-            output: None,
-            position: [77, 0],
-            parens: [107, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: Some(OperandArg {
-                position: [93, 107],
-                args: vec![
-                    OperandArgItem {
-                        value: "0x1f".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [97, 101],
-                        description: String::new(),
-                        id: None,
-                    },
-                    OperandArgItem {
-                        value: "87".to_owned(),
-                        name: "operand arg".to_owned(),
-                        position: [104, 106],
-                        description: String::new(),
-                        id: None,
-                    },
-                ],
-            }),
-        }));
-        assert_eq!(consumed_count, "another-opcode-2<\n  0x1f\n  87>(".len());
-        assert_eq!(rl.state.nodes, expected_state_nodes);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_search_namespace_method() -> anyhow::Result<()> {
-        let mut rl = RainlangDocument::new();
-        let mut main_namespace: Namespace = HashMap::new();
-        let mut deep_namespace: Namespace = HashMap::new();
-        let mut deeper_namespace: Namespace = HashMap::new();
-
-        let deeper_binding = Binding {
-            name: "deeper-binding-name".to_owned(),
-            name_position: [2, 2],
-            content: String::new(),
-            content_position: [4, 4],
-            position: [1, 2],
-            problems: vec![],
-            dependencies: vec![],
-            item: BindingItem::Elided(ElidedBindingItem {
-                msg: "elided binding".to_string(),
-            }),
-        };
-        let deeper_leaf = NamespaceItem::Leaf(NamespaceLeaf {
-            hash: "some-hash".to_owned(),
-            import_index: 2,
-            element: deeper_binding.clone(),
-        });
-
-        let binding = Binding {
-            name: "binding-name".to_owned(),
-            name_position: [1, 1],
-            content: String::new(),
-            content_position: [1, 2],
-            position: [1, 2],
-            problems: vec![],
-            dependencies: vec![],
-            item: BindingItem::Literal(LiteralBindingItem {
-                value: "1234".to_owned(),
-            }),
-        };
-        let deep_leaf = NamespaceItem::Leaf(NamespaceLeaf {
-            hash: "some-other-hash".to_owned(),
-            import_index: 1,
-            element: binding.clone(),
-        });
-
-        deeper_namespace.insert("deeper-binding-name".to_string(), deeper_leaf.clone());
-        deep_namespace.insert("binding-name".to_string(), deep_leaf.clone());
-        deep_namespace.insert(
-            "deeper-namespace".to_string(),
-            NamespaceItem::Node(deeper_namespace),
-        );
-        main_namespace.insert(
-            "deep-namespace".to_string(),
-            NamespaceItem::Node(deep_namespace),
-        );
-
-        let result = rl.search_namespace(
-            "deep-namespace.deeper-namespace.deeper-binding-name",
-            0,
-            &main_namespace,
-        );
-        assert_eq!(Some(&deeper_binding), result);
-
-        let result = rl.search_namespace(".deep-namespace.binding-name", 0, &main_namespace);
-        assert_eq!(Some(&binding), result);
-
-        let result = rl.search_namespace("deep-namespace.other-binding-name", 0, &main_namespace);
-        assert_eq!(None, result);
-
-        let result = rl.search_namespace(
-            "deep-namespace.deeper-namespace.other-binding-name",
-            0,
-            &main_namespace,
-        );
-        assert_eq!(None, result);
-
-        Ok(())
     }
 }

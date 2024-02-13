@@ -5,7 +5,7 @@ use std::{
 };
 use magic_string::{MagicString, OverwriteOptions, GenerateDecodedMapOptions};
 use super::{
-    error::ComposeError,
+    error::{ComposeError, ErrorCode},
     parser::{RainlangDocument, RainDocument, exclusive_parse, Rebind},
     types::{
         patterns::{WORD_PATTERN, NAMESPACE_SEGMENT_PATTERN},
@@ -25,13 +25,13 @@ pub(crate) struct ComposeTargetElement<'a> {
     pub(crate) content_position: Offsets,
     pub(crate) position: Offsets,
     pub(crate) problems: &'a [Problem],
-    pub(crate) dependencies: &'a [String],
     pub(crate) item: RainlangDocument,
 }
 
 /// a composing target
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct ComposeTarget<'a> {
+    pub(crate) namespace: &'a Namespace,
     pub(crate) hash: &'a str,
     pub(crate) import_index: isize,
     pub(crate) element: ComposeTargetElement<'a>,
@@ -42,8 +42,10 @@ impl<'a> ComposeTarget<'a> {
         leaf: &'a NamespaceLeaf,
         binding: &'a Binding,
         rainlang_doc: RainlangDocument,
+        namespace: &'a Namespace,
     ) -> Self {
         ComposeTarget {
+            namespace,
             hash: &leaf.hash,
             import_index: leaf.import_index,
             element: ComposeTargetElement {
@@ -53,7 +55,6 @@ impl<'a> ComposeTarget<'a> {
                 content_position: binding.content_position,
                 position: binding.position,
                 problems: &binding.problems,
-                dependencies: &binding.dependencies,
                 item: rainlang_doc,
             },
         }
@@ -138,7 +139,12 @@ impl RainDocument {
                                 &self.imports,
                             ));
                         } else {
-                            nodes.push(ComposeTarget::create(leaf, binding, rainlang_doc));
+                            nodes.push(ComposeTarget::create(
+                                leaf,
+                                binding,
+                                rainlang_doc,
+                                parent_node,
+                            ));
                         }
                     }
                 }
@@ -151,6 +157,22 @@ impl RainDocument {
         // resolve deps of deps recursively and return the array of deps indexes that
         // will be used to replace with dep identifiers in the text
         let mut deps_indexes = self.resolve_deps(&mut nodes)?;
+
+        // validate each node dep path
+        for (index, _) in deps_indexes.iter().enumerate() {
+            let chain = vec![index as u8];
+            validate_dep_path(index, &deps_indexes, &chain).map_err(|_| {
+                if nodes[index].import_index == -1 {
+                    ComposeError::Problems(vec![ErrorCode::CircularDependency
+                        .to_problem(vec![], nodes[index].element.name_position)])
+                } else {
+                    ComposeError::Problems(vec![ErrorCode::CircularDependency.to_problem(
+                        vec![],
+                        self.imports[nodes[index].import_index as usize].hash_position,
+                    )])
+                }
+            })?;
+        }
 
         // represents sourcemap details of each composing node
         let mut sourcemaps: Vec<ComposeSourcemap> = vec![];
@@ -214,8 +236,8 @@ impl RainDocument {
             let mut new_nested_nodes = vec![];
             for node in nodes[ignore_offset..].iter() {
                 let mut this_node_deps_indexes = VecDeque::new();
-                for dep in node.element.dependencies {
-                    match search_namespace(dep, &self.namespace) {
+                for dep in &node.element.item.dependencies {
+                    match search_namespace(dep, node.namespace) {
                         Ok((parent_node, leaf, binding)) => {
                             if !binding.problems.is_empty() {
                                 return Err(ComposeError::from_problems(
@@ -240,8 +262,12 @@ impl RainDocument {
                                     // is already present and if so capture its index, if not repeat
                                     // the same process with newly found nested nodes, if still not present
                                     // add this target to the nodes and then capture its index
-                                    let new_compse_target =
-                                        ComposeTarget::create(leaf, binding, rainlang_doc);
+                                    let new_compse_target = ComposeTarget::create(
+                                        leaf,
+                                        binding,
+                                        rainlang_doc,
+                                        parent_node,
+                                    );
                                     if let Some((index, _)) = &nodes
                                         .iter()
                                         .enumerate()
@@ -277,6 +303,19 @@ impl RainDocument {
         }
         Ok(deps_indexes)
     }
+}
+
+fn validate_dep_path(index: usize, deps: &VecDeque<VecDeque<u8>>, path: &[u8]) -> Result<(), ()> {
+    for dep in &deps[index] {
+        let mut current_path = path.to_vec();
+        if current_path.contains(dep) {
+            return Err(());
+        } else {
+            current_path.push(*dep);
+            validate_dep_path(*dep as usize, deps, &current_path)?;
+        }
+    }
+    Ok(())
 }
 
 /// Searchs in a Namespace for a given name
@@ -330,6 +369,7 @@ fn search_namespace<'a>(
                     name
                 )),
                 BindingItem::Exp(_e) => Ok((parent, leaf, &leaf.element)),
+                BindingItem::Quote(q) => search_namespace(&q.quote, namespace),
             },
         }
     } else {
@@ -358,29 +398,31 @@ fn build_sourcemap<'a>(
                 }
             }
             Node::Opcode(opcode) => {
-                let ref_args = if let Some(operand_args) = &opcode.operand_args {
+                let args_details = if let Some(operand_args) = &opcode.operand_args {
                     operand_args
                         .args
                         .iter()
                         .filter_map(|v| {
-                            v.id.as_ref()
-                                .map(|id| (v.value.as_str(), id.as_str(), v.position))
+                            v.binding_id
+                                .as_ref()
+                                .map(|(id, typ)| (v.value.as_deref(), id.as_str(), typ, v.position))
                         })
                         .collect()
                 } else {
                     vec![]
                 };
-                if !ref_args.is_empty() {
-                    if deps_indexes.is_empty() && ref_args.iter().any(|v| v.1.starts_with('\'')) {
+                if !args_details.is_empty() {
+                    if deps_indexes.is_empty() && args_details.iter().any(|v| v.1.starts_with('\''))
+                    {
                         return Err("cannot resolve dependecies".to_owned());
                     }
-                    for arg in ref_args {
-                        if arg.1.starts_with('\'') {
+                    for arg in args_details {
+                        if arg.1.starts_with('\'') || *arg.2 {
                             if let Some(dep_index) = deps_indexes.pop_front() {
                                 generator
                                     .overwrite(
-                                        arg.2[0] as i64,
-                                        arg.2[1] as i64,
+                                        arg.3[0] as i64,
+                                        arg.3[1] as i64,
                                         &dep_index.to_string(),
                                         OverwriteOptions::default(),
                                     )
@@ -388,15 +430,17 @@ fn build_sourcemap<'a>(
                             } else {
                                 return Err("cannot resolve dependecies".to_owned());
                             }
-                        } else {
+                        } else if let Some(val) = arg.0 {
                             generator
                                 .overwrite(
-                                    arg.2[0] as i64,
-                                    arg.2[1] as i64,
-                                    arg.0,
+                                    arg.3[0] as i64,
+                                    arg.3[1] as i64,
+                                    val,
                                     OverwriteOptions::default(),
                                 )
                                 .or(Err("could not build sourcemap".to_owned()))?;
+                        } else {
+                            return Err("cannot resolve dependecies".to_owned());
                         }
                     }
                 }
@@ -566,6 +610,9 @@ _: opcode-2(0xabcd 4e18);";
 #some-value 4e18
 #some-other-value 0xabcdef1234
 
+#main
+_: opcode-1<'exp-binding-2>(0xabcd 456);
+
 #exp-binding-1
 _: opcode-1(0xabcd 456);
 
@@ -578,13 +625,15 @@ _: opcode-2(some-name some-other-value);
 ";
         let rainlang_text = RainDocument::compose_text(
             dotrain_text,
-            &["exp-binding-1", "exp-binding-2"],
+            &["main", "exp-binding-1", "exp-binding-2"],
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = "_: opcode-1(0xabcd 456);
+        let expected_rainlang = "_: opcode-1<2>(0xabcd 456);
 
-_: opcode-1<2>(0xabcd 456);
+_: opcode-1(0xabcd 456);
+
+_: opcode-1<3>(0xabcd 456);
 
 some-name: opcode-2(0xabcd 4e18),
 _: opcode-2(some-name 0xabcdef1234);";
@@ -635,7 +684,7 @@ _: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
 #exp-binding-1
 using-words-from 0x1234abced
 abcd: " this is literal string ",
-_: some-sub-parser-word<some-value " some literal as operand ">(some-value literal-binding);
+_: some-sub-parser-word<some-value " some literal as operand " "test">(some-value literal-binding);
 "#;
         let rainlang_text = RainDocument::compose_text(
             dotrain_text,
@@ -645,7 +694,7 @@ _: some-sub-parser-word<some-value " some literal as operand ">(some-value liter
         )?;
         let expected_rainlang = r#"using-words-from 0x1234abced
 abcd: " this is literal string ",
-_: some-sub-parser-word<4e18 " some literal as operand ">(4e18 "some literal value");"#;
+_: some-sub-parser-word<4e18 " some literal as operand " "test">(4e18 "some literal value");"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
         let dotrain_text = r#"---
@@ -654,6 +703,9 @@ _: some-sub-parser-word<4e18 " some literal as operand ">(4e18 "some literal val
 #exp-binding-1
 /* some comment with quote: dont't */
 using-words-from 0x1234abced
+_: [some-sub-parser 123 4 kjh],
+_: "abcd",
+_: [test],
 _: some-sub-parser-word<1 2>(some-value 44);
 "#;
         let rainlang_text = RainDocument::compose_text(
@@ -664,6 +716,9 @@ _: some-sub-parser-word<1 2>(some-value 44);
         )?;
         let expected_rainlang = r#"/* some comment with quote: dont't */
 using-words-from 0x1234abced
+_: [some-sub-parser 123 4 kjh],
+_: "abcd",
+_: [test],
 _: some-sub-parser-word<1 2>(4e18 44);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -684,6 +739,62 @@ _: opcode-1(0xabcd some-value---);
         )?;
         let expected_rainlang = r"/** some other comment with --- */
 _: opcode-1(0xabcd 4e18);";
+        assert_eq!(result, expected_rainlang);
+
+        let dotrain_text = r"---
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#main
+_: opcode-3(0xabcd 456);
+
+#exp-binding-1
+_: opcode-1<exp-binding-2>(0xabcd 456);
+
+#exp-binding-2 'exp-binding-3
+
+#exp-binding-3
+_: opcode-3(some-value some-other-value);
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1", "main"],
+            Some(meta_store.clone()),
+            None,
+        )?;
+        let expected_rainlang = r"_: opcode-1<2>(0xabcd 456);
+
+_: opcode-3(0xabcd 456);
+
+_: opcode-3(4e18 0xabcdef1234);";
+        assert_eq!(result, expected_rainlang);
+
+        let dotrain_text = r"---
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#main
+_: opcode-3(0xabcd 456);
+
+#exp-binding-1
+_: opcode-1<'exp-binding-2>(0xabcd 456);
+
+#exp-binding-2 'exp-binding-3
+
+#exp-binding-3
+_: opcode-3(some-value some-other-value);
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1", "main"],
+            Some(meta_store.clone()),
+            None,
+        )?;
+        let expected_rainlang = r"_: opcode-1<2>(0xabcd 456);
+
+_: opcode-3(0xabcd 456);
+
+_: opcode-3(4e18 0xabcdef1234);";
         assert_eq!(result, expected_rainlang);
 
         let dotrain_text = r"
@@ -808,6 +919,87 @@ _: opcode-1(0xabcd elided);
         ]));
         assert_eq!(result, expected_err);
 
+        let dotrain_text = r"---
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#main
+_: opcode-3(0xabcd 456);
+
+#exp-binding-1
+_: opcode-1<'exp-binding-2>(0xabcd 456);
+
+#exp-binding-2
+_: opcode-1<'exp-binding-3>(0xabcd 456);
+
+#exp-binding-3
+some-name: opcode-2<'exp-binding-2>(0xabcd some-value),
+_: opcode-2(some-name some-other-value);
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1", "main"],
+            Some(meta_store.clone()),
+            None,
+        );
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::CircularDependency.to_problem(vec![], [86, 99])
+        ]));
+        assert_eq!(result, expected_err);
+
+        let dotrain_text = r"---
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#main
+_: opcode-3(0xabcd 456);
+
+#exp-binding-1
+_: opcode-1<exp-binding-2>(0xabcd 456);
+
+#exp-binding-2 'exp-binding-3
+
+#exp-binding-3 'exp-binding-2
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1", "main"],
+            Some(meta_store.clone()),
+            None,
+        );
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::CircularDependency.to_problem(vec![], [112, 125])
+        ]));
+        assert_eq!(result, expected_err);
+
+        let dotrain_text = r"---
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#main
+_: opcode-3(0xabcd 456);
+
+#exp-binding-1
+_: opcode-1<exp-binding-2>(0xabcd 456);
+
+#exp-binding-2 'exp-binding-3
+
+#exp-binding-3 'exp-binding-4
+
+#exp-binding-4
+_: opcode(1 2);
+";
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1", "main"],
+            Some(meta_store.clone()),
+            None,
+        );
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::DeepQuote.to_problem(vec![], [112, 125])
+        ]));
+        assert_eq!(result, expected_err);
+
         Ok(())
     }
 
@@ -906,6 +1098,82 @@ _: opcode-1<2>(0xabcd 456);
 some-name: opcode-2(0xabcd 0x123456 567),
 _: opcode-2(some-name " some new literal string ");"#;
         assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r"---
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#exp-binding-1
+_: opcode-1<exp-binding-2>(0xabcd 456);
+
+#exp-binding-2 'exp-binding-3
+
+#exp-binding-3
+some-name: opcode-2(0xabcd some-value some-override-value),
+_: opcode-2(some-name some-other-value);
+
+#other-exp-binding
+_: opcode(1 2);
+";
+        let mut rain_document =
+            RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![
+            Rebind("some-override-value".to_owned(), "567".to_owned()),
+            Rebind("some-value".to_owned(), r#"0x123456"#.to_owned()),
+            Rebind(
+                "some-other-value".to_owned(),
+                r#"" some new literal string ""#.to_owned(),
+            ),
+            Rebind(
+                "exp-binding-2".to_owned(),
+                r#"'other-exp-binding"#.to_owned(),
+            ),
+        ];
+        block_on(rain_document.parse(false, Some(rebinds)));
+        let rainlang_text = rain_document.compose(&["exp-binding-1"])?;
+        let expected_rainlang = r#"_: opcode-1<1>(0xabcd 456);
+
+_: opcode(1 2);"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r"---
+#some-value 4e18
+#some-other-value 0xabcdef1234
+
+#exp-binding-1
+_: opcode-1(0xabcd 456);
+";
+        let mut rain_document =
+            RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![Rebind(
+            "deep.some-override-value".to_owned(),
+            "567".to_owned(),
+        )];
+        block_on(rain_document.parse(false, Some(rebinds)));
+        let result = rain_document.compose(&["exp-binding-1"]);
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::InvalidSuppliedRebindings
+                .to_problem(vec!["rebind too deep: deep.some-override-value"], [0, 0]),
+        ]));
+        assert_eq!(result, expected_err);
+
+        let dotrain_text = r"---
+#exp-binding-1
+_: opcode-1(0xabcd 456);
+";
+        let mut rain_document =
+            RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![Rebind(
+            "deep.some-quote-binding".to_owned(),
+            "'some-quote".to_owned(),
+        )];
+        block_on(rain_document.parse(false, Some(rebinds)));
+        let result = rain_document.compose(&["exp-binding-1"]);
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::InvalidSuppliedRebindings
+                .to_problem(vec!["rebind too deep: deep.some-quote-binding"], [0, 0]),
+        ]));
+        assert_eq!(result, expected_err);
 
         Ok(())
     }

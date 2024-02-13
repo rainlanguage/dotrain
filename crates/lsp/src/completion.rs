@@ -29,6 +29,9 @@ pub fn get_completion(
     documentation_format: MarkupKind,
 ) -> Option<Vec<CompletionItem>> {
     let target_offset = rain_document.text().offset_at(&position);
+    if target_offset < rain_document.front_matter_offset() + 3 {
+        return None;
+    }
     let lookahead = rain_document
         .text()
         .get(target_offset..target_offset + 1)
@@ -197,6 +200,23 @@ pub fn get_completion(
                         .find(|v| v.content_position[0] <= offset && v.content_position[1] > offset)
                     {
                         if let BindingItem::Exp(rainlang_doc) = &binding.item {
+                            result.push_front(CompletionItem {
+                                label: "using-words-from".to_owned(),
+                                label_details: Some(CompletionItemLabelDetails {
+                                    description: Some("keyword".to_owned()),
+                                    detail: None,
+                                }),
+                                kind: Some(CompletionItemKind::KEYWORD),
+                                detail: Some("using-words-from".to_owned()),
+                                insert_text: Some("using-words-from".to_owned()),
+                                documentation: Some(Documentation::MarkupContent(MarkupContent {
+                                    kind: documentation_format.clone(),
+                                    value:
+                                        "rainlang keyword to bring in words from specified address"
+                                            .to_owned(),
+                                })),
+                                ..Default::default()
+                            });
                             result.extend(get_rainlang_src_alias_completions(
                                 offset,
                                 rainlang_doc,
@@ -393,6 +413,21 @@ fn get_namespace_completions(
                             }
                             MarkupKind::PlainText => leaf.element.content.trim().to_string(),
                         },
+                    })),
+                    ..Default::default()
+                }),
+                BindingItem::Quote(q) => result.push(CompletionItem {
+                    label: key.clone(),
+                    label_details: Some(CompletionItemLabelDetails {
+                        description: Some("binding".to_owned()),
+                        detail: None,
+                    }),
+                    kind: Some(CompletionItemKind::CLASS),
+                    detail: Some(format!("quote binding: {}", key)),
+                    insert_text: Some(key.clone()),
+                    documentation: Some(Documentation::MarkupContent(MarkupContent {
+                        kind: documentation_format.clone(),
+                        value: q.quote.clone(),
                     })),
                     ..Default::default()
                 }),

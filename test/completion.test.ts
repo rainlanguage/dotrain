@@ -69,10 +69,16 @@ describe("LSP Code Completion Language Service Tests", async function () {
 
     it("should provide correct suggestions if leading character is non-word", async () => {
         const _allCompletions = [...AllOpcodeCompletions];
-        _allCompletions.unshift({
-            label: "exp",
-            kind: CompletionItemKind.Class,
-        });
+        _allCompletions.unshift(
+            {
+                label: "using-words-from",
+                kind: CompletionItemKind.Keyword,
+            },
+            {
+                label: "exp",
+                kind: CompletionItemKind.Class,
+            },
+        );
         await testCompletion(
             rainlang`${ws} #exp _: add(1 2)`,
             Position.create(0, 79),
@@ -108,7 +114,7 @@ _: .`;
         const _ns = _dotrain.namespace;
         const items: CompletionItem[] = [];
         _ns.forEach((v, k) => {
-            items.unshift({
+            items.push({
                 label: k,
                 kind: !("element" in v)
                     ? CompletionItemKind.Field

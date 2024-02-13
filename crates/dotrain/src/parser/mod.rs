@@ -1,10 +1,10 @@
-use super::error::Error;
 use regex::{Match, Regex};
 use alloy_primitives::U256;
+use super::error::{Error, ErrorCode};
 use rain_metadata::{RainMetaDocumentV1Item, KnownMagic};
 use super::types::{
-    ast::{ParsedItem, Offsets},
-    patterns::{HEX_PATTERN, E_PATTERN, INT_PATTERN},
+    ast::*,
+    patterns::{HEX_PATTERN, E_PATTERN, INT_PATTERN, NAMESPACE_SEGMENT_PATTERN, WORD_PATTERN},
 };
 
 pub(crate) mod raindocument;
@@ -118,7 +118,7 @@ pub fn tracked_trim(s: &str) -> (&str, usize, usize) {
 }
 
 /// Calculates the line number of the given position in the given text
-pub(crate) fn line_number(text: &str, pos: usize) -> usize {
+pub fn line_number(text: &str, pos: usize) -> usize {
     let lines: Vec<_> = text.split_inclusive('\n').collect();
     let lines_count = lines.len();
     if pos >= text.len() {
@@ -176,6 +176,92 @@ pub(crate) fn is_consumable(items: &Vec<RainMetaDocumentV1Item>) -> bool {
         !dotrains == 0
     } else {
         false
+    }
+}
+
+/// Search in namespaces for a binding
+pub(crate) fn search_binding_ref<'a>(query: &str, namespace: &'a Namespace) -> Option<&'a Binding> {
+    let mut segments: &[ParsedItem] = &exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, 0, true);
+    if query.starts_with('.') {
+        segments = &segments[1..];
+    }
+    if segments.len() > 32 {
+        return None;
+    }
+    if segments[segments.len() - 1].0.is_empty() {
+        return None;
+    }
+    if segments.iter().any(|v| !WORD_PATTERN.is_match(&v.0)) {
+        return None;
+    }
+
+    if let Some(namespace_item) = namespace.get(&segments[0].0) {
+        let mut result = namespace_item;
+        let iter = segments[1..].iter();
+        for segment in iter {
+            match result {
+                NamespaceItem::Node(node) => {
+                    if let Some(namespace_item) = node.get(&segment.0) {
+                        result = namespace_item;
+                    } else {
+                        return None;
+                    }
+                }
+                _ => {
+                    return None;
+                }
+            }
+        }
+        match result {
+            NamespaceItem::Node(_node) => None,
+            NamespaceItem::Leaf(leaf) => Some(&leaf.element),
+        }
+    } else {
+        None
+    }
+}
+
+// reads quotes recursively up until it is ended by not quote or the level limit is reached
+pub(crate) fn deep_read_quote<'a>(
+    name: &'a str,
+    namespace: &'a Namespace,
+    quote_chain: &mut Vec<&'a str>,
+    limit: &mut isize,
+    position: Offsets,
+    original_key: &'a str,
+) -> Result<&'a str, Problem> {
+    *limit -= 1;
+    if *limit >= 0 {
+        if let Some(b) = search_binding_ref(name, namespace) {
+            match &b.item {
+                BindingItem::Elided(e) => {
+                    Err(ErrorCode::ElidedBinding.to_problem(vec![original_key, &e.msg], position))
+                }
+                BindingItem::Literal(_c) => {
+                    Err(ErrorCode::InvalidLiteralQuote.to_problem(vec![original_key], position))
+                }
+                BindingItem::Quote(q) => {
+                    if quote_chain.contains(&q.quote.as_str()) {
+                        Err(ErrorCode::CircularDependency.to_problem(vec![], position))
+                    } else {
+                        quote_chain.push(&q.quote);
+                        deep_read_quote(
+                            &q.quote,
+                            namespace,
+                            quote_chain,
+                            limit,
+                            position,
+                            original_key,
+                        )
+                    }
+                }
+                BindingItem::Exp(_e) => Ok(name),
+            }
+        } else {
+            Err(ErrorCode::UndefinedQuote.to_problem(vec![original_key], position))
+        }
+    } else {
+        Err(ErrorCode::DeepQuote.to_problem(vec![], position))
     }
 }
 

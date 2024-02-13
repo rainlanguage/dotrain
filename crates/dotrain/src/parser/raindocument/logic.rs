@@ -1,287 +1,22 @@
-use std::sync::{Arc, RwLock};
-use serde::{Serialize, Deserialize};
 use async_recursion::async_recursion;
-use topo_sort::{SortResults, TopoSort};
 use std::collections::{HashMap, VecDeque};
-use futures::{executor::block_on, future::join_all};
-use rain_metadata::{
-    types::{dotrain::v1::DotrainMeta, authoring::v1::AuthoringMeta},
-    Store, KnownMagic, RainMetaDocumentV1Item, search,
-};
-use super::{
+use futures::future::join_all;
+use rain_metadata::{types::dotrain::v1::DotrainMeta, KnownMagic, RainMetaDocumentV1Item, search};
+use super::*;
+use super::super::{
+    super::error::{Error, ErrorCode},
+    deep_read_quote, exclusive_parse, fill_in, inclusive_parse, is_consumable,
     rainlangdocument::RainlangDocument,
-    super::{
-        error::{Error, ErrorCode},
-        types::{ast::*, patterns::*},
-    },
-    exclusive_parse, inclusive_parse, fill_in, is_consumable, tracked_trim, line_number, to_u256,
+    to_u256, tracked_trim,
 };
 
-#[cfg(feature = "js-api")]
-use tsify::Tsify;
-#[cfg(feature = "js-api")]
-use wasm_bindgen::prelude::wasm_bindgen;
-
-// Type for a runtime rebind
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
-pub struct Rebind(pub String, pub String);
-
-/// Data structure of a parsed .rain text
-///
-/// RainDocument is the main implementation block that enables parsing of a .rain file contents
-/// to its building blocks and parse tree by handling and resolving imports, namespaces, etc which
-/// later are used by LSP services and compiler as well as providing all the functionalities in between.
-///
-/// It is a portable, extensible and composable format for describing Rainlang fragments, .rain serve as
-/// a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and
-/// adversarial environment such as a public blockchain.
-///
-#[cfg_attr(
-    not(target_family = "wasm"),
-    doc = r#"
-## Example
-
-```rust
-use std::sync::{Arc, RwLock};
-use dotrain::{RainDocument, Store};
-
-let text = "some .rain text content".to_string();
-
-let meta_store = Arc::new(RwLock::new(Store::default()));
-
-// create a new instance that gets parsed right away
-let rain_document = RainDocument::create(text, Some(meta_store), None, None);
-
-// get all problems
-let problems = rain_document.all_problems();
-
-let entrypoints = vec![
-   "entrypoint1", 
-   "entrypoint2"
-];
-
-// compose this instance to get rainlang string
-let result = rain_document.compose(&entrypoints);
-```
-"#
-)]
-#[cfg_attr(
-    target_family = "wasm",
-    doc = " @example
- ```javascript
- // create a new instane
- const rainDocument = RainDocument.create(text, meta_store);
-
- // alternatively instantiate with remote meta search enabled
- const rainDocument = await RainDocument.createAsync(text, meta_store);
-
- // get all problems
- const problems = rainDocument.allProblems;
-
- // compose this instance to get rainlang string
- const expConfig = rainDocument.compose([\"entrypoint1\", \"entrypoint2\"]);
- ```
-"
-)]
-#[cfg_attr(feature = "js-api", wasm_bindgen, derive(Tsify))]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[serde(rename(serialize = "IRainDocument"))]
-pub struct RainDocument {
-    #[cfg_attr(feature = "js-api", tsify(type = "string"))]
-    pub(crate) text: String,
-    pub(crate) front_matter_offset: usize,
-    pub(crate) error: Option<String>,
-    pub(crate) bindings: Vec<Binding>,
-    pub(crate) imports: Vec<Import>,
-    pub(crate) comments: Vec<Comment>,
-    pub(crate) problems: Vec<Problem>,
-    pub(crate) import_depth: usize,
-    pub(crate) namespace: Namespace,
-    #[serde(skip)]
-    pub(crate) meta_store: Arc<RwLock<Store>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[cfg_attr(feature = "js-api", tsify(type = "IAuthoringMeta"))]
-    pub(crate) known_words: Option<AuthoringMeta>,
-}
-
 impl RainDocument {
-    /// Creates an instance and parses with remote meta search enabled
-    pub async fn create_async(
-        text: String,
-        meta_store: Option<Arc<RwLock<Store>>>,
-        words: Option<AuthoringMeta>,
-        rebinds: Option<Vec<Rebind>>,
-    ) -> RainDocument {
-        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
-        rain_document.parse(true, rebinds).await;
-        rain_document
-    }
-
-    /// Creates an instance and parses with remote meta search disabled (cached metas only)
-    pub fn create(
-        text: String,
-        meta_store: Option<Arc<RwLock<Store>>>,
-        words: Option<AuthoringMeta>,
-        rebinds: Option<Vec<Rebind>>,
-    ) -> RainDocument {
-        let mut rain_document = RainDocument::new(text, meta_store, 0, words);
-        block_on(rain_document.parse(false, rebinds));
-        rain_document
-    }
-
-    /// Get the front matter without parsing the dotrain
-    pub fn get_front_matter(text: &str) -> Option<&str> {
-        // split front matter and rest of the text
-        if let Some(splitter) = text.find(FRONTMATTER_SEPARATOR) {
-            Some(&text[..splitter])
-        } else {
-            None
-        }
-    }
-}
-
-impl RainDocument {
-    /// Updates the text and parses right away with remote meta search disabled (cached metas only)
-    pub fn update(&mut self, new_text: String, rebinds: Option<Vec<Rebind>>) {
-        self.text = new_text;
-        block_on(self.parse(false, rebinds));
-    }
-
-    /// Updates the text and parses right away with remote meta search enabled
-    pub async fn update_async(&mut self, new_text: String, rebinds: Option<Vec<Rebind>>) {
-        self.text = new_text;
-        self.parse(true, rebinds).await;
-    }
-
-    /// This instance's current text
-    pub fn text(&self) -> &str {
-        &self.text
-    }
-
-    /// This instance's front matter
-    pub fn front_matter(&self) -> &str {
-        &self.text[0..self.front_matter_offset]
-    }
-
-    /// This instance's body (i.e. text minus front matter)
-    pub fn body(&self) -> &str {
-        if self.front_matter_offset == 0 && !self.text.starts_with(FRONTMATTER_SEPARATOR) {
-            return &self.text;
-        }
-        &self.text[(self.front_matter_offset + FRONTMATTER_SEPARATOR.len())..]
-    }
-
-    /// This instance's top problems
-    pub fn problems(&self) -> &Vec<Problem> {
-        &self.problems
-    }
-
-    /// This instance's comments
-    pub fn comments(&self) -> &Vec<Comment> {
-        &self.comments
-    }
-
-    /// This instance's imports
-    pub fn imports(&self) -> &Vec<Import> {
-        &self.imports
-    }
-
-    /// This instance's bindings
-    pub fn bindings(&self) -> &Vec<Binding> {
-        &self.bindings
-    }
-
-    /// This instance's namespace
-    pub fn namespace(&self) -> &Namespace {
-        &self.namespace
-    }
-
-    /// This instance's meta Store instance
-    pub fn store(&self) -> Arc<RwLock<Store>> {
-        self.meta_store.clone()
-    }
-
-    /// This instance's words
-    pub fn known_words(&self) -> &Option<AuthoringMeta> {
-        &self.known_words
-    }
-
-    /// The error msg if parsing had resulted in an error
-    pub fn runtime_error(&self) -> &Option<String> {
-        &self.error
-    }
-
-    /// This instance's all problems (bindings + top)
-    pub fn all_problems(&self) -> Vec<&Problem> {
-        let mut all = vec![];
-        all.extend(&self.problems);
-        all.extend(self.bindings.iter().flat_map(|v| &v.problems));
-        all
-    }
-
-    /// This instance's bindings problems
-    pub fn bindings_problems(&self) -> Vec<&Problem> {
-        self.bindings.iter().flat_map(|v| &v.problems).collect()
-    }
-
-    /// Parses this instance's text
-    #[async_recursion(?Send)]
-    pub async fn parse(&mut self, enable_remote: bool, rebinds: Option<Vec<Rebind>>) {
-        if NON_EMPTY_PATTERN.is_match(&self.text) {
-            if let Err(e) = self._parse(enable_remote, rebinds).await {
-                // exit with override error if encountered
-                if let Error::InvalidOverride(err_msg) = e {
-                    self.problems.push(
-                        ErrorCode::InvalidSuppliedRebindings.to_problem(vec![&err_msg], [0, 0]),
-                    );
-                } else {
-                    self.error = Some(e.to_string());
-                    self.problems
-                        .push(ErrorCode::RuntimeError.to_problem(vec![&e.to_string()], [0, 0]));
-                }
-            }
-        } else {
-            self.error = None;
-            self.imports.clear();
-            self.problems.clear();
-            self.comments.clear();
-            self.bindings.clear();
-            self.namespace.clear();
-            self.known_words = None;
-            self.front_matter_offset = 0;
-        }
-    }
-}
-
-impl RainDocument {
-    pub(crate) fn new(
-        text: String,
-        meta_store: Option<Arc<RwLock<Store>>>,
-        import_depth: usize,
-        known_words: Option<AuthoringMeta>,
-    ) -> RainDocument {
-        RainDocument {
-            meta_store: meta_store.unwrap_or(Arc::new(RwLock::new(Store::default()))),
-            text,
-            front_matter_offset: 0,
-            error: None,
-            bindings: vec![],
-            namespace: HashMap::new(),
-            imports: vec![],
-            known_words,
-            comments: vec![],
-            problems: vec![],
-            import_depth,
-        }
-    }
-
     /// the main method that takes out and processes each section of a RainDocument
     /// text (comments, imports, etc) one after the other, builds the parse tree, builds
     /// the namespace and checks for dependency issues and resolves the global words
-    #[async_recursion(?Send)]
-    async fn _parse(
+    #[cfg_attr(target_family = "wasm", async_recursion(?Send))]
+    #[cfg_attr(not(target_family = "wasm"), async_recursion)]
+    pub(super) async fn _parse(
         &mut self,
         remote_search: bool,
         opts_rebinds: Option<Vec<Rebind>>,
@@ -400,16 +135,13 @@ impl RainDocument {
 
         // parsing bindings
         let parsed_bindings = exclusive_parse(&document, &BINDING_PATTERN, 0, true);
-        let mut raw_exp_contents = VecDeque::new();
         ignore_first = true;
         for parsed_binding in &parsed_bindings {
             if ignore_first {
                 ignore_first = false;
                 continue;
             }
-            if let Some(raw_content) = self.process_binding(parsed_binding, &mut namespace) {
-                raw_exp_contents.push_back(raw_content);
-            };
+            self.process_binding(parsed_binding, &mut namespace);
             fill_in(
                 &mut document,
                 [parsed_binding.1[0] - 1, parsed_binding.1[1]],
@@ -434,6 +166,9 @@ impl RainDocument {
         // assign the built namespace to this instance's main namespace
         self.namespace = namespace;
 
+        // validate quote bindings
+        self.validate_quote_bindings();
+
         // find any remaining strings and include them as errors
         exclusive_parse(&document, &WS_PATTERN, 0, false)
             .iter()
@@ -442,21 +177,13 @@ impl RainDocument {
                     .push(ErrorCode::UnexpectedToken.to_problem(vec![], v.1))
             });
 
-        // resolve dependencies for rainlang bindings
-        self.process_dependencies(raw_exp_contents);
-
         // try to parse rainlang bindings if only there is at least one and current instance is
         // not an import itself, only owned rainlang bindings will be parsed at this point.
         // reason for not parsing imported/deeper rainlang bindings is because their ast provides
         // no needed info at this point, they will get parsed once the dotrain is being composed with
         // specified entrypoints and they will be parsed only if they are part of the entrypoints or
         // their deps, see 'compile.rs'.
-        if self.import_depth == 0
-            && self
-                .bindings
-                .iter()
-                .any(|b| matches!(b.item, BindingItem::Exp(_)))
-        {
+        if self.import_depth == 0 {
             for binding in &mut self.bindings {
                 // parse the rainlang binding to ast and repopulate the
                 // binding.item and corresponding namespace with it
@@ -492,21 +219,6 @@ impl RainDocument {
             }
         }
 
-        // apply 'ignore next line' lint for matching found problems
-        for cm in &self.comments {
-            if lint_patterns::IGNORE_NEXT_LINE.is_match(&cm.comment) {
-                let line = line_number(&self.text, cm.position[1]);
-                while let Some((i, _)) = self
-                    .problems
-                    .iter()
-                    .enumerate()
-                    .find(|p| line_number(&self.text, p.1.position[0]) == line + 1)
-                {
-                    self.problems.remove(i);
-                }
-            }
-        }
-
         Ok(())
     }
 
@@ -515,7 +227,7 @@ impl RainDocument {
     /// deeper import up to the most outter dotrain at each level of processing imports,
     /// by running this fn, so by checking for that among import.problems, it is possible
     /// to check if an import statement goes deeper than 32 levels
-    fn is_deep_import(import: &Import) -> bool {
+    pub(super) fn is_deep_import(import: &Import) -> bool {
         if let Some(seq) = &import.sequence {
             if let Some(dotrain) = &seq.dotrain {
                 dotrain
@@ -531,41 +243,103 @@ impl RainDocument {
     }
 
     /// Checks if a binding is elided and returns the elision msg if it found any
-    fn is_elided(text: &str) -> Option<String> {
+    pub(super) fn is_elided(text: &str) -> Option<String> {
         let msg = text.trim();
         msg.strip_prefix('!')
             .map(|stripped| stripped.trim().to_owned())
     }
 
     /// Checks if a text contains a single numeric value and returns it ie is constant binding
-    fn is_constant(text: &str) -> Option<(String, bool, bool)> {
+    pub(super) fn is_literal(text: &str) -> Option<(String, usize, bool)> {
         if text.starts_with('"') {
             let has_no_end = !STRING_LITERAL_PATTERN.is_match(text);
-            Some((text.to_owned(), true, has_no_end))
+            Some((text.to_owned(), 0, has_no_end))
+        } else if text.starts_with('[') {
+            let has_no_end = !SUB_PARSER_LITERAL_PATTERN.is_match(text);
+            Some((text.to_owned(), 1, has_no_end))
         } else {
             let items = exclusive_parse(text, &WS_PATTERN, 0, false);
             if items.len() == 1 && NUMERIC_PATTERN.is_match(&items[0].0) {
                 let is_out_of_range = to_u256(&items[0].0).is_err();
-                Some((items[0].0.clone(), false, is_out_of_range))
+                Some((items[0].0.clone(), 2, is_out_of_range))
             } else {
                 None
             }
         }
     }
 
+    pub(super) fn is_quote(text: &str, offset: usize) -> Option<(String, Vec<ParsedItem>)> {
+        let items = exclusive_parse(text, &WS_PATTERN, offset, false);
+        let first = items.first()?;
+        if QUOTE_PATTERN.is_match(&first.0) {
+            Some((first.0[1..].to_owned(), items[1..].to_vec()))
+        } else {
+            None
+        }
+    }
+
     // processes configurations of an import statement
-    fn process_import_config(
+    pub(super) fn process_import_config(
         config_pieces: &mut std::slice::IterMut<'_, ParsedItem>,
+        original_text: &str,
     ) -> ImportConfiguration {
         let mut imp_conf = ImportConfiguration {
             groups: vec![],
             problems: vec![],
         };
         while let Some(first_piece) = config_pieces.next() {
-            if let Some(complementary_piece) = config_pieces.next() {
+            if let Some(mut complementary_piece) = config_pieces.next() {
+                let mut temp: ParsedItem;
+                // to build the complementary piece if it is a string literal with whitespaces
+                if complementary_piece.0.starts_with('"')
+                    && (complementary_piece.0 == "\"" || !complementary_piece.0.ends_with('"'))
+                {
+                    let start = complementary_piece.1[0];
+                    let mut end = 0;
+                    let mut has_no_end = true;
+                    #[allow(clippy::while_let_on_iterator)]
+                    while let Some(end_item) = config_pieces.next() {
+                        end = end_item.1[1];
+                        if end_item.0.ends_with('"') {
+                            has_no_end = false;
+                            break;
+                        }
+                    }
+                    temp = ParsedItem(original_text[start..end].to_owned(), [start, end]);
+                    complementary_piece = &mut temp;
+                    if has_no_end {
+                        imp_conf.problems.push(
+                            ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], [start, end]),
+                        );
+                    }
+                }
+                // to build the complementary piece if it is a sub parser literal with whitespaces
+                if complementary_piece.0.starts_with('[')
+                    && (complementary_piece.0 == "]" || !complementary_piece.0.ends_with(']'))
+                {
+                    let start = complementary_piece.1[0];
+                    let mut end = 0;
+                    let mut has_no_end = true;
+                    #[allow(clippy::while_let_on_iterator)]
+                    while let Some(end_item) = config_pieces.next() {
+                        end = end_item.1[1];
+                        if end_item.0.ends_with(']') {
+                            has_no_end = false;
+                            break;
+                        }
+                    }
+                    temp = ParsedItem(original_text[start..end].to_owned(), [start, end]);
+                    complementary_piece = &mut temp;
+                    if has_no_end {
+                        imp_conf.problems.push(
+                            ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], [start, end]),
+                        );
+                    }
+                }
                 if WORD_PATTERN.is_match(&first_piece.0) {
                     if LITERAL_PATTERN.is_match(&complementary_piece.0)
                         || complementary_piece.0 == "!"
+                        || QUOTE_PATTERN.is_match(&complementary_piece.0)
                     {
                         if imp_conf.groups.iter().any(|v| {
                             if let Some(e) = &v.1 {
@@ -648,8 +422,13 @@ impl RainDocument {
     }
 
     /// processes an import statement
-    #[async_recursion(?Send)]
-    async fn process_import(&self, statement: &ParsedItem, remote_search: bool) -> Import {
+    #[cfg_attr(target_family = "wasm", async_recursion(?Send))]
+    #[cfg_attr(not(target_family = "wasm"), async_recursion)]
+    pub(super) async fn process_import(
+        &self,
+        statement: &ParsedItem,
+        remote_search: bool,
+    ) -> Import {
         let at_pos: Offsets = [statement.1[0] - 1, statement.1[0] - 1];
         let mut result = Import {
             name: ".".to_owned(),
@@ -718,6 +497,7 @@ impl RainDocument {
             if !pieces[config_pieces_start_index..].is_empty() {
                 result.configuration = Some(Self::process_import_config(
                     &mut pieces[config_pieces_start_index..].iter_mut(),
+                    &self.text,
                 ));
             };
         } else {
@@ -757,7 +537,7 @@ impl RainDocument {
 
     // read the corresponding hash from CAS, the result is either a deployer or a meta or not found
     // this should be done with care for the CAS read/write lock
-    async fn fetch_import_contents(
+    pub(super) async fn fetch_import_contents(
         &self,
         subgraphs: &Vec<String>,
         hash_bytes: &[u8],
@@ -816,7 +596,7 @@ impl RainDocument {
     }
 
     /// validates and processes an import that is meta
-    async fn process_meta_import(
+    pub(super) async fn process_meta_import(
         &self,
         meta_items: Vec<RainMetaDocumentV1Item>,
         result: &mut Import,
@@ -869,7 +649,7 @@ impl RainDocument {
     /// processing imports' namespace and building a ready to merge namespace from each
     /// this requires checking each import's namespace for possible issues (duplicate keys, duplicate word sets, etc)
     /// as well as applying renames, rebindings and elidings
-    fn build_imports_namespaces(
+    pub(super) fn build_imports_namespaces(
         &mut self,
         namespace: &Namespace,
     ) -> VecDeque<(String, Offsets, Namespace)> {
@@ -917,7 +697,7 @@ impl RainDocument {
 
     /// applies the import configurations to their corresponding ready to merge namespace
     /// returns the found problems in the configurations
-    fn apply_import_configs(
+    pub(super) fn apply_import_configs(
         configs: &ImportConfiguration,
         new_imp_namespace: &mut Namespace,
     ) -> Vec<Problem> {
@@ -947,9 +727,15 @@ impl RainDocument {
                         } else {
                             let ns_item = new_imp_namespace.get_mut(key).unwrap();
                             if let NamespaceItem::Leaf(leaf) = ns_item {
-                                leaf.element.item = BindingItem::Literal(LiteralBindingItem {
-                                    value: new_conf.0.clone(),
-                                })
+                                if new_conf.0.starts_with('\'') {
+                                    leaf.element.item = BindingItem::Quote(QuoteBindingItem {
+                                        quote: new_conf.0.clone(),
+                                    })
+                                } else {
+                                    leaf.element.item = BindingItem::Literal(LiteralBindingItem {
+                                        value: new_conf.0.clone(),
+                                    })
+                                }
                             } else {
                                 problems.push(
                                     ErrorCode::UnexpectedRebinding
@@ -968,7 +754,7 @@ impl RainDocument {
     }
 
     /// processes a binding item
-    fn process_binding<'a>(
+    pub(super) fn process_binding<'a>(
         &mut self,
         parsed_binding: &'a ParsedItem,
         namespace: &mut Namespace,
@@ -1044,11 +830,18 @@ impl RainDocument {
                     msg = DEFAULT_ELISION.to_owned();
                 }
                 item = BindingItem::Elided(ElidedBindingItem { msg });
-            } else if let Some((value, is_str_literal, has_err)) = Self::is_constant(raw_content) {
-                if is_str_literal {
+            } else if let Some((value, typ, has_err)) = Self::is_literal(raw_content) {
+                if typ == 0 {
                     if has_err {
                         self.problems.push(
-                            ErrorCode::UnexpectedStringLiteral.to_problem(vec![], content_position),
+                            ErrorCode::UnexpectedStringLiteralEnd
+                                .to_problem(vec![], content_position),
+                        );
+                    }
+                } else if typ == 1 {
+                    if has_err {
+                        self.problems.push(
+                            ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], content_position),
                         );
                     }
                 } else if HEX_PATTERN.is_match(&value) && value.len() % 2 == 1 {
@@ -1059,6 +852,12 @@ impl RainDocument {
                         .push(ErrorCode::OutOfRangeValue.to_problem(vec![], content_position));
                 }
                 item = BindingItem::Literal(LiteralBindingItem { value });
+            } else if let Some((quote, rest)) = Self::is_quote(raw_content, content_position[0]) {
+                for unexpected_token in rest {
+                    self.problems
+                        .push(ErrorCode::UnexpectedToken.to_problem(vec![], unexpected_token.1));
+                }
+                item = BindingItem::Quote(QuoteBindingItem { quote });
             } else {
                 // occupy the key with empty rainlang ast, later on will
                 // be replaced with parsed ast once global words are resolved
@@ -1072,7 +871,6 @@ impl RainDocument {
                 content_position,
                 position,
                 problems: vec![],
-                dependencies: vec![],
                 item,
             };
             self.bindings.push(binding.clone());
@@ -1093,7 +891,7 @@ impl RainDocument {
     }
 
     /// copies a namespaces with given import index and hash
-    fn copy_namespace(namespace: &Namespace, index: isize, hash: &str) -> Namespace {
+    pub(super) fn copy_namespace(namespace: &Namespace, index: isize, hash: &str) -> Namespace {
         let mut new_namespace: Namespace = HashMap::new();
         for (key, item) in namespace {
             match item {
@@ -1123,7 +921,7 @@ impl RainDocument {
     }
 
     /// checks if a namespace can safely be merged into another namespace
-    fn check_namespace(new: &Namespace, main: &Namespace) -> Option<ErrorCode> {
+    pub(super) fn check_namespace(new: &Namespace, main: &Namespace) -> Option<ErrorCode> {
         if main.is_empty() {
             None
         } else {
@@ -1153,7 +951,7 @@ impl RainDocument {
     }
 
     /// merges an imported namespaces to the main namespace
-    fn merge_namespace(
+    pub(super) fn merge_namespace(
         &mut self,
         name: String,
         hash_position: Offsets,
@@ -1183,7 +981,7 @@ impl RainDocument {
     }
 
     /// recursivly merges 2 namespaces
-    fn merge(new: &Namespace, main: &mut Namespace) {
+    pub(super) fn merge(new: &Namespace, main: &mut Namespace) {
         if main.is_empty() {
             main.extend(new.clone())
         } else {
@@ -1197,163 +995,106 @@ impl RainDocument {
         }
     }
 
-    /// processes the expressions dependencies and checks for any possible circular dependecy
-    fn process_dependencies(&mut self, mut raw_contents: VecDeque<&str>) {
-        let mut err = false;
-        let mut topo_sort: TopoSort<&str> = TopoSort::new();
-        let deps_map: Vec<&mut Binding> = self
-            .bindings
-            .iter_mut()
-            .filter_map(|binding| match binding.item {
-                BindingItem::Exp(_) => {
-                    if let Some(raw_content) = raw_contents.pop_front() {
-                        for dep in DEP_PATTERN.find_iter(raw_content) {
-                            let dep_as_string = dep.as_str().strip_prefix('\'').unwrap().to_owned();
-                            binding.dependencies.push(dep_as_string);
-                        }
-                        Some(binding)
-                    } else {
-                        err = true;
-                        None
-                    }
-                }
-                _ => None,
-            })
-            .collect();
-
-        if err || !raw_contents.is_empty() {
-            self.problems
-                .push(ErrorCode::DepsResolvingFailed.to_problem(vec![], [0, 0]));
-            return;
-        }
-
-        for edge in &deps_map {
-            topo_sort.insert(
-                &edge.name,
-                edge.dependencies
-                    .iter()
-                    .map(|v| v.as_str())
-                    .collect::<Vec<&str>>(),
-            );
-        }
-        let mut resolved_nodes: Vec<String> = vec![];
-        match topo_sort.into_vec_nodes() {
-            SortResults::Full(_) => return,
-            SortResults::Partial(resolved_deps) => {
-                for d in resolved_deps {
-                    resolved_nodes.push(d.to_owned());
-                }
-            }
-        };
-        for node in deps_map {
-            if !resolved_nodes.contains(&node.name) {
-                node.problems
-                    .push(ErrorCode::CircularDependency.to_problem(vec![], node.name_position));
-            }
-        }
-    }
-
     /// apply the overrides to the namespace
-    fn apply_overrides(rebinds: Vec<Rebind>, namespace: &mut Namespace) -> Result<(), Error> {
+    pub(super) fn apply_overrides(
+        rebinds: Vec<Rebind>,
+        namespace: &mut Namespace,
+    ) -> Result<(), Error> {
+        // restrict quotes to only 1 levels
+        let mut limit = 1;
+
         for Rebind(key, raw_value) in rebinds {
             let value = raw_value.trim();
             if NAMESPACE_PATTERN.is_match(&key) {
-                if let Some((literal_value, _, has_err)) = Self::is_constant(value) {
+                let item;
+                if let Some((literal_value, _, has_err)) = Self::is_literal(value) {
                     if has_err {
-                        return Err(Error::InvalidOverride(format!("invalid value: {}", value)));
-                    }
-                    let mut segments =
-                        VecDeque::from(exclusive_parse(&key, &NAMESPACE_SEGMENT_PATTERN, 0, true));
-                    if key.starts_with('.') {
-                        segments.pop_front();
-                    }
-                    if segments.len() > 32 {
                         return Err(Error::InvalidOverride(format!(
-                            "invalid key, namespace too deep: {}",
+                            "invalid rebind value: {}",
+                            value
+                        )));
+                    }
+                    item = BindingItem::Literal(LiteralBindingItem {
+                        value: literal_value,
+                    });
+                } else if let Some((quote, rest)) = Self::is_quote(value, 0) {
+                    if !rest.is_empty() {
+                        return Err(Error::InvalidOverride(format!(
+                            "invalid rebind value: {}",
+                            value
+                        )));
+                    }
+                    item = BindingItem::Quote(QuoteBindingItem { quote });
+                } else {
+                    return Err(Error::InvalidOverride(format!(
+                        "invalid rebind value: {}",
+                        value
+                    )));
+                }
+
+                let mut segments =
+                    VecDeque::from(exclusive_parse(&key, &NAMESPACE_SEGMENT_PATTERN, 0, true));
+                if key.starts_with('.') {
+                    segments.pop_front();
+                }
+                if segments.len() > 32 {
+                    return Err(Error::InvalidOverride(format!(
+                        "invalid key, namespace too deep: {}",
+                        key
+                    )));
+                }
+                if let Some(last) = segments.back() {
+                    if last.0.is_empty() {
+                        return Err(Error::InvalidOverride(format!(
+                            "invalid key, expected to end with a node: {}",
                             key
                         )));
                     }
-                    if let Some(last) = segments.back() {
-                        if last.0.is_empty() {
-                            return Err(Error::InvalidOverride(format!(
-                                "invalid key, expected to end with a node: {}",
-                                key
-                            )));
-                        }
-                    }
+                }
+                // restrict rebinds to only 1 levels
+                if segments.len() > 1 {
+                    return Err(Error::InvalidOverride(format!("rebind too deep: {}", key)));
+                }
 
-                    if let Some(ns_item) = namespace.get_mut(&segments[0].0) {
-                        segments.push_back(ParsedItem(String::new(), [0, 0]));
-                        let mut result = ns_item;
-                        for (i, segment) in segments.range(1..).enumerate() {
-                            match result {
-                                NamespaceItem::Node(node) => {
-                                    if i == segments.len() - 3 && !node.contains_key(&segment.0) {
-                                        node.insert(
-                                            segment.0.to_owned(),
-                                            NamespaceItem::Leaf(NamespaceLeaf {
-                                                hash: String::new(),
-                                                import_index: -1,
-                                                element: Binding {
-                                                    name: segment.0.to_owned(),
-                                                    name_position: [0, 0],
-                                                    content: value.to_owned(),
-                                                    content_position: [0, 0],
-                                                    position: [0, 0],
-                                                    problems: vec![],
-                                                    dependencies: vec![],
-                                                    item: BindingItem::Literal(
-                                                        LiteralBindingItem {
-                                                            value: literal_value.to_owned(),
-                                                        },
-                                                    ),
-                                                },
-                                            }),
-                                        );
-                                        break;
-                                    } else if i == segments.len() - 2 {
-                                        return Err(Error::InvalidOverride(format!(
-                                            "undefined identifier: {} in key: {}",
-                                            segment.0, key
-                                        )));
-                                    } else if let Some(item) = node.get_mut(&segment.0) {
-                                        result = item;
+                if segments.len() == 1 {
+                    let mut problems = vec![];
+                    if let Some(ns_item) = namespace.get(&segments[0].0) {
+                        match ns_item {
+                            NamespaceItem::Node(_node) => {
+                                return Err(Error::InvalidOverride(format!(
+                                    "undefined identifier: {} in key: {}",
+                                    segments[0].0, key
+                                )));
+                            }
+                            NamespaceItem::Leaf(leaf) => {
+                                if let BindingItem::Quote(q) = &item {
+                                    problems = Self::validate_quote(
+                                        namespace,
+                                        q,
+                                        key.as_str(),
+                                        leaf.element.name_position,
+                                        &mut limit,
+                                    );
+                                };
+                                if let BindingItem::Exp(_e) = &leaf.element.item {
+                                    let typ = if matches!(item, BindingItem::Literal(_)) {
+                                        "literals"
                                     } else {
-                                        return Err(Error::InvalidOverride(format!(
-                                            "undefined identifier: {} in key: {}",
-                                            segment.0, key
-                                        )));
-                                    }
-                                }
-                                NamespaceItem::Leaf(leaf) => {
-                                    if i == segments.len() - 2 {
-                                        match &leaf.element.item {
-                                            BindingItem::Exp(_e) => return Err(Error::InvalidOverride(format!(
-                                                "invalid rebinding: {}, cannot rebind rainlang expression bindings",
-                                                key
-                                            ))),
-                                            BindingItem::Elided(_) => {
-                                                leaf.element.item = BindingItem::Literal(LiteralBindingItem { value: literal_value.to_owned() });
-                                            },
-                                            BindingItem::Literal(_c) => {
-                                                leaf.element.item = BindingItem::Literal(LiteralBindingItem { value: literal_value.to_owned() });
-                                            },
-                                        };
-                                        break;
-                                    } else {
-                                        return Err(Error::InvalidOverride(format!(
-                                            "undefined identifier: {} in key: {}",
-                                            segment.0, key
-                                        )));
-                                    }
+                                        "quotes"
+                                    };
+                                    return Err(Error::InvalidOverride(format!(
+                                            "invalid rebinding: {}, cannot rebind rainlang expression bindings to {}",
+                                            typ,
+                                            key
+                                        ))
+                                    );
                                 }
                             }
                         }
-                    } else if segments.len() > 1 {
-                        return Err(Error::InvalidOverride(format!(
-                            "undefined namespace: {} in key: {}",
-                            segments[0].0, key
-                        )));
+                    };
+                    if let Some(NamespaceItem::Leaf(leaf)) = namespace.get_mut(&segments[0].0) {
+                        leaf.element.item = item;
+                        leaf.element.problems = problems;
                     } else {
                         namespace.insert(
                             key,
@@ -1366,23 +1107,172 @@ impl RainDocument {
                                     content: value.to_owned(),
                                     content_position: [0, 0],
                                     position: [0, 0],
-                                    problems: vec![],
-                                    dependencies: vec![],
-                                    item: BindingItem::Literal(LiteralBindingItem {
-                                        value: value.to_owned(),
-                                    }),
+                                    problems,
+                                    item,
                                 },
                             }),
                         );
                     }
+                } else if let Some(ns_item) = namespace.get_mut(&segments[0].0) {
+                    segments.push_back(ParsedItem(String::new(), [0, 0]));
+                    let mut result = ns_item;
+                    let mut parent_node: Option<&Namespace> = None;
+                    #[allow(unused_assignments)]
+                    for (i, segment) in segments.range(1..).enumerate() {
+                        match result {
+                            NamespaceItem::Node(node) => {
+                                if i == segments.len() - 3 && !node.contains_key(&segment.0) {
+                                    let problems = if let BindingItem::Quote(q) = &item {
+                                        Self::validate_quote(
+                                            node,
+                                            q,
+                                            key.as_str(),
+                                            [0, 0],
+                                            &mut limit,
+                                        )
+                                    } else {
+                                        vec![]
+                                    };
+                                    node.insert(
+                                        segment.0.to_owned(),
+                                        NamespaceItem::Leaf(NamespaceLeaf {
+                                            hash: String::new(),
+                                            import_index: -1,
+                                            element: Binding {
+                                                name: segment.0.to_owned(),
+                                                name_position: [0, 0],
+                                                content: value.to_owned(),
+                                                content_position: [0, 0],
+                                                position: [0, 0],
+                                                problems,
+                                                item,
+                                            },
+                                        }),
+                                    );
+                                    parent_node = Some(node);
+                                    break;
+                                } else if i == segments.len() - 2 {
+                                    return Err(Error::InvalidOverride(format!(
+                                        "undefined identifier: {} in key: {}",
+                                        segment.0, key
+                                    )));
+                                } else if let Some(item) = node.get_mut(&segment.0) {
+                                    result = item;
+                                } else {
+                                    return Err(Error::InvalidOverride(format!(
+                                        "undefined identifier: {} in key: {}",
+                                        segment.0, key
+                                    )));
+                                }
+                            }
+                            NamespaceItem::Leaf(leaf) => {
+                                if i == segments.len() - 2 {
+                                    let problems = if let BindingItem::Quote(q) = &item {
+                                        Self::validate_quote(
+                                            parent_node.unwrap(),
+                                            q,
+                                            key.as_str(),
+                                            leaf.element.name_position,
+                                            &mut limit,
+                                        )
+                                    } else {
+                                        vec![]
+                                    };
+                                    match &leaf.element.item {
+                                        BindingItem::Exp(_e) => {
+                                            let typ = if matches!(item, BindingItem::Literal(_)) {
+                                                "literals"
+                                            } else {
+                                                "quotes"
+                                            };
+                                            return Err(Error::InvalidOverride(format!(
+                                                "invalid rebinding: {}, cannot rebind rainlang expression bindings to {}",
+                                                typ,
+                                                key
+                                            )));
+                                        }
+                                        _ => {
+                                            if matches!(item, BindingItem::Quote(_)) {
+                                                leaf.element.problems = problems;
+                                            }
+                                            leaf.element.item = item;
+                                        }
+                                    };
+                                    break;
+                                } else {
+                                    return Err(Error::InvalidOverride(format!(
+                                        "undefined identifier: {} in key: {}",
+                                        segment.0, key
+                                    )));
+                                }
+                            }
+                        }
+                    }
                 } else {
-                    return Err(Error::InvalidOverride(format!("invalid value: {}", value)));
+                    return Err(Error::InvalidOverride(format!(
+                        "undefined namespace: {} in key: {}",
+                        segments[0].0, key
+                    )));
                 }
             } else {
-                return Err(Error::InvalidOverride(format!("invalid key: {}", key)));
+                return Err(Error::InvalidOverride(format!(
+                    "invalid rebind key: {}",
+                    key
+                )));
             }
         }
         Ok(())
+    }
+
+    pub(super) fn validate_quote_bindings(&mut self) {
+        let mut errs = vec![];
+        for (key, value) in &self.namespace {
+            if let NamespaceItem::Leaf(leaf) = &value {
+                if leaf.import_index == -1 {
+                    if let BindingItem::Quote(quote) = &leaf.element.item {
+                        let mut limit = 1;
+                        let mut result = Self::validate_quote(
+                            &self.namespace,
+                            quote,
+                            key,
+                            leaf.element.name_position,
+                            &mut limit,
+                        );
+                        if !result.is_empty() {
+                            errs.push((key.to_owned(), result.pop().unwrap()));
+                        }
+                    }
+                }
+            }
+        }
+        for (key, err) in errs {
+            if let NamespaceItem::Leaf(leaf) = self.namespace.get_mut(&key).unwrap() {
+                leaf.element.problems = vec![err.clone()];
+            }
+        }
+    }
+
+    fn validate_quote(
+        namespace: &Namespace,
+        q: &QuoteBindingItem,
+        key: &str,
+        position: Offsets,
+        limit: &mut isize,
+    ) -> Vec<Problem> {
+        if key == q.quote {
+            vec![ErrorCode::CircularDependency.to_problem(vec![], position)]
+        } else if let Err(p) = deep_read_quote(
+            &q.quote,
+            namespace,
+            &mut vec![key, q.quote.as_str()],
+            limit,
+            position,
+            key,
+        ) {
+            vec![p]
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -1398,444 +1288,5 @@ impl PartialEq for RainDocument {
             && self.known_words == other.known_words
             && self.problems == other.problems
             && self.error == other.error
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use super::super::rainlangdocument::RainlangDocument;
-
-    #[test]
-    fn test_is_constant_method() -> anyhow::Result<()> {
-        let text = " \n 1234 \n\t ";
-        let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("1234".to_owned(), false, false)));
-
-        let text = " \n 14e6";
-        let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("14e6".to_owned(), false, false)));
-
-        let text = " \t 0x1234abcdef ";
-        let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("0x1234abcdef".to_owned(), false, false)));
-
-        let text = " \n 99999e99999 \n";
-        let result = RainDocument::is_constant(text);
-        assert_eq!(result, Some(("99999e99999".to_owned(), false, true)));
-
-        let text = "\" some\n literal  \nvalue\t\n \"";
-        let result = RainDocument::is_constant(text);
-        assert_eq!(
-            result,
-            Some(("\" some\n literal  \nvalue\t\n \"".to_owned(), true, false))
-        );
-
-        let text = "\" some\n literal\n with no end ";
-        let result = RainDocument::is_constant(text);
-        assert_eq!(
-            result,
-            Some(("\" some\n literal\n with no end ".to_owned(), true, true))
-        );
-
-        let text = " \n 999 234 \n";
-        let result = RainDocument::is_constant(text);
-        assert_eq!(result, None);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_is_elided_method() -> anyhow::Result<()> {
-        let text = " ! \n some msg \n msg continues \n\t";
-        let result = RainDocument::is_elided(text);
-        assert_eq!(result, Some("some msg \n msg continues".to_owned()));
-
-        let text = " ! \n\t";
-        let result = RainDocument::is_elided(text);
-        assert_eq!(result, Some("".to_owned()));
-
-        let text = "some msg";
-        let result = RainDocument::is_elided(text);
-        assert_eq!(result, None);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_process_import_config_method() -> anyhow::Result<()> {
-        let text = " 'item1 renamed-item1 \n  \n\n\t item2 0x1234 \n";
-        let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        let result = RainDocument::process_import_config(&mut config_items.iter_mut());
-        let expected = ImportConfiguration {
-            groups: vec![
-                (
-                    ParsedItem("'item1".to_owned(), [1, 7]),
-                    Some(ParsedItem("renamed-item1".to_owned(), [8, 21])),
-                ),
-                (
-                    ParsedItem("item2".to_owned(), [29, 34]),
-                    Some(ParsedItem("0x1234".to_owned(), [35, 41])),
-                ),
-            ],
-            problems: vec![],
-        };
-        assert_eq!(result, expected);
-
-        let text = "'item1 renamed-item1 . ";
-        let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        let result = RainDocument::process_import_config(&mut config_items.iter_mut());
-        let expected = ImportConfiguration {
-            groups: vec![
-                (
-                    ParsedItem("'item1".to_owned(), [0, 6]),
-                    Some(ParsedItem("renamed-item1".to_owned(), [7, 20])),
-                ),
-                (ParsedItem(".".to_owned(), [21, 22]), None),
-            ],
-            problems: vec![ErrorCode::ExpectedElisionOrRebinding.to_problem(vec![], [21, 22])],
-        };
-        assert_eq!(result, expected);
-
-        let text = "Bad-name 0x1234";
-        let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
-        let result = RainDocument::process_import_config(&mut config_items.iter_mut());
-        let expected = ImportConfiguration {
-            groups: vec![(
-                ParsedItem("Bad-name".to_owned(), [0, 8]),
-                Some(ParsedItem("0x1234".to_owned(), [9, 15])),
-            )],
-            problems: vec![ErrorCode::UnexpectedToken.to_problem(vec![], [0, 8])],
-        };
-        assert_eq!(result, expected);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_process_import_method() -> anyhow::Result<()> {
-        let mut meta_store = Store::new();
-        let hash = "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184";
-        let hash_bytes = alloy_primitives::hex::decode(hash).unwrap();
-        meta_store.update_with(&hash_bytes, "meta2-bytes".as_bytes());
-
-        let rain_document = RainDocument::new(
-            String::new(),
-            Some(Arc::new(RwLock::new(meta_store))),
-            0,
-            None,
-        );
-        let statements = vec![ParsedItem(
-            "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184".to_owned(),
-            [17, 83],
-        )];
-
-        let result = block_on(rain_document.process_import(&statements[0], false));
-        let expected = Import {
-            name: ".".to_owned(),
-            name_position: [17, 83],
-            hash: hash.to_owned(),
-            hash_position: [17, 83],
-            position: [16, 83],
-            problems: vec![ErrorCode::CorruptMeta.to_problem(vec![], [17, 83])],
-            configuration: None,
-            sequence: None,
-        };
-        assert_eq!(result, expected);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_check_namespace_method() -> anyhow::Result<()> {
-        let mut main_namespace: Namespace = HashMap::new();
-        let mut new_namespace: Namespace = HashMap::new();
-        main_namespace.insert(
-            "binding-name".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0xabc".to_owned(),
-                import_index: -1,
-                element: Binding {
-                    name: "binding-name".to_owned(),
-                    name_position: [0, 1],
-                    content: "some-content".to_owned(),
-                    content_position: [2, 10],
-                    position: [0, 10],
-                    problems: vec![],
-                    dependencies: vec![],
-                    item: BindingItem::Literal(LiteralBindingItem {
-                        value: "3e18".to_owned(),
-                    }),
-                },
-            }),
-        );
-        new_namespace.insert(
-            "binding-name".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0xabc".to_owned(),
-                import_index: -1,
-                element: Binding {
-                    name: "binding-name".to_owned(),
-                    name_position: [0, 1],
-                    content: "some-content".to_owned(),
-                    content_position: [2, 10],
-                    position: [0, 10],
-                    problems: vec![],
-                    dependencies: vec![],
-                    item: BindingItem::Literal(LiteralBindingItem {
-                        value: "3e18".to_owned(),
-                    }),
-                },
-            }),
-        );
-        assert_eq!(
-            RainDocument::check_namespace(&new_namespace, &main_namespace),
-            Some(ErrorCode::CollidingNamespaceNodes)
-        );
-
-        let mut main_namespace: Namespace = HashMap::new();
-        let mut new_namespace: Namespace = HashMap::new();
-        main_namespace.insert(
-            "binding-name".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0xabc".to_owned(),
-                import_index: -1,
-                element: Binding {
-                    name: "binding-name".to_owned(),
-                    name_position: [0, 1],
-                    content: "some-content".to_owned(),
-                    content_position: [2, 10],
-                    position: [0, 10],
-                    problems: vec![],
-                    dependencies: vec![],
-                    item: BindingItem::Literal(LiteralBindingItem {
-                        value: "3e18".to_owned(),
-                    }),
-                },
-            }),
-        );
-        new_namespace.insert(
-            "binding-other-name".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0xabc".to_owned(),
-                import_index: -1,
-                element: Binding {
-                    name: "binding-other-name".to_owned(),
-                    name_position: [0, 1],
-                    content: "some-other-content".to_owned(),
-                    content_position: [2, 10],
-                    position: [0, 10],
-                    problems: vec![],
-                    dependencies: vec![],
-                    item: BindingItem::Literal(LiteralBindingItem {
-                        value: "3e18".to_owned(),
-                    }),
-                },
-            }),
-        );
-        assert_eq!(
-            RainDocument::check_namespace(&new_namespace, &main_namespace),
-            None
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_merge_namespace_method() -> anyhow::Result<()> {
-        let mut main_namespace: Namespace = HashMap::new();
-        let mut new_namespace: Namespace = HashMap::new();
-        main_namespace.insert(
-            "binding-name".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0xabc".to_owned(),
-                import_index: -1,
-                element: Binding {
-                    name: "binding-name".to_owned(),
-                    name_position: [0, 1],
-                    content: "some-content".to_owned(),
-                    content_position: [2, 10],
-                    position: [0, 10],
-                    problems: vec![],
-                    dependencies: vec![],
-                    item: BindingItem::Literal(LiteralBindingItem {
-                        value: "3e18".to_owned(),
-                    }),
-                },
-            }),
-        );
-        new_namespace.insert(
-            "binding-other-name".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0xabc".to_owned(),
-                import_index: -1,
-                element: Binding {
-                    name: "binding-other-name".to_owned(),
-                    name_position: [0, 1],
-                    content: "some-other-content".to_owned(),
-                    content_position: [2, 10],
-                    position: [0, 10],
-                    problems: vec![],
-                    dependencies: vec![],
-                    item: BindingItem::Literal(LiteralBindingItem {
-                        value: "3e18".to_owned(),
-                    }),
-                },
-            }),
-        );
-        main_namespace.insert(
-            "deep-namespace".to_owned(),
-            NamespaceItem::Node(new_namespace.clone()),
-        );
-
-        let mut rain_document = RainDocument::new(String::new(), None, 0, None);
-        rain_document.merge_namespace(
-            ".".to_owned(),
-            [0, 10],
-            new_namespace.clone(),
-            &mut main_namespace,
-        );
-        let mut expected = main_namespace.clone();
-        expected.insert(
-            "binding-other-name".to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: "0xabc".to_owned(),
-                import_index: -1,
-                element: Binding {
-                    name: "binding-other-name".to_owned(),
-                    name_position: [0, 1],
-                    content: "some-other-content".to_owned(),
-                    content_position: [2, 10],
-                    position: [0, 10],
-                    problems: vec![],
-                    dependencies: vec![],
-                    item: BindingItem::Literal(LiteralBindingItem {
-                        value: "3e18".to_owned(),
-                    }),
-                },
-            }),
-        );
-        assert_eq!(main_namespace, expected);
-        assert!(rain_document.problems.is_empty());
-
-        let mut rain_document = RainDocument::new(String::new(), None, 0, None);
-        rain_document.merge_namespace(
-            "deep-namespace".to_owned(),
-            [0, 10],
-            new_namespace,
-            &mut main_namespace,
-        );
-        let expected = main_namespace.clone();
-        assert_eq!(main_namespace, expected);
-        assert_eq!(
-            rain_document.problems,
-            vec![ErrorCode::CollidingNamespaceNodes.to_problem(vec![], [0, 10])]
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_parse_method() -> anyhow::Result<()> {
-        let store = Store::new();
-        let meta_store = Arc::new(RwLock::new(store));
-
-        let text = r"some front matter
----
-/** this is test */
-                                                                           
-
-#const-binding 4e18
-#elided-binding ! this elided, rebind before use
-#exp-binding
-_: opcode-1(0xabcd 456);
-";
-        let rain_document =
-            RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
-        let expected_bindings: Vec<Binding> = vec![
-            Binding {
-                name: "const-binding".to_owned(),
-                name_position: [120, 133],
-                content: "4e18".to_owned(),
-                content_position: [134, 138],
-                position: [120, 139],
-                problems: vec![],
-                dependencies: vec![],
-                item: BindingItem::Literal(LiteralBindingItem {
-                    value: "4e18".to_owned(),
-                }),
-            },
-            Binding {
-                name: "elided-binding".to_owned(),
-                name_position: [140, 154],
-                content: "! this elided, rebind before use".to_owned(),
-                content_position: [155, 187],
-                position: [140, 188],
-                problems: vec![],
-                dependencies: vec![],
-                item: BindingItem::Elided(ElidedBindingItem {
-                    msg: "this elided, rebind before use".to_owned(),
-                }),
-            },
-            Binding {
-                name: "exp-binding".to_owned(),
-                name_position: [189, 200],
-                content: "_: opcode-1(0xabcd 456);".to_owned(),
-                content_position: [201, 225],
-                position: [189, 226],
-                problems: vec![],
-                dependencies: vec![],
-                item: BindingItem::Exp(RainlangDocument::create(
-                    "_: opcode-1(0xabcd 456);".to_owned(),
-                    &HashMap::new(),
-                    None,
-                )),
-            },
-        ];
-        let mut expected_namespace: Namespace = HashMap::new();
-        expected_namespace.insert(
-            expected_bindings[0].name.to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: String::new(),
-                import_index: -1,
-                element: expected_bindings[0].clone(),
-            }),
-        );
-        expected_namespace.insert(
-            expected_bindings[1].name.to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: String::new(),
-                import_index: -1,
-                element: expected_bindings[1].clone(),
-            }),
-        );
-        expected_namespace.insert(
-            expected_bindings[2].name.to_owned(),
-            NamespaceItem::Leaf(NamespaceLeaf {
-                hash: String::new(),
-                import_index: -1,
-                element: expected_bindings[2].clone(),
-            }),
-        );
-
-        let expected_rain_document = RainDocument {
-            text: text.to_owned(),
-            front_matter_offset: 18,
-            error: None,
-            bindings: expected_bindings.clone(),
-            imports: vec![],
-            comments: vec![Comment {
-                comment: "/** this is test */".to_owned(),
-                position: [22, 41],
-            }],
-            problems: vec![],
-            import_depth: 0,
-            namespace: expected_namespace,
-            meta_store,
-            known_words: None,
-        };
-        assert_eq!(rain_document, expected_rain_document);
-
-        Ok(())
     }
 }
