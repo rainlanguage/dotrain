@@ -419,7 +419,7 @@ impl RainlangDocument {
         let mut parsed_items = inclusive_parse(text, &ANY_PATTERN, 0);
         let mut iter = parsed_items.iter_mut();
         while let Some(item) = iter.next() {
-            if item.0.starts_with('"') {
+            if item.0.starts_with('"') && (item.0 == "\"" || !item.0.ends_with('"')) {
                 let start = item.1[0];
                 let mut end = text.len();
                 let mut has_no_end = true;
@@ -467,7 +467,7 @@ impl RainlangDocument {
             };
         let next_pos = [cursor, cursor + next.len()];
 
-        if next.starts_with('"') {
+        if next.starts_with('"') && (next == "\"" || !next.ends_with('"')) {
             match remaining.find('"') {
                 Some(string_literal_end) => {
                     let consumed = string_literal_end + next.len() + 1;
@@ -494,7 +494,7 @@ impl RainlangDocument {
                 }
             }
         }
-        if next.starts_with('[') {
+        if next.starts_with('[') && (next == "]" || !next.ends_with(']')) {
             match remaining.find(']') {
                 Some(sub_parser_end) => {
                     let consumed = sub_parser_end + next.len() + 1;

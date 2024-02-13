@@ -684,7 +684,7 @@ _: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
 #exp-binding-1
 using-words-from 0x1234abced
 abcd: " this is literal string ",
-_: some-sub-parser-word<some-value " some literal as operand ">(some-value literal-binding);
+_: some-sub-parser-word<some-value " some literal as operand " "test">(some-value literal-binding);
 "#;
         let rainlang_text = RainDocument::compose_text(
             dotrain_text,
@@ -694,7 +694,7 @@ _: some-sub-parser-word<some-value " some literal as operand ">(some-value liter
         )?;
         let expected_rainlang = r#"using-words-from 0x1234abced
 abcd: " this is literal string ",
-_: some-sub-parser-word<4e18 " some literal as operand ">(4e18 "some literal value");"#;
+_: some-sub-parser-word<4e18 " some literal as operand " "test">(4e18 "some literal value");"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
         let dotrain_text = r#"---
@@ -704,6 +704,8 @@ _: some-sub-parser-word<4e18 " some literal as operand ">(4e18 "some literal val
 /* some comment with quote: dont't */
 using-words-from 0x1234abced
 _: [some-sub-parser 123 4 kjh],
+_: "abcd",
+_: [test],
 _: some-sub-parser-word<1 2>(some-value 44);
 "#;
         let rainlang_text = RainDocument::compose_text(
@@ -715,6 +717,8 @@ _: some-sub-parser-word<1 2>(some-value 44);
         let expected_rainlang = r#"/* some comment with quote: dont't */
 using-words-from 0x1234abced
 _: [some-sub-parser 123 4 kjh],
+_: "abcd",
+_: [test],
 _: some-sub-parser-word<1 2>(4e18 44);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
