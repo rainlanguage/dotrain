@@ -66,25 +66,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Create zip and tar built package archives for GH release
-      - name: Create Built Package Archives
-        run: | 
-          zip -r rainlang-codemirror-${{ env.NEW_VERSION }}.zip dist src README.md package.json
-          tar -czvf rainlang-codemirror-${{ env.NEW_VERSION }}.tar.gz dist src README.md package.json
-
-      # Create gitHub release with built package archives
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.NEW_VERSION }}
-          name: Release ${{ env.NEW_VERSION }}
-          # specify the additional built packages to be included in GH release
-          files: |
-            rainlang-codemirror-${{ env.NEW_VERSION }}.zip
-            rainlang-codemirror-${{ env.NEW_VERSION }}.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Publish To NPM
         run: npm publish
         env:
