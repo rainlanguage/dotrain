@@ -47,7 +47,7 @@ jobs:
           git config --global user.name "${{ secrets.CI_GIT_USER }}"
 
       # set version to rust crate version
-      - name: Bump Patch Version
+      - name: Set Version
         run: echo "NEW_VERSION=$(npm version $(node ./scripts/version.js) --no-git-tag-version)" >> $GITHUB_ENV
 
       # Commit changes and tag
