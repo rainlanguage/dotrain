@@ -38,11 +38,25 @@
           ];
         };
 
+        install-js-deps = rainix.mkTask.${system} {
+          name = "install-js-deps";
+          body = ''
+            set -euxo pipefail
+            npm install
+          '';
+          additionalBuildInputs = [
+            pkgs.wasm-bindgen-cli
+            rainix.rust-toolchain.${system}
+            rainix.rust-build-inputs.${system}
+            rainix.node-build-inputs.${system}
+          ];
+        };
+
         build-js-bindings = rainix.mkTask.${system} {
           name = "build-js-bindings";
           body = ''
             set -euxo pipefail
-            npm install
+            npm run build
           '';
           additionalBuildInputs = [
             pkgs.wasm-bindgen-cli

@@ -28,6 +28,9 @@ jobs:
           ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
         run: nix run .#${{ matrix.task }}
 
+      - name: Install JS Deps
+        run:  nix run .#install-js-deps
+
       - name: Build JS Bindings
         run:  nix run .#build-js-bindings
       
