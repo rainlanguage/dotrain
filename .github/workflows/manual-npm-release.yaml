@@ -55,7 +55,7 @@ jobs:
         run: |
           git add "package.json"
           git add "package-lock.json"
-          git commit -m "Release ${{ env.NEW_VERSION }}"
+          git commit -m "Node Release ${{ env.NEW_VERSION }}"
           git tag ${{ env.NEW_VERSION }}
 
       # Push the commit to remote
@@ -63,6 +63,24 @@ jobs:
         run: | 
           git push origin 
           git push -u origin ${{ env.NEW_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Create zip and tar built package archives for GH release
+      - name: Create Built Package Archives
+        run: | 
+          zip -r dotrain-node-${{ env.NEW_VERSION }}.zip dist assets cjs.js esm.js cjs.d.ts esm.d.ts example.rainconfig.json README.md package.json
+          tar -czvf dotrain-node-${{ env.NEW_VERSION }}.tar.gz dist assets cjs.js esm.js cjs.d.ts esm.d.ts example.rainconfig.json README.md package.json
+
+      # Create gitHub release with built package archives
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.NEW_VERSION }}
+          name: Release ${{ env.NEW_VERSION }}
+          files: |
+            dotrain-node-${{ env.NEW_VERSION }}.zip
+            dotrain-node-${{ env.NEW_VERSION }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
