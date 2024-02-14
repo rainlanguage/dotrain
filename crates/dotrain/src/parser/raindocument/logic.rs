@@ -526,7 +526,7 @@ impl RainDocument {
         } else if result
             .problems
             .iter()
-            .all(|p| p.code != ErrorCode::CorruptMeta)
+            .all(|p| p.code != ErrorCode::CorruptMeta && p.code != ErrorCode::InconsumableMeta)
         {
             result.problems.push(
                 ErrorCode::UndefinedImport.to_problem(vec![&result.hash], result.hash_position),
@@ -544,30 +544,36 @@ impl RainDocument {
         result: &mut Import,
         remote_search: bool,
     ) -> Option<Vec<RainMetaDocumentV1Item>> {
-        if let Some(cached_meta) = self.meta_store.read().unwrap().get_meta(hash_bytes) {
-            match RainMetaDocumentV1Item::cbor_decode(&cached_meta.clone()) {
-                Ok(v) => {
-                    if is_consumable(&v) {
-                        return Some(v);
-                    } else {
-                        result.problems.push(
-                            ErrorCode::InconsumableMeta.to_problem(vec![], result.hash_position),
-                        );
+        {
+            if let Some(cached_meta) = self.meta_store.read().unwrap().get_meta(hash_bytes) {
+                match RainMetaDocumentV1Item::cbor_decode(&cached_meta.clone()) {
+                    Ok(v) => {
+                        if is_consumable(&v) {
+                            return Some(v);
+                        } else {
+                            result.problems.push(
+                                ErrorCode::InconsumableMeta
+                                    .to_problem(vec![], result.hash_position),
+                            );
+                        }
+                    }
+                    Err(_) => {
+                        result
+                            .problems
+                            .push(ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position));
                     }
                 }
-                Err(_) => {
-                    result
-                        .problems
-                        .push(ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position));
-                }
-            }
-        };
+                return None;
+            };
+        }
         if remote_search {
             if let Ok(meta_res) = search(&result.hash, subgraphs).await {
-                self.meta_store
-                    .write()
-                    .unwrap()
-                    .update_with(hash_bytes, &meta_res.bytes);
+                {
+                    self.meta_store
+                        .write()
+                        .unwrap()
+                        .update_with(hash_bytes, &meta_res.bytes);
+                };
 
                 match RainMetaDocumentV1Item::cbor_decode(&meta_res.bytes) {
                     Ok(v) => {
@@ -578,18 +584,14 @@ impl RainDocument {
                                 ErrorCode::InconsumableMeta
                                     .to_problem(vec![], result.hash_position),
                             );
-                            return None;
                         }
                     }
                     Err(_) => {
                         result
                             .problems
                             .push(ErrorCode::CorruptMeta.to_problem(vec![], result.hash_position));
-                        return None;
                     }
                 }
-            } else {
-                return None;
             }
         }
         None
@@ -606,7 +608,7 @@ impl RainDocument {
         for meta in meta_items {
             match meta.unpack() {
                 Ok(meta_data) => {
-                    if matches!(meta.magic, KnownMagic::DotrainV1) {
+                    if meta.magic == KnownMagic::DotrainV1 {
                         if let Ok(dotrain_text) = DotrainMeta::from_utf8(meta_data) {
                             let mut dotrain = RainDocument::new(
                                 dotrain_text,
