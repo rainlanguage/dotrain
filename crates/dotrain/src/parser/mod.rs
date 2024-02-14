@@ -166,14 +166,14 @@ pub(crate) fn is_consumable(items: &Vec<RainMetaDocumentV1Item>) -> bool {
     if !items.is_empty() {
         let mut dotrains = 0;
         for v in items {
-            if matches!(v.magic, KnownMagic::DotrainV1) {
+            if v.magic == KnownMagic::DotrainV1 {
                 dotrains += 1;
             }
             if dotrains > 1 {
                 return false;
             }
         }
-        !dotrains == 0
+        dotrains == 1
     } else {
         false
     }

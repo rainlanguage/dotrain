@@ -68,7 +68,7 @@ new-total-amount-sent);
             range: toRange(3, 20, 3, 86),
             contents: {
                 kind: "plaintext",
-                value: "value",
+                value: "literal value",
             },
         });
     });

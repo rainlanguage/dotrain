@@ -19,7 +19,7 @@ use dotrain::{
 
 static META_COMPLETION: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0?x").unwrap());
 static TRIGGERS: Lazy<Regex> = Lazy::new(|| Regex::new(r"[a-zA-Z0-9-.']").unwrap());
-static TRIGGERS_PATH: Lazy<Regex> = Lazy::new(|| Regex::new(r"[a-zA-Z0-9-.'\\/]").unwrap());
+static TRIGGERS_PATH: Lazy<Regex> = Lazy::new(|| Regex::new(r"[a-zA-Z0-9-.'\/]").unwrap());
 
 /// Provides completion items for the given RainDocument at the given Position
 pub fn get_completion(

@@ -1,7 +1,8 @@
 use super::{OffsetAt, PositionAt};
 use dotrain::{
     RainDocument,
-    types::ast::{Node, BindingItem},
+    types::{ast::*, patterns::*},
+    exclusive_parse,
 };
 use lsp_types::{Position, MarkupKind, Hover, HoverContents, Range, MarkupContent};
 
@@ -82,6 +83,7 @@ pub fn get_hover(
                             nodes.push(a);
                         }
                         return search(
+                            rain_document,
                             nodes,
                             binding.content_position[0],
                             target_offset - binding.content_position[0],
@@ -93,7 +95,7 @@ pub fn get_hover(
                         return Some(Hover {
                             contents: HoverContents::Markup(MarkupContent {
                                 kind: content_type,
-                                value: "constant value".to_owned(),
+                                value: "literal value".to_owned(),
                             }),
                             range: Some(Range::new(
                                 rain_document
@@ -109,7 +111,7 @@ pub fn get_hover(
                         return Some(Hover {
                             contents: HoverContents::Markup(MarkupContent {
                                 kind: content_type,
-                                value: "quote".to_owned(),
+                                value: "elision msg".to_owned(),
                             }),
                             range: Some(Range::new(
                                 rain_document
@@ -125,7 +127,7 @@ pub fn get_hover(
                         return Some(Hover {
                             contents: HoverContents::Markup(MarkupContent {
                                 kind: content_type,
-                                value: "elision msg".to_owned(),
+                                value: "quote binding".to_owned(),
                             }),
                             range: Some(Range::new(
                                 rain_document
@@ -145,6 +147,7 @@ pub fn get_hover(
 }
 
 fn search(
+    rain_document: &RainDocument,
     nodes: Vec<&Node>,
     offset: usize,
     target_offset: usize,
@@ -158,6 +161,7 @@ fn search(
                 Node::Opcode(op) => {
                     if op.parens[0] < target_offset && op.parens[1] > target_offset {
                         return search(
+                            rain_document,
                             op.inputs.iter().collect(),
                             offset,
                             target_offset,
@@ -170,15 +174,28 @@ fn search(
                                 if arg.position[0] <= target_offset
                                     && arg.position[1] > target_offset
                                 {
+                                    let header = if arg.description.is_empty() {
+                                        arg.name.clone()
+                                    } else {
+                                        [arg.name.clone(), arg.description.clone()].join("\n")
+                                    };
+                                    let value = if let Some((id, _)) = &arg.binding_id {
+                                        match search_binding_ref(id.strip_prefix('\'').unwrap_or(id.as_str()), rain_document.namespace()) {
+                                            None => header,
+                                            Some(binding) => match &binding.item {
+                                                BindingItem::Elided(e) => format!("{}\n\n---\n\nelided binding\n\n---\n\nmessage:\n{}", header, get_value(&e.msg, &kind)),
+                                                BindingItem::Literal(l) => format!("{}\n\n---\n\nliteral binding\n\n---\n\n{}", header, get_value(&l.value, &kind)),
+                                                BindingItem::Quote(q) => format!("{}\n\n---\n\nquote binding\n\n---\n\n{}", header, get_value(&q.quote, &kind)),
+                                                BindingItem::Exp(_) => format!("{}\n\n---\n\nrainlang expression binding\n\n---\n\n{}", header, get_value(&binding.content, &kind)),
+                                            }
+                                        }
+                                    } else {
+                                        header
+                                    };
                                     return Some(Hover {
                                         contents: HoverContents::Markup(MarkupContent {
                                             kind,
-                                            value: if arg.description.is_empty() {
-                                                arg.name.clone()
-                                            } else {
-                                                [arg.name.clone(), arg.description.clone()]
-                                                    .join("\n")
-                                            },
+                                            value,
                                         }),
                                         range: Some(Range::new(
                                             text.position_at(arg.position[0] + offset),
@@ -216,11 +233,12 @@ fn search(
                 Node::Literal(literal) => {
                     return Some(Hover {
                         contents: HoverContents::Markup(MarkupContent {
+                            value: if literal.id.is_some() {
+                                get_value(&literal.value, &kind)
+                            } else {
+                                "literal value".to_owned()
+                            },
                             kind,
-                            value: literal
-                                .id
-                                .as_ref()
-                                .map_or("value".to_owned(), |id| id.clone()),
                         }),
                         range: Some(Range::new(
                             text.position_at(literal.position[0] + offset),
@@ -229,9 +247,30 @@ fn search(
                     });
                 }
                 Node::Alias(alias) => {
-                    let mut value = "Stack Alias".to_owned();
-                    if alias.name == "_" {
-                        value.push_str(" Placeholder")
+                    let value = if alias.name == "_" {
+                        "Stack Alias Placeholder".to_owned()
+                    } else {
+                        match search_binding_ref(&alias.name, rain_document.namespace()) {
+                            None => "Stack Alias".to_owned(),
+                            Some(binding) => match &binding.item {
+                                BindingItem::Elided(e) => format!(
+                                    "elided binding\n\n---\n\nmessage:\n{}",
+                                    get_value(&e.msg, &kind)
+                                ),
+                                BindingItem::Literal(l) => format!(
+                                    "literal binding\n\n---\n\n{}",
+                                    get_value(&l.value, &kind)
+                                ),
+                                BindingItem::Quote(q) => format!(
+                                    "quote binding\n\n---\n\n{}",
+                                    get_value(&q.quote, &kind)
+                                ),
+                                BindingItem::Exp(_) => format!(
+                                    "rainlang expression binding\n\n---\n\n{}",
+                                    get_value(&binding.content, &kind)
+                                ),
+                            },
+                        }
                     };
                     return Some(Hover {
                         contents: HoverContents::Markup(MarkupContent { kind, value }),
@@ -245,4 +284,67 @@ fn search(
         }
     }
     None
+}
+
+fn search_binding_ref<'a>(query: &str, namespace: &'a Namespace) -> Option<&'a Binding> {
+    let mut segments: &[ParsedItem] = &exclusive_parse(query, &NAMESPACE_SEGMENT_PATTERN, 0, true);
+    if query.starts_with('.') {
+        segments = &segments[1..];
+    }
+    if segments.len() > 32 {
+        return None;
+    }
+    if segments[segments.len() - 1].0.is_empty() {
+        return None;
+    }
+    if segments.iter().any(|v| !WORD_PATTERN.is_match(&v.0)) {
+        return None;
+    }
+
+    if let Some(namespace_item) = namespace.get(&segments[0].0) {
+        let mut result = namespace_item;
+        let iter = segments[1..].iter();
+        for segment in iter {
+            match result {
+                NamespaceItem::Node(node) => {
+                    if let Some(namespace_item) = node.get(&segment.0) {
+                        result = namespace_item;
+                    } else {
+                        return None;
+                    }
+                }
+                _ => {
+                    return None;
+                }
+            }
+        }
+        match result {
+            NamespaceItem::Node(_node) => None,
+            NamespaceItem::Leaf(leaf) => Some(&leaf.element),
+        }
+    } else {
+        None
+    }
+}
+
+fn get_value(text: &str, kind: &MarkupKind) -> String {
+    let lines_len = text.lines().count();
+    let limited_text = if lines_len > 10 {
+        let mut line_text = vec![];
+        for (i, line) in text.lines().enumerate() {
+            line_text.push(line);
+            if i == 9 {
+                break;
+            }
+        }
+        line_text.push("...");
+        line_text.join("\n")
+    } else {
+        text.to_owned()
+    };
+    if *kind == MarkupKind::Markdown {
+        format!("```rainlang\n---\n{}\n```", limited_text)
+    } else {
+        limited_text
+    }
 }
