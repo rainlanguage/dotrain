@@ -182,7 +182,7 @@ impl RainDocument {
         // reason for not parsing imported/deeper rainlang bindings is because their ast provides
         // no needed info at this point, they will get parsed once the dotrain is being composed with
         // specified entrypoints and they will be parsed only if they are part of the entrypoints or
-        // their deps, see 'compile.rs'.
+        // their deps, see 'composer.rs'.
         if self.import_depth == 0 {
             for binding in &mut self.bindings {
                 // parse the rainlang binding to ast and repopulate the

@@ -18,7 +18,7 @@ all fields in the rainconfig are optional and are as follows:
 
   - include: Specifies a list of directories (files/folders) to be included and watched. 
   folders will be watched recursively for .rain files. These files will be available as 
-  dotrain meta in the cas so if their hash is specified in a compilation target they will 
+  dotrain meta in the cas so if their hash is specified in a composition target they will 
   get resolved.
 
   - subgraphs: Additional subgraph endpoint URLs to include when searching for metas of 

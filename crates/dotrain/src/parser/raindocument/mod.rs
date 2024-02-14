@@ -24,7 +24,7 @@ mod logic;
 ///
 /// RainDocument is the main implementation block that enables parsing of a .rain file contents
 /// to its building blocks and parse tree by handling and resolving imports, namespaces, etc which
-/// later are used by LSP services and compiler as well as providing all the functionalities in between.
+/// later are used by LSP services and composer as well as providing all the functionalities in between.
 ///
 /// It is a portable, extensible and composable format for describing Rainlang fragments, .rain serve as
 /// a wrapper/container/medium for Rainlang to be shared and audited simply in a permissionless and

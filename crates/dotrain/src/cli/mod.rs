@@ -49,7 +49,7 @@ pub struct Compose {
     /// './example.rainconfig.json' for more details.
     #[arg(short, long)]
     config: Option<PathBuf>,
-    /// Force compile by ignoring all erroneous paths/contents specified in rainconfig
+    /// Force compose by ignoring all erroneous paths/contents specified in rainconfig
     #[arg(short, long)]
     force: Option<bool>,
     /// Only use local dotrain meta specified in rainconfig include field and dont search for them in subgraphs
