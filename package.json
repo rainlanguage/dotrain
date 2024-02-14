@@ -1,7 +1,7 @@
 {
     "name": "@rainlanguage/dotrain",
     "description": "Rain language server protocol implementation and composer for NodeJs and Browser",
-    "version": "6.0.0",
+    "version": "6.0.1-alpha.5",
     "author": "Rain Language",
     "license": "CAL-1.0",
     "repository": {
@@ -43,7 +43,8 @@
         "lint": "eslint \"dist/**\" \"test/**\"",
         "lint-fix": "eslint \"dist/**\" \"test/**\" --fix",
         "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
-        "move-api": "copyfiles \"./dotrain.api.json\" \"./docs\" && rimraf ./dotrain.api.json && rimraf ./dist/cjs/tsdoc-metadata.json"
+        "move-api": "copyfiles \"./dotrain.api.json\" \"./docs\" && rimraf ./dotrain.api.json && rimraf ./dist/cjs/tsdoc-metadata.json",
+        "set-version": "npm version $(node ./scripts/version.js) --no-git-tag-version"
     },
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
