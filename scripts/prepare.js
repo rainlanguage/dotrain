@@ -25,7 +25,8 @@ import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentIt
     "",
 );
 dts =
-    `import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
+    `/* this file is auto-generated, do not modify */
+import { SemanticTokensPartialResult } from "vscode-languageserver-protocol";
 import { Hover, Position, MarkupKind, Diagnostic, CompletionItem, TextDocumentItem } from "vscode-languageserver-types";
 export * from "vscode-languageserver-types";
 export * from "vscode-languageserver-protocol";
@@ -72,6 +73,7 @@ const wasmB64 = require('../wasm.json');
 const bytes = Buffer.from(wasmB64.wasm, 'base64');`,
 );
 cjs = cjs.replace("const { TextDecoder, TextEncoder } = require(`util`);", "");
+cjs = "/* this file is auto-generated, do not modify */\n" + cjs;
 fs.writeFileSync("./dist/cjs/index.js", cjs);
 
 // prepare esm
@@ -109,6 +111,7 @@ const wasmModule = new WebAssembly.Module(bytes);
 const wasmInstance = new WebAssembly.Instance(wasmModule, imports);
 wasm = wasmInstance.exports;`;
 esm = esm.replaceAll("imports.wbg", "imports.__wbindgen_placeholder__");
+esm = "/* this file is auto-generated, do not modify */\n" + esm;
 fs.writeFileSync("./dist/esm/index.js", esm);
 
 fs.writeFileSync("./cjs.js", '"use strict";\n\nmodule.exports = require("./dist/cjs/index");\n');
