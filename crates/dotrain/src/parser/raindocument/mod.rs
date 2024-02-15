@@ -82,7 +82,6 @@ let result = rain_document.compose(&entrypoints);
 #[serde(rename_all = "camelCase")]
 #[serde(rename(serialize = "IRainDocument"))]
 pub struct RainDocument {
-    #[cfg_attr(feature = "js-api", tsify(type = "string"))]
     pub(crate) text: String,
     pub(crate) front_matter_offset: usize,
     pub(crate) error: Option<String>,
