@@ -48,7 +48,7 @@ jobs:
 
       # set version to rust crate version
       - name: Set Version
-        run: echo "NEW_VERSION=$(nix develop .#js - c npm version $(node ./scripts/version.js) --no-git-tag-version)" >> $GITHUB_ENV
+        run: echo "NEW_VERSION=$(nix develop .#js -c npm version $(node ./scripts/version.js) --no-git-tag-version)" >> $GITHUB_ENV
 
       # Commit changes and tag
       - name: Commit And Tag
