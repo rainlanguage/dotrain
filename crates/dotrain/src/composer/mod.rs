@@ -129,24 +129,22 @@ impl RainDocument {
                             leaf.import_index,
                             &self.imports,
                         ));
-                    } else {
-                        let rainlang_doc =
-                            RainlangDocument::create(binding.content.clone(), parent_node, None);
-                        if !rainlang_doc.problems.is_empty() {
-                            return Err(ComposeError::from_problems(
-                                &rainlang_doc.problems,
-                                leaf.import_index,
-                                &self.imports,
-                            ));
-                        } else {
-                            nodes.push(ComposeTarget::create(
-                                leaf,
-                                binding,
-                                rainlang_doc,
-                                parent_node,
-                            ));
-                        }
                     }
+                    let rainlang_doc =
+                        RainlangDocument::create(binding.content.clone(), parent_node, None);
+                    if !rainlang_doc.problems.is_empty() {
+                        return Err(ComposeError::from_problems(
+                            &rainlang_doc.problems,
+                            leaf.import_index,
+                            &self.imports,
+                        ));
+                    }
+                    nodes.push(ComposeTarget::create(
+                        leaf,
+                        binding,
+                        rainlang_doc,
+                        parent_node,
+                    ));
                 }
                 Err(e) => {
                     return Err(ComposeError::Reject(e));
@@ -245,49 +243,41 @@ impl RainDocument {
                                     leaf.import_index,
                                     &self.imports,
                                 ));
+                            }
+                            let rainlang_doc = RainlangDocument::create(
+                                binding.content.clone(),
+                                parent_node,
+                                None,
+                            );
+                            if !rainlang_doc.problems.is_empty() {
+                                return Err(ComposeError::from_problems(
+                                    &rainlang_doc.problems,
+                                    leaf.import_index,
+                                    &self.imports,
+                                ));
+                            }
+                            // first search in composing nodes list to see if the current dep
+                            // is already present and if so capture its index, if not repeat
+                            // the same process with newly found nested nodes, if still not present
+                            // add this target to the nodes and then capture its index
+                            let new_compse_target =
+                                ComposeTarget::create(leaf, binding, rainlang_doc, parent_node);
+                            if let Some((index, _)) = &nodes
+                                .iter()
+                                .enumerate()
+                                .find(|(_, found)| **found == new_compse_target)
+                            {
+                                this_node_deps_indexes.push_back(*index as u8);
+                            } else if let Some((index, _)) = &new_nested_nodes
+                                .iter()
+                                .enumerate()
+                                .find(|(_, found)| **found == new_compse_target)
+                            {
+                                this_node_deps_indexes.push_back((nodes.len() + index) as u8);
                             } else {
-                                let rainlang_doc = RainlangDocument::create(
-                                    binding.content.clone(),
-                                    parent_node,
-                                    None,
-                                );
-                                if !rainlang_doc.problems.is_empty() {
-                                    return Err(ComposeError::from_problems(
-                                        &rainlang_doc.problems,
-                                        leaf.import_index,
-                                        &self.imports,
-                                    ));
-                                } else {
-                                    // first search in composing nodes list to see if the current dep
-                                    // is already present and if so capture its index, if not repeat
-                                    // the same process with newly found nested nodes, if still not present
-                                    // add this target to the nodes and then capture its index
-                                    let new_compse_target = ComposeTarget::create(
-                                        leaf,
-                                        binding,
-                                        rainlang_doc,
-                                        parent_node,
-                                    );
-                                    if let Some((index, _)) = &nodes
-                                        .iter()
-                                        .enumerate()
-                                        .find(|(_, found)| **found == new_compse_target)
-                                    {
-                                        this_node_deps_indexes.push_back(*index as u8);
-                                    } else if let Some((index, _)) = &new_nested_nodes
-                                        .iter()
-                                        .enumerate()
-                                        .find(|(_, found)| **found == new_compse_target)
-                                    {
-                                        this_node_deps_indexes
-                                            .push_back((nodes.len() + index) as u8);
-                                    } else {
-                                        this_node_deps_indexes.push_back(
-                                            (nodes.len() + new_nested_nodes.len()) as u8,
-                                        );
-                                        new_nested_nodes.push(new_compse_target);
-                                    }
-                                }
+                                this_node_deps_indexes
+                                    .push_back((nodes.len() + new_nested_nodes.len()) as u8);
+                                new_nested_nodes.push(new_compse_target);
                             }
                         }
                         Err(e) => {
@@ -310,10 +300,9 @@ fn validate_dep_path(index: usize, deps: &VecDeque<VecDeque<u8>>, path: &[u8]) -
         let mut current_path = path.to_vec();
         if current_path.contains(dep) {
             return Err(());
-        } else {
-            current_path.push(*dep);
-            validate_dep_path(*dep as usize, deps, &current_path)?;
         }
+        current_path.push(*dep);
+        validate_dep_path(*dep as usize, deps, &current_path)?;
     }
     Ok(())
 }

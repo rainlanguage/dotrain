@@ -1153,12 +1153,14 @@ impl RainDocument {
                                     );
                                     parent_node = Some(node);
                                     break;
-                                } else if i == segments.len() - 2 {
+                                }
+                                if i == segments.len() - 2 {
                                     return Err(Error::InvalidOverride(format!(
                                         "undefined identifier: {} in key: {}",
                                         segment.0, key
                                     )));
-                                } else if let Some(item) = node.get_mut(&segment.0) {
+                                }
+                                if let Some(item) = node.get_mut(&segment.0) {
                                     result = item;
                                 } else {
                                     return Err(Error::InvalidOverride(format!(
@@ -1201,12 +1203,11 @@ impl RainDocument {
                                         }
                                     };
                                     break;
-                                } else {
-                                    return Err(Error::InvalidOverride(format!(
-                                        "undefined identifier: {} in key: {}",
-                                        segment.0, key
-                                    )));
                                 }
+                                return Err(Error::InvalidOverride(format!(
+                                    "undefined identifier: {} in key: {}",
+                                    segment.0, key
+                                )));
                             }
                         }
                     }
