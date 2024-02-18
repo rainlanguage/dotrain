@@ -1002,9 +1002,6 @@ impl RainDocument {
         rebinds: Vec<Rebind>,
         namespace: &mut Namespace,
     ) -> Result<(), Error> {
-        // restrict quotes to only 1 levels
-        let mut limit = 1;
-
         for Rebind(key, raw_value) in rebinds {
             let value = raw_value.trim();
             if NAMESPACE_PATTERN.is_match(&key) {
@@ -1070,6 +1067,8 @@ impl RainDocument {
                             }
                             NamespaceItem::Leaf(leaf) => {
                                 if let BindingItem::Quote(q) = &item {
+                                    // restrict quotes to only 1 levels
+                                    let mut limit = 1;
                                     problems = Self::validate_quote(
                                         namespace,
                                         q,
@@ -1125,6 +1124,8 @@ impl RainDocument {
                             NamespaceItem::Node(node) => {
                                 if i == segments.len() - 3 && !node.contains_key(&segment.0) {
                                     let problems = if let BindingItem::Quote(q) = &item {
+                                        // restrict quotes to only 1 levels
+                                        let mut limit = 1;
                                         Self::validate_quote(
                                             node,
                                             q,
@@ -1172,6 +1173,8 @@ impl RainDocument {
                             NamespaceItem::Leaf(leaf) => {
                                 if i == segments.len() - 2 {
                                     let problems = if let BindingItem::Quote(q) = &item {
+                                        // restrict quotes to only 1 levels
+                                        let mut limit = 1;
                                         Self::validate_quote(
                                             parent_node.unwrap(),
                                             q,
