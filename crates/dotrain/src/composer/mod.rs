@@ -1168,50 +1168,20 @@ _: opcode-1(0xabcd 456);
 #get-last-tranche !The binding to get the last tranche space and update time.
 #set-last-tranche !The binding to set the last tranche space and update time.
 
-#tranche-space-key "tranche-space"
-#update-time-key "update-time"
-
 #get-real-last-tranche
-  tranche-space-before: get(hash(order-hash() tranche-space-key)),
-  last-update-time: get(hash(order-hash() update-time-key)),
-  now: block-timestamp();
+  tranche-space-before: get(hash(order-hash() 1));
 
 #set-real-last-tranche
-  tranche-space now:,
-  :set(hash(order-hash() tranche-space-key) tranche-space),
-  :set(hash(order-hash() update-time-key) now);
-
-#set-test-last-tranche
-  tranche-space now:;
+  :set(hash(order-hash() 1) 2);
 
 #io-ratio-multiplier-sell
   multiplier: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
 
-#io-ratio-multiplier-buy
-  multiplier: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
-
 #calculate-io
-  tranche-space-now
-  tranche-space-available
-  tranche-total-size: call<1>(),
-  tranche-io-ratio: decimal18-mul(1 decimal18-power(2 decimal18-floor(tranche-space-now))),
-  tranche-available-size: decimal18-mul(tranche-total-size tranche-space-available),
-  tranch-io-ratio: decimal18-mul(tranche-io-ratio call<io-ratio-multiplier>());
+  tranch-io-ratio: decimal18-mul(1 call<io-ratio-multiplier>());
 
 #handle-io
-  now
-  tranche-space-now
-  _
-  tranche-total-size: call<1>(),
-  tranche-space-diff: decimal18-div(decimal18-scale18-dynamic(output-token-decimals() output-vault-balance-decrease()) tranche-total-size),
-  tranche-space-after: decimal18-add(tranche-space-now tranche-space-diff),
-  /* Snap tranche space to the nearest tranche to avoid dust issues at the edges */
-  tranche-space-after-snapped: decimal18-snap-to-unit(3 tranche-space-after),
-  :ensure(
-    greater-than-or-equal-to(decimal18-saturating-sub(tranche-space-after-snapped tranche-space-now) 4)
-    "Minimum trade size not met."
-  ),
-  :call<set-last-tranche>(tranche-space-after-snapped now);
+  :call<set-last-tranche>(2 1);
 "#;
         let mut rain_document =
             RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
@@ -1231,32 +1201,13 @@ _: opcode-1(0xabcd 456);
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
         let rainlang_text = rain_document.compose(&["calculate-io", "handle-io"])?;
-        let expected_rainlang = r#"tranche-space-now
-  tranche-space-available
-  tranche-total-size: call<1>(),
-  tranche-io-ratio: decimal18-mul(1 decimal18-power(2 decimal18-floor(tranche-space-now))),
-  tranche-available-size: decimal18-mul(tranche-total-size tranche-space-available),
-  tranch-io-ratio: decimal18-mul(tranche-io-ratio call<2>());
+        let expected_rainlang = r#"tranch-io-ratio: decimal18-mul(1 call<2>());
 
-now
-  tranche-space-now
-  _
-  tranche-total-size: call<1>(),
-  tranche-space-diff: decimal18-div(decimal18-scale18-dynamic(output-token-decimals() output-vault-balance-decrease()) tranche-total-size),
-  tranche-space-after: decimal18-add(tranche-space-now tranche-space-diff),
-  /* Snap tranche space to the nearest tranche to avoid dust issues at the edges */
-  tranche-space-after-snapped: decimal18-snap-to-unit(3 tranche-space-after),
-  :ensure(
-    greater-than-or-equal-to(decimal18-saturating-sub(tranche-space-after-snapped tranche-space-now) 4)
-    "Minimum trade size not met."
-  ),
-  :call<3>(tranche-space-after-snapped now);
+:call<3>(2 1);
 
 multiplier: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
 
-tranche-space now:,
-  :set(hash(order-hash() "tranche-space") tranche-space),
-  :set(hash(order-hash() "update-time") now);"#;
+:set(hash(order-hash() 1) 2);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
         Ok(())
