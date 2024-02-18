@@ -1165,47 +1165,38 @@ _: opcode-1(0xabcd 456);
         assert_eq!(result, expected_err);
 
         let dotrain_text = r#"---
-#get-last-tranche !The binding to get the last tranche space and update time.
-#set-last-tranche !The binding to set the last tranche space and update time.
+#a !some msg.
+#b !some other msg.
 
-#get-real-last-tranche
-  tranche-space-before: get(hash(order-hash() 1));
+#some-binding
+  _: get(hash(order-hash() 1));
 
-#set-real-last-tranche
+#some-other-binding
   :set(hash(order-hash() 1) 2);
 
-#io-ratio-multiplier-sell
-  multiplier: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
+#another-binding
+  _: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
 
-#calculate-io
-  tranch-io-ratio: decimal18-mul(1 call<io-ratio-multiplier>());
+#e1
+  _: decimal18-mul(1 call<rebind-item>());
 
-#handle-io
-  :call<set-last-tranche>(2 1);
+#e2
+  :call<b>(2 1);
 "#;
         let mut rain_document =
             RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
         let rebinds = vec![
-            Rebind(
-                "get-last-tranche".to_owned(),
-                "'get-real-last-tranche".to_owned(),
-            ),
-            Rebind(
-                "set-last-tranche".to_owned(),
-                "'set-real-last-tranche".to_owned(),
-            ),
-            Rebind(
-                "io-ratio-multiplier".to_owned(),
-                "'io-ratio-multiplier-sell".to_owned(),
-            ),
+            Rebind("a".to_owned(), "'some-binding".to_owned()),
+            Rebind("b".to_owned(), "'some-other-binding".to_owned()),
+            Rebind("rebind-item".to_owned(), "'another-binding".to_owned()),
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
-        let rainlang_text = rain_document.compose(&["calculate-io", "handle-io"])?;
-        let expected_rainlang = r#"tranch-io-ratio: decimal18-mul(1 call<2>());
+        let rainlang_text = rain_document.compose(&["e1", "e2"])?;
+        let expected_rainlang = r#"_: decimal18-mul(1 call<2>());
 
 :call<3>(2 1);
 
-multiplier: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
+_: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
 
 :set(hash(order-hash() 1) 2);"#;
         assert_eq!(rainlang_text, expected_rainlang);
