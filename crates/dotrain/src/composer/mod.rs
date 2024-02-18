@@ -1165,203 +1165,40 @@ _: opcode-1(0xabcd 456);
         assert_eq!(result, expected_err);
 
         let dotrain_text = r#"---
-#tranche-space-per-second !The amount of tranche space that is recharged per second as a normalized 18 decimal fixed point value.
-#tranche-space-recharge-delay !The duration in seconds that no recharging occurs after a trade occurs.
+#a !some msg.
+#b !some other msg.
 
-#tranche-size-base !Base tranche size is the size of the smallest tranche, denominated in output token.
-#tranche-size-growth !The exponential growth factor of the size of each tranche, as a decimal 18 fixed point number. E.g. 1e16 is 1% output amount growth per tranche.
+#some-binding
+  _: get(opcode-4(opcode-1() 1));
 
-#io-ratio-base !The base IO ratio, as a decimal 18 fixed point number. This is the IO ratio at tranche space 0 and grows according to the growth factor per tranche.
-#io-ratio-growth !The exponential growth factor of the IO ratio, as a decimal 18 fixed point number. E.g. 1e16 is 1% io-ratio growth per tranche.
+#some-other-binding
+  :set(opcode-4(opcode-1() 1) 2);
 
-#reference-stable !The stable token that is used as a reference for the TWAP to offer dollar equivalent conversions.
-#reference-stable-decimals !The number of decimals of the reference stable token.
-#reference-reserve !The token that will be used to compare against the reference stable token to calculate the TWAP for dollar equivalent conversions.
-#reference-reserve-decimals !The number of decimals of the reserve token.
-#twap-duration !The duration in seconds of the TWAP window for dollar equivalence conversions.
+#another-binding
+  _: opcode-2(1 0 [something]);
 
-#min-tranche-space-diff !The minimum tranche space difference that is allowed per trade, as a decimal 18 fixed point number. Prevents dusting the strat to stop it recharging.
-#tranche-space-snap-threshold !The threshold in tranche space to snap to the nearest tranche to avoid dust issues at the edges.
+#e1
+  _: opcode-3(1 call<rebind-item>());
 
-#get-last-tranche !The binding to get the last tranche space and update time.
-#set-last-tranche !The binding to set the last tranche space and update time.
-
-#test-tranche-space-before !Returned by get-test-last-tranche to allow the tranche space before to be bound for testing.
-#test-last-update-time !Returned by get-test-last-tranche to allow the last update time to be bound for testing.
-#test-now !Returned by get-test-last-tranche to allow the current time to be bound for testing.
-
-#io-ratio-multiplier !The binding to get the IO ratio multiplier.
-
-#tranche-space-key "tranche-space"
-#update-time-key "update-time"
-
-#get-real-last-tranche
-  tranche-space-before: get(hash(order-hash() tranche-space-key)),
-  last-update-time: get(hash(order-hash() update-time-key)),
-  now: block-timestamp();
-
-#set-real-last-tranche
-  tranche-space now:,
-  :set(hash(order-hash() tranche-space-key) tranche-space),
-  :set(hash(order-hash() update-time-key) now);
-
-/* Forward the bindings through as is to the caller. */
-#get-test-last-tranche
-  _ _ _: test-tranche-space-before test-last-update-time test-now;
-
-/* There's nothing to set if we're just rebinding in tests. */
-#set-test-last-tranche
-  tranche-space now:;
-
-/**
- * To calculate a tranche without looping constructs, we have the idea of a 1D
- * tranche space that has a lower bound at 0 and we move through it linearly
- * as trades are made. Every decimal 18 unit of tranche space is a tranche.
- * The amount and price is derived from where we are in tranche space, and the
- * amount that we move through tranche space per trade is derived from real vault
- * movements.
- * Tranches are recharged at a constant rate in tranche space, which maps to a
- * non linear rate in token space, according to the derived relationship.
- */
-#calculate-tranche
-  tranche-space-before
-  last-update-time
-  now: call<get-last-tranche>(),
-  recharge-duration: int-saturating-sub(now int-add(last-update-time tranche-space-recharge-delay)),
-  recharged-tranche-space: decimal18-mul(int-to-decimal18(recharge-duration) tranche-space-per-second),
-  /* repeat now for easy access by callers */
-  _: now,
-  tranche-space-now: decimal18-saturating-sub(tranche-space-before recharged-tranche-space),
-  tranche-space-available: decimal18-headroom(tranche-space-now),
-  tranche-total-size: decimal18-mul(tranche-size-base decimal18-power(tranche-size-growth decimal18-floor(tranche-space-now)));
-
-#io-ratio-multiplier-sell
-  multiplier: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
-
-#io-ratio-multiplier-buy
-  multiplier: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
-
-#calculate-io
-  tranche-space-now
-  tranche-space-available
-  tranche-total-size: call<'calculate-tranche>(),
-  tranche-io-ratio: decimal18-mul(io-ratio-base decimal18-power(io-ratio-growth decimal18-floor(tranche-space-now))),
-  tranche-available-size: decimal18-mul(tranche-total-size tranche-space-available),
-  tranch-io-ratio: decimal18-mul(tranche-io-ratio call<io-ratio-multiplier>());
-
-#handle-io
-  now
-  tranche-space-now
-  _
-  tranche-total-size: call<'calculate-tranche>(),
-  tranche-space-diff: decimal18-div(decimal18-scale18-dynamic(output-token-decimals() output-vault-balance-decrease()) tranche-total-size),
-  tranche-space-after: decimal18-add(tranche-space-now tranche-space-diff),
-  /* Snap tranche space to the nearest tranche to avoid dust issues at the edges */
-  tranche-space-after-snapped: decimal18-snap-to-unit(tranche-space-snap-threshold tranche-space-after),
-  :ensure(
-    greater-than-or-equal-to(decimal18-saturating-sub(tranche-space-after-snapped tranche-space-now) min-tranche-space-diff)
-    "Minimum trade size not met."
-  ),
-  :call<set-last-tranche>(tranche-space-after-snapped now);
+#e2
+  :call<b>(2 1);
 "#;
         let mut rain_document =
             RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
         let rebinds = vec![
-            Rebind(
-                "tranche-space-per-second".to_owned(),
-                "1157407400000000000000".to_owned(),
-            ),
-            Rebind("tranche-space-recharge-delay".to_owned(), "300".to_owned()),
-            Rebind(
-                "tranche-size-base".to_owned(),
-                "3500000000000000000000".to_owned(),
-            ),
-            Rebind(
-                "tranche-size-growth".to_owned(),
-                "1100000000000000000".to_owned(),
-            ),
-            Rebind("io-ratio-base".to_owned(), "1110000000000000000".to_owned()),
-            Rebind(
-                "io-ratio-growth".to_owned(),
-                "1020000000000000000".to_owned(),
-            ),
-            Rebind(
-                "reference-stable".to_owned(),
-                "0x6B175474E89094C44Da98b954EedeAC495271d0F".to_owned(),
-            ),
-            Rebind("reference-stable-decimals".to_owned(), "18".to_owned()),
-            Rebind(
-                "reference-reserve".to_owned(),
-                "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2".to_owned(),
-            ),
-            Rebind("reference-reserve-decimals".to_owned(), "18".to_owned()),
-            Rebind("twap-duration".to_owned(), "1800".to_owned()),
-            Rebind(
-                "min-tranche-space-diff".to_owned(),
-                "100000000000000000".to_owned(),
-            ),
-            Rebind(
-                "tranche-space-snap-threshold".to_owned(),
-                "10000000000000000".to_owned(),
-            ),
-            Rebind(
-                "get-last-tranche".to_owned(),
-                "'get-real-last-tranche".to_owned(),
-            ),
-            Rebind(
-                "set-last-tranche".to_owned(),
-                "'set-real-last-tranche".to_owned(),
-            ),
-            Rebind(
-                "io-ratio-multiplier".to_owned(),
-                "'io-ratio-multiplier-sell".to_owned(),
-            ),
+            Rebind("a".to_owned(), "'some-binding".to_owned()),
+            Rebind("b".to_owned(), "'some-other-binding".to_owned()),
+            Rebind("rebind-item".to_owned(), "'another-binding".to_owned()),
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
-        let rainlang_text = rain_document.compose(&["calculate-io", "handle-io"])?;
-        let expected_rainlang = r#"tranche-space-now
-  tranche-space-available
-  tranche-total-size: call<2>(),
-  tranche-io-ratio: decimal18-mul(1110000000000000000 decimal18-power(1020000000000000000 decimal18-floor(tranche-space-now))),
-  tranche-available-size: decimal18-mul(tranche-total-size tranche-space-available),
-  tranch-io-ratio: decimal18-mul(tranche-io-ratio call<3>());
+        let rainlang_text = rain_document.compose(&["e1", "e2"])?;
+        let expected_rainlang = r#"_: opcode-3(1 call<2>());
 
-now
-  tranche-space-now
-  _
-  tranche-total-size: call<2>(),
-  tranche-space-diff: decimal18-div(decimal18-scale18-dynamic(output-token-decimals() output-vault-balance-decrease()) tranche-total-size),
-  tranche-space-after: decimal18-add(tranche-space-now tranche-space-diff),
-  /* Snap tranche space to the nearest tranche to avoid dust issues at the edges */
-  tranche-space-after-snapped: decimal18-snap-to-unit(10000000000000000 tranche-space-after),
-  :ensure(
-    greater-than-or-equal-to(decimal18-saturating-sub(tranche-space-after-snapped tranche-space-now) 100000000000000000)
-    "Minimum trade size not met."
-  ),
-  :call<4>(tranche-space-after-snapped now);
+:call<3>(2 1);
 
-tranche-space-before
-  last-update-time
-  now: call<5>(),
-  recharge-duration: int-saturating-sub(now int-add(last-update-time 300)),
-  recharged-tranche-space: decimal18-mul(int-to-decimal18(recharge-duration) 1157407400000000000000),
-  /* repeat now for easy access by callers */
-  _: now,
-  tranche-space-now: decimal18-saturating-sub(tranche-space-before recharged-tranche-space),
-  tranche-space-available: decimal18-headroom(tranche-space-now),
-  tranche-total-size: decimal18-mul(3500000000000000000000 decimal18-power(1100000000000000000 decimal18-floor(tranche-space-now)));
+_: opcode-2(1 0 [something]);
 
-multiplier: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
-
-tranche-space now:,
-  :set(hash(order-hash() "tranche-space") tranche-space),
-  :set(hash(order-hash() "update-time") now);
-
-/* Forward the bindings through as is to the caller. */
-
-tranche-space-before: get(hash(order-hash() "tranche-space")),
-  last-update-time: get(hash(order-hash() "update-time")),
-  now: block-timestamp();"#;
+:set(opcode-4(opcode-1() 1) 2);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
         Ok(())
