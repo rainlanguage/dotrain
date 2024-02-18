@@ -1169,16 +1169,16 @@ _: opcode-1(0xabcd 456);
 #b !some other msg.
 
 #some-binding
-  _: get(hash(order-hash() 1));
+  _: get(opcode-4(opcode-1() 1));
 
 #some-other-binding
-  :set(hash(order-hash() 1) 2);
+  :set(opcode-4(opcode-1() 1) 2);
 
 #another-binding
-  _: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
+  _: opcode-2(1 0 [something]);
 
 #e1
-  _: decimal18-mul(1 call<rebind-item>());
+  _: opcode-3(1 call<rebind-item>());
 
 #e2
   :call<b>(2 1);
@@ -1192,13 +1192,13 @@ _: opcode-1(0xabcd 456);
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
         let rainlang_text = rain_document.compose(&["e1", "e2"])?;
-        let expected_rainlang = r#"_: decimal18-mul(1 call<2>());
+        let expected_rainlang = r#"_: opcode-3(1 call<2>());
 
 :call<3>(2 1);
 
-_: uniswap-v3-twap-output-ratio(1 0 [uniswap-v3-fee-low]);
+_: opcode-2(1 0 [something]);
 
-:set(hash(order-hash() 1) 2);"#;
+:set(opcode-4(opcode-1() 1) 2);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
         Ok(())
