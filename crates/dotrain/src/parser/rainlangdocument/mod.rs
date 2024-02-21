@@ -35,6 +35,7 @@ pub struct RainlangDocument {
     pub(crate) comments: Vec<Comment>,
     pub(crate) error: Option<String>,
     pub(crate) dependencies: Vec<String>,
+    pub(crate) pragmas: Vec<(ParsedItem, ParsedItem, Option<String>)>,
     #[serde(skip)]
     state: RainlangState,
 }
@@ -79,6 +80,7 @@ impl RainlangDocument {
             problems: vec![],
             comments: vec![],
             dependencies: vec![],
+            pragmas: vec![],
             error: None,
             state: RainlangState::default(),
         };
@@ -93,6 +95,7 @@ impl RainlangDocument {
             problems: vec![],
             comments: vec![],
             dependencies: vec![],
+            pragmas: vec![],
             error: None,
             state: RainlangState::default(),
         }

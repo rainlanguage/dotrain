@@ -68,6 +68,7 @@ pub enum ErrorCode {
     ExpectedClosingAngleBracket = 0x406,
     ExpectedHexLiteral = 0x407,
     ExpectedSemi = 0x408,
+    ExpectedLiteral = 0x409,
 
     MismatchRHS = 0x501,
     MismatchLHS = 0x502,
@@ -147,6 +148,7 @@ impl ErrorCode {
             Self::ExpectedSemi => "expected to end with semi".to_owned(),
             Self::ExpectedHexLiteral => "expected to be followed by a hex literal".to_owned(),
             Self::ExpectedRename => "expected to be renamed".to_owned(),
+            Self::ExpectedLiteral => "expected to be followed by a literal".to_owned(),
 
             Self::MismatchRHS => String::new(),
             Self::MismatchLHS => String::new(),

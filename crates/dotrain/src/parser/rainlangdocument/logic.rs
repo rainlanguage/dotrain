@@ -47,19 +47,54 @@ impl RainlangDocument {
         }
 
         // parse and take out pragma definitions
-        // currently not part of ast
-        for parsed_pragma in inclusive_parse(&document, &PRAGMA_PATTERN, 0) {
-            // if not followed by a hex literal
-            if !PRAGMA_END_PATTERN.is_match(&parsed_pragma.0) {
+        let pragmas = inclusive_parse(&document, &PRAGMA_PATTERN, 0);
+        for (i, parsed_pragma) in pragmas.iter().enumerate() {
+            let start = parsed_pragma.1[1];
+            let end = if i == pragmas.len() - 1 {
+                document.len()
+            } else {
+                pragmas[i + 1].1[0]
+            };
+            let range_text = &document[start..end];
+            if let Some(range_items) = self.parse_range(range_text, start, true) {
+                if range_items.len() != 1 && i != pragmas.len() - 1 {
+                    for item in &range_items[1..] {
+                        self.problems
+                            .push(ErrorCode::UnexpectedToken.to_problem(vec![], item.1));
+                    }
+                    fill_in(
+                        &mut document,
+                        [parsed_pragma.1[0], range_items[range_items.len() - 1].1[1]],
+                    )?;
+                } else if range_items.len() != 1 && i == pragmas.len() - 1 {
+                    fill_in(&mut document, [parsed_pragma.1[0], range_items[0].1[1]])?;
+                } else {
+                    fill_in(
+                        &mut document,
+                        [parsed_pragma.1[0], range_items[range_items.len() - 1].1[1]],
+                    )?;
+                }
+                let mut value = None;
+                if !LITERAL_PATTERN.is_match(&range_items[0].0) {
+                    if let Some(binding) =
+                        self.search_namespace(&range_items[0].0, range_items[0].1[0], namespace)
+                    {
+                        if let BindingItem::Literal(literal) = &binding.item {
+                            value = Some(literal.value.clone());
+                        } else {
+                            self.problems.push(
+                                ErrorCode::InvalidReferenceLiteral
+                                    .to_problem(vec![], range_items[0].1),
+                            );
+                        }
+                    }
+                }
+                self.pragmas
+                    .push((parsed_pragma.clone(), range_items[0].clone(), value));
+            } else {
                 self.problems
-                    .push(ErrorCode::ExpectedHexLiteral.to_problem(vec![], parsed_pragma.1));
+                    .push(ErrorCode::ExpectedLiteral.to_problem(vec![], parsed_pragma.1));
             }
-            // if not at top, ie checking for a ":" before the pragma definition
-            if document[..parsed_pragma.1[0]].contains(':') {
-                self.problems
-                    .push(ErrorCode::UnexpectedPragma.to_problem(vec![], parsed_pragma.1));
-            }
-            fill_in(&mut document, parsed_pragma.1)?;
         }
 
         let mut src_items: Vec<String> = vec![];
@@ -299,7 +334,9 @@ impl RainlangDocument {
         if let Some(operand_close_index) = exp.find('>') {
             let slices = exp[1..].split_at(operand_close_index - 1);
             remaining = operand_close_index + 1;
-            let operand_args = self.parse_operand_args(slices.0, cursor + 1);
+            let operand_args = self
+                .parse_range(slices.0, cursor + 1, false)
+                .unwrap_or_default();
             op.operand_args = Some(OperandArg {
                 position: [cursor, cursor + slices.0.len() + 2],
                 args: vec![],
@@ -401,57 +438,73 @@ impl RainlangDocument {
         remaining
     }
 
-    pub(super) fn parse_operand_args(&mut self, text: &str, offset: usize) -> Vec<ParsedItem> {
-        let mut operand_args = vec![];
+    pub(super) fn parse_range(
+        &mut self,
+        text: &str,
+        offset: usize,
+        ignore_rest: bool,
+    ) -> Option<Vec<ParsedItem>> {
+        let mut result = vec![];
         let mut parsed_items = inclusive_parse(text, &ANY_PATTERN, 0);
         let mut iter = parsed_items.iter_mut();
         while let Some(item) = iter.next() {
-            if item.0.starts_with('"') && (item.0 == "\"" || !item.0.ends_with('"')) {
-                let start = item.1[0];
-                let mut end = text.len();
-                let mut has_no_end = true;
-                #[allow(clippy::while_let_on_iterator)]
-                while let Some(end_item) = iter.next() {
-                    if end_item.0.ends_with('"') {
-                        has_no_end = false;
-                        end = end_item.1[1];
-                        break;
-                    }
-                }
-                let pos = [start + offset, end + offset];
-                if has_no_end {
-                    self.problems
-                        .push(ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], pos));
-                } else {
-                    operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
-                }
-            } else if item.0.starts_with('[') && (item.0 == "]" || !item.0.ends_with(']')) {
-                let start = item.1[0];
-                let mut end = text.len();
-                let mut has_no_end = true;
-                #[allow(clippy::while_let_on_iterator)]
-                while let Some(end_item) = iter.next() {
-                    if end_item.0.ends_with(']') {
-                        has_no_end = false;
-                        end = end_item.1[1];
-                        break;
-                    }
-                }
-                let pos = [start + offset, end + offset];
-                if has_no_end {
-                    self.problems
-                        .push(ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], pos));
-                } else {
-                    operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
-                }
-            } else {
-                operand_args.push(ParsedItem(
+            if ignore_rest && !result.is_empty() {
+                result.push(ParsedItem(
                     item.0.to_owned(),
                     [item.1[0] + offset, item.1[1] + offset],
                 ))
+            } else {
+                if item.0.starts_with('"') && (item.0 == "\"" || !item.0.ends_with('"')) {
+                    let start = item.1[0];
+                    let mut end = text.len();
+                    let mut has_no_end = true;
+                    #[allow(clippy::while_let_on_iterator)]
+                    while let Some(end_item) = iter.next() {
+                        if end_item.0.ends_with('"') {
+                            has_no_end = false;
+                            end = end_item.1[1];
+                            break;
+                        }
+                    }
+                    let pos = [start + offset, end + offset];
+                    if has_no_end {
+                        self.problems
+                            .push(ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], pos));
+                        return None;
+                    }
+                    result.push(ParsedItem(text[start..end].to_owned(), pos))
+                } else if item.0.starts_with('[') && (item.0 == "]" || !item.0.ends_with(']')) {
+                    let start = item.1[0];
+                    let mut end = text.len();
+                    let mut has_no_end = true;
+                    #[allow(clippy::while_let_on_iterator)]
+                    while let Some(end_item) = iter.next() {
+                        if end_item.0.ends_with(']') {
+                            has_no_end = false;
+                            end = end_item.1[1];
+                            break;
+                        }
+                    }
+                    let pos = [start + offset, end + offset];
+                    if has_no_end {
+                        self.problems
+                            .push(ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], pos));
+                        return None;
+                    }
+                    result.push(ParsedItem(text[start..end].to_owned(), pos))
+                } else {
+                    result.push(ParsedItem(
+                        item.0.to_owned(),
+                        [item.1[0] + offset, item.1[1] + offset],
+                    ))
+                }
             }
         }
-        operand_args
+        if result.is_empty() {
+            None
+        } else {
+            Some(result)
+        }
     }
 
     /// parses an upcoming word to the corresponding AST node

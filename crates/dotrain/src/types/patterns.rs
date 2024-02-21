@@ -97,7 +97,7 @@ pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*
 
 /// pragma pattern (keyword + ws + hex)
 pub static PRAGMA_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"(:?^|\s)using-words-from(\s+0x[0-9a-fA-F]*)?(:?\s|$)").unwrap());
+    Lazy::new(|| Regex::new(r"(:?(^|\s))using-words-from(:?(\s|$))").unwrap());
 
 /// pattern of end of a pragma definition
 pub static PRAGMA_END_PATTERN: Lazy<Regex> =
