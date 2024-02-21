@@ -453,51 +453,49 @@ impl RainlangDocument {
                     item.0.to_owned(),
                     [item.1[0] + offset, item.1[1] + offset],
                 ))
-            } else {
-                if item.0.starts_with('"') && (item.0 == "\"" || !item.0.ends_with('"')) {
-                    let start = item.1[0];
-                    let mut end = text.len();
-                    let mut has_no_end = true;
-                    #[allow(clippy::while_let_on_iterator)]
-                    while let Some(end_item) = iter.next() {
-                        if end_item.0.ends_with('"') {
-                            has_no_end = false;
-                            end = end_item.1[1];
-                            break;
-                        }
+            } else if item.0.starts_with('"') && (item.0 == "\"" || !item.0.ends_with('"')) {
+                let start = item.1[0];
+                let mut end = text.len();
+                let mut has_no_end = true;
+                #[allow(clippy::while_let_on_iterator)]
+                while let Some(end_item) = iter.next() {
+                    if end_item.0.ends_with('"') {
+                        has_no_end = false;
+                        end = end_item.1[1];
+                        break;
                     }
-                    let pos = [start + offset, end + offset];
-                    if has_no_end {
-                        self.problems
-                            .push(ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], pos));
-                        return None;
-                    }
-                    result.push(ParsedItem(text[start..end].to_owned(), pos))
-                } else if item.0.starts_with('[') && (item.0 == "]" || !item.0.ends_with(']')) {
-                    let start = item.1[0];
-                    let mut end = text.len();
-                    let mut has_no_end = true;
-                    #[allow(clippy::while_let_on_iterator)]
-                    while let Some(end_item) = iter.next() {
-                        if end_item.0.ends_with(']') {
-                            has_no_end = false;
-                            end = end_item.1[1];
-                            break;
-                        }
-                    }
-                    let pos = [start + offset, end + offset];
-                    if has_no_end {
-                        self.problems
-                            .push(ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], pos));
-                        return None;
-                    }
-                    result.push(ParsedItem(text[start..end].to_owned(), pos))
-                } else {
-                    result.push(ParsedItem(
-                        item.0.to_owned(),
-                        [item.1[0] + offset, item.1[1] + offset],
-                    ))
                 }
+                let pos = [start + offset, end + offset];
+                if has_no_end {
+                    self.problems
+                        .push(ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], pos));
+                    return None;
+                }
+                result.push(ParsedItem(text[start..end].to_owned(), pos))
+            } else if item.0.starts_with('[') && (item.0 == "]" || !item.0.ends_with(']')) {
+                let start = item.1[0];
+                let mut end = text.len();
+                let mut has_no_end = true;
+                #[allow(clippy::while_let_on_iterator)]
+                while let Some(end_item) = iter.next() {
+                    if end_item.0.ends_with(']') {
+                        has_no_end = false;
+                        end = end_item.1[1];
+                        break;
+                    }
+                }
+                let pos = [start + offset, end + offset];
+                if has_no_end {
+                    self.problems
+                        .push(ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], pos));
+                    return None;
+                }
+                result.push(ParsedItem(text[start..end].to_owned(), pos))
+            } else {
+                result.push(ParsedItem(
+                    item.0.to_owned(),
+                    [item.1[0] + offset, item.1[1] + offset],
+                ))
             }
         }
         if result.is_empty() {
