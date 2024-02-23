@@ -35,7 +35,7 @@ pub struct RainlangDocument {
     pub(crate) comments: Vec<Comment>,
     pub(crate) error: Option<String>,
     pub(crate) dependencies: Vec<String>,
-    pub(crate) pragmas: Vec<(ParsedItem, ParsedItem, Option<String>)>,
+    pub(crate) pragmas: Vec<(ParsedItem, Vec<(ParsedItem, Option<String>)>)>,
     #[serde(skip)]
     state: RainlangState,
 }

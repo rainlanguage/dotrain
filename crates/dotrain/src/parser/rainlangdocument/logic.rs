@@ -1,4 +1,6 @@
 use rain_metadata::types::authoring::v1::AuthoringMeta;
+use crate::search_binding_ref;
+
 use super::*;
 use super::super::{
     super::{
@@ -47,7 +49,23 @@ impl RainlangDocument {
         }
 
         // parse and take out pragma definitions
-        let pragmas = inclusive_parse(&document, &PRAGMA_PATTERN, 0);
+        let pragmas = inclusive_parse(&document, &PRAGMA_PATTERN, 0)
+            .iter()
+            .map(|v| {
+                if v.0 == PRAGMA_KEYWORD {
+                    v.clone()
+                } else {
+                    let mut pos = v.1;
+                    if v.0.starts_with([' ', '\n', '\t', '\r']) {
+                        pos[0] += 1;
+                    }
+                    if v.0.ends_with([' ', '\n', '\t', '\r']) {
+                        pos[1] -= 1;
+                    }
+                    ParsedItem(PRAGMA_KEYWORD.to_owned(), pos)
+                }
+            })
+            .collect::<Vec<ParsedItem>>();
         for (i, parsed_pragma) in pragmas.iter().enumerate() {
             let start = parsed_pragma.1[1];
             let end = if i == pragmas.len() - 1 {
@@ -55,45 +73,70 @@ impl RainlangDocument {
             } else {
                 pragmas[i + 1].1[0]
             };
+
+            let mut items = vec![];
             let range_text = &document[start..end];
-            if let Some(range_items) = self.parse_range(range_text, start, true) {
-                if range_items.len() != 1 && i != pragmas.len() - 1 {
-                    for item in &range_items[1..] {
-                        self.problems
-                            .push(ErrorCode::UnexpectedToken.to_problem(vec![], item.1));
-                    }
-                    fill_in(
-                        &mut document,
-                        [parsed_pragma.1[0], range_items[range_items.len() - 1].1[1]],
-                    )?;
-                } else if range_items.len() != 1 && i == pragmas.len() - 1 {
-                    fill_in(&mut document, [parsed_pragma.1[0], range_items[0].1[1]])?;
-                } else {
-                    fill_in(
-                        &mut document,
-                        [parsed_pragma.1[0], range_items[range_items.len() - 1].1[1]],
-                    )?;
-                }
-                let mut value = None;
-                if !LITERAL_PATTERN.is_match(&range_items[0].0) {
-                    if let Some(binding) =
-                        self.search_namespace(&range_items[0].0, range_items[0].1[0], namespace)
-                    {
-                        if let BindingItem::Literal(literal) = &binding.item {
-                            value = Some(literal.value.clone());
+            if let Some(range_items) = self.parse_range(range_text, start, false) {
+                let iter = range_items.iter().enumerate();
+                for (j, range_item) in iter {
+                    if !LITERAL_PATTERN.is_match(&range_item.0) {
+                        if let Some(binding) = search_binding_ref(&range_item.0, namespace) {
+                            if let BindingItem::Literal(literal) = &binding.item {
+                                items.push((range_item.clone(), Some(literal.value.clone())));
+                            } else {
+                                self.problems.push(
+                                    ErrorCode::InvalidReferenceLiteral
+                                        .to_problem(vec![], range_item.1),
+                                );
+                                items.push((range_item.clone(), None));
+                            }
                         } else {
+                            if i == pragmas.len() - 1 {
+                                break;
+                            }
+                            items.push((range_item.clone(), None));
                             self.problems.push(
-                                ErrorCode::InvalidReferenceLiteral
-                                    .to_problem(vec![], range_items[0].1),
+                                ErrorCode::UndefinedIdentifier
+                                    .to_problem(vec![&range_item.0], range_item.1),
                             );
                         }
+                    } else {
+                        items.push((range_item.clone(), None));
                     }
                 }
-                self.pragmas
-                    .push((parsed_pragma.clone(), range_items[0].clone(), value));
             } else {
                 self.problems
                     .push(ErrorCode::ExpectedLiteral.to_problem(vec![], parsed_pragma.1));
+            }
+
+            if items.is_empty() {
+                self.problems
+                    .push(ErrorCode::ExpectedLiteral.to_problem(vec![], parsed_pragma.1));
+                fill_in(&mut document, parsed_pragma.1)?;
+            } else {
+                fill_in(
+                    &mut document,
+                    [parsed_pragma.1[0], items[items.len() - 1].0 .1[1]],
+                )?;
+            };
+
+            self.pragmas.push((parsed_pragma.clone(), items));
+        }
+        if self.pragmas.len() > 1 {
+            for pragma_statement in &self.pragmas[1..] {
+                if pragma_statement.1.is_empty() {
+                    self.problems.push(
+                        ErrorCode::UnexpectedPragma.to_problem(vec![], pragma_statement.0 .1),
+                    );
+                } else {
+                    self.problems.push(ErrorCode::UnexpectedPragma.to_problem(
+                        vec![],
+                        [
+                            pragma_statement.0 .1[0],
+                            pragma_statement.1[pragma_statement.1.len() - 1].0 .1[1],
+                        ],
+                    ));
+                }
             }
         }
 
@@ -335,7 +378,7 @@ impl RainlangDocument {
             let slices = exp[1..].split_at(operand_close_index - 1);
             remaining = operand_close_index + 1;
             let operand_args = self
-                .parse_range(slices.0, cursor + 1, false)
+                .parse_range(slices.0, cursor + 1, true)
                 .unwrap_or_default();
             op.operand_args = Some(OperandArg {
                 position: [cursor, cursor + slices.0.len() + 2],
@@ -442,18 +485,13 @@ impl RainlangDocument {
         &mut self,
         text: &str,
         offset: usize,
-        ignore_rest: bool,
+        validate: bool,
     ) -> Option<Vec<ParsedItem>> {
         let mut result = vec![];
         let mut parsed_items = inclusive_parse(text, &ANY_PATTERN, 0);
         let mut iter = parsed_items.iter_mut();
         while let Some(item) = iter.next() {
-            if ignore_rest && !result.is_empty() {
-                result.push(ParsedItem(
-                    item.0.to_owned(),
-                    [item.1[0] + offset, item.1[1] + offset],
-                ))
-            } else if item.0.starts_with('"') && (item.0 == "\"" || !item.0.ends_with('"')) {
+            if item.0.starts_with('"') && (item.0 == "\"" || !item.0.ends_with('"')) {
                 let start = item.1[0];
                 let mut end = text.len();
                 let mut has_no_end = true;
@@ -466,7 +504,7 @@ impl RainlangDocument {
                     }
                 }
                 let pos = [start + offset, end + offset];
-                if has_no_end {
+                if has_no_end && validate {
                     self.problems
                         .push(ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], pos));
                     return None;
@@ -485,7 +523,7 @@ impl RainlangDocument {
                     }
                 }
                 let pos = [start + offset, end + offset];
-                if has_no_end {
+                if has_no_end && validate {
                     self.problems
                         .push(ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], pos));
                     return None;

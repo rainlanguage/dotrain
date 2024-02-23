@@ -135,7 +135,7 @@ impl ErrorCode {
             Self::UnexpectedClosingAngleParen => "unexpected \">\"".to_owned(),
             Self::UnexpectedEndOfComment => "unexpected end of comment".to_owned(),
             Self::UnexpectedComment => "unexpected comment".to_owned(),
-            Self::UnexpectedPragma => "unexpected pragma, must be at top".to_owned(),
+            Self::UnexpectedPragma => "unexpected pragma, expected only one statement at top".to_owned(),
             Self::UnexpectedRename => format!("unexpected rename, name '{}' already taken", msg_items[0]),
             Self::UnexpectedStringLiteralEnd => "unexpected end of string literal".to_owned(),
             Self::UnexpectedSubParserEnd => "unexpected end of sub parser syntax".to_owned(),

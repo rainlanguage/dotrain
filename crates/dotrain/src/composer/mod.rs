@@ -186,17 +186,19 @@ impl RainDocument {
             let generator = &mut MagicString::new(node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
                 // sourcemap pragmas
-                for (_keyword, item, value) in &node.element.item.pragmas {
-                    if let Some(v) = value {
-                        generator
-                            .overwrite(
-                                item.1[0] as i64,
-                                item.1[1] as i64,
-                                v,
-                                OverwriteOptions::default(),
-                            )
-                            .or(Err("could not build sourcemap".to_owned()))
-                            .map_err(ComposeError::Reject)?;
+                for (_keyword, items) in &node.element.item.pragmas {
+                    for (item, value) in items {
+                        if let Some(v) = value {
+                            generator
+                                .overwrite(
+                                    item.1[0] as i64,
+                                    item.1[1] as i64,
+                                    v,
+                                    OverwriteOptions::default(),
+                                )
+                                .or(Err("could not build sourcemap".to_owned()))
+                                .map_err(ComposeError::Reject)?;
+                        }
                     }
                 }
                 build_sourcemap(
@@ -1008,9 +1010,7 @@ _: opcode(1 2);
 #literal-binding "some literal value"
 
 #exp-binding-1
-using-words-from some-value
-using-words-from " some string literal "
-using-words-from "abcd"
+using-words-from some-value " some string literal " "abcd"
 abcd: " this is literal string ",
 _: some-sub-parser-word<1 2>(4e18 literal-binding);
 "#;
@@ -1020,9 +1020,7 @@ _: some-sub-parser-word<1 2>(4e18 literal-binding);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = r#"using-words-from 0x1234abcedf
-using-words-from " some string literal "
-using-words-from "abcd"
+        let expected_rainlang = r#"using-words-from 0x1234abcedf " some string literal " "abcd"
 abcd: " this is literal string ",
 _: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
         assert_eq!(rainlang_text, expected_rainlang);
@@ -1032,7 +1030,7 @@ _: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
 #literal-binding "some literal value"
 
 #exp-binding-1
-using-words-from some-value extra
+using-words-from some-value
 using-words-from " some string literal " extra
 using-words-from "abcd"
 abcd: " this is literal string ",
@@ -1045,8 +1043,9 @@ _: some-sub-parser-word<1 2>(4e18 literal-binding);
             None,
         );
         let expected_err = Err(ComposeError::Problems(vec![
-            ErrorCode::UnexpectedToken.to_problem(vec![], [111, 116]),
-            ErrorCode::UnexpectedToken.to_problem(vec![], [158, 163]),
+            ErrorCode::UndefinedIdentifier.to_problem(vec!["extra"], [152, 157]),
+            ErrorCode::UnexpectedPragma.to_problem(vec![], [111, 157]),
+            ErrorCode::UnexpectedPragma.to_problem(vec![], [158, 181]),
         ]));
         assert_eq!(result, expected_err);
 
