@@ -77,8 +77,7 @@ impl RainlangDocument {
             let mut items = vec![];
             let range_text = &document[start..end];
             if let Some(range_items) = self.parse_range(range_text, start, false) {
-                let iter = range_items.iter().enumerate();
-                for (j, range_item) in iter {
+                for range_item in range_items {
                     if !LITERAL_PATTERN.is_match(&range_item.0) {
                         if let Some(binding) = search_binding_ref(&range_item.0, namespace) {
                             if let BindingItem::Literal(literal) = &binding.item {
