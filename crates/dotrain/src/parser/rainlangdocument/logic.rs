@@ -66,8 +66,8 @@ impl RainlangDocument {
                 }
             })
             .collect::<Vec<ParsedItem>>();
-        for (i, parsed_pragma) in pragmas.iter().enumerate() {
-            let start = parsed_pragma.1[1];
+        for (i, parsed_pragma_keyword) in pragmas.iter().enumerate() {
+            let start = parsed_pragma_keyword.1[1];
             let end = if i == pragmas.len() - 1 {
                 document.len()
             } else {
@@ -75,55 +75,58 @@ impl RainlangDocument {
             };
 
             let mut sources = vec![];
-            let range_text = &document[start..end];
-            if let Some(range_items) = self.parse_range(range_text, start, false) {
-                for range_item in range_items {
-                    if !LITERAL_PATTERN.is_match(&range_item.0) {
-                        if let Some(binding) = search_binding_ref(&range_item.0, namespace) {
+            let sources_text = &document[start..end];
+            if let Some(parsed_src_items) = self.parse_range(sources_text, start, false) {
+                for src in parsed_src_items {
+                    if !LITERAL_PATTERN.is_match(&src.0) {
+                        if let Some(binding) = search_binding_ref(&src.0, namespace) {
                             if let BindingItem::Literal(literal) = &binding.item {
-                                sources.push((range_item.clone(), Some(literal.value.clone())));
+                                sources.push((src.clone(), Some(literal.value.clone())));
                             } else {
                                 self.problems.push(
-                                    ErrorCode::InvalidReferenceLiteral
-                                        .to_problem(vec![], range_item.1),
+                                    ErrorCode::InvalidReferenceLiteral.to_problem(vec![], src.1),
                                 );
-                                sources.push((range_item.clone(), None));
+                                sources.push((src.clone(), None));
                             }
                         } else {
                             if i == pragmas.len() - 1 {
                                 break;
                             }
-                            sources.push((range_item.clone(), None));
+                            sources.push((src.clone(), None));
                             self.problems.push(
-                                ErrorCode::UndefinedIdentifier
-                                    .to_problem(vec![&range_item.0], range_item.1),
+                                ErrorCode::UndefinedIdentifier.to_problem(vec![&src.0], src.1),
                             );
                         }
                     } else {
-                        sources.push((range_item.clone(), None));
+                        sources.push((src.clone(), None));
                     }
                 }
             } else {
                 self.problems
-                    .push(ErrorCode::ExpectedLiteral.to_problem(vec![], parsed_pragma.1));
+                    .push(ErrorCode::ExpectedLiteral.to_problem(vec![], parsed_pragma_keyword.1));
             }
 
             if sources.is_empty() {
                 self.problems
-                    .push(ErrorCode::ExpectedLiteral.to_problem(vec![], parsed_pragma.1));
-                fill_in(&mut document, parsed_pragma.1)?;
+                    .push(ErrorCode::ExpectedLiteral.to_problem(vec![], parsed_pragma_keyword.1));
+                fill_in(&mut document, parsed_pragma_keyword.1)?;
             } else {
                 fill_in(
                     &mut document,
-                    [parsed_pragma.1[0], sources[sources.len() - 1].0 .1[1]],
+                    [
+                        parsed_pragma_keyword.1[0],
+                        sources[sources.len() - 1].0 .1[1],
+                    ],
                 )?;
             };
 
             self.pragmas.push(PragmaStatement {
-                keyword: parsed_pragma.clone(),
+                keyword: parsed_pragma_keyword.clone(),
                 sources,
             });
         }
+
+        // flag multiple pragma statements
         if self.pragmas.len() > 1 {
             for pragma_statement in &self.pragmas[1..] {
                 if pragma_statement.sources.is_empty() {
