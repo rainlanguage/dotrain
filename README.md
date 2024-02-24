@@ -1,7 +1,7 @@
 ![](./assets/rainlang-banner.svg)
 
-# **Rain Language**
-The Rain language server protocol ([LSP](https://microsoft.github.io/language-server-protocol/)) implementation (language services) and .rain composer written in rust and made available for NodeJs and broswers through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/) in Typescript/Javascript which makes it well suited for editors and IDEs (as it is used in Rainlang vscode and codemirror language extension).
+# **Rain Language Composer and LSP**
+The Rain language server protocol ([LSP](https://microsoft.github.io/language-server-protocol/)) services implementation (language services) and .rain composer written in rust and made available for NodeJs and broswers through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/) in Typescript/Javascript which makes it well suited for editors and IDEs (as it is used in Rainlang vscode and codemirror language extension).
 - Dotrain specs can be found [here](https://github.com/rainlanguage/specs/blob/main/dotrain.md)
 - Rainlang specs can be found [here](https://github.com/rainlanguage/specs/blob/main/rainlang.md)
 - Dotrain has been implemented for vscode and codemirror, see [rainlang-vscode](https://github.com/rainlanguage/rainlang-vscode) and [rainlang-codemirror](https://github.com/rainlanguage/rainlang-codemirror) repositories for more details.
@@ -13,7 +13,7 @@ For more info and details, please read this [article](https://hackmd.io/@REJeq0M
 
 If you find an issue or you want to propose an improvement, please feel free to post it on: [issues](https://github.com/rainlanguage/dotrain/issues)
 
-
+---
 # **Tutorial**
 ## **Javascript/Typescript**
 To get started, install the package:
