@@ -55,6 +55,7 @@ const rainlangText = await rainDocument.compose(["entrypoint-1" , "entrypoint-2"
 ```
 <br>
 
+## **Rust**
 ## dotrain crate
 To get started, install the package:
 ```bash
