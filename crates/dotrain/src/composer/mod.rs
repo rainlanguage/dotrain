@@ -4,6 +4,8 @@ use std::{
     collections::VecDeque,
 };
 use magic_string::{MagicString, OverwriteOptions, GenerateDecodedMapOptions};
+use crate::types::ast::PragmaStatement;
+
 use super::{
     error::{ComposeError, ErrorCode},
     parser::{RainlangDocument, RainDocument, exclusive_parse, Rebind},
@@ -186,13 +188,13 @@ impl RainDocument {
             let generator = &mut MagicString::new(node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
                 // sourcemap pragmas
-                for (_keyword, items) in &node.element.item.pragmas {
-                    for (item, value) in items {
-                        if let Some(v) = value {
+                for PragmaStatement { sources, .. } in &node.element.item.pragmas {
+                    for (source, literal) in sources {
+                        if let Some(v) = literal {
                             generator
                                 .overwrite(
-                                    item.1[0] as i64,
-                                    item.1[1] as i64,
+                                    source.1[0] as i64,
+                                    source.1[1] as i64,
                                     v,
                                     OverwriteOptions::default(),
                                 )

@@ -28,7 +28,6 @@ struct RainlangState {
 #[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[allow(clippy::type_complexity)]
 pub struct RainlangDocument {
     pub(crate) text: String,
     pub(crate) ast: Vec<RainlangSource>,
@@ -36,7 +35,7 @@ pub struct RainlangDocument {
     pub(crate) comments: Vec<Comment>,
     pub(crate) error: Option<String>,
     pub(crate) dependencies: Vec<String>,
-    pub(crate) pragmas: Vec<(ParsedItem, Vec<(ParsedItem, Option<String>)>)>,
+    pub(crate) pragmas: Vec<PragmaStatement>,
     #[serde(skip)]
     state: RainlangState,
 }
