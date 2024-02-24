@@ -121,7 +121,7 @@ impl RainlangDocument {
             };
 
             self.pragmas.push(PragmaStatement {
-                keyword: parsed_pragma_keyword.clone(),
+                keyword: parsed_pragma_keyword.1,
                 sources,
             });
         }
@@ -131,14 +131,14 @@ impl RainlangDocument {
             for pragma_statement in &self.pragmas[1..] {
                 if pragma_statement.sources.is_empty() {
                     self.problems.push(
-                        ErrorCode::UnexpectedPragma.to_problem(vec![], pragma_statement.keyword.1),
+                        ErrorCode::UnexpectedPragma.to_problem(vec![], pragma_statement.keyword),
                     );
                 } else {
                     self.problems.push(
                         ErrorCode::UnexpectedPragma.to_problem(
                             vec![],
                             [
-                                pragma_statement.keyword.1[0],
+                                pragma_statement.keyword[0],
                                 pragma_statement.sources[pragma_statement.sources.len() - 1]
                                     .0
                                      .1[1],

@@ -149,7 +149,7 @@ pub struct Import {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
 pub struct PragmaStatement {
-    pub keyword: ParsedItem,
+    pub keyword: Offsets,
     pub sources: Vec<(ParsedItem, Option<String>)>,
 }
 
