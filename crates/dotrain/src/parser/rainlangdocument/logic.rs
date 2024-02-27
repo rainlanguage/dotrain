@@ -1,4 +1,6 @@
 use rain_metadata::types::authoring::v1::AuthoringMeta;
+use crate::search_binding_ref;
+
 use super::*;
 use super::super::{
     super::{
@@ -47,19 +49,104 @@ impl RainlangDocument {
         }
 
         // parse and take out pragma definitions
-        // currently not part of ast
-        for parsed_pragma in inclusive_parse(&document, &PRAGMA_PATTERN, 0) {
-            // if not followed by a hex literal
-            if !PRAGMA_END_PATTERN.is_match(&parsed_pragma.0) {
+        let pragmas = inclusive_parse(&document, &PRAGMA_PATTERN, 0)
+            .iter()
+            .map(|v| {
+                if v.0 == PRAGMA_KEYWORD {
+                    v.clone()
+                } else {
+                    let mut pos = v.1;
+                    if v.0.starts_with([' ', '\n', '\t', '\r']) {
+                        pos[0] += 1;
+                    }
+                    if v.0.ends_with([' ', '\n', '\t', '\r']) {
+                        pos[1] -= 1;
+                    }
+                    ParsedItem(PRAGMA_KEYWORD.to_owned(), pos)
+                }
+            })
+            .collect::<Vec<ParsedItem>>();
+        for (i, parsed_pragma_keyword) in pragmas.iter().enumerate() {
+            let start = parsed_pragma_keyword.1[1];
+            let end = if i == pragmas.len() - 1 {
+                document.len()
+            } else {
+                pragmas[i + 1].1[0]
+            };
+
+            let mut sources = vec![];
+            let sources_text = &document[start..end];
+            if let Some(parsed_src_items) = self.parse_range(sources_text, start, false) {
+                for src in parsed_src_items {
+                    if !LITERAL_PATTERN.is_match(&src.0) {
+                        if let Some(binding) = search_binding_ref(&src.0, namespace) {
+                            if let BindingItem::Literal(literal) = &binding.item {
+                                sources.push((src.clone(), Some(literal.value.clone())));
+                            } else {
+                                self.problems.push(
+                                    ErrorCode::InvalidReferenceLiteral.to_problem(vec![], src.1),
+                                );
+                                sources.push((src.clone(), None));
+                            }
+                        } else {
+                            if i == pragmas.len() - 1 {
+                                break;
+                            }
+                            sources.push((src.clone(), None));
+                            self.problems.push(
+                                ErrorCode::UndefinedIdentifier.to_problem(vec![&src.0], src.1),
+                            );
+                        }
+                    } else {
+                        sources.push((src.clone(), None));
+                    }
+                }
+            } else {
                 self.problems
-                    .push(ErrorCode::ExpectedHexLiteral.to_problem(vec![], parsed_pragma.1));
+                    .push(ErrorCode::ExpectedLiteral.to_problem(vec![], parsed_pragma_keyword.1));
             }
-            // if not at top, ie checking for a ":" before the pragma definition
-            if document[..parsed_pragma.1[0]].contains(':') {
+
+            if sources.is_empty() {
                 self.problems
-                    .push(ErrorCode::UnexpectedPragma.to_problem(vec![], parsed_pragma.1));
+                    .push(ErrorCode::ExpectedLiteral.to_problem(vec![], parsed_pragma_keyword.1));
+                fill_in(&mut document, parsed_pragma_keyword.1)?;
+            } else {
+                fill_in(
+                    &mut document,
+                    [
+                        parsed_pragma_keyword.1[0],
+                        sources[sources.len() - 1].0 .1[1],
+                    ],
+                )?;
+            };
+
+            self.pragmas.push(PragmaStatement {
+                keyword: parsed_pragma_keyword.1,
+                sources,
+            });
+        }
+
+        // flag multiple pragma statements
+        if self.pragmas.len() > 1 {
+            for pragma_statement in &self.pragmas[1..] {
+                if pragma_statement.sources.is_empty() {
+                    self.problems.push(
+                        ErrorCode::UnexpectedPragma.to_problem(vec![], pragma_statement.keyword),
+                    );
+                } else {
+                    self.problems.push(
+                        ErrorCode::UnexpectedPragma.to_problem(
+                            vec![],
+                            [
+                                pragma_statement.keyword[0],
+                                pragma_statement.sources[pragma_statement.sources.len() - 1]
+                                    .0
+                                     .1[1],
+                            ],
+                        ),
+                    );
+                }
             }
-            fill_in(&mut document, parsed_pragma.1)?;
         }
 
         let mut src_items: Vec<String> = vec![];
@@ -299,7 +386,9 @@ impl RainlangDocument {
         if let Some(operand_close_index) = exp.find('>') {
             let slices = exp[1..].split_at(operand_close_index - 1);
             remaining = operand_close_index + 1;
-            let operand_args = self.parse_operand_args(slices.0, cursor + 1);
+            let operand_args = self
+                .parse_range(slices.0, cursor + 1, true)
+                .unwrap_or_default();
             op.operand_args = Some(OperandArg {
                 position: [cursor, cursor + slices.0.len() + 2],
                 args: vec![],
@@ -401,8 +490,13 @@ impl RainlangDocument {
         remaining
     }
 
-    pub(super) fn parse_operand_args(&mut self, text: &str, offset: usize) -> Vec<ParsedItem> {
-        let mut operand_args = vec![];
+    pub(super) fn parse_range(
+        &mut self,
+        text: &str,
+        offset: usize,
+        validate: bool,
+    ) -> Option<Vec<ParsedItem>> {
+        let mut result = vec![];
         let mut parsed_items = inclusive_parse(text, &ANY_PATTERN, 0);
         let mut iter = parsed_items.iter_mut();
         while let Some(item) = iter.next() {
@@ -419,12 +513,12 @@ impl RainlangDocument {
                     }
                 }
                 let pos = [start + offset, end + offset];
-                if has_no_end {
+                if has_no_end && validate {
                     self.problems
                         .push(ErrorCode::UnexpectedStringLiteralEnd.to_problem(vec![], pos));
-                } else {
-                    operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
+                    return None;
                 }
+                result.push(ParsedItem(text[start..end].to_owned(), pos))
             } else if item.0.starts_with('[') && (item.0 == "]" || !item.0.ends_with(']')) {
                 let start = item.1[0];
                 let mut end = text.len();
@@ -438,20 +532,24 @@ impl RainlangDocument {
                     }
                 }
                 let pos = [start + offset, end + offset];
-                if has_no_end {
+                if has_no_end && validate {
                     self.problems
                         .push(ErrorCode::UnexpectedSubParserEnd.to_problem(vec![], pos));
-                } else {
-                    operand_args.push(ParsedItem(text[start..end].to_owned(), pos))
+                    return None;
                 }
+                result.push(ParsedItem(text[start..end].to_owned(), pos))
             } else {
-                operand_args.push(ParsedItem(
+                result.push(ParsedItem(
                     item.0.to_owned(),
                     [item.1[0] + offset, item.1[1] + offset],
                 ))
             }
         }
-        operand_args
+        if result.is_empty() {
+            None
+        } else {
+            Some(result)
+        }
     }
 
     /// parses an upcoming word to the corresponding AST node

@@ -144,6 +144,15 @@ pub struct Import {
     pub sequence: Option<ImportSequence>,
 }
 
+/// Type of a pragma statement
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
+pub struct PragmaStatement {
+    pub keyword: Offsets,
+    pub sources: Vec<(ParsedItem, Option<String>)>,
+}
+
 /// Type of an AST node
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]

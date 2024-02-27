@@ -4,6 +4,8 @@ use std::{
     collections::VecDeque,
 };
 use magic_string::{MagicString, OverwriteOptions, GenerateDecodedMapOptions};
+use crate::types::ast::PragmaStatement;
+
 use super::{
     error::{ComposeError, ErrorCode},
     parser::{RainlangDocument, RainDocument, exclusive_parse, Rebind},
@@ -185,6 +187,22 @@ impl RainDocument {
         for node in &nodes {
             let generator = &mut MagicString::new(node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
+                // sourcemap pragmas
+                for PragmaStatement { sources, .. } in &node.element.item.pragmas {
+                    for (source, literal) in sources {
+                        if let Some(v) = literal {
+                            generator
+                                .overwrite(
+                                    source.1[0] as i64,
+                                    source.1[1] as i64,
+                                    v,
+                                    OverwriteOptions::default(),
+                                )
+                                .or(Err("could not build sourcemap".to_owned()))
+                                .map_err(ComposeError::Reject)?;
+                        }
+                    }
+                }
                 build_sourcemap(
                     node.element
                         .item
@@ -989,6 +1007,50 @@ _: opcode(1 2);
         ]));
         assert_eq!(result, expected_err);
 
+        let dotrain_text = r#"---
+#some-value 0x1234abcedf
+#literal-binding "some literal value"
+
+#exp-binding-1
+using-words-from some-value " some string literal " "abcd"
+abcd: " this is literal string ",
+_: some-sub-parser-word<1 2>(4e18 literal-binding);
+"#;
+        let rainlang_text = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1"],
+            Some(meta_store.clone()),
+            None,
+        )?;
+        let expected_rainlang = r#"using-words-from 0x1234abcedf " some string literal " "abcd"
+abcd: " this is literal string ",
+_: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r#"---
+#some-value 0x1234abcedf
+#literal-binding "some literal value"
+
+#exp-binding-1
+using-words-from some-value
+using-words-from " some string literal " extra
+using-words-from "abcd"
+abcd: " this is literal string ",
+_: some-sub-parser-word<1 2>(4e18 literal-binding);
+"#;
+        let result = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding-1", "main"],
+            Some(meta_store.clone()),
+            None,
+        );
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::UndefinedIdentifier.to_problem(vec!["extra"], [152, 157]),
+            ErrorCode::UnexpectedPragma.to_problem(vec![], [111, 157]),
+            ErrorCode::UnexpectedPragma.to_problem(vec![], [158, 181]),
+        ]));
+        assert_eq!(result, expected_err);
+
         Ok(())
     }
 
@@ -1199,6 +1261,25 @@ _: opcode-1(0xabcd 456);
 _: opcode-2(1 0 [something]);
 
 :set(opcode-4(opcode-1() 1) 2);"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r#"---
+#some-binding
+  _: opcode-2<0 b>(1 0 [something]);
+
+#some-other-binding
+  _: opcode-2<1 6>(1 0 [something]);
+"#;
+        let mut rain_document =
+            RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![
+            Rebind("a".to_owned(), "'b".to_owned()),
+            Rebind("b".to_owned(), "'some-other-binding".to_owned()),
+        ];
+        block_on(rain_document.parse(false, Some(rebinds)));
+        let rainlang_text = rain_document.compose(&["some-binding"])?;
+        let expected_rainlang =
+            "_: opcode-2<0 1>(1 0 [something]);\n\n_: opcode-2<1 6>(1 0 [something]);";
         assert_eq!(rainlang_text, expected_rainlang);
 
         Ok(())
