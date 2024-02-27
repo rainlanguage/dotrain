@@ -84,7 +84,8 @@ impl RainlangDocument {
                                 sources.push((src.clone(), Some(literal.value.clone())));
                             } else {
                                 self.problems.push(
-                                    ErrorCode::InvalidReferenceLiteral.to_problem(vec![], src.1),
+                                    ErrorCode::InvalidReferenceLiteral
+                                        .to_problem(vec![&src.0], src.1),
                                 );
                                 sources.push((src.clone(), None));
                             }
