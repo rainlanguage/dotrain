@@ -26,13 +26,13 @@ serde_json = "1.0.108"
 serde_repr = "0.1.17"
 serde_bytes = "0.11.12"
 futures = "0.3.29"
-alloy-json-abi = "0.5.0"
-alloy-sol-types = "0.5.0"
+alloy-json-abi = { workspace = true}
+alloy-sol-types = { workspace = true }
 topo_sort = "0.4.0"
 magic_string = "0.3.4"
 async-recursion = "1.0.5"
 getrandom = { version = "0.2.11", features = ["js", "js-sys"] }
-revm = { version = "3.5.0", default-features = false, features = ["serde", "std"] }
+revm = { workspace = true, default-features = false, features = ["serde", "std"] }
 anyhow = { workspace = true }
 regex = { workspace = true }
 once_cell = { workspace = true }
