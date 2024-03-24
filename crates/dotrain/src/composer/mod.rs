@@ -66,7 +66,7 @@ impl<'a> ComposeTarget<'a> {
     }
 
     fn build_name_comment(&self, index: usize) -> String {
-        let header = "/** ".to_string() + &index.to_string() + ". ";
+        let header = "/* ".to_string() + &index.to_string() + ". ";
         if self.namespace_path.is_empty() {
             header + self.element.name + " */ \n"
         } else {
@@ -553,7 +553,7 @@ mod tests {
         front 
         matter
 ---
-/** this is test */
+/* this is test */
 
 #exp-binding
 _: opcode-1(0xabcd 456);
@@ -564,7 +564,7 @@ _: opcode-1(0xabcd 456);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = "/** 0. exp-binding */ \n_: opcode-1(0xabcd 456);";
+        let expected_rainlang = "/* 0. exp-binding */ \n_: opcode-1(0xabcd 456);";
         assert_eq!(rainlang_text, expected_rainlang);
 
         let dotrain_text = r"
@@ -584,7 +584,7 @@ some-name _: opcode-2(opcode-1(1 2) const-binding) 0xab34;
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = "/** 0. exp-binding */ 
+        let expected_rainlang = "/* 0. exp-binding */ 
 _: opcode-1(0xabcd 456),
 some-name _: opcode-2(opcode-1(1 2) 4e18) 0xab34;";
         assert_eq!(rainlang_text, expected_rainlang);
@@ -608,11 +608,11 @@ _: opcode-2(0xabcd some-value);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = "/** 0. exp-binding-1 */ 
+        let expected_rainlang = "/* 0. exp-binding-1 */ 
 _: opcode-1<1>(0xabcd 456),
 some-name _: 0xab34;
 
-/** 1. exp-binding-2 */ 
+/* 1. exp-binding-2 */ 
 _: opcode-2(0xabcd 4e18);";
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -638,11 +638,11 @@ _: opcode-2(0xabcd some-value);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = "/** 0. exp-binding-1 */ 
+        let expected_rainlang = "/* 0. exp-binding-1 */ 
 _: opcode-1(0xabcd 456),
 some-name _: 0xab34;
 
-/** 1. exp-binding-2 */ 
+/* 1. exp-binding-2 */ 
 _: opcode-2(0xabcd 4e18);";
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -669,16 +669,16 @@ _: opcode-2(some-name some-other-value);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = "/** 0. main */ 
+        let expected_rainlang = "/* 0. main */ 
 _: opcode-1<2>(0xabcd 456);
 
-/** 1. exp-binding-1 */ 
+/* 1. exp-binding-1 */ 
 _: opcode-1(0xabcd 456);
 
-/** 2. exp-binding-2 */ 
+/* 2. exp-binding-2 */ 
 _: opcode-1<3>(0xabcd 456);
 
-/** 3. exp-binding-3 */ 
+/* 3. exp-binding-3 */ 
 some-name: opcode-2(0xabcd 4e18),
 _: opcode-2(some-name 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
@@ -697,7 +697,7 @@ _: some-sub-parser-word<1 2>(some-value some-other-value);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = "/** 0. exp-binding-1 */ 
+        let expected_rainlang = "/* 0. exp-binding-1 */ 
 using-words-from 0x1234abced
 _: some-sub-parser-word<1 2>(4e18 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
@@ -717,7 +717,7 @@ _: some-sub-parser-word<1 2>(some-value literal-binding);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = r#"/** 0. exp-binding-1 */ 
+        let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 using-words-from 0x1234abced
 abcd: " this is literal string ",
 _: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
@@ -738,7 +738,7 @@ _: some-sub-parser-word<some-value " some literal as operand " "test">(some-valu
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = r#"/** 0. exp-binding-1 */ 
+        let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 using-words-from 0x1234abced
 abcd: " this is literal string ",
 _: some-sub-parser-word<4e18 " some literal as operand " "test">(4e18 "some literal value");"#;
@@ -761,7 +761,7 @@ _: some-sub-parser-word<1 2>(some-value 44);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = r#"/** 0. exp-binding-1 */ 
+        let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 /* some comment with quote: dont't */
 using-words-from 0x1234abced
 _: [some-sub-parser 123 4 kjh],
@@ -785,7 +785,7 @@ _: opcode-1(0xabcd some-value---);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = r"/** 0. exp-binding-1--- */ 
+        let expected_rainlang = r"/* 0. exp-binding-1--- */ 
 /** some other comment with --- */
 _: opcode-1(0xabcd 4e18);";
         assert_eq!(result, expected_rainlang);
@@ -811,13 +811,13 @@ _: opcode-3(some-value some-other-value);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = r"/** 0. exp-binding-1 */ 
+        let expected_rainlang = r"/* 0. exp-binding-1 */ 
 _: opcode-1<2>(0xabcd 456);
 
-/** 1. main */ 
+/* 1. main */ 
 _: opcode-3(0xabcd 456);
 
-/** 2. exp-binding-3 */ 
+/* 2. exp-binding-3 */ 
 _: opcode-3(4e18 0xabcdef1234);";
         assert_eq!(result, expected_rainlang);
 
@@ -842,13 +842,13 @@ _: opcode-3(some-value some-other-value);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = r"/** 0. exp-binding-1 */ 
+        let expected_rainlang = r"/* 0. exp-binding-1 */ 
 _: opcode-1<2>(0xabcd 456);
 
-/** 1. main */ 
+/* 1. main */ 
 _: opcode-3(0xabcd 456);
 
-/** 2. exp-binding-3 */ 
+/* 2. exp-binding-3 */ 
 _: opcode-3(4e18 0xabcdef1234);";
         assert_eq!(result, expected_rainlang);
 
@@ -1070,7 +1070,7 @@ _: some-sub-parser-word<1 2>(4e18 literal-binding);
             Some(meta_store.clone()),
             None,
         )?;
-        let expected_rainlang = r#"/** 0. exp-binding-1 */ 
+        let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 using-words-from 0x1234abcedf " some string literal " "abcd"
 abcd: " this is literal string ",
 _: some-sub-parser-word<1 2>(4e18 "some literal value");"#;
@@ -1127,13 +1127,13 @@ _: opcode-2(some-name some-other-value);
         let rebinds = vec![Rebind("some-override-value".to_owned(), "567".to_owned())];
         block_on(rain_document.parse(false, Some(rebinds)));
         let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
-        let expected_rainlang = "/** 0. exp-binding-1 */ 
+        let expected_rainlang = "/* 0. exp-binding-1 */ 
 _: opcode-1(0xabcd 456);
 
-/** 1. exp-binding-2 */ 
+/* 1. exp-binding-2 */ 
 _: opcode-1<2>(0xabcd 456);
 
-/** 2. exp-binding-3 */ 
+/* 2. exp-binding-3 */ 
 some-name: opcode-2(0xabcd 4e18 567),
 _: opcode-2(some-name 0xabcdef1234);";
         assert_eq!(rainlang_text, expected_rainlang);
@@ -1160,13 +1160,13 @@ _: opcode-2(some-name some-other-value);
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
         let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
-        let expected_rainlang = r#"/** 0. exp-binding-1 */ 
+        let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 _: opcode-1(0xabcd 456);
 
-/** 1. exp-binding-2 */ 
+/* 1. exp-binding-2 */ 
 _: opcode-1<2>(0xabcd 456);
 
-/** 2. exp-binding-3 */ 
+/* 2. exp-binding-3 */ 
 some-name: opcode-2(0xabcd 0x123456 567),
 _: opcode-2(some-name 0xabcdef1234);"#;
         assert_eq!(rainlang_text, expected_rainlang);
@@ -1197,13 +1197,13 @@ _: opcode-2(some-name some-other-value);
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
         let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
-        let expected_rainlang = r#"/** 0. exp-binding-1 */ 
+        let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 _: opcode-1(0xabcd 456);
 
-/** 1. exp-binding-2 */ 
+/* 1. exp-binding-2 */ 
 _: opcode-1<2>(0xabcd 456);
 
-/** 2. exp-binding-3 */ 
+/* 2. exp-binding-3 */ 
 some-name: opcode-2(0xabcd 0x123456 567),
 _: opcode-2(some-name " some new literal string ");"#;
         assert_eq!(rainlang_text, expected_rainlang);
@@ -1240,10 +1240,10 @@ _: opcode(1 2);
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
         let rainlang_text = rain_document.compose(&["exp-binding-1"])?;
-        let expected_rainlang = r#"/** 0. exp-binding-1 */ 
+        let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 _: opcode-1<1>(0xabcd 456);
 
-/** 1. other-exp-binding */ 
+/* 1. other-exp-binding */ 
 _: opcode(1 2);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -1314,16 +1314,16 @@ _: opcode-1(0xabcd 456);
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
         let rainlang_text = rain_document.compose(&["e1", "e2"])?;
-        let expected_rainlang = r#"/** 0. e1 */ 
+        let expected_rainlang = r#"/* 0. e1 */ 
 _: opcode-3(1 call<2>());
 
-/** 1. e2 */ 
+/* 1. e2 */ 
 :call<3>(2 1);
 
-/** 2. another-binding */ 
+/* 2. another-binding */ 
 _: opcode-2(1 0 [something]);
 
-/** 3. some-other-binding */ 
+/* 3. some-other-binding */ 
 :set(opcode-4(opcode-1() 1) 2);"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -1342,10 +1342,10 @@ _: opcode-2(1 0 [something]);
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
         let rainlang_text = rain_document.compose(&["some-binding"])?;
-        let expected_rainlang = "/** 0. some-binding */ 
+        let expected_rainlang = "/* 0. some-binding */ 
 _: opcode-2<0 1>(1 0 [something]);
 
-/** 1. some-other-binding */ 
+/* 1. some-other-binding */ 
 _: opcode-2<1 6>(1 0 [something]);";
         assert_eq!(rainlang_text, expected_rainlang);
 
