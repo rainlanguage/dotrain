@@ -13,7 +13,7 @@ describe("Dotrain to Rainlang Composing Tests", async function () {
                 ["expression"],
                 metaStore,
             ),
-            ":;",
+            "/* 0. expression */ \n:;",
         );
     });
 
@@ -27,7 +27,7 @@ describe("Dotrain to Rainlang Composing Tests", async function () {
                 ["expression"],
                 metaStore,
             ),
-            ":;",
+            "/* 0. expression */ \n:;",
         );
     });
 
@@ -42,7 +42,7 @@ describe("Dotrain to Rainlang Composing Tests", async function () {
                 ["exp1", "exp2"],
                 metaStore,
             ),
-            ":;\n\n:;",
+            "/* 0. exp1 */ \n:;\n\n/* 1. exp2 */ \n:;",
         );
     });
 
@@ -53,7 +53,7 @@ describe("Dotrain to Rainlang Composing Tests", async function () {
                 ["expression"],
                 metaStore,
             ),
-            "_:int-add(10 20);",
+            "/* 0. expression */ \n_:int-add(10 20);",
         );
     });
 
@@ -64,7 +64,7 @@ describe("Dotrain to Rainlang Composing Tests", async function () {
                 ["expression"],
                 metaStore,
             ),
-            "_: int-add(10 20), _: block-timestamp();",
+            "/* 0. expression */ \n_: int-add(10 20), _: block-timestamp();",
         );
     });
 
@@ -75,7 +75,7 @@ describe("Dotrain to Rainlang Composing Tests", async function () {
                 ["expression"],
                 metaStore,
             ),
-            "_ _: int-add(10 20) block-timestamp();",
+            "/* 0. expression */ \n_ _: int-add(10 20) block-timestamp();",
         );
     });
 
@@ -102,17 +102,21 @@ describe("Dotrain to Rainlang Composing Tests", async function () {
         `;
         assert.equal(
             await RainDocument.composeText(expression, ["exp1", "exp2", "exp3", "exp4"], metaStore),
-            `c0: 1,
+            `/* 0. exp1 */ 
+c0: 1,
             c1: 2,
             condition: 1;
 
+/* 1. exp2 */ 
 s0 s1: 1 2,
             o0 o1: 1 2,
             condition: 3;
 
+/* 2. exp3 */ 
 s0: 1,
             _: less-than(s0 3);
 
+/* 3. exp4 */ 
 s0 s1: 1 2,
             _: int-add(s0 4),
             _: int-add(s1 5);`,
