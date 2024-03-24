@@ -33,6 +33,7 @@ pub(crate) struct ComposeTargetElement<'a> {
 /// a composing target
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct ComposeTarget<'a> {
+    pub(crate) namespace_path: String,
     pub(crate) namespace: &'a Namespace,
     pub(crate) hash: &'a str,
     pub(crate) import_index: isize,
@@ -41,12 +42,14 @@ pub(crate) struct ComposeTarget<'a> {
 
 impl<'a> ComposeTarget<'a> {
     fn create(
+        namespace_path: String,
         leaf: &'a NamespaceLeaf,
         binding: &'a Binding,
         rainlang_doc: RainlangDocument,
         namespace: &'a Namespace,
     ) -> Self {
         ComposeTarget {
+            namespace_path,
             namespace,
             hash: &leaf.hash,
             import_index: leaf.import_index,
@@ -60,6 +63,10 @@ impl<'a> ComposeTarget<'a> {
                 item: rainlang_doc,
             },
         }
+    }
+
+    fn build_name_comment(&self) -> String {
+        "/** #".to_string() + &self.namespace_path + "." + self.element.name + " */ \n"
     }
 }
 
@@ -123,8 +130,8 @@ impl RainDocument {
 
         // resolve the entrypoints, check their validity and put them at top of compose target list
         for entrypoint in entrypoints {
-            match search_namespace(entrypoint, &self.namespace) {
-                Ok((parent_node, leaf, binding)) => {
+            match search_namespace(entrypoint, &self.namespace, "") {
+                Ok((parent_namespace, leaf, binding, namespace_path)) => {
                     if !binding.problems.is_empty() {
                         return Err(ComposeError::from_problems(
                             &binding.problems,
@@ -133,7 +140,7 @@ impl RainDocument {
                         ));
                     }
                     let rainlang_doc =
-                        RainlangDocument::create(binding.content.clone(), parent_node, None);
+                        RainlangDocument::create(binding.content.clone(), parent_namespace, None);
                     if !rainlang_doc.problems.is_empty() {
                         return Err(ComposeError::from_problems(
                             &rainlang_doc.problems,
@@ -142,10 +149,11 @@ impl RainDocument {
                         ));
                     }
                     nodes.push(ComposeTarget::create(
+                        namespace_path,
                         leaf,
                         binding,
                         rainlang_doc,
-                        parent_node,
+                        parent_namespace,
                     ));
                 }
                 Err(e) => {
@@ -187,6 +195,11 @@ impl RainDocument {
         for node in &nodes {
             let generator = &mut MagicString::new(node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
+                // sourcemap binding name comment
+                generator.prepend(&node.build_name_comment())
+                    .or(Err("could not build sourcemap".to_owned()))
+                    .map_err(ComposeError::Reject)?;
+
                 // sourcemap pragmas
                 for PragmaStatement { sources, .. } in &node.element.item.pragmas {
                     for (source, literal) in sources {
@@ -253,8 +266,8 @@ impl RainDocument {
             for node in nodes[ignore_offset..].iter() {
                 let mut this_node_deps_indexes = VecDeque::new();
                 for dep in &node.element.item.dependencies {
-                    match search_namespace(dep, node.namespace) {
-                        Ok((parent_node, leaf, binding)) => {
+                    match search_namespace(dep, node.namespace, &node.namespace_path) {
+                        Ok((parent_node, leaf, binding, namespace_path)) => {
                             if !binding.problems.is_empty() {
                                 return Err(ComposeError::from_problems(
                                     &binding.problems,
@@ -279,7 +292,7 @@ impl RainDocument {
                             // the same process with newly found nested nodes, if still not present
                             // add this target to the nodes and then capture its index
                             let new_compse_target =
-                                ComposeTarget::create(leaf, binding, rainlang_doc, parent_node);
+                                ComposeTarget::create(namespace_path, leaf, binding, rainlang_doc, parent_node);
                             if let Some((index, _)) = &nodes
                                 .iter()
                                 .enumerate()
@@ -329,7 +342,8 @@ fn validate_dep_path(index: usize, deps: &VecDeque<VecDeque<u8>>, path: &[u8]) -
 fn search_namespace<'a>(
     name: &str,
     namespace: &'a Namespace,
-) -> Result<(&'a Namespace, &'a NamespaceLeaf, &'a Binding), String> {
+    namepsapce_path: &str,
+) -> Result<(&'a Namespace, &'a NamespaceLeaf, &'a Binding, String), String> {
     let mut segments = VecDeque::from(exclusive_parse(name, &NAMESPACE_SEGMENT_PATTERN, 0, true));
     if name.starts_with('.') {
         segments.pop_front();
@@ -347,6 +361,14 @@ fn search_namespace<'a>(
     }
 
     if let Some(ns_item) = namespace.get(&segments[0].0) {
+        let new_ns_path = 
+            namepsapce_path.to_string() 
+            + "." 
+            + segments
+                .range(0..segments.len() - 1).map(|v| v.0.clone())
+                .collect::<Vec<_>>()
+                .join(".")
+                .as_str();
         let mut result = ns_item;
         let mut parent = namespace;
         for segment in segments.range(1..) {
@@ -375,8 +397,8 @@ fn search_namespace<'a>(
                     "invalid entrypoint: {}, constants cannot be entrypoint",
                     name
                 )),
-                BindingItem::Exp(_e) => Ok((parent, leaf, &leaf.element)),
-                BindingItem::Quote(q) => search_namespace(&q.quote, namespace),
+                BindingItem::Exp(_e) => Ok((parent, leaf, &leaf.element, new_ns_path)),
+                BindingItem::Quote(q) => search_namespace(&q.quote, namespace, namepsapce_path),
             },
         }
     } else {
