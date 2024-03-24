@@ -65,11 +65,12 @@ impl<'a> ComposeTarget<'a> {
         }
     }
 
-    fn build_name_comment(&self) -> String {
+    fn build_name_comment(&self, index: usize) -> String {
+        let header = "/** ".to_string() + &index.to_string() + ". ";
         if self.namespace_path.is_empty() {
-            "/** #".to_string() + self.element.name + " */ \n"
+            header + self.element.name + " */ \n"
         } else {
-            "/** #".to_string() + &self.namespace_path + "." + self.element.name + " */ \n"
+            header + &self.namespace_path + "." + self.element.name + " */ \n"
         }
     }
 }
@@ -196,12 +197,12 @@ impl RainDocument {
         };
 
         // build composing sourcemap struct for each target node
-        for node in &nodes {
+        for (index, node) in nodes.iter().enumerate() {
             let generator = &mut MagicString::new(node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
                 // sourcemap binding name comment
                 generator
-                    .prepend(&node.build_name_comment())
+                    .prepend(&node.build_name_comment(index))
                     .or(Err("could not build sourcemap".to_owned()))
                     .map_err(ComposeError::Reject)?;
 
