@@ -200,7 +200,8 @@ impl RainDocument {
             let generator = &mut MagicString::new(node.element.content);
             if let Some(deps) = deps_indexes.pop_front().as_mut() {
                 // sourcemap binding name comment
-                generator.prepend(&node.build_name_comment())
+                generator
+                    .prepend(&node.build_name_comment())
                     .or(Err("could not build sourcemap".to_owned()))
                     .map_err(ComposeError::Reject)?;
 
@@ -295,8 +296,13 @@ impl RainDocument {
                             // is already present and if so capture its index, if not repeat
                             // the same process with newly found nested nodes, if still not present
                             // add this target to the nodes and then capture its index
-                            let new_compse_target =
-                                ComposeTarget::create(namespace_path, leaf, binding, rainlang_doc, parent_node);
+                            let new_compse_target = ComposeTarget::create(
+                                namespace_path,
+                                leaf,
+                                binding,
+                                rainlang_doc,
+                                parent_node,
+                            );
                             if let Some((index, _)) = &nodes
                                 .iter()
                                 .enumerate()
