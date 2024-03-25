@@ -1,6 +1,6 @@
 #![doc(
-    html_logo_url = "https://raw.githubusercontent.com/rainlanguage/rainlang-vscode/master/docs/images/rain-logo-icon.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/rainlanguage/rainlang-vscode/master/docs/images/rain-logo-icon.svg"
+    html_logo_url = "https://raw.githubusercontent.com/rainlanguage/dotrain/main/assets/rainlang-banner.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/rainlanguage/dotrain/main/assets/rainlang-banner.svg"
 )]
 //! .rain to rainlang composer written in rust and made available for NodeJs and broswers through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/)
 //! in Typescript/Javascript.
