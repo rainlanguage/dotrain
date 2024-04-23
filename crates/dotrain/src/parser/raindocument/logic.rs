@@ -1111,13 +1111,13 @@ impl RainDocument {
                     for (i, segment) in segments.range(1..).enumerate() {
                         match result {
                             NamespaceItem::Node(node) => {
-                                parent_node = Some(node.clone());
                                 if i == segments.len() - 2 {
                                     return Err(Error::InvalidOverride(format!(
                                         "cannot rebind namespaces, {} is an occupied namespace",
                                         segments[segments.len() - 1].0
                                     )));
                                 }
+                                parent_node = Some(node.clone());
                                 if let Some(item) = node.get_mut(&segment.0) {
                                     result = item;
                                 } else {
