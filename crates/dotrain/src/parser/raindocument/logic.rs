@@ -1051,6 +1051,7 @@ impl RainDocument {
                     }
                 }
                 // restrict rebinds to only 1 levels
+                // should be removed or set to cap value when we support deeper rebindings
                 if segments.len() > 1 {
                     return Err(Error::InvalidOverride(format!("rebind too deep: {}", key)));
                 }
@@ -1061,8 +1062,8 @@ impl RainDocument {
                         match ns_item {
                             NamespaceItem::Node(_node) => {
                                 return Err(Error::InvalidOverride(format!(
-                                    "undefined identifier: {} in key: {}",
-                                    segments[0].0, key
+                                    "cannot rebind namespaces, {} is an occupied namespace",
+                                    segments[0].0
                                 )));
                             }
                             NamespaceItem::Leaf(leaf) => {
@@ -1097,77 +1098,61 @@ impl RainDocument {
                         leaf.element.item = item;
                         leaf.element.problems = problems;
                     } else {
-                        namespace.insert(
-                            key,
-                            NamespaceItem::Leaf(NamespaceLeaf {
-                                hash: String::new(),
-                                import_index: -1,
-                                element: Binding {
-                                    name: segments[0].0.to_owned(),
-                                    name_position: [0, 0],
-                                    content: value.to_owned(),
-                                    content_position: [0, 0],
-                                    position: [0, 0],
-                                    problems,
-                                    item,
-                                },
-                            }),
-                        );
+                        return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
                     }
                 } else if let Some(ns_item) = namespace.get_mut(&segments[0].0) {
                     segments.push_back(ParsedItem(String::new(), [0, 0]));
                     let mut result = ns_item;
-                    let mut parent_node: Option<&Namespace> = None;
+                    let mut parent_node: Option<Namespace> = None;
                     #[allow(unused_assignments)]
                     for (i, segment) in segments.range(1..).enumerate() {
                         match result {
                             NamespaceItem::Node(node) => {
-                                if i == segments.len() - 3 && !node.contains_key(&segment.0) {
-                                    let problems = if let BindingItem::Quote(q) = &item {
-                                        // restrict quotes to only 1 levels
-                                        let mut limit = 1;
-                                        Self::validate_quote(
-                                            node,
-                                            q,
-                                            key.as_str(),
-                                            [0, 0],
-                                            &mut limit,
-                                        )
-                                    } else {
-                                        vec![]
-                                    };
-                                    node.insert(
-                                        segment.0.to_owned(),
-                                        NamespaceItem::Leaf(NamespaceLeaf {
-                                            hash: String::new(),
-                                            import_index: -1,
-                                            element: Binding {
-                                                name: segment.0.to_owned(),
-                                                name_position: [0, 0],
-                                                content: value.to_owned(),
-                                                content_position: [0, 0],
-                                                position: [0, 0],
-                                                problems,
-                                                item,
-                                            },
-                                        }),
-                                    );
-                                    parent_node = Some(node);
-                                    break;
-                                }
+                                parent_node = Some(node.clone());
+                                // if i == segments.len() - 3 && !node.contains_key(&segment.0) {
+                                //     let problems = if let BindingItem::Quote(q) = &item {
+                                //         // restrict quotes to only 1 levels
+                                //         let mut limit = 1;
+                                //         Self::validate_quote(
+                                //             node,
+                                //             q,
+                                //             key.as_str(),
+                                //             [0, 0],
+                                //             &mut limit,
+                                //         )
+                                //     } else {
+                                //         vec![]
+                                //     };
+                                //     node.insert(
+                                //         segment.0.to_owned(),
+                                //         NamespaceItem::Leaf(NamespaceLeaf {
+                                //             hash: String::new(),
+                                //             import_index: -1,
+                                //             element: Binding {
+                                //                 name: segment.0.to_owned(),
+                                //                 name_position: [0, 0],
+                                //                 content: value.to_owned(),
+                                //                 content_position: [0, 0],
+                                //                 position: [0, 0],
+                                //                 problems,
+                                //                 item,
+                                //             },
+                                //         }),
+                                //     );
+                                //     parent_node = Some(node);
+                                //     break;
+                                //     return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
+                                // }
                                 if i == segments.len() - 2 {
                                     return Err(Error::InvalidOverride(format!(
-                                        "undefined identifier: {} in key: {}",
-                                        segment.0, key
+                                        "cannot rebind namespaces, {} is an occupied namespace",
+                                        segments[segments.len() - 1].0
                                     )));
                                 }
                                 if let Some(item) = node.get_mut(&segment.0) {
                                     result = item;
                                 } else {
-                                    return Err(Error::InvalidOverride(format!(
-                                        "undefined identifier: {} in key: {}",
-                                        segment.0, key
-                                    )));
+                                    return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
                                 }
                             }
                             NamespaceItem::Leaf(leaf) => {
@@ -1176,7 +1161,7 @@ impl RainDocument {
                                         // restrict quotes to only 1 levels
                                         let mut limit = 1;
                                         Self::validate_quote(
-                                            parent_node.unwrap(),
+                                            &parent_node.ok_or(Error::FailedToParse)?,
                                             q,
                                             key.as_str(),
                                             leaf.element.name_position,
@@ -1207,18 +1192,12 @@ impl RainDocument {
                                     };
                                     break;
                                 }
-                                return Err(Error::InvalidOverride(format!(
-                                    "undefined identifier: {} in key: {}",
-                                    segment.0, key
-                                )));
+                                return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
                             }
                         }
                     }
                 } else {
-                    return Err(Error::InvalidOverride(format!(
-                        "undefined namespace: {} in key: {}",
-                        segments[0].0, key
-                    )));
+                    return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
                 }
             } else {
                 return Err(Error::InvalidOverride(format!(
