@@ -1098,7 +1098,10 @@ impl RainDocument {
                         leaf.element.item = item;
                         leaf.element.problems = problems;
                     } else {
-                        return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
+                        return Err(Error::InvalidOverride(format!(
+                            "undefined binding: {}",
+                            key
+                        )));
                     }
                 } else if let Some(ns_item) = namespace.get_mut(&segments[0].0) {
                     segments.push_back(ParsedItem(String::new(), [0, 0]));
@@ -1109,40 +1112,6 @@ impl RainDocument {
                         match result {
                             NamespaceItem::Node(node) => {
                                 parent_node = Some(node.clone());
-                                // if i == segments.len() - 3 && !node.contains_key(&segment.0) {
-                                //     let problems = if let BindingItem::Quote(q) = &item {
-                                //         // restrict quotes to only 1 levels
-                                //         let mut limit = 1;
-                                //         Self::validate_quote(
-                                //             node,
-                                //             q,
-                                //             key.as_str(),
-                                //             [0, 0],
-                                //             &mut limit,
-                                //         )
-                                //     } else {
-                                //         vec![]
-                                //     };
-                                //     node.insert(
-                                //         segment.0.to_owned(),
-                                //         NamespaceItem::Leaf(NamespaceLeaf {
-                                //             hash: String::new(),
-                                //             import_index: -1,
-                                //             element: Binding {
-                                //                 name: segment.0.to_owned(),
-                                //                 name_position: [0, 0],
-                                //                 content: value.to_owned(),
-                                //                 content_position: [0, 0],
-                                //                 position: [0, 0],
-                                //                 problems,
-                                //                 item,
-                                //             },
-                                //         }),
-                                //     );
-                                //     parent_node = Some(node);
-                                //     break;
-                                //     return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
-                                // }
                                 if i == segments.len() - 2 {
                                     return Err(Error::InvalidOverride(format!(
                                         "cannot rebind namespaces, {} is an occupied namespace",
@@ -1152,7 +1121,10 @@ impl RainDocument {
                                 if let Some(item) = node.get_mut(&segment.0) {
                                     result = item;
                                 } else {
-                                    return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
+                                    return Err(Error::InvalidOverride(format!(
+                                        "undefined binding: {}",
+                                        key
+                                    )));
                                 }
                             }
                             NamespaceItem::Leaf(leaf) => {
@@ -1192,12 +1164,18 @@ impl RainDocument {
                                     };
                                     break;
                                 }
-                                return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
+                                return Err(Error::InvalidOverride(format!(
+                                    "undefined binding: {}",
+                                    key
+                                )));
                             }
                         }
                     }
                 } else {
-                    return Err(Error::InvalidOverride(format!("undefined binding: {}", key)));
+                    return Err(Error::InvalidOverride(format!(
+                        "undefined binding: {}",
+                        key
+                    )));
                 }
             } else {
                 return Err(Error::InvalidOverride(format!(

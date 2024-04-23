@@ -1363,10 +1363,7 @@ _: opcode-1(0xabcd 456);
 ";
         let mut rain_document =
             RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
-        let rebinds = vec![Rebind(
-            "non-existant-binding".to_owned(),
-            "567".to_owned(),
-        )];
+        let rebinds = vec![Rebind("non-existant-binding".to_owned(), "567".to_owned())];
         block_on(rain_document.parse(false, Some(rebinds)));
         let result = rain_document.compose(&["exp-binding-1"]);
         let expected_err = Err(ComposeError::Problems(vec![
