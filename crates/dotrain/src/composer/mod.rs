@@ -1111,6 +1111,7 @@ _: some-sub-parser-word<1 2>(4e18 literal-binding);
         let dotrain_text = r"---
 #some-value 4e18
 #some-other-value 0xabcdef1234
+#some-override-value ! elided
 
 #exp-binding-1
 _: opcode-1(0xabcd 456);
@@ -1141,6 +1142,7 @@ _: opcode-2(some-name 0xabcdef1234);";
         let dotrain_text = r"---
 #some-value 4e18
 #some-other-value 0xabcdef1234
+#some-override-value ! elided
 
 #exp-binding-1
 _: opcode-1(0xabcd 456);
@@ -1174,6 +1176,7 @@ _: opcode-2(some-name 0xabcdef1234);"#;
         let dotrain_text = r"---
 #some-value 4e18
 #some-other-value 0xabcdef1234
+#some-override-value ! elided
 
 #exp-binding-1
 _: opcode-1(0xabcd 456);
@@ -1211,6 +1214,7 @@ _: opcode-2(some-name " some new literal string ");"#;
         let dotrain_text = r"---
 #some-value 4e18
 #some-other-value 0xabcdef1234
+#some-override-value ! elided
 
 #exp-binding-1
 _: opcode-1<exp-binding-2>(0xabcd 456);
@@ -1289,6 +1293,7 @@ _: opcode-1(0xabcd 456);
         let dotrain_text = r#"---
 #a !some msg.
 #b !some other msg.
+#rebind-item ! elided
 
 #some-binding
   _: get(opcode-4(opcode-1() 1));
@@ -1328,6 +1333,9 @@ _: opcode-2(1 0 [something]);
         assert_eq!(rainlang_text, expected_rainlang);
 
         let dotrain_text = r#"---
+#a !some msg.
+#b !some other msg
+
 #some-binding
   _: opcode-2<0 b>(1 0 [something]);
 
@@ -1348,6 +1356,21 @@ _: opcode-2<0 1>(1 0 [something]);
 /* 1. some-other-binding */ 
 _: opcode-2<1 6>(1 0 [something]);";
         assert_eq!(rainlang_text, expected_rainlang);
+
+        let dotrain_text = r"---
+#exp-binding-1
+_: opcode-1(0xabcd 456);
+";
+        let mut rain_document =
+            RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
+        let rebinds = vec![Rebind("non-existant-binding".to_owned(), "567".to_owned())];
+        block_on(rain_document.parse(false, Some(rebinds)));
+        let result = rain_document.compose(&["exp-binding-1"]);
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::InvalidSuppliedRebindings
+                .to_problem(vec!["undefined binding: non-existant-binding"], [0, 0]),
+        ]));
+        assert_eq!(result, expected_err);
 
         Ok(())
     }
