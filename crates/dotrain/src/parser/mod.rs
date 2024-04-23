@@ -286,7 +286,7 @@ mod tests {
     fn test_parse_cli_key_val() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
         let key_value_pair = "key=value";
         let result = parse_cli_key_val(key_value_pair)?;
-        
+
         assert_eq!(result.0, "key");
         assert_eq!(result.1, "value");
 
