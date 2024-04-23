@@ -265,6 +265,19 @@ pub(crate) fn deep_read_quote<'a>(
     }
 }
 
+/// Parse a single key-value pair from cli arg
+pub fn parse_key_val(
+    key_value_pair: &str,
+) -> Result<Rebind, Box<dyn std::error::Error + Send + Sync + 'static>> {
+    let pos = key_value_pair
+        .find('=')
+        .ok_or_else(|| format!("invalid key=value: no `=` found in `{key_value_pair}`"))?;
+    Ok(Rebind(
+        key_value_pair[..pos].to_owned(),
+        key_value_pair[pos + 1..].to_owned(),
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use crate::parser::*;
