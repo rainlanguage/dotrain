@@ -1,4 +1,4 @@
-![](./assets/rainlang-banner.svg)
+![](https://raw.githubusercontent.com/rainlanguage/rain.brand/main/Rainlang%20logo.svg)
 
 # **Rain Language Composer and LSP**
 The Rain language server protocol ([LSP](https://microsoft.github.io/language-server-protocol/)) services implementation (language services) and .rain composer written in rust and made available for NodeJs and broswers through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/) in Typescript/Javascript which makes it well suited for editors and IDEs (as it is used in Rainlang vscode and codemirror language extension).
