@@ -69,8 +69,8 @@ jobs:
       # Create zip and tar built package archives for GH release
       - name: Create Built Package Archives
         run: | 
-          zip -r dotrain-node-${{ env.NEW_VERSION }}.zip dist assets cjs.js esm.js cjs.d.ts esm.d.ts example.rainconfig.json README.md package.json
-          tar -czvf dotrain-node-${{ env.NEW_VERSION }}.tar.gz dist assets cjs.js esm.js cjs.d.ts esm.d.ts example.rainconfig.json README.md package.json
+          zip -r dotrain-node-${{ env.NEW_VERSION }}.zip dist cjs.js esm.js cjs.d.ts esm.d.ts example.rainconfig.json README.md package.json
+          tar -czvf dotrain-node-${{ env.NEW_VERSION }}.tar.gz dist cjs.js esm.js cjs.d.ts esm.d.ts example.rainconfig.json README.md package.json
 
       # Create gitHub release with built package archives
       - name: Create GitHub Release
