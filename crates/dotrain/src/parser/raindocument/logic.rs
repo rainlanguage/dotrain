@@ -1107,7 +1107,6 @@ impl RainDocument {
                     segments.push_back(ParsedItem(String::new(), [0, 0]));
                     let mut result = ns_item;
                     let mut parent_node: Option<Namespace> = None;
-                    #[allow(unused_assignments)]
                     for (i, segment) in segments.range(1..).enumerate() {
                         match result {
                             NamespaceItem::Node(node) => {
