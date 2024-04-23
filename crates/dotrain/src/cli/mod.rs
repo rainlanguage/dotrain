@@ -6,7 +6,7 @@
 
 use std::path::PathBuf;
 use clap::{Parser, Subcommand, command};
-use crate::parser::{Rebind, parse_key_val};
+use crate::parser::{Rebind, parse_cli_key_val};
 
 mod compose;
 mod rainconfig;
@@ -41,7 +41,7 @@ pub struct Compose {
     #[arg(short, long)]
     entrypoint: Vec<String>,
     /// rebinds items with new literal values
-    #[arg(short, long, value_parser = parse_key_val)]
+    #[arg(short, long, value_parser = parse_cli_key_val)]
     bind: Option<Vec<Rebind>>,
     /// Path to the rainconfig json file that contains configurations,
     /// if provided will be used to when composing the .rain, see

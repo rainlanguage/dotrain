@@ -266,7 +266,7 @@ pub(crate) fn deep_read_quote<'a>(
 }
 
 /// Parse a single key-value pair from cli arg
-pub fn parse_key_val(
+pub fn parse_cli_key_val(
     key_value_pair: &str,
 ) -> Result<Rebind, Box<dyn std::error::Error + Send + Sync + 'static>> {
     let pos = key_value_pair
