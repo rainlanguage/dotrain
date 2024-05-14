@@ -198,7 +198,7 @@ mod tests {
     fn test_process_operand_method() -> anyhow::Result<()> {
         let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
-        let exp = r#"<"12." 56>"#;
+        let exp = r#"<12 56>"#;
         let mut op = Opcode {
             opcode: OpcodeDetails {
                 name: "opc".to_owned(),
@@ -228,19 +228,19 @@ mod tests {
             inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
-                position: [8, 18],
+                position: [8, 15],
                 args: vec![
                     OperandArgItem {
-                        value: Some(r#""12.""#.to_owned()),
+                        value: Some("12".to_owned()),
                         name: "operand arg".to_owned(),
-                        position: [9, 14],
+                        position: [9, 11],
                         description: String::new(),
                         binding_id: None,
                     },
                     OperandArgItem {
                         value: Some("56".to_owned()),
                         name: "operand arg".to_owned(),
-                        position: [15, 17],
+                        position: [12, 14],
                         description: String::new(),
                         binding_id: None,
                     },
@@ -388,6 +388,59 @@ mod tests {
                 ],
             }),
         };
+        assert_eq!(consumed_count, exp.len());
+        assert_eq!(op, expected_op);
+
+        let exp = r#"<"12." "56.abcd">"#;
+        let mut op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opc".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            inputs: vec![],
+            lhs_alias: None,
+            operand_args: None,
+        };
+
+        let consumed_count = rl.process_operand(exp, 8, &mut op, &namespace);
+        let expected_op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opc".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            inputs: vec![],
+            lhs_alias: None,
+            operand_args: Some(OperandArg {
+                position: [8, 25],
+                args: vec![
+                    OperandArgItem {
+                        value: Some(r#""12.""#.to_owned()),
+                        name: "operand arg".to_owned(),
+                        position: [9, 14],
+                        description: String::new(),
+                        binding_id: None,
+                    },
+                    OperandArgItem {
+                        value: Some(r#""56.abcd""#.to_owned()),
+                        name: "operand arg".to_owned(),
+                        position: [15, 24],
+                        description: String::new(),
+                        binding_id: None,
+                    },
+                ],
+            }),
+        };
+
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
 
