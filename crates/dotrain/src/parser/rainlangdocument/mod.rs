@@ -522,7 +522,7 @@ mod tests {
             },
         ]);
 
-        let text = "opcode<12.2 56>(";
+        let text = "opcode<12 56>(";
         let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta)?;
         let mut expected_state_nodes = vec![Node::Opcode(Opcode {
             opcode: OpcodeDetails {
@@ -533,11 +533,49 @@ mod tests {
             operand: None,
             output: None,
             position: [10, 0],
-            parens: [25, 0],
+            parens: [23, 0],
             inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
-                position: [16, 25],
+                position: [16, 23],
+                args: vec![
+                    OperandArgItem {
+                        value: Some("12".to_owned()),
+                        name: "operand arg".to_owned(),
+                        position: [17, 19],
+                        description: String::new(),
+                        binding_id: None,
+                    },
+                    OperandArgItem {
+                        value: Some("56".to_owned()),
+                        name: "operand arg".to_owned(),
+                        position: [20, 22],
+                        description: String::new(),
+                        binding_id: None,
+                    },
+                ],
+            }),
+        })];
+        assert_eq!(consumed_count, text.len());
+        assert_eq!(rl.state.nodes, expected_state_nodes);
+
+        let text = "opcode<12.2 2.5e16>(";
+        rl.state.depth -= 1;
+        let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta)?;
+        expected_state_nodes.push(Node::Opcode(Opcode {
+            opcode: OpcodeDetails {
+                name: "opcode".to_owned(),
+                description: String::new(),
+                position: [10, 16],
+            },
+            operand: None,
+            output: None,
+            position: [10, 0],
+            parens: [29, 0],
+            inputs: vec![],
+            lhs_alias: None,
+            operand_args: Some(OperandArg {
+                position: [16, 29],
                 args: vec![
                     OperandArgItem {
                         value: Some("12.2".to_owned()),
@@ -547,15 +585,15 @@ mod tests {
                         binding_id: None,
                     },
                     OperandArgItem {
-                        value: Some("56".to_owned()),
+                        value: Some("2.5e16".to_owned()),
                         name: "operand arg".to_owned(),
-                        position: [22, 24],
+                        position: [22, 28],
                         description: String::new(),
                         binding_id: None,
                     },
                 ],
             }),
-        })];
+        }));
         assert_eq!(consumed_count, text.len());
         assert_eq!(rl.state.nodes, expected_state_nodes);
 
@@ -577,6 +615,44 @@ mod tests {
             operand_args: None,
         }));
         assert_eq!(consumed_count, "another-opcode(".len());
+        assert_eq!(rl.state.nodes, expected_state_nodes);
+
+        let text = "another-opcode-2<\n  0x1f\n  87>(\n  0xabcef1234\n)";
+        rl.state.depth -= 1;
+        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta)?;
+        expected_state_nodes.push(Node::Opcode(Opcode {
+            opcode: OpcodeDetails {
+                name: "another-opcode-2".to_owned(),
+                description: String::new(),
+                position: [77, 93],
+            },
+            operand: None,
+            output: None,
+            position: [77, 0],
+            parens: [107, 0],
+            inputs: vec![],
+            lhs_alias: None,
+            operand_args: Some(OperandArg {
+                position: [93, 107],
+                args: vec![
+                    OperandArgItem {
+                        value: Some("0x1f".to_owned()),
+                        name: "operand arg".to_owned(),
+                        position: [97, 101],
+                        description: String::new(),
+                        binding_id: None,
+                    },
+                    OperandArgItem {
+                        value: Some("87".to_owned()),
+                        name: "operand arg".to_owned(),
+                        position: [104, 106],
+                        description: String::new(),
+                        binding_id: None,
+                    },
+                ],
+            }),
+        }));
+        assert_eq!(consumed_count, "another-opcode-2<\n  0x1f\n  87>(".len());
         assert_eq!(rl.state.nodes, expected_state_nodes);
 
         let text = "another-opcode-2<\n  0x1f\n  87.3e2>(\n  0xabcef1234\n)";
