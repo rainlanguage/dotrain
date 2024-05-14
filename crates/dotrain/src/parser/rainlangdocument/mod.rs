@@ -508,7 +508,10 @@ mod tests {
                 ],
             }),
         }));
-        assert_eq!(consumed_count, "another-opcode-2<\n  0x1f\n  87.3e2>(".len());
+        assert_eq!(
+            consumed_count,
+            "another-opcode-2<\n  0x1f\n  87.3e2>(".len()
+        );
         assert_eq!(rl.state.nodes, expected_state_nodes);
 
         Ok(())
