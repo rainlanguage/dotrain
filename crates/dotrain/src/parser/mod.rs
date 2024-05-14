@@ -283,9 +283,9 @@ mod tests {
     use crate::parser::*;
 
     #[test]
-    fn test_parse_cli_key_val() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    fn test_parse_cli_key_val() -> anyhow::Result<()> {
         let key_value_pair = "key=value";
-        let result = parse_cli_key_val(key_value_pair)?;
+        let result = parse_cli_key_val(key_value_pair).unwrap();
 
         assert_eq!(result.0, "key");
         assert_eq!(result.1, "value");
