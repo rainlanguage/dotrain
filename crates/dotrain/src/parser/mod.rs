@@ -1,10 +1,9 @@
 use regex::{Match, Regex};
-use alloy_primitives::U256;
 use super::error::{Error, ErrorCode};
 use rain_metadata::{RainMetaDocumentV1Item, KnownMagic};
 use super::types::{
     ast::*,
-    patterns::{HEX_PATTERN, E_PATTERN, INT_PATTERN, NAMESPACE_SEGMENT_PATTERN, WORD_PATTERN},
+    patterns::{NAMESPACE_SEGMENT_PATTERN, WORD_PATTERN},
 };
 
 pub(crate) mod raindocument;
@@ -132,32 +131,6 @@ pub fn line_number(text: &str, pos: usize) -> usize {
             }
         }
         0
-    }
-}
-
-pub(crate) fn hex_to_u256(val: &str) -> Result<U256, Error> {
-    let mut hex = val;
-    if let Some(stripped) = val.strip_prefix("0x") {
-        hex = stripped
-    }
-    Ok(U256::from_str_radix(hex, 16)?)
-}
-
-pub(crate) fn e_to_u256(value: &str) -> Result<U256, Error> {
-    let slices = value.split_once('e').unwrap();
-    let int = slices.0.to_owned() + &"0".repeat(slices.1.parse()?);
-    Ok(U256::from_str_radix(&int, 10)?)
-}
-
-pub(crate) fn to_u256(value: &str) -> Result<U256, Error> {
-    if E_PATTERN.is_match(value) {
-        Ok(e_to_u256(value)?)
-    } else if INT_PATTERN.is_match(value) {
-        Ok(U256::from_str_radix(value, 10)?)
-    } else if HEX_PATTERN.is_match(value) {
-        Ok(hex_to_u256(value)?)
-    } else {
-        Err(Error::InvalidNumbericValue)
     }
 }
 
@@ -350,27 +323,6 @@ mod tests {
         ";
         let result = line_number(text, 38);
         assert_eq!(result, 3);
-        Ok(())
-    }
-
-    #[test]
-    fn test_to_u256() -> anyhow::Result<()> {
-        let hex = "0xabcd123";
-        let int = "876123";
-        let e = "5e13";
-
-        let result = to_u256(hex)?;
-        let expected = U256::from_str_radix("abcd123", 16)?;
-        assert_eq!(result, expected);
-
-        let result = to_u256(int)?;
-        let expected = U256::from_str_radix("876123", 10)?;
-        assert_eq!(result, expected);
-
-        let result = to_u256(e)?;
-        let expected = U256::from_str_radix("50000000000000", 10)?;
-        assert_eq!(result, expected);
-
         Ok(())
     }
 }

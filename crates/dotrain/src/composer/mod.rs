@@ -1115,6 +1115,21 @@ _: opcode-1(0xabcd "something.else");
 _: opcode-1(0xabcd "something.else");"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
+        let dotrain_text = r#"
+        some 
+        front 
+        matter
+---
+/* this is test */
+
+#exp-binding
+_: opcode-1(12.34e6 123.123);
+"#;
+        let rainlang_text = RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None)?;
+        let expected_rainlang = r#"/* 0. exp-binding */ 
+_: opcode-1(12.34e6 123.123);"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
         Ok(())
     }
 

@@ -23,7 +23,7 @@ pub static HASH_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]{
 
 /// numeric pattern
 pub static NUMERIC_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$").unwrap());
+    Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$|^\d+(\.\d+)?$|^[1-9]\d*(\.\d+)?e\d+$").unwrap());
 
 /// string literal pattern
 pub static STRING_LITERAL_PATTERN: Lazy<Regex> =
@@ -35,17 +35,20 @@ pub static SUB_PARSER_LITERAL_PATTERN: Lazy<Regex> =
 
 /// literal pattern (numeric + string literal + sub parser)
 pub static LITERAL_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$"#).unwrap()
+    Regex::new(
+        r#"^0x[0-9a-fA-F]+$|^\d+(\.\d+)?$|^[1-9]\d*(\.\d+)?e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$"#,
+    )
+    .unwrap()
 });
 
 /// Hex pattern
 pub static HEX_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$").unwrap());
 
 /// e numberic pattern
-pub static E_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[1-9]\d*e\d+$").unwrap());
+pub static E_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[1-9]\d*(\.\d+)?e\d+$").unwrap());
 
 /// Integer pattern
-pub static INT_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d+$").unwrap());
+pub static INT_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d+(\.\d+)?$").unwrap());
 
 /// RainDocument Namespace pattern
 pub static NAMESPACE_PATTERN: Lazy<Regex> =
@@ -73,7 +76,7 @@ pub static NON_EMPTY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\s]").un
 
 /// operand arguments pattern (literal + namespace + quoted namespace)
 pub static OPERAND_ARG_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$|^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#).unwrap()
+    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+(\.\d+)?$|^[1-9]\d*(\.\d+)?e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$|^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#).unwrap()
 });
 
 /// quote pattern
@@ -191,7 +194,7 @@ mod tests {
             assert!(!INT_PATTERN.is_match(i), "String '{}' considered valid.", i);
         }
         // valids
-        for i in ["123", "1234567890", "83276401"] {
+        for i in ["123", "1234567890", "83276401", "123.123"] {
             assert!(
                 INT_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
@@ -204,7 +207,7 @@ mod tests {
             assert!(!E_PATTERN.is_match(i), "String '{}' considered valid.", i);
         }
         // valids
-        for i in ["3e16", "2345e12987234", "101e1001"] {
+        for i in ["3e16", "2345e12987234", "101e1001", "123.45e12"] {
             assert!(E_PATTERN.is_match(i), "String '{}' considered invalid.", i);
         }
 
@@ -297,6 +300,8 @@ mod tests {
             "0x123abcdefAdfe",
             "'abcd12-jh2.oiu.lkj89-",
             "'.asd12-wer.jh45-iu78.lk9",
+            "123.123",
+            "123.12e2",
         ] {
             assert!(
                 OPERAND_ARG_PATTERN.is_match(i),

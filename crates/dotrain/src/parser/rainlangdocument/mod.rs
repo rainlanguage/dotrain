@@ -198,7 +198,7 @@ mod tests {
     fn test_process_operand_method() -> anyhow::Result<()> {
         let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
-        let exp = r#"<"12." 56>"#;
+        let exp = r#"<"12." 56.9>"#;
         let mut op = Opcode {
             opcode: OpcodeDetails {
                 name: "opc".to_owned(),
@@ -228,7 +228,7 @@ mod tests {
             inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
-                position: [8, 18],
+                position: [8, 20],
                 args: vec![
                     OperandArgItem {
                         value: Some(r#""12.""#.to_owned()),
@@ -238,9 +238,9 @@ mod tests {
                         binding_id: None,
                     },
                     OperandArgItem {
-                        value: Some("56".to_owned()),
+                        value: Some("56.9".to_owned()),
                         name: "operand arg".to_owned(),
-                        position: [15, 17],
+                        position: [15, 19],
                         description: String::new(),
                         binding_id: None,
                     },
@@ -416,7 +416,7 @@ mod tests {
             },
         ]);
 
-        let text = "opcode<12 56>(";
+        let text = "opcode<12.2 56>(";
         let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta)?;
         let mut expected_state_nodes = vec![Node::Opcode(Opcode {
             opcode: OpcodeDetails {
@@ -427,23 +427,23 @@ mod tests {
             operand: None,
             output: None,
             position: [10, 0],
-            parens: [23, 0],
+            parens: [25, 0],
             inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
-                position: [16, 23],
+                position: [16, 25],
                 args: vec![
                     OperandArgItem {
-                        value: Some("12".to_owned()),
+                        value: Some("12.2".to_owned()),
                         name: "operand arg".to_owned(),
-                        position: [17, 19],
+                        position: [17, 21],
                         description: String::new(),
                         binding_id: None,
                     },
                     OperandArgItem {
                         value: Some("56".to_owned()),
                         name: "operand arg".to_owned(),
-                        position: [20, 22],
+                        position: [22, 24],
                         description: String::new(),
                         binding_id: None,
                     },
@@ -473,7 +473,7 @@ mod tests {
         assert_eq!(consumed_count, "another-opcode(".len());
         assert_eq!(rl.state.nodes, expected_state_nodes);
 
-        let text = "another-opcode-2<\n  0x1f\n  87>(\n  0xabcef1234\n)";
+        let text = "another-opcode-2<\n  0x1f\n  87.3e2>(\n  0xabcef1234\n)";
         rl.state.depth -= 1;
         let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta)?;
         expected_state_nodes.push(Node::Opcode(Opcode {
@@ -485,11 +485,11 @@ mod tests {
             operand: None,
             output: None,
             position: [77, 0],
-            parens: [107, 0],
+            parens: [111, 0],
             inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
-                position: [93, 107],
+                position: [93, 111],
                 args: vec![
                     OperandArgItem {
                         value: Some("0x1f".to_owned()),
@@ -499,16 +499,16 @@ mod tests {
                         binding_id: None,
                     },
                     OperandArgItem {
-                        value: Some("87".to_owned()),
+                        value: Some("87.3e2".to_owned()),
                         name: "operand arg".to_owned(),
-                        position: [104, 106],
+                        position: [104, 110],
                         description: String::new(),
                         binding_id: None,
                     },
                 ],
             }),
         }));
-        assert_eq!(consumed_count, "another-opcode-2<\n  0x1f\n  87>(".len());
+        assert_eq!(consumed_count, "another-opcode-2<\n  0x1f\n  87.3e2>(".len());
         assert_eq!(rl.state.nodes, expected_state_nodes);
 
         Ok(())

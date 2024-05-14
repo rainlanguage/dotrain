@@ -7,7 +7,7 @@ use super::super::{
     super::error::{Error, ErrorCode},
     deep_read_quote, exclusive_parse, fill_in, inclusive_parse, is_consumable,
     rainlangdocument::RainlangDocument,
-    to_u256, tracked_trim,
+    tracked_trim,
 };
 
 impl RainDocument {
@@ -260,8 +260,7 @@ impl RainDocument {
         } else {
             let items = exclusive_parse(text, &WS_PATTERN, 0, false);
             if items.len() == 1 && NUMERIC_PATTERN.is_match(&items[0].0) {
-                let is_out_of_range = to_u256(&items[0].0).is_err();
-                Some((items[0].0.clone(), 2, is_out_of_range))
+                Some((items[0].0.clone(), 2, false))
             } else {
                 None
             }
