@@ -1374,4 +1374,29 @@ _: opcode-1(0xabcd 456);
 
         Ok(())
     }
+
+    #[test]
+    fn test_compose_2() -> anyhow::Result<()> {
+        let dotrain_text = r#"
+        some 
+        front 
+        matter
+---
+/* this is test */
+
+#exp-binding
+_: opcode-1(0xabcd "456.1");
+"#;
+        let rainlang_text = RainDocument::compose_text(
+            dotrain_text,
+            &["exp-binding"],
+            None,
+            None,
+        )?;
+        let expected_rainlang = r#"/* 0. exp-binding */ 
+_: opcode-1(0xabcd "456.1");"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
+        Ok(())
+    }
 }

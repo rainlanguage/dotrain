@@ -677,6 +677,14 @@ impl RainlangDocument {
                 self.problems
                     .push(ErrorCode::ExpectedOpeningParen.to_problem(vec![], next_pos));
             }
+        } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_LITERAL_PATTERN.is_match(next)
+        {
+            self.update_state(Node::Literal(Literal {
+                value: next.to_owned(),
+                position: next_pos,
+                lhs_alias: None,
+                id: None,
+            }))?;
         } else if next.contains('.') {
             if let Some(b) = self.search_namespace(next, cursor, namespace) {
                 match &b.item {
@@ -736,14 +744,6 @@ impl RainlangDocument {
                 self.problems
                     .push(ErrorCode::OutOfRangeValue.to_problem(vec![], next_pos));
             }
-            self.update_state(Node::Literal(Literal {
-                value: next.to_owned(),
-                position: next_pos,
-                lhs_alias: None,
-                id: None,
-            }))?;
-        } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_LITERAL_PATTERN.is_match(next)
-        {
             self.update_state(Node::Literal(Literal {
                 value: next.to_owned(),
                 position: next_pos,

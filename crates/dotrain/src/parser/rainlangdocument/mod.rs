@@ -198,7 +198,7 @@ mod tests {
     fn test_process_operand_method() -> anyhow::Result<()> {
         let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
-        let exp = "<12 56>";
+        let exp = r#"<"12." 56>"#;
         let mut op = Opcode {
             opcode: OpcodeDetails {
                 name: "opc".to_owned(),
@@ -228,25 +228,26 @@ mod tests {
             inputs: vec![],
             lhs_alias: None,
             operand_args: Some(OperandArg {
-                position: [8, 15],
+                position: [8, 18],
                 args: vec![
                     OperandArgItem {
-                        value: Some("12".to_owned()),
+                        value: Some(r#""12.""#.to_owned()),
                         name: "operand arg".to_owned(),
-                        position: [9, 11],
+                        position: [9, 14],
                         description: String::new(),
                         binding_id: None,
                     },
                     OperandArgItem {
                         value: Some("56".to_owned()),
                         name: "operand arg".to_owned(),
-                        position: [12, 14],
+                        position: [15, 17],
                         description: String::new(),
                         binding_id: None,
                     },
                 ],
             }),
         };
+
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
 
