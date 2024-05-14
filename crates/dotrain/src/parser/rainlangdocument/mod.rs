@@ -238,7 +238,7 @@ mod tests {
                         binding_id: None,
                     },
                     OperandArgItem {
-                        value: Some("56.9".to_owned()),
+                        value: Some("56".to_owned()),
                         name: "operand arg".to_owned(),
                         position: [12, 14],
                         description: String::new(),
@@ -434,6 +434,59 @@ mod tests {
                         value: Some(r#""56.abcd""#.to_owned()),
                         name: "operand arg".to_owned(),
                         position: [15, 24],
+                        description: String::new(),
+                        binding_id: None,
+                    },
+                ],
+            }),
+        };
+
+        assert_eq!(consumed_count, exp.len());
+        assert_eq!(op, expected_op);
+
+        let exp = r#"<12.3 2.5e16>"#;
+        let mut op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opc".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            inputs: vec![],
+            lhs_alias: None,
+            operand_args: None,
+        };
+
+        let consumed_count = rl.process_operand(exp, 8, &mut op, &namespace);
+        let expected_op = Opcode {
+            opcode: OpcodeDetails {
+                name: "opc".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            },
+            operand: None,
+            output: None,
+            position: [5, 0],
+            parens: [0, 0],
+            inputs: vec![],
+            lhs_alias: None,
+            operand_args: Some(OperandArg {
+                position: [8, 21],
+                args: vec![
+                    OperandArgItem {
+                        value: Some("12.3".to_owned()),
+                        name: "operand arg".to_owned(),
+                        position: [9, 13],
+                        description: String::new(),
+                        binding_id: None,
+                    },
+                    OperandArgItem {
+                        value: Some("2.5e16".to_owned()),
+                        name: "operand arg".to_owned(),
+                        position: [14, 20],
                         description: String::new(),
                         binding_id: None,
                     },
