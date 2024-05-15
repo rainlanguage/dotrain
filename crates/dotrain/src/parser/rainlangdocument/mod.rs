@@ -196,31 +196,38 @@ mod tests {
 
     #[test]
     fn test_process_operand_method() -> anyhow::Result<()> {
+        fn get_op() -> Opcode {
+            Opcode {
+                opcode: OpcodeDetails {
+                    name: "opc".to_owned(),
+                    description: String::new(),
+                    position: [5, 8],
+                },
+                operand: None,
+                output: None,
+                position: [5, 0],
+                parens: [0, 0],
+                inputs: vec![],
+                lhs_alias: None,
+                operand_args: None,
+            }
+        }
+        fn get_op_details() -> OpcodeDetails {
+            OpcodeDetails {
+                name: "opc".to_owned(),
+                description: String::new(),
+                position: [5, 8],
+            }
+        }
+
         let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
-        let exp = r#"<12 56>"#;
-        let mut op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: None,
-        };
 
+        let exp = r#"<12 56>"#;
+        let mut op = get_op();
         let consumed_count = rl.process_operand(exp, 8, &mut op, &namespace);
         let expected_op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
+            opcode: get_op_details(),
             operand: None,
             output: None,
             position: [5, 0],
@@ -247,34 +254,15 @@ mod tests {
                 ],
             }),
         };
-
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
 
         let exp =
             r#"<0xa5 "some string literal " some-literal-binding "some other string literal ">"#;
-        let mut op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opcode".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: None,
-        };
-
+        let mut op = get_op();
         let consumed_count = rl.process_operand(exp, 8, &mut op, &namespace);
         let expected_op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opcode".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
+            opcode: get_op_details(),
             operand: None,
             output: None,
             position: [5, 0],
@@ -319,28 +307,10 @@ mod tests {
         assert_eq!(op, expected_op);
 
         let exp = "<1\n0xf2\n69   32 [some sub parser literal]>";
-        let mut op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: None,
-        };
-
+        let mut op = get_op();
         let consumed_count = rl.process_operand(exp, 15, &mut op, &namespace);
         let expected_op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
+            opcode: get_op_details(),
             operand: None,
             output: None,
             position: [5, 0],
@@ -392,28 +362,10 @@ mod tests {
         assert_eq!(op, expected_op);
 
         let exp = r#"<"12." "56.abcd">"#;
-        let mut op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
-            operand: None,
-            output: None,
-            position: [5, 0],
-            parens: [0, 0],
-            inputs: vec![],
-            lhs_alias: None,
-            operand_args: None,
-        };
-
+        let mut op = get_op();
         let consumed_count = rl.process_operand(exp, 8, &mut op, &namespace);
         let expected_op = Opcode {
-            opcode: OpcodeDetails {
-                name: "opc".to_owned(),
-                description: String::new(),
-                position: [5, 8],
-            },
+            opcode: get_op_details(),
             operand: None,
             output: None,
             position: [5, 0],
@@ -440,7 +392,6 @@ mod tests {
                 ],
             }),
         };
-
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
 
