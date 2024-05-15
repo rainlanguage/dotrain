@@ -254,7 +254,6 @@ mod tests {
                 ],
             }),
         };
-
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
 
