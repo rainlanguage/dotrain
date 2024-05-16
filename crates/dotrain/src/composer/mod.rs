@@ -1408,11 +1408,11 @@ _: opcode-1(0xabcd 456);
 
     /// we need [crate::types::patterns::NUMERIC_PATTERN] but
     /// without anchors/boundries which proptest doesnt support
-    static PATTERN: &str = r"0x[0-9a-fA-F]+|[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
+    const PATTERN: &str = r"0x[0-9a-fA-F]+|[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
     proptest! {
         #[test]
         fn test_fuzz_literals_compose(a in PATTERN, b in PATTERN, c in PATTERN, d in PATTERN) {
-            let dotrain_text = format!(r#"
+            let dotrain_text = format!("
 some 
 front 
 matter
@@ -1421,12 +1421,12 @@ matter
 
 #exp-binding
 _: opcode-1<{} {}>({} {});
-"#, a, b, c, d);
+", a, b, c, d);
 
             let result = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None);
 
-            // since fuzzer can produce odd length hex literals, the only
-            // acceptable compose error is if it is a ErrorCode::OddLenHex
+            // since fuzzer can produce odd length hex literals, the
+            // only acceptable compose error is ErrorCode::OddLenHex
             match result {
                 Ok(rainlang_text) => {
                     let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", a, b, c, d);
