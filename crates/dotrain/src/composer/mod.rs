@@ -1406,12 +1406,12 @@ _: opcode-1(0xabcd 456);
         Ok(())
     }
 
-    /// we need [crate::types::patterns::NUMERIC_PATTERN] but
+    /// need [crate::types::patterns::E_PATTERN] and [crate::types::patterns::INT_PATTERN] but
     /// without anchors/boundries which proptest doesnt support
-    const PATTERN: &str = r"0x[0-9a-fA-F]+|[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
+    const PATTERN: &str = r"[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
     proptest! {
         #[test]
-        fn test_fuzz_literals_compose(a in PATTERN, b in PATTERN, c in PATTERN, d in PATTERN) {
+        fn test_fuzz_num_literals_compose(a in PATTERN, b in PATTERN, c in PATTERN, d in PATTERN) {
             let dotrain_text = format!("
 some 
 front 
@@ -1423,25 +1423,10 @@ matter
 _: opcode-1<{} {}>({} {});
 ", a, b, c, d);
 
-            let result = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None);
+            let rainlang_text = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None)?;
+            let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", a, b, c, d);
 
-            // since fuzzer can produce odd length hex literals, the
-            // only acceptable compose error is ErrorCode::OddLenHex
-            match result {
-                Ok(rainlang_text) => {
-                    let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", a, b, c, d);
-                    assert_eq!(rainlang_text, expected_rainlang);
-                },
-                Err(e) => {
-                    if let ComposeError::Problems(problems) = e {
-                        for p in problems {
-                            assert_eq!(p.code, ErrorCode::OddLenHex);
-                        }
-                    } else {
-                        panic!("failed fuzz tests!")
-                    }
-                }
-            }
+            assert_eq!(rainlang_text, expected_rainlang);
         }
     }
 }
