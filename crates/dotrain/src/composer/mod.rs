@@ -1406,16 +1406,21 @@ _: opcode-1(0xabcd 456);
         Ok(())
     }
 
-    /// [crate::types::patterns::E_PATTERN] and [crate::types::patterns::INT_PATTERN] but
-    /// without anchors/boundries (in this case they are ^ and $) which proptest doesnt support
-    const PATTERN: &str = r"[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
     proptest! {
         #![proptest_config(Config {
             cases: 999,
             ..Config::default()
         })]
         #[test]
-        fn test_fuzz_num_literals_compose(a in PATTERN, b in PATTERN, c in PATTERN, d in PATTERN) {
+        fn test_fuzz_num_literals_compose(
+            a in [0f64..f64::MAX],
+            b in [0f64..f64::MAX],
+            c in [0f64..f64::MAX],
+            d in [0f64..f64::MAX],
+        ) {
+            let e1 = format!("{:e}", c[0]);
+            let e2 = format!("{:e}", d[0]);
+
             let dotrain_text = format!("
 some 
 front 
@@ -1428,10 +1433,10 @@ matter
 
 #exp-binding
 _: opcode-1<{} literal-a>(literal-b {});
-", a, b, c, d);
+", a[0], b[0], e1, e2);
 
             let rainlang_text = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None)?;
-            let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", c, a, b, d);
+            let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", e1, a[0], b[0], e2);
 
             assert_eq!(rainlang_text, expected_rainlang);
         }
