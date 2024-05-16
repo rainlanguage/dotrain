@@ -514,7 +514,7 @@ mod tests {
     use crate::error::ErrorCode;
     use crate::parser::Rebind;
     use futures::executor::block_on;
-    use proptest::proptest;
+    use proptest::{proptest, test_runner::Config};
     use rain_metadata::{
         types::authoring::v1::{AuthoringMetaItem, AuthoringMeta},
         NPE2Deployer,
@@ -1410,8 +1410,9 @@ _: opcode-1(0xabcd 456);
     /// without anchors/boundries (in this case they are ^ and $) which proptest doesnt support
     const PATTERN: &str = r"[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
     proptest! {
-        #![proptest_config(proptest::test_runner::Config {
-            cases: 999, .. proptest::test_runner::Config::default()
+        #![proptest_config(Config {
+            cases: 999,
+            ..Config::default()
         })]
         #[test]
         fn test_fuzz_num_literals_compose(a in PATTERN, b in PATTERN, c in PATTERN, d in PATTERN) {
