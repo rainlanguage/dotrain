@@ -1407,7 +1407,7 @@ _: opcode-1(0xabcd 456);
     }
 
     /// need [crate::types::patterns::E_PATTERN] and [crate::types::patterns::INT_PATTERN] but
-    /// without anchors/boundries which proptest doesnt support
+    /// without anchors/boundries (in this case they are ^ and $) which proptest doesnt support
     const PATTERN: &str = r"[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
     proptest! {
         #[test]
@@ -1419,12 +1419,15 @@ matter
 ---
 /* this is test */
 
+#literal-a {}
+#literal-b {}
+
 #exp-binding
-_: opcode-1<{} {}>({} {});
+_: opcode-1<{} literal-a>(literal-b {});
 ", a, b, c, d);
 
             let rainlang_text = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None)?;
-            let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", a, b, c, d);
+            let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", c, a, b, d);
 
             assert_eq!(rainlang_text, expected_rainlang);
         }
