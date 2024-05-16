@@ -125,7 +125,8 @@ pub static SUB_SOURCE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(",").unwrap
 pub static ANY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\S+").unwrap());
 
 /// rainlang lhs pattern
-pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*$|^_$").unwrap());
+pub static LHS_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new((WORD_PATTERN.as_str().to_string() + "|" + "^_$").as_str()).unwrap());
 
 /// pragma pattern (keyword + ws + hex)
 pub static PRAGMA_PATTERN: Lazy<Regex> =
