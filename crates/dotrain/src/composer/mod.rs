@@ -1406,12 +1406,12 @@ _: opcode-1(0xabcd 456);
         Ok(())
     }
 
-    /// we need [crate::types::patterns::NUMERIC_PATTERN] but without anchors/boundries which proptest doesnt support
-    static NUMERIC_PATTERN: &str =
-        r"0x[0-9a-fA-F]+|[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
+    /// we need [crate::types::patterns::NUMERIC_PATTERN] but
+    /// without anchors/boundries which proptest doesnt support
+    static PATTERN: &str = r"0x[0-9a-fA-F]+|[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
     proptest! {
         #[test]
-        fn test_fuzz_literals_compose(a in NUMERIC_PATTERN, b in NUMERIC_PATTERN, c in NUMERIC_PATTERN, d in NUMERIC_PATTERN) {
+        fn test_fuzz_literals_compose(a in PATTERN, b in PATTERN, c in PATTERN, d in PATTERN) {
             let dotrain_text = format!(r#"
 some 
 front 
@@ -1425,7 +1425,7 @@ _: opcode-1<{} {}>({} {});
 
             let result = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None);
 
-            // since fuzzer can produce odd length hex literals, the only 
+            // since fuzzer can produce odd length hex literals, the only
             // acceptable compose error is if it is a ErrorCode::OddLenHex
             match result {
                 Ok(rainlang_text) => {
