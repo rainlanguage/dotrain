@@ -23,7 +23,11 @@ pub static HASH_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]{
 
 /// numeric pattern
 pub static NUMERIC_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^0x[0-9a-fA-F]+$|^[0-9]+(\.[0-9]+)?$|^[1-9][0-9]*(\.[0-9]+)?e[0-9]+$").unwrap()
+    Regex::new(
+        (HEX_PATTERN.as_str().to_string() + "|" + INT_PATTERN.as_str() + "|" + E_PATTERN.as_str())
+            .as_str(),
+    )
+    .unwrap()
 });
 
 /// string literal pattern
@@ -37,7 +41,16 @@ pub static SUB_PARSER_LITERAL_PATTERN: Lazy<Regex> =
 /// literal pattern (numeric + string literal + sub parser)
 pub static LITERAL_PATTERN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
-        r#"^0x[0-9a-fA-F]+$|^[0-9]+(\.[0-9]+)?$|^[1-9][0-9]*(\.[0-9]+)?e[0-9]+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$"#,
+        (HEX_PATTERN.as_str().to_string()
+            + "|"
+            + INT_PATTERN.as_str()
+            + "|"
+            + E_PATTERN.as_str()
+            + "|"
+            + STRING_LITERAL_PATTERN.as_str()
+            + "|"
+            + SUB_PARSER_LITERAL_PATTERN.as_str())
+        .as_str(),
     )
     .unwrap()
 });
@@ -78,7 +91,21 @@ pub static NON_EMPTY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\s]").un
 
 /// operand arguments pattern (literal + namespace + quoted namespace)
 pub static OPERAND_ARG_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"^0x[0-9a-fA-F]+$|^[0-9]+(\.[0-9]+)?$|^[1-9][0-9]*(\.[0-9]+)?e[0-9]+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$|^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#).unwrap()
+    Regex::new(
+        (HEX_PATTERN.as_str().to_string()
+            + "|"
+            + INT_PATTERN.as_str()
+            + "|"
+            + E_PATTERN.as_str()
+            + "|"
+            + STRING_LITERAL_PATTERN.as_str()
+            + "|"
+            + SUB_PARSER_LITERAL_PATTERN.as_str()
+            + "|"
+            + r#"^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#)
+            .as_str(),
+    )
+    .unwrap()
 });
 
 /// quote pattern
