@@ -1406,7 +1406,7 @@ _: opcode-1(0xabcd 456);
         Ok(())
     }
 
-    /// need [crate::types::patterns::E_PATTERN] and [crate::types::patterns::INT_PATTERN] but
+    /// [crate::types::patterns::E_PATTERN] and [crate::types::patterns::INT_PATTERN] but
     /// without anchors/boundries (in this case they are ^ and $) which proptest doesnt support
     const PATTERN: &str = r"[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
     proptest! {
