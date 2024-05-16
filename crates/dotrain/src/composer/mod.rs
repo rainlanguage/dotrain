@@ -514,6 +514,7 @@ mod tests {
     use crate::error::ErrorCode;
     use crate::parser::Rebind;
     use futures::executor::block_on;
+    use proptest::proptest;
     use rain_metadata::{
         types::authoring::v1::{AuthoringMetaItem, AuthoringMeta},
         NPE2Deployer,
@@ -1403,5 +1404,44 @@ _: opcode-1(0xabcd 456);
         assert_eq!(result, expected_err);
 
         Ok(())
+    }
+
+    /// we need [crate::types::patterns::NUMERIC_PATTERN] but without anchors/boundries which proptest doesnt support
+    static NUMERIC_PATTERN: &str =
+        r"0x[0-9a-fA-F]+|[0-9]+(\.[0-9]+)?|[1-9][0-9]*(\.[0-9]+)?e[0-9]+";
+    proptest! {
+        #[test]
+        fn test_fuzz_literals_compose(a in NUMERIC_PATTERN, b in NUMERIC_PATTERN, c in NUMERIC_PATTERN, d in NUMERIC_PATTERN) {
+            let dotrain_text = format!(r#"
+some 
+front 
+matter
+---
+/* this is test */
+
+#exp-binding
+_: opcode-1<{} {}>({} {});
+"#, a, b, c, d);
+
+            let result = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None);
+
+            // since fuzzer can produce odd length hex literals, the only 
+            // acceptable compose error is if it is a ErrorCode::OddLenHex
+            match result {
+                Ok(rainlang_text) => {
+                    let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", a, b, c, d);
+                    assert_eq!(rainlang_text, expected_rainlang);
+                },
+                Err(e) => {
+                    if let ComposeError::Problems(problems) = e {
+                        for p in problems {
+                            assert_eq!(p.code, ErrorCode::OddLenHex);
+                        }
+                    } else {
+                        panic!("failed fuzz tests!")
+                    }
+                }
+            }
+        }
     }
 }

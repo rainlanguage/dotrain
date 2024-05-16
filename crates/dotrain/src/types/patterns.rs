@@ -22,8 +22,9 @@ pub static WORD_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][0-9a-z-]
 pub static HASH_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]{64}$").unwrap());
 
 /// numeric pattern
-pub static NUMERIC_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$|^\d+(\.\d+)?$|^[1-9]\d*(\.\d+)?e\d+$").unwrap());
+pub static NUMERIC_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^0x[0-9a-fA-F]+$|^[0-9]+(\.[0-9]+)?$|^[1-9][0-9]*(\.[0-9]+)?e[0-9]+$").unwrap()
+});
 
 /// string literal pattern
 pub static STRING_LITERAL_PATTERN: Lazy<Regex> =
@@ -36,7 +37,7 @@ pub static SUB_PARSER_LITERAL_PATTERN: Lazy<Regex> =
 /// literal pattern (numeric + string literal + sub parser)
 pub static LITERAL_PATTERN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
-        r#"^0x[0-9a-fA-F]+$|^\d+(\.\d+)?$|^[1-9]\d*(\.\d+)?e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$"#,
+        r#"^0x[0-9a-fA-F]+$|^[0-9]+(\.[0-9]+)?$|^[1-9][0-9]*(\.[0-9]+)?e[0-9]+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$"#,
     )
     .unwrap()
 });
@@ -45,10 +46,11 @@ pub static LITERAL_PATTERN: Lazy<Regex> = Lazy::new(|| {
 pub static HEX_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$").unwrap());
 
 /// e numberic pattern
-pub static E_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[1-9]\d*(\.\d+)?e\d+$").unwrap());
+pub static E_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^[1-9][0-9]*(\.[0-9]+)?e[0-9]+$").unwrap());
 
 /// Integer pattern
-pub static INT_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d+(\.\d+)?$").unwrap());
+pub static INT_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9]+(\.[0-9]+)?$").unwrap());
 
 /// RainDocument Namespace pattern
 pub static NAMESPACE_PATTERN: Lazy<Regex> =
@@ -76,7 +78,7 @@ pub static NON_EMPTY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\s]").un
 
 /// operand arguments pattern (literal + namespace + quoted namespace)
 pub static OPERAND_ARG_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+(\.\d+)?$|^[1-9]\d*(\.\d+)?e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$|^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#).unwrap()
+    Regex::new(r#"^0x[0-9a-fA-F]+$|^[0-9]+(\.[0-9]+)?$|^[1-9][0-9]*(\.[0-9]+)?e[0-9]+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$|^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#).unwrap()
 });
 
 /// quote pattern
