@@ -1432,8 +1432,7 @@ matter
 #literal-b {}
 
 #exp-binding
-_: opcode-1<{} literal-a>(literal-b {});
-", a[0], b[0], e1, e2);
+_: opcode-1<{} literal-a>(literal-b {});", a[0], b[0], e1, e2);
 
             let rainlang_text = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None)?;
             let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", e1, a[0], b[0], e2);
