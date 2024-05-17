@@ -677,19 +677,7 @@ impl RainlangDocument {
                 self.problems
                     .push(ErrorCode::ExpectedOpeningParen.to_problem(vec![], next_pos));
             }
-        } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_LITERAL_PATTERN.is_match(next)
-        {
-            self.update_state(Node::Literal(Literal {
-                value: next.to_owned(),
-                position: next_pos,
-                lhs_alias: None,
-                id: None,
-            }))?;
-        } else if NUMERIC_PATTERN.is_match(next) {
-            if HEX_PATTERN.is_match(next) && next.len() % 2 == 1 {
-                self.problems
-                    .push(ErrorCode::OddLenHex.to_problem(vec![], next_pos));
-            }
+        } else if LITERAL_PATTERN.is_match(next) {
             self.update_state(Node::Literal(Literal {
                 value: next.to_owned(),
                 position: next_pos,

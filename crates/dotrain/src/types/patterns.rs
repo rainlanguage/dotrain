@@ -41,11 +41,7 @@ pub static SUB_PARSER_LITERAL_PATTERN: Lazy<Regex> =
 /// literal pattern (numeric + string literal + sub parser)
 pub static LITERAL_PATTERN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
-        (HEX_PATTERN.as_str().to_string()
-            + "|"
-            + INT_PATTERN.as_str()
-            + "|"
-            + E_PATTERN.as_str()
+        (NUMERIC_PATTERN.as_str().to_string()
             + "|"
             + STRING_LITERAL_PATTERN.as_str()
             + "|"
