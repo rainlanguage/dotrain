@@ -514,6 +514,7 @@ mod tests {
     use crate::error::ErrorCode;
     use crate::parser::Rebind;
     use futures::executor::block_on;
+    use proptest::{proptest, test_runner::Config};
     use rain_metadata::{
         types::authoring::v1::{AuthoringMetaItem, AuthoringMeta},
         NPE2Deployer,
@@ -1115,6 +1116,21 @@ _: opcode-1(0xabcd "something.else");
 _: opcode-1(0xabcd "something.else");"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
+        let dotrain_text = r#"
+        some 
+        front 
+        matter
+---
+/* this is test */
+
+#exp-binding
+_: opcode-1(12.34e6 123.123);
+"#;
+        let rainlang_text = RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None)?;
+        let expected_rainlang = r#"/* 0. exp-binding */ 
+_: opcode-1(12.34e6 123.123);"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
         Ok(())
     }
 
@@ -1388,5 +1404,40 @@ _: opcode-1(0xabcd 456);
         assert_eq!(result, expected_err);
 
         Ok(())
+    }
+
+    proptest! {
+        #![proptest_config(Config {
+            cases: 999,
+            ..Config::default()
+        })]
+        #[test]
+        fn test_fuzz_num_literals_compose(
+            a in [0f64..f64::MAX],
+            b in [0f64..f64::MAX],
+            c in [0f64..f64::MAX],
+            d in [0f64..f64::MAX],
+        ) {
+            let e1 = format!("{:e}", c[0]);
+            let e2 = format!("{:e}", d[0]);
+
+            let dotrain_text = format!("
+some 
+front 
+matter
+---
+/* this is test */
+
+#literal-a {}
+#literal-b {}
+
+#exp-binding
+_: opcode-1<{} literal-a>(literal-b {});", a[0], b[0], e1, e2);
+
+            let rainlang_text = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None)?;
+            let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", e1, a[0], b[0], e2);
+
+            assert_eq!(rainlang_text, expected_rainlang);
+        }
     }
 }

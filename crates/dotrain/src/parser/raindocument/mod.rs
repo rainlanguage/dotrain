@@ -298,7 +298,7 @@ mod tests {
 
         let text = " \n 99999e99999 \n";
         let result = RainDocument::is_literal(text);
-        assert_eq!(result, Some(("99999e99999".to_owned(), 2, true)));
+        assert_eq!(result, Some(("99999e99999".to_owned(), 2, false)));
 
         let text = "\" some\n literal  \nvalue\t\n \"";
         let result = RainDocument::is_literal(text);

@@ -22,8 +22,13 @@ pub static WORD_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][0-9a-z-]
 pub static HASH_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]{64}$").unwrap());
 
 /// numeric pattern
-pub static NUMERIC_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$").unwrap());
+pub static NUMERIC_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(
+        (HEX_PATTERN.as_str().to_string() + "|" + INT_PATTERN.as_str() + "|" + E_PATTERN.as_str())
+            .as_str(),
+    )
+    .unwrap()
+});
 
 /// string literal pattern
 pub static STRING_LITERAL_PATTERN: Lazy<Regex> =
@@ -35,17 +40,26 @@ pub static SUB_PARSER_LITERAL_PATTERN: Lazy<Regex> =
 
 /// literal pattern (numeric + string literal + sub parser)
 pub static LITERAL_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$"#).unwrap()
+    Regex::new(
+        (NUMERIC_PATTERN.as_str().to_string()
+            + "|"
+            + STRING_LITERAL_PATTERN.as_str()
+            + "|"
+            + SUB_PARSER_LITERAL_PATTERN.as_str())
+        .as_str(),
+    )
+    .unwrap()
 });
 
 /// Hex pattern
 pub static HEX_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$").unwrap());
 
 /// e numberic pattern
-pub static E_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[1-9]\d*e\d+$").unwrap());
+pub static E_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^[1-9][0-9]*(\.[0-9]+)?e[0-9]+$").unwrap());
 
 /// Integer pattern
-pub static INT_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\d+$").unwrap());
+pub static INT_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9]+(\.[0-9]+)?$").unwrap());
 
 /// RainDocument Namespace pattern
 pub static NAMESPACE_PATTERN: Lazy<Regex> =
@@ -73,7 +87,21 @@ pub static NON_EMPTY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^\s]").un
 
 /// operand arguments pattern (literal + namespace + quoted namespace)
 pub static OPERAND_ARG_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"^0x[0-9a-fA-F]+$|^\d+$|^[1-9]\d*e\d+$|^\"[\s\S]*?\"$|^\[[\s\S]*?\]$|^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#).unwrap()
+    Regex::new(
+        (HEX_PATTERN.as_str().to_string()
+            + "|"
+            + INT_PATTERN.as_str()
+            + "|"
+            + E_PATTERN.as_str()
+            + "|"
+            + STRING_LITERAL_PATTERN.as_str()
+            + "|"
+            + SUB_PARSER_LITERAL_PATTERN.as_str()
+            + "|"
+            + r#"^'?\.?[a-z][0-9a-z-]*(\.[a-z][0-9a-z-]*)*$"#)
+            .as_str(),
+    )
+    .unwrap()
 });
 
 /// quote pattern
@@ -93,7 +121,8 @@ pub static SUB_SOURCE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(",").unwrap
 pub static ANY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\S+").unwrap());
 
 /// rainlang lhs pattern
-pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][a-z0-9-]*$|^_$").unwrap());
+pub static LHS_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new((WORD_PATTERN.as_str().to_string() + "|" + "^_$").as_str()).unwrap());
 
 /// pragma pattern (keyword + ws + hex)
 pub static PRAGMA_PATTERN: Lazy<Regex> =
@@ -191,7 +220,7 @@ mod tests {
             assert!(!INT_PATTERN.is_match(i), "String '{}' considered valid.", i);
         }
         // valids
-        for i in ["123", "1234567890", "83276401"] {
+        for i in ["123", "1234567890", "83276401", "123.123"] {
             assert!(
                 INT_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
@@ -204,7 +233,7 @@ mod tests {
             assert!(!E_PATTERN.is_match(i), "String '{}' considered valid.", i);
         }
         // valids
-        for i in ["3e16", "2345e12987234", "101e1001"] {
+        for i in ["3e16", "2345e12987234", "101e1001", "123.45e12"] {
             assert!(E_PATTERN.is_match(i), "String '{}' considered invalid.", i);
         }
 
@@ -297,6 +326,8 @@ mod tests {
             "0x123abcdefAdfe",
             "'abcd12-jh2.oiu.lkj89-",
             "'.asd12-wer.jh45-iu78.lk9",
+            "123.123",
+            "123.12e2",
         ] {
             assert!(
                 OPERAND_ARG_PATTERN.is_match(i),

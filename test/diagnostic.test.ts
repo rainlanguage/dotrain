@@ -176,22 +176,6 @@ describe("LSP Diagnostics Language Service Tests", async function () {
         );
     });
 
-    it("should error: value greater than 32 bytes in size", async () => {
-        await testDiagnostics(
-            rainlang`${ws} #exn _: int-add(1 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);`,
-            services,
-            [
-                {
-                    message: "value out of range",
-                    range: toRange(0, 86, 0, 154),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.OutOfRangeValue,
-                    source: "rainlang",
-                },
-            ],
-        );
-    });
-
     it("should error: undefined word: max-uint266", async () => {
         await testDiagnostics(rainlang`${ws} #exn x: max-uint266;`, services, [
             {

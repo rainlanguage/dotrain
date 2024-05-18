@@ -114,7 +114,7 @@ _: .`;
         const _ns = _dotrain.namespace;
         const items: CompletionItem[] = [];
         _ns.forEach((v, k) => {
-            items.push({
+            items.unshift({
                 label: k,
                 kind: !("element" in v)
                     ? CompletionItemKind.Field

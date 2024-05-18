@@ -7,7 +7,7 @@ use super::super::{
         error::{Error, ErrorCode},
         types::patterns::*,
     },
-    inclusive_parse, fill_in, exclusive_parse, tracked_trim, to_u256,
+    inclusive_parse, fill_in, exclusive_parse, tracked_trim,
 };
 
 impl RainlangDocument {
@@ -677,8 +677,7 @@ impl RainlangDocument {
                 self.problems
                     .push(ErrorCode::ExpectedOpeningParen.to_problem(vec![], next_pos));
             }
-        } else if STRING_LITERAL_PATTERN.is_match(next) || SUB_PARSER_LITERAL_PATTERN.is_match(next)
-        {
+        } else if LITERAL_PATTERN.is_match(next) {
             self.update_state(Node::Literal(Literal {
                 value: next.to_owned(),
                 position: next_pos,
@@ -735,21 +734,6 @@ impl RainlangDocument {
                     lhs_alias: None,
                 }))?;
             }
-        } else if NUMERIC_PATTERN.is_match(next) {
-            if HEX_PATTERN.is_match(next) && next.len() % 2 == 1 {
-                self.problems
-                    .push(ErrorCode::OddLenHex.to_problem(vec![], next_pos));
-            }
-            if to_u256(next).is_err() {
-                self.problems
-                    .push(ErrorCode::OutOfRangeValue.to_problem(vec![], next_pos));
-            }
-            self.update_state(Node::Literal(Literal {
-                value: next.to_owned(),
-                position: next_pos,
-                lhs_alias: None,
-                id: None,
-            }))?;
         } else if WORD_PATTERN.is_match(next) {
             if self.ast[self.ast.len() - 1]
                 .lines

@@ -697,6 +697,7 @@ dependencies = [
  "js-sys",
  "magic_string",
  "once_cell",
+ "proptest",
  "rain-metadata",
  "regex",
  "serde",
