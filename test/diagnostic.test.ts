@@ -188,22 +188,6 @@ describe("LSP Diagnostics Language Service Tests", async function () {
         ]);
     });
 
-    it('should error: "_notdefined" is not a valid rainlang word', async () => {
-        await testDiagnostics(
-            rainlang`${ws} #exn _: int-add(10 20); #exp1 x: _notdefined;`,
-            services,
-            [
-                {
-                    message: "invalid word pattern: _notdefined",
-                    range: toRange(0, 101, 0, 112),
-                    severity: DiagnosticSeverity.Error,
-                    code: ErrorCode.InvalidWordPattern,
-                    source: "rainlang",
-                },
-            ],
-        );
-    });
-
     it("should error: expected > and (", async () => {
         await testDiagnostics(rainlang`${ws} #exn _: int-add<1 2();`, services, [
             {

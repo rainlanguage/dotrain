@@ -1148,6 +1148,21 @@ _some-other-lhs-word: 1e18,
 _ _: opcode-1(_some-lhs-word _some-other-lhs-word) _some-other-lhs-word;"#;
         assert_eq!(rainlang_text, expected_rainlang);
 
+        let dotrain_text = r#"
+        some 
+        front 
+        matter
+---
+#_bad-binding-name 123
+#exp-binding
+_some-lhs-word: opcode-1(12 _bad-binding-name);
+"#;
+        let result = RainDocument::compose_text(dotrain_text, &["exp-binding-1"], None, None);
+        let expected_err = Err(ComposeError::Problems(vec![
+            ErrorCode::InvalidWordPattern.to_problem(vec!["_bad-binding-name"], [50, 67])
+        ]));
+        assert_eq!(result, expected_err);
+
         Ok(())
     }
 

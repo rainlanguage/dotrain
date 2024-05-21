@@ -16,7 +16,7 @@ pub const FRONTMATTER_SEPARATOR: &str = "---";
 pub static ILLEGAL_CHAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^ -~\s]+").unwrap());
 
 /// word pattern
-pub static WORD_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^_?[a-z][0-9a-z-]*$").unwrap());
+pub static WORD_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][0-9a-z-]*$").unwrap());
 
 /// Import hash pattern
 pub static HASH_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]{64}$").unwrap());
@@ -120,9 +120,14 @@ pub static SUB_SOURCE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(",").unwrap
 /// any not whitespace pattern
 pub static ANY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\S+").unwrap());
 
+/// word pattern
+pub static LHS_WORD_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^_?[a-z][0-9a-z-]*$").unwrap());
+
 /// rainlang lhs pattern
-pub static LHS_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new((WORD_PATTERN.as_str().to_string() + "|" + "^_$").as_str()).unwrap());
+pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new((LHS_WORD_PATTERN.as_str().to_string() + "|" + "^_$").as_str()).unwrap()
+});
 
 /// pragma pattern (keyword + ws + hex)
 pub static PRAGMA_PATTERN: Lazy<Regex> =
@@ -154,7 +159,14 @@ mod tests {
         }
 
         // invalids
-        for i in ["-abcd", "-abcd-efg", "1abcd-efg", "1234", "AkjhJ-Qer"] {
+        for i in [
+            "-abcd",
+            "-abcd-efg",
+            "1abcd-efg",
+            "1234",
+            "AkjhJ-Qer",
+            "_abcd-efg",
+        ] {
             assert!(
                 !WORD_PATTERN.is_match(i),
                 "String '{}' considered valid.",
@@ -162,14 +174,7 @@ mod tests {
             );
         }
         // valids
-        for i in [
-            "abcd",
-            "abcd-efg",
-            "abcd12-efg8",
-            "a678",
-            "a1876-",
-            "_some-word",
-        ] {
+        for i in ["abcd", "abcd-efg", "abcd12-efg8", "a678", "a1876-"] {
             assert!(
                 WORD_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
