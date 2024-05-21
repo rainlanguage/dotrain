@@ -92,7 +92,7 @@ cargo add dotrain-lsp
 ```
 
 ### Features
-- `js-api`: includes wrappers around main structs and functionalities to provide an API through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/) (this feature is always enabled when building for wasm family targets)
+- `js-api`: includes wrappers around main structs and functionalities to provide an API through [wasm-bindgen](https://rustwasm.github.io/docs/wasm-bindgen/)
 
 ```rust
 use std::sync::{Arc, RwLock};
