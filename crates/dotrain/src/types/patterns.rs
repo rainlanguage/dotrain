@@ -120,9 +120,14 @@ pub static SUB_SOURCE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(",").unwrap
 /// any not whitespace pattern
 pub static ANY_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\S+").unwrap());
 
+/// word pattern
+pub static LHS_WORD_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^_?[a-z][0-9a-z-]*$").unwrap());
+
 /// rainlang lhs pattern
-pub static LHS_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new((WORD_PATTERN.as_str().to_string() + "|" + "^_$").as_str()).unwrap());
+pub static LHS_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new((LHS_WORD_PATTERN.as_str().to_string() + "|" + "^_$").as_str()).unwrap()
+});
 
 /// pragma pattern (keyword + ws + hex)
 pub static PRAGMA_PATTERN: Lazy<Regex> =
@@ -159,8 +164,8 @@ mod tests {
             "-abcd-efg",
             "1abcd-efg",
             "1234",
-            "_abcd-efg",
             "AkjhJ-Qer",
+            "_abcd-efg",
         ] {
             assert!(
                 !WORD_PATTERN.is_match(i),
@@ -341,7 +346,7 @@ mod tests {
             assert!(!LHS_PATTERN.is_match(i), "String '{}' considered valid.", i);
         }
         // valids
-        for i in ["abced67", "_", "as12-iuy-", "a12-456-678-"] {
+        for i in ["abced67", "_", "as12-iuy-", "a12-456-678-", "_some-word"] {
             assert!(
                 LHS_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
