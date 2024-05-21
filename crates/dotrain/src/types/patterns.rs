@@ -16,7 +16,7 @@ pub const FRONTMATTER_SEPARATOR: &str = "---";
 pub static ILLEGAL_CHAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^ -~\s]+").unwrap());
 
 /// word pattern
-pub static WORD_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[a-z][0-9a-z-]*$").unwrap());
+pub static WORD_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^_?[a-z][0-9a-z-]*$").unwrap());
 
 /// Import hash pattern
 pub static HASH_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]{64}$").unwrap());
@@ -154,14 +154,7 @@ mod tests {
         }
 
         // invalids
-        for i in [
-            "-abcd",
-            "-abcd-efg",
-            "1abcd-efg",
-            "1234",
-            "_abcd-efg",
-            "AkjhJ-Qer",
-        ] {
+        for i in ["-abcd", "-abcd-efg", "1abcd-efg", "1234", "AkjhJ-Qer"] {
             assert!(
                 !WORD_PATTERN.is_match(i),
                 "String '{}' considered valid.",
@@ -169,7 +162,14 @@ mod tests {
             );
         }
         // valids
-        for i in ["abcd", "abcd-efg", "abcd12-efg8", "a678", "a1876-"] {
+        for i in [
+            "abcd",
+            "abcd-efg",
+            "abcd12-efg8",
+            "a678",
+            "a1876-",
+            "_some-word",
+        ] {
             assert!(
                 WORD_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
@@ -341,7 +341,7 @@ mod tests {
             assert!(!LHS_PATTERN.is_match(i), "String '{}' considered valid.", i);
         }
         // valids
-        for i in ["abced67", "_", "as12-iuy-", "a12-456-678-"] {
+        for i in ["abced67", "_", "as12-iuy-", "a12-456-678-", "_some-word"] {
             assert!(
                 LHS_PATTERN.is_match(i),
                 "String '{}' considered invalid.",
