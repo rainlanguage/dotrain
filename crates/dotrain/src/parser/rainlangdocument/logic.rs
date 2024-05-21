@@ -734,7 +734,7 @@ impl RainlangDocument {
                     lhs_alias: None,
                 }))?;
             }
-        } else if LHS_WORD_PATTERN.is_match(next) {
+        } else if LHS_WORD_PATTERN.is_match(next) || WORD_PATTERN.is_match(next) {
             if self.ast[self.ast.len() - 1]
                 .lines
                 .iter()
