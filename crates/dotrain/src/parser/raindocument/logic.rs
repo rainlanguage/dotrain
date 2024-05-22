@@ -808,7 +808,7 @@ impl RainDocument {
             content_position = [parsed_binding.1[1] + 1, parsed_binding.1[1] + 1];
         }
         let invalid_id = !WORD_PATTERN.is_match(&name);
-        let dup_id = self.namespace.contains_key(&name);
+        let dup_id = namespace.contains_key(&name);
 
         if invalid_id {
             self.problems

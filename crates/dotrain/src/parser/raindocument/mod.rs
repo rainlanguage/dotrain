@@ -751,6 +751,49 @@ _: opcode-1(0xabcd 456);
             problems: vec![],
             import_depth: 0,
             namespace: expected_namespace,
+            meta_store: meta_store.clone(),
+            known_words: None,
+        };
+        assert_eq!(rain_document, expected_rain_document);
+
+        let text = r"some front matter
+---
+#binding 4e18
+#binding !msg
+";
+        let rain_document =
+            RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
+        let expected_bindings: Vec<Binding> = vec![Binding {
+            name: "binding".to_owned(),
+            name_position: [23, 30],
+            content: "4e18".to_owned(),
+            content_position: [31, 35],
+            position: [23, 36],
+            problems: vec![],
+            item: BindingItem::Literal(LiteralBindingItem {
+                value: "4e18".to_string(),
+            }),
+        }];
+        let mut expected_namespace: Namespace = HashMap::new();
+        expected_namespace.insert(
+            expected_bindings[0].name.to_owned(),
+            NamespaceItem::Leaf(NamespaceLeaf {
+                hash: String::new(),
+                import_index: -1,
+                element: expected_bindings[0].clone(),
+            }),
+        );
+
+        let expected_rain_document = RainDocument {
+            text: text.to_owned(),
+            front_matter_offset: 18,
+            error: None,
+            bindings: expected_bindings.clone(),
+            imports: vec![],
+            comments: vec![],
+            problems: vec![ErrorCode::DuplicateIdentifier.to_problem(vec![], [37, 44])],
+            import_depth: 0,
+            namespace: expected_namespace,
             meta_store,
             known_words: None,
         };
