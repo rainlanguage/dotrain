@@ -56,7 +56,7 @@ pub static HEX_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^0x[0-9a-fA-F]+$
 
 /// e numberic pattern
 pub static E_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^[1-9][0-9]*(\.[0-9]+)?e[0-9]+$").unwrap());
+    Lazy::new(|| Regex::new(r"^[1-9][0-9]*(\.[0-9]+)?e-?[0-9]+$").unwrap());
 
 /// Integer pattern
 pub static INT_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[0-9]+(\.[0-9]+)?$").unwrap());
@@ -238,7 +238,13 @@ mod tests {
             assert!(!E_PATTERN.is_match(i), "String '{}' considered valid.", i);
         }
         // valids
-        for i in ["3e16", "2345e12987234", "101e1001", "123.45e12"] {
+        for i in [
+            "3e16",
+            "2345e12987234",
+            "101e1001",
+            "123.45e12",
+            "123.45e-12",
+        ] {
             assert!(E_PATTERN.is_match(i), "String '{}' considered invalid.", i);
         }
 

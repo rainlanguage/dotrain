@@ -1163,6 +1163,21 @@ _some-lhs-word: opcode-1(12 _bad-binding-name);
         ]));
         assert_eq!(result, expected_err);
 
+        let dotrain_text = r#"
+        some 
+        front 
+        matter
+---
+/* this is test */
+
+#exp-binding
+_: opcode-1(12.34e-6 1.234e-15);
+"#;
+        let rainlang_text = RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None)?;
+        let expected_rainlang = r#"/* 0. exp-binding */ 
+_: opcode-1(12.34e-6 1.234e-15);"#;
+        assert_eq!(rainlang_text, expected_rainlang);
+
         Ok(())
     }
 
