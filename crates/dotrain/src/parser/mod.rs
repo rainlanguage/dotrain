@@ -265,7 +265,9 @@ pub(crate) fn deep_read_quote<'a>(
     }
 }
 
-/// Parse a single key-value pair from cli arg
+/// Parse a single key-value pair from cli arg.
+/// This is implemented from examples in clap crate docs:
+/// https://docs.rs/clap/latest/clap/builder/struct.ValueParser.html#example-1
 pub fn parse_cli_key_val(
     key_value_pair: &str,
 ) -> Result<Rebind, Box<dyn std::error::Error + Send + Sync + 'static>> {
