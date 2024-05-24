@@ -4,10 +4,9 @@
 //! struct, enums that use `clap` derive macro to produce CLI commands, argument
 //! and options while underlying functions handle each scenario
 
-use std::error::Error;
 use std::path::PathBuf;
-use crate::parser::Rebind;
 use clap::{Parser, Subcommand, command};
+use crate::parser::{Rebind, parse_cli_key_val};
 
 mod compose;
 mod rainconfig;
@@ -42,7 +41,7 @@ pub struct Compose {
     #[arg(short, long)]
     entrypoint: Vec<String>,
     /// rebinds items with new literal values
-    #[arg(short, long, value_parser = parse_key_val)]
+    #[arg(short, long, value_parser = parse_cli_key_val)]
     bind: Option<Vec<Rebind>>,
     /// Path to the rainconfig json file that contains configurations,
     /// if provided will be used to when composing the .rain, see
@@ -68,17 +67,6 @@ pub enum RainconfigInfo {
     Include,
     /// Prints info about 'subgraphs' field
     Subgraphs,
-}
-
-/// Parse a single key-value pair
-fn parse_key_val(key_value_pair: &str) -> Result<Rebind, Box<dyn Error + Send + Sync + 'static>> {
-    let pos = key_value_pair
-        .find('=')
-        .ok_or_else(|| format!("invalid key=value: no `=` found in `{key_value_pair}`"))?;
-    Ok(Rebind(
-        key_value_pair[..pos].to_owned(),
-        key_value_pair[pos + 1..].to_owned(),
-    ))
 }
 
 /// Dispatches the CLI call based on the given options and commands

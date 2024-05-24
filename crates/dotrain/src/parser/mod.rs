@@ -238,9 +238,35 @@ pub(crate) fn deep_read_quote<'a>(
     }
 }
 
+/// Parse a single key-value pair from cli arg.
+/// This is implemented from examples in clap crate docs:
+/// https://docs.rs/clap/latest/clap/builder/struct.ValueParser.html#example-1
+pub fn parse_cli_key_val(
+    key_value_pair: &str,
+) -> Result<Rebind, Box<dyn std::error::Error + Send + Sync + 'static>> {
+    let pos = key_value_pair
+        .find('=')
+        .ok_or_else(|| format!("invalid key=value: no `=` found in `{key_value_pair}`"))?;
+    Ok(Rebind(
+        key_value_pair[..pos].to_owned(),
+        key_value_pair[pos + 1..].to_owned(),
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use crate::parser::*;
+
+    #[test]
+    fn test_parse_cli_key_val() -> anyhow::Result<()> {
+        let key_value_pair = "key=value";
+        let result = parse_cli_key_val(key_value_pair).unwrap();
+
+        assert_eq!(result.0, "key");
+        assert_eq!(result.1, "value");
+
+        Ok(())
+    }
 
     #[test]
     fn test_inclusive_parse() -> anyhow::Result<()> {
