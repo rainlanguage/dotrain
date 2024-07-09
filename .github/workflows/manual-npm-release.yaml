@@ -1,5 +1,4 @@
 name: Manual NPM Release
-permissions: write-all
 on: [workflow_dispatch]
 
 jobs:
@@ -10,6 +9,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
+          ssh-key: ${{ secrets.PUBLISHER_SSH_KEY }}
 
       - uses: DeterminateSystems/nix-installer-action@v4
       - uses: DeterminateSystems/magic-nix-cache-action@v2
