@@ -66,7 +66,7 @@ jobs:
         run: |
           git add "package.json"
           git add "package-lock.json"
-          git commit -m "Node Release ${{ env.NEW_VERSION }}"
+          git commit -m "Release ${{ env.NEW_VERSION }}"
           git tag ${{ env.NEW_VERSION }}
 
       # Push the commit to remote
