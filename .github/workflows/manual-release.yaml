@@ -137,12 +137,7 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
       - name: Build Bin
-        if: ${{ matrix.platform }} == linux
         run: nix develop -c cargo build -r --features cli --bin dotrain --target "${{ matrix.target }}"
-
-      - name: Build Bin
-        if: ${{ matrix.platform }} != linux
-        run: nix develop -c cargo build -r --features cli --bin dotrain
 
       - run: cp target/release/dotrain ./dotrain_cli_${{ needs.release.outputs.version }}_${{ matrix.platform }}_${{ matrix.arch }}
 
