@@ -80,7 +80,7 @@ jobs:
         run: echo "NPM_PACKAGE=$(nix develop .#js -c npm pack --silent)" >> $GITHUB_ENV
 
       - name: Rename NPM Package Tarball
-        run: mv ${{ env.NPM_PACKAGE }} npm_package_${{ env.NPM_PACKAGE }}
+        run: mv ${{ env.NPM_PACKAGE }} dotrain_npm_package_${{ env.NEW_VERSION }}.tgz
 
       # publish to npm
       - name: Publish To NPM
@@ -96,13 +96,13 @@ jobs:
         with:
           tag_name: ${{ env.NEW_VERSION }}
           name: Release ${{ env.NEW_VERSION }}
-          files: npm_package_${{ env.NPM_PACKAGE }}
+          files: dotrain_npm_package_${{ env.NEW_VERSION }}.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
   release_bin:
-    name: Release ${{ matrix.platform }}_${{ matrix.arch }} bin
+    name: Release dotrain ${{ matrix.platform }}_${{ matrix.arch }} bin
     needs: release
     runs-on: ${{ matrix.runner }}
     strategy:
