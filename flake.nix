@@ -43,13 +43,8 @@
           body = ''
             set -euxo pipefail
             npm install
+            npm run build
           '';
-          additionalBuildInputs = [
-            pkgs.wasm-bindgen-cli
-            rainix.rust-toolchain.${system}
-            rainix.rust-build-inputs.${system}
-            rainix.node-build-inputs.${system}
-          ];
         };
 
         test-js-bindings = rainix.mkTask.${system} {
@@ -58,9 +53,6 @@
             set -euxo pipefail
             npm test
           '';
-          additionalBuildInputs = [
-            rainix.node-build-inputs.${system}
-          ];
         };
 
         js-bindings-docs = rainix.mkTask.${system} {
@@ -69,9 +61,6 @@
             set -euxo pipefail
             npm run docgen
           '';
-          additionalBuildInputs = [
-            rainix.node-build-inputs.${system}
-          ];
         };
       } // rainix.packages.${system};
 
@@ -79,17 +68,21 @@
       defaultPackage = packages.build-bin;
 
       # For `nix develop`:
-      devShells = {
-        js = pkgs.mkShell {
-          nativeBuildInputs = [
-            rainix.rust-toolchain.${system}
-            rainix.rust-build-inputs.${system}
-            rainix.node-build-inputs.${system}
-          ] ++ (with pkgs; [ 
-            wasm-bindgen-cli
-          ]);
-        };
-      } // rainix.devShells.${system};
+      devShells.default = pkgs.mkShell {
+        packages = [
+          packages.build-js-bindings
+          packages.test-js-bindings
+          packages.js-bindings-docs
+          packages.rainix-rs-prelude
+          packages.rainix-rs-static
+          packages.rainix-rs-test
+          packages.rainix-rs-artifacts
+        ];
+        buildInputs = rainix.devShells.${system}.default.buildInputs;
+        nativeBuildInputs = rainix.devShells.${system}.default.nativeBuildInputs ++ (with pkgs; [ 
+          wasm-bindgen-cli
+        ]);
+      };
     }
   );
 }

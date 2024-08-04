@@ -171,17 +171,17 @@ Here is an example of a `rainconfig.json`:
 ## **Building JS/TS Bindings**
 From the root of this repo, simply run the following to build the js bindings:
 ```bash
-nix run .#build-js-bindings
+nix develop -c build-js-bindings
 ```
 
 This will build the rust library with `wasm32-unknown-unknown` target in release mode with `js-api` feature enabled and then generates bindings using `wasm-bindgen-cli` into `./dist` directory by encoding the wasm binary into a json as importing json is native in js/ts and eliminates the need for using fetch/fs operations when loading the wasm module.
 
 To generate js/ts documents:
 ```bash
-nix run .#js-bindings-docs
+nix develop -c js-bindings-docs
 ```
 
 To run tests:
 ```bash
-nix run .#test-js-bindings
+nix develop -c test-js-bindings
 ```
