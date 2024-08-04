@@ -31,8 +31,9 @@
         "/example.rainconfig.json"
     ],
     "scripts": {
-        "prepack": "npm run build",
-        "build": "rimraf ./dist && npm run build-wasm && npm run build-bindings && npm run lint-bindings",
+        "prepublish": "node scripts/build check",
+        "prepublishOnly": "npm run build",
+        "build": "rimraf ./dist && nix-develop -c npm run build-wasm && npm run build-bindings && npm run lint-bindings",
         "build-wasm": "cargo build --target wasm32-unknown-unknown --lib --features 'js-api' -r",
         "node-bg": "wasm-bindgen --target nodejs ./target/wasm32-unknown-unknown/release/dotrain_lsp.wasm --out-dir ./temp/node",
         "web-bg": "wasm-bindgen --target web ./target/wasm32-unknown-unknown/release/dotrain_lsp.wasm --out-dir ./temp/web",
@@ -42,7 +43,8 @@
         "lint": "eslint \"dist/**\" \"test/**\"",
         "lint-fix": "eslint \"dist/**\" \"test/**\" --fix",
         "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
-        "move-api": "copyfiles \"./dotrain.api.json\" \"./docs\" && rimraf ./dotrain.api.json && rimraf ./dist/cjs/tsdoc-metadata.json"
+        "move-api": "copyfiles \"./dotrain.api.json\" \"./docs\" && rimraf ./dotrain.api.json && rimraf ./dist/cjs/tsdoc-metadata.json",
+        "rm-dist": "rimraf ./dist"
     },
     "devDependencies": {
         "@microsoft/api-extractor": "^7.33.5",
