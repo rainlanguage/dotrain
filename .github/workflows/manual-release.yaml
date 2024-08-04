@@ -138,10 +138,18 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@v4
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
+      - name: Git Config
+        run: |
+          git config --global user.email "${{ secrets.CI_GIT_EMAIL }}"
+          git config --global user.name "${{ secrets.CI_GIT_USER }}"
+
+      - name: Pull Release Commit
+        run: git pull origin
+
       - name: Build Bin
         run: nix develop -c cargo build -r --features cli --bin dotrain --target "${{ matrix.target }}"
 
-      - run: cp target/release/dotrain ./dotrain_cli_${{ needs.release.outputs.version }}_${{ matrix.platform }}_${{ matrix.arch }}
+      - run: nix develop -c cp ./target/release/dotrain ./dotrain_cli_${{ needs.release.outputs.version }}_${{ matrix.platform }}_${{ matrix.arch }}
 
       - name: Add Bin To Release
         uses: softprops/action-gh-release@v2
