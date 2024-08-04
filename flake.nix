@@ -73,6 +73,10 @@
           packages.build-js-bindings
           packages.test-js-bindings
           packages.js-bindings-docs
+          packages.rainix-rs-prelude
+          packages.rainix-rs-static
+          packages.rainix-rs-test
+          packages.rainix-rs-artifacts
         ];
         buildInputs = rainix.devShells.${system}.default.buildInputs;
         nativeBuildInputs = rainix.devShells.${system}.default.nativeBuildInputs;
