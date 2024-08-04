@@ -78,11 +78,8 @@
           packages.rainix-rs-test
           packages.rainix-rs-artifacts
         ];
-        buildInputs = [
-          rainix.rust-toolchain.${system}
-          rainix.rust-build-inputs.${system}
-          rainix.node-build-inputs.${system}
-        ] ++ (with pkgs; [ 
+        buildInputs = rainix.devShells.${system}.default.buildInputs;
+        nativeBuildInputs = rainix.devShells.${system}.default.nativeBuildInputs ++ (with pkgs; [ 
           wasm-bindgen-cli
         ]);
       };
