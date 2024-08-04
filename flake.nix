@@ -78,7 +78,7 @@
           packages.rainix-rs-test
           packages.rainix-rs-artifacts
         ];
-        nativeBuildInputs = [
+        buildInputs = [
           rainix.rust-toolchain.${system}
           rainix.rust-build-inputs.${system}
           rainix.node-build-inputs.${system}
