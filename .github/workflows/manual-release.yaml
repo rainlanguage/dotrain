@@ -46,20 +46,20 @@ jobs:
           node-version: 21
           cache: 'npm'
 
-      - run: nix run .#rainix-rs-prelude
+      - run: nix develop -c rainix-rs-prelude
       
       - name: Run rainix-rs-test
-        run: nix run .#rainix-rs-test
+        run: nix develop -c rainix-rs-test
 
       - name: Build JS Bindings
-        run:  nix run .#build-js-bindings
+        run:  nix develop -c build-js-bindings
       
       - name: Run JS Tests
-        run:  nix run .#test-js-bindings
+        run:  nix develop -c test-js-bindings
 
       # set npm version to rust crate version
       - name: Set Version
-        run: echo "NEW_VERSION=$(nix develop .#js -c npm version $(node ./scripts/version.js) --no-git-tag-version)" >> $GITHUB_ENV
+        run: echo "NEW_VERSION=$(nix develop -c npm version $(node ./scripts/version.js) --no-git-tag-version)" >> $GITHUB_ENV
 
       # Commit changes and tag
       - name: Commit And Tag
@@ -79,7 +79,7 @@ jobs:
 
       # Create npm package tarball to put in release files
       - name: Create NPM Package Tarball
-        run: echo "NPM_PACKAGE=$(nix develop .#js -c npm pack --silent)" >> $GITHUB_ENV
+        run: echo "NPM_PACKAGE=$(nix develop -c npm pack --silent)" >> $GITHUB_ENV
 
       - name: Rename NPM Package Tarball
         run: mv ${{ env.NPM_PACKAGE }} dotrain_npm_package_${{ env.NEW_VERSION }}.tgz
