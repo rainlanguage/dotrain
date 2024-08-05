@@ -43,7 +43,7 @@ jobs:
       - run: ls -l
 
       - name: Build Bin
-        run: nix develop -c cargo build -r --features cli --bin dotrain --target "${{ matrix.target }}"
+        run: nix develop -c cargo build -r --features cli --bin dotrain
 
       - run: ls -l
       - run: cd target/release/ && ls -l
