@@ -149,7 +149,7 @@ jobs:
       - name: Build Bin
         run: nix develop -c cargo build -r --features cli --bin dotrain --target "${{ matrix.target }}"
 
-      - run: nix develop -c cp ./target/release/dotrain ./dotrain_cli_${{ needs.release.outputs.version }}_${{ matrix.platform }}_${{ matrix.arch }}
+      - run: cp ./target/${{ matrix.target }}/release/dotrain ./dotrain_cli_${{ needs.release.outputs.version }}_${{ matrix.platform }}_${{ matrix.arch }}
 
       - name: Add Bin To Release
         uses: softprops/action-gh-release@v2
