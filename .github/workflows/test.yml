@@ -43,8 +43,9 @@ jobs:
       - run: ls -l
 
       - name: Build Bin
-        run: nix develop -c cargo build -r --features cli --bin dotrain
+        run: nix develop -c cargo build -r --features cli --bin dotrain --target "${{ matrix.target }}"
 
       - run: ls -l
-      - run: cd target/release/ && ls -l
+      - run: cd target && ls -l
+      - run: cd target/${{ matrix.target }} && ls -l
       - run: nix develop -c cp ./target/release/dotrain ./dotrain_cli
