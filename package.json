@@ -22,8 +22,8 @@
     }
   },
   "browser": {
-    "./dist/cjs/index.js": "./dist/esm/index.js",
-    "./dist/esm/index.js": "./dist/esm/index.js"
+        "./dist/cjs/index.js": "./dist/cjs/index.js",
+        "./dist/esm/index.js": "./dist/esm/index.js"
   },
   "engines": {
     "node": ">=18"
