@@ -1,70 +1,76 @@
 {
-    "name": "@rainlanguage/dotrain",
-    "description": "Rain language composer (.rain to rainlang composition) and language server protocol implementation for NodeJs and Browser",
-    "version": "6.0.1-alpha.21",
-    "author": "Rain Language",
-    "license": "CAL-1.0",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/rainlanguage/dotrain.git"
-    },
-    "keywords": [],
-    "bugs": {
-        "url": "https://github.com/rainlanguage/dotrain/issues"
-    },
-    "homepage": "https://github.com/rainlanguage/dotrain#readme",
-    "main": "./dist/cjs/index.js",
-    "module": "./dist/esm/index.js",
-    "browser": {
-        "./dist/cjs/index.js": "./dist/cjs/index.js",
-        "./dist/esm/index.js": "./dist/esm/index.js"
-    },
-    "engines": {
-        "node": ">=18"
-    },
-    "files": [
-        "/dist",
-        "/cjs.js",
-        "/esm.js",
-        "/cjs.d.ts",
-        "/esm.d.ts",
-        "/example.rainconfig.json"
-    ],
-    "scripts": {
-        "prepublish": "node scripts/build check",
-        "nix-build": "nix develop -c npm run build",
-        "build": "npm run build-wasm && npm run build-bindings && npm run lint-bindings",
-        "build-wasm": "cargo build --target wasm32-unknown-unknown --lib --features 'js-api' -r",
-        "node-bg": "wasm-bindgen --target nodejs ./target/wasm32-unknown-unknown/release/dotrain_lsp.wasm --out-dir ./temp/node",
-        "web-bg": "wasm-bindgen --target web ./target/wasm32-unknown-unknown/release/dotrain_lsp.wasm --out-dir ./temp/web",
-        "build-bindings": "npm run node-bg && npm run web-bg && rimraf ./dist && node ./scripts/prepare",
-        "lint-bindings": "eslint \"dist/**\" --fix",
-        "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
-        "lint": "eslint \"dist/**\" \"test/**\"",
-        "lint-fix": "eslint \"dist/**\" \"test/**\" --fix",
-        "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
-        "move-api": "copyfiles \"./dotrain.api.json\" \"./docs\" && rimraf ./dotrain.api.json && rimraf ./dist/cjs/tsdoc-metadata.json",
-        "rm-dist": "rimraf ./dist"
-    },
-    "devDependencies": {
-        "@microsoft/api-extractor": "^7.33.5",
-        "@princjef/api-documenter": "^1.0.2",
-        "@types/mocha": "^10.0.0",
-        "@types/node": "^18.13.0",
-        "@typescript-eslint/eslint-plugin": "^5.42.0",
-        "@typescript-eslint/parser": "^5.42.0",
-        "copyfiles": "^2.4.1",
-        "eslint": "^8.26.0",
-        "eslint-config-prettier": "^9.1.0",
-        "eslint-plugin-prettier": "^5.1.1",
-        "mocha": "^10.1.0",
-        "prettier": "^3.1.1",
-        "ts-node": "^10.9.1",
-        "typescript": "^4.8.4"
-    },
-    "dependencies": {
-        "buffer": "^6.0.3",
-        "vscode-languageserver-protocol": "^3.17.5",
-        "vscode-languageserver-types": "^3.17.3"
+  "name": "@rainlanguage/dotrain",
+  "description": "Rain language composer (.rain to rainlang composition) and language server protocol implementation for NodeJs and Browser",
+  "version": "6.0.1-alpha.21",
+  "author": "Rain Language",
+  "license": "CAL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rainlanguage/dotrain.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/rainlanguage/dotrain/issues"
+  },
+  "homepage": "https://github.com/rainlanguage/dotrain#readme",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
     }
+  },
+  "browser": {
+    "./dist/cjs/index.js": "./dist/esm/index.js",
+    "./dist/esm/index.js": "./dist/esm/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "/dist",
+    "/cjs.js",
+    "/esm.js",
+    "/cjs.d.ts",
+    "/esm.d.ts",
+    "/example.rainconfig.json"
+  ],
+  "scripts": {
+    "prepublish": "node scripts/build check",
+    "nix-build": "nix develop -c npm run build",
+    "build": "npm run build-wasm && npm run build-bindings && npm run lint-bindings",
+    "build-wasm": "cargo build --target wasm32-unknown-unknown --lib --features 'js-api' -r",
+    "node-bg": "wasm-bindgen --target nodejs ./target/wasm32-unknown-unknown/release/dotrain_lsp.wasm --out-dir ./temp/node",
+    "web-bg": "wasm-bindgen --target web ./target/wasm32-unknown-unknown/release/dotrain_lsp.wasm --out-dir ./temp/web",
+    "build-bindings": "npm run node-bg && npm run web-bg && rimraf ./dist && node ./scripts/prepare",
+    "lint-bindings": "eslint \"dist/**\" --fix",
+    "test": "mocha -r ts-node/register test/**/*.test.ts --timeout 100000",
+    "lint": "eslint \"dist/**\" \"test/**\"",
+    "lint-fix": "eslint \"dist/**\" \"test/**\" --fix",
+    "docgen": "rimraf ./docs && api-extractor run --local && api-documenter -i ./ -o ./docs && npm run move-api",
+    "move-api": "copyfiles \"./dotrain.api.json\" \"./docs\" && rimraf ./dotrain.api.json && rimraf ./dist/cjs/tsdoc-metadata.json",
+    "rm-dist": "rimraf ./dist"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "^7.33.5",
+    "@princjef/api-documenter": "^1.0.2",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^18.13.0",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
+    "copyfiles": "^2.4.1",
+    "eslint": "^8.26.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.1",
+    "mocha": "^10.1.0",
+    "prettier": "^3.1.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "vscode-languageserver-protocol": "^3.17.5",
+    "vscode-languageserver-types": "^3.17.3"
+  }
 }
