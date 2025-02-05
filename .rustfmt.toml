@@ -1,6 +1,7 @@
 edition = "2018"
 reorder_imports = false
 reorder_modules = false
+ignore = ["lib"]
 # group_imports = "StdExternalCrate"
 # imports_layout = "HorizontalVertical"
 # unstable_features = true
