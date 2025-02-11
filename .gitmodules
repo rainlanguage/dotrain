@@ -1,0 +1,4 @@
+[submodule "lib/magic-string"]
+	path = lib/magic-string
+	url = https://github.com/rouzwelt/magic-string-rs
+	branch = fix-memory-leak
