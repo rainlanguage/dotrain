@@ -141,7 +141,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_patterns() -> anyhow::Result<()> {
+    fn test_patterns() {
         // valids
         for i in [
             "a", "aa", "aA", "aAa", "a0", "aa0", "aA0", "aA0a", "aA0a0", "", "a-", "a-a", "-", " ",
@@ -421,7 +421,5 @@ mod tests {
                 i
             );
         }
-
-        Ok(())
     }
 }

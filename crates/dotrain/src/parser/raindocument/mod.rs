@@ -283,7 +283,7 @@ mod tests {
     use super::super::rainlangdocument::RainlangDocument;
 
     #[test]
-    fn test_is_constant_method() -> anyhow::Result<()> {
+    fn test_is_constant_method() {
         let text = " \n 1234 \n\t ";
         let result = RainDocument::is_literal(text);
         assert_eq!(result, Some(("1234".to_owned(), 2, false)));
@@ -335,12 +335,10 @@ mod tests {
         let text = " \n 999 234 \n";
         let result = RainDocument::is_literal(text);
         assert_eq!(result, None);
-
-        Ok(())
     }
 
     #[test]
-    fn test_is_elided_method() -> anyhow::Result<()> {
+    fn test_is_elided_method() {
         let text = " ! \n some msg \n msg continues \n\t";
         let result = RainDocument::is_elided(text);
         assert_eq!(result, Some("some msg \n msg continues".to_owned()));
@@ -352,12 +350,10 @@ mod tests {
         let text = "some msg";
         let result = RainDocument::is_elided(text);
         assert_eq!(result, None);
-
-        Ok(())
     }
 
     #[test]
-    fn test_process_import_config_method() -> anyhow::Result<()> {
+    fn test_process_import_config_method() {
         let text = " 'item1 renamed-item1 \n  \n\n\t item2 0x1234 \n";
         let mut config_items = exclusive_parse(text, &WS_PATTERN, 0, false);
         let result = RainDocument::process_import_config(&mut config_items.iter_mut(), text);
@@ -438,12 +434,10 @@ mod tests {
             problems: vec![ErrorCode::UnexpectedToken.to_problem(vec![], [0, 8])],
         };
         assert_eq!(result, expected);
-
-        Ok(())
     }
 
     #[test]
-    fn test_process_import_method() -> anyhow::Result<()> {
+    fn test_process_import_method() {
         let mut meta_store = Store::new();
         let hash = "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184";
         let hash_bytes = alloy_primitives::hex::decode(hash).unwrap();
@@ -472,12 +466,10 @@ mod tests {
             sequence: None,
         };
         assert_eq!(result, expected);
-
-        Ok(())
     }
 
     #[test]
-    fn test_check_namespace_method() -> anyhow::Result<()> {
+    fn test_check_namespace_method() {
         let mut main_namespace: Namespace = HashMap::new();
         let mut new_namespace: Namespace = HashMap::new();
         main_namespace.insert(
@@ -563,12 +555,10 @@ mod tests {
             RainDocument::check_namespace(&new_namespace, &main_namespace),
             None
         );
-
-        Ok(())
     }
 
     #[test]
-    fn test_merge_namespace_method() -> anyhow::Result<()> {
+    fn test_merge_namespace_method() {
         let mut main_namespace: Namespace = HashMap::new();
         let mut new_namespace: Namespace = HashMap::new();
         main_namespace.insert(
@@ -654,12 +644,10 @@ mod tests {
             rain_document.problems,
             vec![ErrorCode::CollidingNamespaceNodes.to_problem(vec![], [0, 10])]
         );
-
-        Ok(())
     }
 
     #[test]
-    fn test_parse_method() -> anyhow::Result<()> {
+    fn test_parse_method() {
         let store = Store::new();
         let meta_store = Arc::new(RwLock::new(store));
 
@@ -798,7 +786,5 @@ _: opcode-1(0xabcd 456);
             known_words: None,
         };
         assert_eq!(rain_document, expected_rain_document);
-
-        Ok(())
     }
 }

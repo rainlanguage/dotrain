@@ -22,18 +22,17 @@ crate-type = ["rlib", "cdylib"]
 
 [dependencies]
 lsp-types = "0.94.1"
-anyhow = { workspace = true }
 dotrain = { workspace = true }
 regex = { workspace = true }
 once_cell = { workspace = true }
 alloy-primitives = { workspace = true }
 
 # js-api
-js-sys = { version = "0.3.66", optional = true }
-wasm-bindgen = { version = "0.2.89", optional = true }
-serde-wasm-bindgen = { version = "0.6.1", optional = true }
-wasm-bindgen-futures = { version = "0.4.39", optional = true }
-tsify = { version = "0.4.5", default-features = false, features = ["js", "wasm-bindgen"], optional = true }
+js-sys = { version = "0.3", optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
+serde-wasm-bindgen = { version = "0.6", optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+tsify = { version = "0.4", default-features = false, features = ["js", "wasm-bindgen"], optional = true }
 
 [lints.clippy]
 all = "warn"

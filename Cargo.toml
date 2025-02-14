@@ -10,10 +10,10 @@ homepage = "https://github.com/rainlanguage/dotrain"
 repository = "https://github.com/rainlanguage/dotrain"
 
 [workspace.dependencies]
-regex = "1.10.2"
-anyhow = "1.0.75"
-once_cell = "1.18.0"
-alloy-primitives = "0.7.7"
+regex = "1.10"
+anyhow = "1"
+once_cell = "1"
+alloy-primitives = "0"
 rain-metadata = "0.0.2-alpha.2"
 
 [workspace.dependencies.dotrain]
