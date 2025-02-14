@@ -13,7 +13,7 @@ repository = "https://github.com/rainlanguage/dotrain"
 regex = "1.10"
 anyhow = "1"
 once_cell = "1"
-alloy-primitives = "0"
+alloy-primitives = "0.7"
 rain-metadata = "0.0.2-alpha.2"
 
 [workspace.dependencies.dotrain]
