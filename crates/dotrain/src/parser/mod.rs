@@ -258,18 +258,16 @@ mod tests {
     use crate::parser::*;
 
     #[test]
-    fn test_parse_cli_key_val() -> anyhow::Result<()> {
+    fn test_parse_cli_key_val() {
         let key_value_pair = "key=value";
         let result = parse_cli_key_val(key_value_pair).unwrap();
 
         assert_eq!(result.0, "key");
         assert_eq!(result.1, "value");
-
-        Ok(())
     }
 
     #[test]
-    fn test_inclusive_parse() -> anyhow::Result<()> {
+    fn test_inclusive_parse() {
         let text = r"abcd eb
         qkbjh (aoib 124b)";
         let pattern = Regex::new(r"b\s").unwrap();
@@ -281,11 +279,10 @@ mod tests {
         ];
 
         assert_eq!(parsed_items, expected);
-        Ok(())
     }
 
     #[test]
-    fn test_exclusive_parse() -> anyhow::Result<()> {
+    fn test_exclusive_parse() {
         let text = r"abcd eb
         qkbjh (aoib 124b)";
         let pattern = Regex::new(r"b\s").unwrap();
@@ -298,50 +295,46 @@ mod tests {
         ];
 
         assert_eq!(parsed_items, expected);
-        Ok(())
     }
 
     #[test]
-    fn test_fill_in() -> anyhow::Result<()> {
+    fn test_fill_in() {
         let mut text = r"abcd eb
         qkbjh (aoib 124b)"
             .to_string();
 
-        fill_in(&mut text, [23, 27])?;
+        fill_in(&mut text, [23, 27]).unwrap();
         let expected = r"abcd eb
         qkbjh (     124b)";
 
         assert_eq!(text, expected);
-        Ok(())
     }
 
     #[test]
-    fn test_fill_out() -> anyhow::Result<()> {
+    fn test_fill_out() {
         let mut text = r"abcd eb
         qkbjh (aoib 124b)"
             .to_string();
 
-        fill_out(&mut text, [23, 27])?;
+        fill_out(&mut text, [23, 27]).unwrap();
         let expected = r"       
                aoib      ";
 
         assert_eq!(text, expected);
-        Ok(())
     }
 
     #[test]
-    fn test_tracked_trim() -> anyhow::Result<()> {
+    fn test_tracked_trim() {
         let text = " \n  abcd   \n\t";
 
         let result = tracked_trim(text);
         let expected = ("abcd", 4, 5);
 
         assert_eq!(result, expected);
-        Ok(())
     }
 
     #[test]
-    fn test_line_number() -> anyhow::Result<()> {
+    fn test_line_number() {
         let text = r"abcd
         efgh (123 876)
 
@@ -349,6 +342,5 @@ mod tests {
         ";
         let result = line_number(text, 38);
         assert_eq!(result, 3);
-        Ok(())
     }
 }

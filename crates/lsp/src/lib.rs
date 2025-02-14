@@ -460,7 +460,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_position_at() -> anyhow::Result<()> {
+    fn test_position_at() {
         let text = r"abcd
         efgh
         ijkl";
@@ -478,12 +478,10 @@ mod tests {
             character: 10,
         };
         assert_eq!(pos2, pos2_expected);
-
-        Ok(())
     }
 
     #[test]
-    fn test_offset_at() -> anyhow::Result<()> {
+    fn test_offset_at() {
         let text = r"abcd
         efgh
         ijkl";
@@ -501,7 +499,5 @@ mod tests {
         });
         let expected_offset2 = 28;
         assert_eq!(offset2, expected_offset2);
-
-        Ok(())
     }
 }

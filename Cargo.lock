@@ -695,7 +695,7 @@ dependencies = [
  "futures",
  "getrandom",
  "js-sys",
- "magic_string",
+ "magic_string_rain",
  "once_cell",
  "proptest",
  "rain-metadata",
@@ -718,7 +718,6 @@ name = "dotrain-lsp"
 version = "6.0.1-alpha.21"
 dependencies = [
  "alloy-primitives 0.7.7",
- "anyhow",
  "dotrain",
  "js-sys",
  "lsp-types",
@@ -1390,8 +1389,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "magic_string"
-version = "0.3.4"
+name = "magic_string_rain"
+version = "0.3.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b14a99e25cbe68891c84655e1bc0181c72c270c07d89591954982c607c1d912a"
 dependencies = [
  "base64 0.13.1",
  "regex",

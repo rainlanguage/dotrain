@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, RwLock},
     collections::VecDeque,
 };
-use magic_string::{MagicString, OverwriteOptions, GenerateDecodedMapOptions};
+use magic_string_rain::{MagicString, OverwriteOptions, GenerateDecodedMapOptions};
 use crate::types::ast::PragmaStatement;
 
 use super::{
@@ -521,7 +521,7 @@ mod tests {
     };
 
     #[test]
-    fn test_compose() -> anyhow::Result<()> {
+    fn test_compose() {
         let mut store = rain_metadata::Store::new();
         let authoring_meta = AuthoringMeta(vec![
             AuthoringMetaItem {
@@ -564,7 +564,8 @@ _: opcode-1(0xabcd 456);
             &["exp-binding"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = "/* 0. exp-binding */ \n_: opcode-1(0xabcd 456);";
         assert_eq!(rainlang_text, expected_rainlang);
 
@@ -584,7 +585,8 @@ some-name _: opcode-2(opcode-1(1 2) const-binding) 0xab34;
             &["exp-binding"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = "/* 0. exp-binding */ 
 _: opcode-1(0xabcd 456),
 some-name _: opcode-2(opcode-1(1 2) 4e18) 0xab34;";
@@ -608,7 +610,8 @@ _: opcode-2(0xabcd some-value);
             &["exp-binding-1"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = "/* 0. exp-binding-1 */ 
 _: opcode-1<1>(0xabcd 456),
 some-name _: 0xab34;
@@ -638,7 +641,8 @@ _: opcode-2(0xabcd some-value);
             &["exp-binding-1", "exp-binding-2"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = "/* 0. exp-binding-1 */ 
 _: opcode-1(0xabcd 456),
 some-name _: 0xab34;
@@ -669,7 +673,8 @@ _: opcode-2(some-name some-other-value);
             &["main", "exp-binding-1", "exp-binding-2"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = "/* 0. main */ 
 _: opcode-1<2>(0xabcd 456);
 
@@ -697,7 +702,8 @@ _: some-sub-parser-word<1 2>(some-value some-other-value);
             &["exp-binding-1"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = "/* 0. exp-binding-1 */ 
 using-words-from 0x1234abced
 _: some-sub-parser-word<1 2>(4e18 0xabcdef1234);";
@@ -717,7 +723,8 @@ _: some-sub-parser-word<1 2>(some-value literal-binding);
             &["exp-binding-1"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 using-words-from 0x1234abced
 abcd: " this is literal string ",
@@ -738,7 +745,8 @@ _: some-sub-parser-word<some-value " some literal as operand " "test">(some-valu
             &["exp-binding-1"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 using-words-from 0x1234abced
 abcd: " this is literal string ",
@@ -761,7 +769,8 @@ _: some-sub-parser-word<1 2>(some-value 44);
             &["exp-binding-1"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 /* some comment with quote: dont't */
 using-words-from 0x1234abced
@@ -785,7 +794,8 @@ _: opcode-1(0xabcd some-value---);
             &["exp-binding-1---"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = r"/* 0. exp-binding-1--- */ 
 /** some other comment with --- */
 _: opcode-1(0xabcd 4e18);";
@@ -811,7 +821,8 @@ _: opcode-3(some-value some-other-value);
             &["exp-binding-1", "main"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = r"/* 0. exp-binding-1 */ 
 _: opcode-1<2>(0xabcd 456);
 
@@ -842,7 +853,8 @@ _: opcode-3(some-value some-other-value);
             &["exp-binding-1", "main"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = r"/* 0. exp-binding-1 */ 
 _: opcode-1<2>(0xabcd 456);
 
@@ -1070,7 +1082,8 @@ _: some-sub-parser-word<1 2>(4e18 literal-binding);
             &["exp-binding-1"],
             Some(meta_store.clone()),
             None,
-        )?;
+        )
+        .unwrap();
         let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 using-words-from 0x1234abcedf " some string literal " "abcd"
 abcd: " this is literal string ",
@@ -1111,7 +1124,8 @@ _: some-sub-parser-word<1 2>(4e18 literal-binding);
 #exp-binding
 _: opcode-1(0xabcd "something.else");
 "#;
-        let rainlang_text = RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None)?;
+        let rainlang_text =
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None).unwrap();
         let expected_rainlang = r#"/* 0. exp-binding */ 
 _: opcode-1(0xabcd "something.else");"#;
         assert_eq!(rainlang_text, expected_rainlang);
@@ -1126,7 +1140,8 @@ _: opcode-1(0xabcd "something.else");"#;
 #exp-binding
 _: opcode-1(12.34e6 123.123);
 "#;
-        let rainlang_text = RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None)?;
+        let rainlang_text =
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None).unwrap();
         let expected_rainlang = r#"/* 0. exp-binding */ 
 _: opcode-1(12.34e6 123.123);"#;
         assert_eq!(rainlang_text, expected_rainlang);
@@ -1141,7 +1156,8 @@ _some-lhs-word: opcode-1(12 123.456e123),
 _some-other-lhs-word: 1e18,
 _ _: opcode-1(_some-lhs-word _some-other-lhs-word) _some-other-lhs-word;
 "#;
-        let rainlang_text = RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None)?;
+        let rainlang_text =
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None).unwrap();
         let expected_rainlang = r#"/* 0. exp-binding */ 
 _some-lhs-word: opcode-1(12 123.456e123),
 _some-other-lhs-word: 1e18,
@@ -1173,7 +1189,8 @@ _some-lhs-word: opcode-1(12 _bad-binding-name);
 #exp-binding
 _: opcode-1(12.34e-6 1.234e-15);
 "#;
-        let rainlang_text = RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None)?;
+        let rainlang_text =
+            RainDocument::compose_text(dotrain_text, &["exp-binding"], None, None).unwrap();
         let expected_rainlang = r#"/* 0. exp-binding */ 
 _: opcode-1(12.34e-6 1.234e-15);"#;
         assert_eq!(rainlang_text, expected_rainlang);
@@ -1193,12 +1210,10 @@ _some-lhs-word: opcode-1(12 1);
             ErrorCode::DuplicateIdentifier.to_problem(vec![], [64, 72])
         ]));
         assert_eq!(result, expected_err);
-
-        Ok(())
     }
 
     #[test]
-    fn test_compose_with_rebinds() -> anyhow::Result<()> {
+    fn test_compose_with_rebinds() {
         let store = rain_metadata::Store::new();
         let meta_store = Arc::new(RwLock::new(store));
 
@@ -1221,7 +1236,9 @@ _: opcode-2(some-name some-other-value);
             RainDocument::new(dotrain_text.to_owned(), Some(meta_store.clone()), 0, None);
         let rebinds = vec![Rebind("some-override-value".to_owned(), "567".to_owned())];
         block_on(rain_document.parse(false, Some(rebinds)));
-        let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
+        let rainlang_text = rain_document
+            .compose(&["exp-binding-1", "exp-binding-2"])
+            .unwrap();
         let expected_rainlang = "/* 0. exp-binding-1 */ 
 _: opcode-1(0xabcd 456);
 
@@ -1255,7 +1272,9 @@ _: opcode-2(some-name some-other-value);
             Rebind("some-value".to_owned(), r#"0x123456"#.to_owned()),
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
-        let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
+        let rainlang_text = rain_document
+            .compose(&["exp-binding-1", "exp-binding-2"])
+            .unwrap();
         let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 _: opcode-1(0xabcd 456);
 
@@ -1293,7 +1312,9 @@ _: opcode-2(some-name some-other-value);
             ),
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
-        let rainlang_text = rain_document.compose(&["exp-binding-1", "exp-binding-2"])?;
+        let rainlang_text = rain_document
+            .compose(&["exp-binding-1", "exp-binding-2"])
+            .unwrap();
         let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 _: opcode-1(0xabcd 456);
 
@@ -1337,7 +1358,7 @@ _: opcode(1 2);
             ),
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
-        let rainlang_text = rain_document.compose(&["exp-binding-1"])?;
+        let rainlang_text = rain_document.compose(&["exp-binding-1"]).unwrap();
         let expected_rainlang = r#"/* 0. exp-binding-1 */ 
 _: opcode-1<1>(0xabcd 456);
 
@@ -1412,7 +1433,7 @@ _: opcode-1(0xabcd 456);
             Rebind("rebind-item".to_owned(), "'another-binding".to_owned()),
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
-        let rainlang_text = rain_document.compose(&["e1", "e2"])?;
+        let rainlang_text = rain_document.compose(&["e1", "e2"]).unwrap();
         let expected_rainlang = r#"/* 0. e1 */ 
 _: opcode-3(1 call<2>());
 
@@ -1443,7 +1464,7 @@ _: opcode-2(1 0 [something]);
             Rebind("b".to_owned(), "'some-other-binding".to_owned()),
         ];
         block_on(rain_document.parse(false, Some(rebinds)));
-        let rainlang_text = rain_document.compose(&["some-binding"])?;
+        let rainlang_text = rain_document.compose(&["some-binding"]).unwrap();
         let expected_rainlang = "/* 0. some-binding */ 
 _: opcode-2<0 1>(1 0 [something]);
 
@@ -1465,8 +1486,6 @@ _: opcode-1(0xabcd 456);
                 .to_problem(vec!["undefined binding: non-existant-binding"], [0, 0]),
         ]));
         assert_eq!(result, expected_err);
-
-        Ok(())
     }
 
     proptest! {
@@ -1497,7 +1516,7 @@ matter
 #exp-binding
 _: opcode-1<{} literal-a>(literal-b {});", a[0], b[0], e1, e2);
 
-            let rainlang_text = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None)?;
+            let rainlang_text = RainDocument::compose_text(&dotrain_text, &["exp-binding"], None, None).unwrap();
             let expected_rainlang = format!("/* 0. exp-binding */ \n_: opcode-1<{} {}>({} {});", e1, a[0], b[0], e2);
 
             assert_eq!(rainlang_text, expected_rainlang);

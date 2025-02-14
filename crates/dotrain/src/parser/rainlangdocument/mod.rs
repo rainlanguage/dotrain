@@ -117,7 +117,7 @@ mod tests {
     use rain_metadata::types::authoring::v1::AuthoringMetaItem;
 
     #[test]
-    fn test_process_opcode_method() -> anyhow::Result<()> {
+    fn test_process_opcode_method() {
         let mut rl = RainlangDocument::new();
         rl.state.depth = 1;
         rl.state.parens.close = vec![13];
@@ -155,7 +155,7 @@ mod tests {
             operand_args: None,
         });
         rl.state.nodes = vec![value_node.clone(), op_node];
-        rl.process_opcode()?;
+        rl.process_opcode().unwrap();
 
         let expected_op_node = Node::Opcode(Opcode {
             opcode: OpcodeDetails {
@@ -190,12 +190,10 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(rl.state, expected_state);
-
-        Ok(())
     }
 
     #[test]
-    fn test_process_operand_method() -> anyhow::Result<()> {
+    fn test_process_operand_method() {
         fn get_op() -> Opcode {
             Opcode {
                 opcode: OpcodeDetails {
@@ -462,12 +460,10 @@ mod tests {
         };
         assert_eq!(consumed_count, exp.len());
         assert_eq!(op, expected_op);
-
-        Ok(())
     }
 
     #[test]
-    fn test_consume_method() -> anyhow::Result<()> {
+    fn test_consume_method() {
         let mut rl = RainlangDocument::new();
         let namespace = HashMap::new();
         let authoring_meta = AuthoringMeta(vec![
@@ -489,7 +485,7 @@ mod tests {
         ]);
 
         let text = "opcode<12 56>(";
-        let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta).unwrap();
         let mut expected_state_nodes = vec![Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "opcode".to_owned(),
@@ -527,7 +523,7 @@ mod tests {
 
         let text = "opcode<12.2 2.5e16>(";
         rl.state.depth -= 1;
-        let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 10, &namespace, &authoring_meta).unwrap();
         expected_state_nodes.push(Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "opcode".to_owned(),
@@ -565,7 +561,7 @@ mod tests {
 
         let text = "another-opcode(12 0x123abced)";
         rl.state.depth -= 1;
-        let consumed_count = rl.consume(text, 24, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 24, &namespace, &authoring_meta).unwrap();
         expected_state_nodes.push(Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "another-opcode".to_owned(),
@@ -585,7 +581,7 @@ mod tests {
 
         let text = "another-opcode-2<\n  0x1f\n  87>(\n  0xabcef1234\n)";
         rl.state.depth -= 1;
-        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta).unwrap();
         expected_state_nodes.push(Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "another-opcode-2".to_owned(),
@@ -623,7 +619,7 @@ mod tests {
 
         let text = "another-opcode-2<\n  0x1f\n  87.3e2>(\n  0xabcef1234\n)";
         rl.state.depth -= 1;
-        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta).unwrap();
         expected_state_nodes.push(Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "another-opcode-2".to_owned(),
@@ -664,7 +660,7 @@ mod tests {
 
         let text = "another-opcode-2<\n  0x1f\n  8.3e-2>(\n  0xabcef1234\n)";
         rl.state.depth -= 1;
-        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta)?;
+        let consumed_count = rl.consume(text, 77, &namespace, &authoring_meta).unwrap();
         expected_state_nodes.push(Node::Opcode(Opcode {
             opcode: OpcodeDetails {
                 name: "another-opcode-2".to_owned(),
@@ -702,12 +698,10 @@ mod tests {
             "another-opcode-2<\n  0x1f\n  8.3e-2>(".len()
         );
         assert_eq!(rl.state.nodes, expected_state_nodes);
-
-        Ok(())
     }
 
     #[test]
-    fn test_search_namespace_method() -> anyhow::Result<()> {
+    fn test_search_namespace_method() {
         let mut rl = RainlangDocument::new();
         let mut main_namespace: Namespace = HashMap::new();
         let mut deep_namespace: Namespace = HashMap::new();
@@ -779,7 +773,5 @@ mod tests {
             &main_namespace,
         );
         assert_eq!(None, result);
-
-        Ok(())
     }
 }
