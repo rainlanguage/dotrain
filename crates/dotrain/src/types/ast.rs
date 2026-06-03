@@ -220,6 +220,7 @@ pub struct QuoteBindingItem {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 #[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
+#[allow(clippy::large_enum_variant)]
 pub enum BindingItem {
     Elided(ElidedBindingItem),
     Literal(LiteralBindingItem),
@@ -329,6 +330,7 @@ impl NamespaceLeaf {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 #[cfg_attr(feature = "js-api", derive(Tsify), tsify(into_wasm_abi, from_wasm_abi))]
+#[allow(clippy::large_enum_variant)]
 pub enum NamespaceItem {
     Leaf(NamespaceLeaf),
     Node(Namespace),

@@ -449,7 +449,7 @@ mod tests {
             0,
             None,
         );
-        let statements = vec![ParsedItem(
+        let statements = [ParsedItem(
             "0x6518ec1930d8846b093dcff41a6ee6f6352c72b82e48584cce741a9e8a6d6184".to_owned(),
             [17, 83],
         )];
