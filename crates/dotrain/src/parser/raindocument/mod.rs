@@ -787,4 +787,164 @@ _: opcode-1(0xabcd 456);
         };
         assert_eq!(rain_document, expected_rain_document);
     }
+
+    // helper that returns the namespace leaf for a given binding name, panicking
+    // with a helpful message if the key is missing or is a namespace node
+    fn leaf<'a>(namespace: &'a Namespace, name: &str) -> &'a NamespaceLeaf {
+        match namespace.get(name) {
+            Some(item) => item.unwrap_leaf(),
+            None => panic!(
+                "binding `{}` not found in resolved namespace; present keys: {:?}",
+                name,
+                namespace.keys().collect::<Vec<_>>()
+            ),
+        }
+    }
+
+    #[test]
+    fn test_parse_imported_dotrain() {
+        // a dotrain that is imported by another dotrain; its single literal binding
+        // is stored as a DotrainV1 meta in the store keyed by its keccak256 hash
+        let meta_store = Arc::new(RwLock::new(Store::new()));
+        let imported_text = r"---
+#imported-value 0x1234
+";
+        let (imported_hash, _) = meta_store
+            .write()
+            .unwrap()
+            .set_dotrain(imported_text, "imported.rain", false)
+            .unwrap();
+        let imported_hash_hex = alloy_primitives::hex::encode_prefixed(&imported_hash);
+
+        // the importer references the imported dotrain by its hash via the `@` statement
+        // and additionally declares its own binding
+        let text = format!(
+            r"---
+@{imported_hash_hex}
+#own-value 0x5678
+"
+        );
+        let rain_document = RainDocument::create(text, Some(meta_store.clone()), None, None);
+
+        // resolution must succeed without problems, and the single import must be recorded
+        // pointing at the hash that was stored
+        assert_eq!(rain_document.problems, vec![]);
+        assert_eq!(rain_document.imports.len(), 1);
+        assert_eq!(rain_document.imports[0].hash, imported_hash_hex);
+        assert!(rain_document.imports[0].problems.is_empty());
+        // the imported dotrain itself was parsed out and carried in the import sequence
+        let imported_doc = rain_document.imports[0]
+            .sequence
+            .as_ref()
+            .expect("import sequence")
+            .dotrain
+            .as_ref()
+            .expect("imported dotrain");
+        assert_eq!(imported_doc.import_depth, 1);
+
+        // the importer's own binding is in the namespace as an owned leaf (import_index -1)
+        let own = leaf(&rain_document.namespace, "own-value");
+        assert_eq!(own.import_index, -1);
+        assert!(own.is_constant_binding());
+        assert_eq!(own.unwrap_constant_binding(), "0x5678");
+
+        // the imported binding is merged into the root namespace as an imported leaf
+        // (import_index 0, the index of the only import) carrying the import's hash and
+        // the value declared in the imported dotrain, proving the import was resolved and
+        // merged rather than the importer being parsed in isolation
+        let imported = leaf(&rain_document.namespace, "imported-value");
+        assert_eq!(imported.import_index, 0);
+        assert_eq!(imported.hash, imported_hash_hex);
+        assert!(imported.is_constant_binding());
+        assert_eq!(imported.unwrap_constant_binding(), "0x1234");
+    }
+
+    #[test]
+    fn test_parse_nested_imported_dotrain() {
+        // three dotrains chained by import: `inner` is imported by `middle`, and `middle`
+        // is imported by the top-level document. each declares a distinct binding so the
+        // merged namespaces do not collide.
+        let meta_store = Arc::new(RwLock::new(Store::new()));
+
+        let inner_text = r"---
+#inner-value 0x1111
+";
+        let (inner_hash, _) = meta_store
+            .write()
+            .unwrap()
+            .set_dotrain(inner_text, "inner.rain", false)
+            .unwrap();
+        let inner_hash_hex = alloy_primitives::hex::encode_prefixed(&inner_hash);
+
+        // the middle dotrain imports `inner` (nested import) and adds its own binding
+        let middle_text = format!(
+            r"---
+@{inner_hash_hex}
+#middle-value 0x2222
+"
+        );
+        let (middle_hash, _) = meta_store
+            .write()
+            .unwrap()
+            .set_dotrain(&middle_text, "middle.rain", false)
+            .unwrap();
+        let middle_hash_hex = alloy_primitives::hex::encode_prefixed(&middle_hash);
+
+        // the top document imports only `middle`, which in turn imports `inner`
+        let top_text = format!(
+            r"---
+@{middle_hash_hex}
+#top-value 0x3333
+"
+        );
+        let rain_document = RainDocument::create(top_text, Some(meta_store.clone()), None, None);
+
+        // the whole nested chain must resolve cleanly
+        assert_eq!(rain_document.problems, vec![]);
+        assert_eq!(rain_document.imports.len(), 1);
+        assert_eq!(rain_document.imports[0].hash, middle_hash_hex);
+        assert!(rain_document.imports[0].problems.is_empty());
+
+        // the directly imported `middle` dotrain is at depth 1 and itself resolved its
+        // import of `inner`, which sits at depth 2 in the nested import sequence
+        let middle_doc = rain_document.imports[0]
+            .sequence
+            .as_ref()
+            .expect("import sequence")
+            .dotrain
+            .as_ref()
+            .expect("middle dotrain");
+        assert_eq!(middle_doc.import_depth, 1);
+        assert_eq!(middle_doc.imports.len(), 1);
+        assert_eq!(middle_doc.imports[0].hash, inner_hash_hex);
+        let inner_doc = middle_doc.imports[0]
+            .sequence
+            .as_ref()
+            .expect("nested import sequence")
+            .dotrain
+            .as_ref()
+            .expect("inner dotrain");
+        assert_eq!(inner_doc.import_depth, 2);
+
+        // the top document's own binding is an owned leaf
+        let top = leaf(&rain_document.namespace, "top-value");
+        assert_eq!(top.import_index, -1);
+        assert_eq!(top.unwrap_constant_binding(), "0x3333");
+
+        // the directly imported `middle` binding is merged into the top namespace
+        let middle = leaf(&rain_document.namespace, "middle-value");
+        assert_eq!(middle.import_index, 0);
+        assert_eq!(middle.hash, middle_hash_hex);
+        assert_eq!(middle.unwrap_constant_binding(), "0x2222");
+
+        // the transitively imported `inner` binding is also reachable from the top
+        // namespace: because `middle`'s namespace was fully resolved (including its own
+        // import of `inner`) before being merged upward, the innermost binding flattens
+        // all the way to the top document, which is the defining property of nested
+        // import resolution
+        let inner = leaf(&rain_document.namespace, "inner-value");
+        assert_eq!(inner.import_index, 0);
+        assert_eq!(inner.hash, inner_hash_hex);
+        assert_eq!(inner.unwrap_constant_binding(), "0x1111");
+    }
 }
