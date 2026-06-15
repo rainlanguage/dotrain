@@ -8,7 +8,7 @@ use super::{
         types::ast::{Problem, Import, Comment, Binding},
     },
 };
-use serde_wasm_bindgen::{Error, to_value, from_value};
+use serde_wasm_bindgen::{to_value, from_value};
 use wasm_bindgen::{
     JsValue,
     convert::*,
@@ -235,9 +235,8 @@ impl From<Rebind> for JsValue {
     }
 }
 impl TryFromJsValue for Rebind {
-    type Error = Error;
-    fn try_from_js_value(value: JsValue) -> Result<Self, Self::Error> {
-        from_value(value)
+    fn try_from_js_value_ref(value: &JsValue) -> Option<Self> {
+        from_value(value.clone()).ok()
     }
 }
 impl VectorFromWasmAbi for Rebind {

@@ -1,5 +1,5 @@
 use super::ast::*;
-use serde_wasm_bindgen::{Error, to_value, from_value};
+use serde_wasm_bindgen::{to_value, from_value};
 use wasm_bindgen::{
     JsValue,
     convert::*,
@@ -19,9 +19,8 @@ impl From<Problem> for JsValue {
     }
 }
 impl TryFromJsValue for Problem {
-    type Error = Error;
-    fn try_from_js_value(value: JsValue) -> Result<Self, Self::Error> {
-        from_value(value)
+    fn try_from_js_value_ref(value: &JsValue) -> Option<Self> {
+        from_value(value.clone()).ok()
     }
 }
 impl VectorFromWasmAbi for Problem {
@@ -49,9 +48,8 @@ impl From<ParsedItem> for JsValue {
     }
 }
 impl TryFromJsValue for ParsedItem {
-    type Error = Error;
-    fn try_from_js_value(value: JsValue) -> Result<Self, Self::Error> {
-        from_value(value)
+    fn try_from_js_value_ref(value: &JsValue) -> Option<Self> {
+        from_value(value.clone()).ok()
     }
 }
 impl VectorFromWasmAbi for ParsedItem {
@@ -79,9 +77,8 @@ impl From<Comment> for JsValue {
     }
 }
 impl TryFromJsValue for Comment {
-    type Error = Error;
-    fn try_from_js_value(value: JsValue) -> Result<Self, Self::Error> {
-        from_value(value)
+    fn try_from_js_value_ref(value: &JsValue) -> Option<Self> {
+        from_value(value.clone()).ok()
     }
 }
 impl VectorFromWasmAbi for Comment {
@@ -109,9 +106,8 @@ impl From<Import> for JsValue {
     }
 }
 impl TryFromJsValue for Import {
-    type Error = Error;
-    fn try_from_js_value(value: JsValue) -> Result<Self, Self::Error> {
-        from_value(value)
+    fn try_from_js_value_ref(value: &JsValue) -> Option<Self> {
+        from_value(value.clone()).ok()
     }
 }
 impl VectorFromWasmAbi for Import {
@@ -139,9 +135,8 @@ impl From<Binding> for JsValue {
     }
 }
 impl TryFromJsValue for Binding {
-    type Error = Error;
-    fn try_from_js_value(value: JsValue) -> Result<Self, Self::Error> {
-        from_value(value)
+    fn try_from_js_value_ref(value: &JsValue) -> Option<Self> {
+        from_value(value.clone()).ok()
     }
 }
 impl VectorFromWasmAbi for Binding {
@@ -169,9 +164,8 @@ impl From<RainlangSource> for JsValue {
     }
 }
 impl TryFromJsValue for RainlangSource {
-    type Error = Error;
-    fn try_from_js_value(value: JsValue) -> Result<Self, Self::Error> {
-        from_value(value)
+    fn try_from_js_value_ref(value: &JsValue) -> Option<Self> {
+        from_value(value.clone()).ok()
     }
 }
 impl VectorFromWasmAbi for RainlangSource {

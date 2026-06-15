@@ -13,6 +13,7 @@ async function testCompletion(
     position: Position,
     expectedCompletions: CompletionItem[] | null,
     services: RainLanguageServices,
+    unordered = false,
 ) {
     const actualCompletions = services.doComplete(
         TextDocumentItem.create("file:///completion.test.rain", "rainlang", 1, text),
@@ -22,10 +23,23 @@ async function testCompletion(
     if (expectedCompletions === null) assert.ok(actualCompletions === undefined);
     else {
         assert.ok(actualCompletions?.length == expectedCompletions?.length);
-        expectedCompletions.forEach((item, i) => {
-            assert.equal(actualCompletions[i].label, item.label);
-            assert.equal(actualCompletions[i].kind, item.kind);
-        });
+        // Namespace items come from an unordered map, so their suggestion order
+        // is not significant; compare them as a set keyed by label.
+        if (unordered) {
+            const byLabel = (a: CompletionItem, b: CompletionItem) =>
+                a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
+            const actual = [...actualCompletions].sort(byLabel);
+            const expected = [...expectedCompletions].sort(byLabel);
+            expected.forEach((item, i) => {
+                assert.equal(actual[i].label, item.label);
+                assert.equal(actual[i].kind, item.kind);
+            });
+        } else {
+            expectedCompletions.forEach((item, i) => {
+                assert.equal(actualCompletions[i].label, item.label);
+                assert.equal(actualCompletions[i].kind, item.kind);
+            });
+        }
     }
 }
 
@@ -128,6 +142,7 @@ _: .`;
             Position.create(5, 4),
             items.filter((v) => v.label !== "Dispair"),
             services,
+            true,
         );
     });
 
@@ -156,6 +171,7 @@ _: .r`;
             Position.create(5, 5),
             items.filter((v) => v.label !== "Dispair"),
             services,
+            true,
         );
     });
 });
