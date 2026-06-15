@@ -3,23 +3,23 @@ on: [push]
 jobs:
   static:
     uses: rainlanguage/rainix/.github/workflows/rainix-rs-static.yaml@main
+    secrets: inherit
   test:
     uses: rainlanguage/rainix/.github/workflows/rainix-rs-test.yaml@main
+    secrets: inherit
   js-bindings:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: nixbuild/nix-quick-install-action@v30
+      # Shared rainix nix + cachix CI preamble (checkout, nix-quick-install,
+      # Cachix, cache-nix-action) — the pinned action SHAs live once in the
+      # composite, matching every rainix reusable. The build/test/docs commands
+      # below are dotrain-specific flake devShell tasks (npm + wasm-bindgen CLI
+      # over the js-api crate, mocha tests, api-extractor docs), so there is no
+      # rainix reusable workflow that runs them; only the preamble is shared.
+      - uses: rainlanguage/rainix/.github/actions/nix-cachix-setup@main
         with:
-          nix_conf: |
-            keep-env-derivations = true
-            keep-outputs = true
-      - name: Restore and save Nix store
-        uses: nix-community/cache-nix-action@v6
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-          gc-max-store-size-linux: 1G
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - uses: rainlanguage/rainix/.github/actions/rust-cache@main
       - run: nix develop -c build-js-bindings
       - run: nix develop -c test-js-bindings
       - run: nix develop -c js-bindings-docs
