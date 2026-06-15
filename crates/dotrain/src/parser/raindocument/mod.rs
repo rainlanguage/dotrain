@@ -814,7 +814,7 @@ _: opcode-1(0xabcd 456);
             .unwrap()
             .set_dotrain(imported_text, "imported.rain", false)
             .unwrap();
-        let imported_hash_hex = alloy_primitives::hex::encode_prefixed(&imported_hash);
+        let imported_hash_hex = alloy_primitives::hex::encode_prefixed(imported_hash);
 
         // the importer references the imported dotrain by its hash via the `@` statement
         // and additionally declares its own binding
@@ -874,7 +874,7 @@ _: opcode-1(0xabcd 456);
             .unwrap()
             .set_dotrain(inner_text, "inner.rain", false)
             .unwrap();
-        let inner_hash_hex = alloy_primitives::hex::encode_prefixed(&inner_hash);
+        let inner_hash_hex = alloy_primitives::hex::encode_prefixed(inner_hash);
 
         // the middle dotrain imports `inner` (nested import) and adds its own binding
         let middle_text = format!(
@@ -888,7 +888,7 @@ _: opcode-1(0xabcd 456);
             .unwrap()
             .set_dotrain(&middle_text, "middle.rain", false)
             .unwrap();
-        let middle_hash_hex = alloy_primitives::hex::encode_prefixed(&middle_hash);
+        let middle_hash_hex = alloy_primitives::hex::encode_prefixed(middle_hash);
 
         // the top document imports only `middle`, which in turn imports `inner`
         let top_text = format!(
