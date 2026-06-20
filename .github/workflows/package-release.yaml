@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-
 jobs:
   release:
     # Auto-publishes the dotrain crates to crates.io and the @rainlanguage/dotrain
