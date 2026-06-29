@@ -947,4 +947,48 @@ _: opcode-1(0xabcd 456);
         assert_eq!(inner.hash, inner_hash_hex);
         assert_eq!(inner.unwrap_constant_binding(), "0x1111");
     }
+
+    // Mutation-validated: revert the process_binding fix (restore content_text path) and
+    // this test fails because b1's content_position extends through the comment.
+    #[test]
+    fn test_comment_before_binding_excluded_from_previous_content_position() {
+        let store = Store::new();
+        let meta_store = Arc::new(RwLock::new(store));
+
+        // Comment before #b2 must not appear in b1's content or content_position.
+        let text = "---\n#b1\n! elided\n\n/* comment for b2 */\n#b2\n! elided2\n";
+        let rain_document =
+            RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
+
+        let b1 = rain_document
+            .bindings()
+            .iter()
+            .find(|b| b.name == "b1")
+            .expect("binding b1 not found");
+
+        // b1 content must be the elision text only, not including the comment.
+        assert_eq!(b1.content, "! elided");
+
+        // b1 content_position must end at the last char of "! elided", not at the comment.
+        let content_end = b1.content_position[1];
+        let text_at_end = text.get(b1.content_position[0]..content_end).unwrap();
+        assert_eq!(text_at_end, "! elided");
+
+        // The comment text must not appear anywhere inside b1's content_position range.
+        let b1_content_range = text
+            .get(b1.content_position[0]..b1.content_position[1])
+            .unwrap();
+        assert!(
+            !b1_content_range.contains("/*"),
+            "comment leaked into b1 content_position: {b1_content_range:?}"
+        );
+
+        // b2 must also parse correctly.
+        let b2 = rain_document
+            .bindings()
+            .iter()
+            .find(|b| b.name == "b2")
+            .expect("binding b2 not found");
+        assert_eq!(b2.content, "! elided2");
+    }
 }
