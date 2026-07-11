@@ -120,6 +120,7 @@ impl RainDocument {
 
 impl RainDocument {
     /// builds composing targets sourcemaps
+    #[allow(mismatched_lifetime_syntaxes)]
     pub(crate) fn build_targets_sourcemap(
         &self,
         entrypoints: &[&str],

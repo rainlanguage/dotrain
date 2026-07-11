@@ -1,0 +1,16 @@
+name: Package Release
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    # Auto-publishes the dotrain crates to crates.io and the @rainlanguage/dotrain
+    # npm package on every merge to main, version-bumped in lockstep by the shared
+    # rainix-autopublish reusable — the same merge-driven model every other rain repo
+    # uses. Replaces the old manual `workflow_dispatch` release.
+    uses: rainlanguage/rainix/.github/workflows/rainix-autopublish.yaml@main
+    with:
+      crates: dotrain dotrain-lsp
+      npm-package: "@rainlanguage/dotrain"
+    secrets: inherit

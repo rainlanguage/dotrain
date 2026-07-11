@@ -5,7 +5,7 @@
 //! and options while underlying functions handle each scenario
 
 use std::path::PathBuf;
-use clap::{Parser, Subcommand, command};
+use clap::{Parser, Subcommand};
 use crate::parser::{Rebind, parse_cli_key_val};
 
 mod compose;

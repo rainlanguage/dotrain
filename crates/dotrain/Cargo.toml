@@ -9,7 +9,13 @@ repository.workspace = true
 
 [features]
 cli = ["dep:tracing", "dep:tracing-subscriber", "dep:clap", "dep:tokio"]
-js-api = ["dep:js-sys", "dep:wasm-bindgen", "dep:serde-wasm-bindgen", "dep:wasm-bindgen-futures", "dep:tsify"]
+js-api = [
+  "dep:js-sys",
+  "dep:wasm-bindgen",
+  "dep:serde-wasm-bindgen",
+  "dep:wasm-bindgen-futures",
+  "dep:tsify",
+]
 
 [lib]
 name = "dotrain"
@@ -46,7 +52,10 @@ js-sys = { version = "0.3", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 serde-wasm-bindgen = { version = "0.6", optional = true }
 wasm-bindgen-futures = { version = "0.4", optional = true }
-tsify = { version = "0.4", default-features = false, features = ["wasm-bindgen", "js"], optional = true }
+tsify = { version = "0.4", default-features = false, features = [
+  "wasm-bindgen",
+  "js",
+], optional = true }
 
 [lints.clippy]
 all = "warn"
