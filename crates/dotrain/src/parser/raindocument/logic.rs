@@ -784,24 +784,37 @@ impl RainDocument {
             name = slices.0[..slices.0.len() - 1].to_owned();
             name_position = [parsed_binding.1[0], parsed_binding.1[0] + boundry_offset];
 
-            let slices = content_text.split_at(boundry_offset + 1);
-            let trimmed_content = tracked_trim(slices.1);
-            content_position = if trimmed_content.0.is_empty() {
+            let orig_slices = content_text.split_at(boundry_offset + 1);
+            let trimmed_orig = tracked_trim(orig_slices.1);
+            // For content_position start: use leading trim from original text so comments
+            // at the start of a binding's content are preserved (not skipped).
+            // For content_position end: use trailing trim from modified doc (raw_trimmed.2)
+            // so comments before the next #-binding are excluded from this binding.
+            // When the modified content is all whitespace (comment-only binding),
+            // raw_trimmed.2 spans the whole content, which would put the end before
+            // the start; trim the end against the original text instead so the range
+            // stays valid and covers the comment.
+            content_position = if trimmed_orig.0.is_empty() {
                 [
                     parsed_binding.1[0] + boundry_offset + 1,
                     parsed_binding.1[1],
                 ]
             } else {
+                let end_trim = if raw_trimmed.0.is_empty() {
+                    trimmed_orig.2
+                } else {
+                    raw_trimmed.2
+                };
                 [
-                    parsed_binding.1[0] + boundry_offset + 1 + trimmed_content.1,
-                    parsed_binding.1[1] - trimmed_content.2,
+                    parsed_binding.1[0] + boundry_offset + 1 + trimmed_orig.1,
+                    parsed_binding.1[1] - end_trim,
                 ]
             };
-            content = if trimmed_content.0.is_empty() {
-                slices.1.to_owned()
-            } else {
-                trimmed_content.0.to_owned()
-            };
+            content = self
+                .text
+                .get(content_position[0]..content_position[1])
+                .unwrap_or("")
+                .to_owned();
         } else {
             name = parsed_binding.0.clone();
             name_position = parsed_binding.1;
