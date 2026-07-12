@@ -790,15 +790,24 @@ impl RainDocument {
             // at the start of a binding's content are preserved (not skipped).
             // For content_position end: use trailing trim from modified doc (raw_trimmed.2)
             // so comments before the next #-binding are excluded from this binding.
+            // When the modified content is all whitespace (comment-only binding),
+            // raw_trimmed.2 spans the whole content, which would put the end before
+            // the start; trim the end against the original text instead so the range
+            // stays valid and covers the comment.
             content_position = if trimmed_orig.0.is_empty() {
                 [
                     parsed_binding.1[0] + boundry_offset + 1,
                     parsed_binding.1[1],
                 ]
             } else {
+                let end_trim = if raw_trimmed.0.is_empty() {
+                    trimmed_orig.2
+                } else {
+                    raw_trimmed.2
+                };
                 [
                     parsed_binding.1[0] + boundry_offset + 1 + trimmed_orig.1,
-                    parsed_binding.1[1] - raw_trimmed.2,
+                    parsed_binding.1[1] - end_trim,
                 ]
             };
             content = self

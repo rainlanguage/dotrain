@@ -991,4 +991,75 @@ _: opcode-1(0xabcd 456);
             .expect("binding b2 not found");
         assert_eq!(b2.content, "! elided2");
     }
+
+    // Mutation-validated: make the content_position end bound always use the
+    // modified-doc trailing trim (raw_trimmed.2) even for comment-only content and
+    // this test fails because start > end.
+    #[test]
+    fn test_comment_only_binding_content_position_not_inverted() {
+        let meta_store = Arc::new(RwLock::new(Store::new()));
+
+        // Comment-only bindings with leading whitespace: the range must stay valid
+        // (start <= end) and cover the comment.
+        let cases: [(&str, [usize; 2], &str); 4] = [
+            ("---\n#b1\n  /* c */\n#b2\n! e2\n", [10, 17], "/* c */"),
+            ("---\n#b1\n  /* c */\n", [10, 17], "/* c */"),
+            (
+                "---\n#b1\n        /* xxxxx */\n#b2\n! e2\n",
+                [16, 27],
+                "/* xxxxx */",
+            ),
+            ("---\n#b1\n   /* c */", [11, 18], "/* c */"),
+        ];
+        for (text, expected_position, expected_content) in cases {
+            let rain_document =
+                RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
+            let b1 = rain_document
+                .bindings()
+                .iter()
+                .find(|b| b.name == "b1")
+                .expect("binding b1 not found");
+
+            assert!(
+                b1.content_position[0] <= b1.content_position[1],
+                "inverted content_position {:?} for {text:?}",
+                b1.content_position
+            );
+            assert_eq!(b1.content_position, expected_position, "for {text:?}");
+            assert_eq!(b1.content, expected_content, "for {text:?}");
+            assert_eq!(
+                text.get(b1.content_position[0]..b1.content_position[1])
+                    .unwrap(),
+                expected_content,
+                "for {text:?}"
+            );
+        }
+    }
+
+    // Mutation-validated: make the content_position start bound use the modified-doc
+    // leading trim (raw_trimmed.1) instead of the original text's and this test fails
+    // because the doc comment is skipped.
+    #[test]
+    fn test_comment_at_start_of_binding_content_preserved() {
+        let meta_store = Arc::new(RwLock::new(Store::new()));
+
+        // A comment at the start of a binding's own content area belongs to that
+        // binding: it stays inside content and content_position.
+        let text = "---\n#b1\n/* doc */ _: 1;";
+        let rain_document =
+            RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
+        let b1 = rain_document
+            .bindings()
+            .iter()
+            .find(|b| b.name == "b1")
+            .expect("binding b1 not found");
+
+        assert_eq!(b1.content, "/* doc */ _: 1;");
+        assert_eq!(b1.content_position, [8, 23]);
+        assert_eq!(
+            text.get(b1.content_position[0]..b1.content_position[1])
+                .unwrap(),
+            "/* doc */ _: 1;"
+        );
+    }
 }
