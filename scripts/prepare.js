@@ -45,8 +45,8 @@ fs.writeFileSync("./dist/esm/index.d.ts", dts);
 // prepare cjs
 let cjs = fs.readFileSync("./temp/node/dotrain_lsp.js", { encoding: "utf-8" });
 cjs = cjs.replace(
-    `const path = require('path').join(__dirname, 'dotrain_lsp_bg.wasm');
-const bytes = require('fs').readFileSync(path);`,
+    `const wasmPath = \`\${__dirname}/dotrain_lsp_bg.wasm\`;
+const wasmBytes = require('fs').readFileSync(wasmPath);`,
     `
 /**
  * Method to be used as Tagged Templates to activate embedded rainlang in
@@ -70,7 +70,7 @@ module.exports = {
 
 const { Buffer } = require('buffer');
 const wasmB64 = require('../wasm.json');
-const bytes = Buffer.from(wasmB64.wasm, 'base64');`,
+const wasmBytes = Buffer.from(wasmB64.wasm, 'base64');`,
 );
 cjs = cjs.replace("const { TextDecoder, TextEncoder } = require(`util`);", "");
 cjs = "/* this file is auto-generated, do not modify */\n" + cjs;
@@ -107,8 +107,8 @@ import { Buffer } from 'buffer';
 import wasmB64 from '../wasm.json';
 const bytes = Buffer.from(wasmB64.wasm, 'base64');
 
-const wasmModule = new WebAssembly.Module(bytes);
-const wasmInstance = new WebAssembly.Instance(wasmModule, imports);
+wasmModule = new WebAssembly.Module(bytes);
+wasmInstance = new WebAssembly.Instance(wasmModule, imports);
 wasm = wasmInstance.exports;`;
 esm = esm.replaceAll("imports.wbg", "imports.__wbindgen_placeholder__");
 esm = "/* this file is auto-generated, do not modify */\n" + esm;

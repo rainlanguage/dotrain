@@ -14,7 +14,7 @@ js-api = [
   "dep:wasm-bindgen",
   "dep:serde-wasm-bindgen",
   "dep:wasm-bindgen-futures",
-  "dep:tsify"
+  "dep:tsify",
 ]
 
 [lib]
@@ -32,7 +32,10 @@ js-sys = { version = "0.3", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 serde-wasm-bindgen = { version = "0.6", optional = true }
 wasm-bindgen-futures = { version = "0.4", optional = true }
-tsify = { version = "0.4", default-features = false, features = ["js", "wasm-bindgen"], optional = true }
+tsify = { version = "0.4", default-features = false, features = [
+  "js",
+  "wasm-bindgen",
+], optional = true }
 
 [lints.clippy]
 all = "warn"

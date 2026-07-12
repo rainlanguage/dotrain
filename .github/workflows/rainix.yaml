@@ -1,38 +1,25 @@
-name: Rainix CI
+name: rainix-rs
 on: [push]
-
 jobs:
-  rainix:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        task: [rainix-rs-test, rainix-rs-artifacts]
-        include:
-          # We don't need to do rust static analysis on multiple platforms
-          - os: ubuntu-latest
-            task: rainix-rs-static
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-
+  static:
+    uses: rainlanguage/rainix/.github/workflows/rainix-rs-static.yaml@main
+    secrets: inherit
+  test:
+    uses: rainlanguage/rainix/.github/workflows/rainix-rs-test.yaml@main
+    secrets: inherit
+  js-bindings:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Shared rainix nix + cachix CI preamble (checkout, nix-quick-install,
+      # Cachix, cache-nix-action) — the pinned action SHAs live once in the
+      # composite, matching every rainix reusable. The build/test/docs commands
+      # below are dotrain-specific flake devShell tasks (npm + wasm-bindgen CLI
+      # over the js-api crate, mocha tests, api-extractor docs), so there is no
+      # rainix reusable workflow that runs them; only the preamble is shared.
+      - uses: rainlanguage/rainix/.github/actions/nix-cachix-setup@main
         with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - uses: DeterminateSystems/nix-installer-action@v4
-      - uses: DeterminateSystems/magic-nix-cache-action@v2
-
-      - run: nix develop -c rainix-rs-prelude
-
-      - name: Run ${{ matrix.task }}
-        run: nix develop -c ${{ matrix.task }}
-
-      - name: Build JS Bindings
-        run:  nix develop -c build-js-bindings
-      
-      - name: Run JS Tests
-        run:  nix develop -c test-js-bindings
-
-      - name: Test JS Doc Generation
-        run:  nix develop -c js-bindings-docs
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - uses: rainlanguage/rainix/.github/actions/rust-cache@main
+      - run: nix develop -c build-js-bindings
+      - run: nix develop -c test-js-bindings
+      - run: nix develop -c js-bindings-docs
