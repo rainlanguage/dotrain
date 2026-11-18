@@ -947,4 +947,119 @@ _: opcode-1(0xabcd 456);
         assert_eq!(inner.hash, inner_hash_hex);
         assert_eq!(inner.unwrap_constant_binding(), "0x1111");
     }
+
+    // Mutation-validated: revert the process_binding fix (restore content_text path) and
+    // this test fails because b1's content_position extends through the comment.
+    #[test]
+    fn test_comment_before_binding_excluded_from_previous_content_position() {
+        let store = Store::new();
+        let meta_store = Arc::new(RwLock::new(store));
+
+        // Comment before #b2 must not appear in b1's content or content_position.
+        let text = "---\n#b1\n! elided\n\n/* comment for b2 */\n#b2\n! elided2\n";
+        let rain_document =
+            RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
+
+        let b1 = rain_document
+            .bindings()
+            .iter()
+            .find(|b| b.name == "b1")
+            .expect("binding b1 not found");
+
+        // b1 content must be the elision text only, not including the comment.
+        assert_eq!(b1.content, "! elided");
+
+        // b1 content_position must end at the last char of "! elided", not at the comment.
+        let content_end = b1.content_position[1];
+        let text_at_end = text.get(b1.content_position[0]..content_end).unwrap();
+        assert_eq!(text_at_end, "! elided");
+
+        // The comment text must not appear anywhere inside b1's content_position range.
+        let b1_content_range = text
+            .get(b1.content_position[0]..b1.content_position[1])
+            .unwrap();
+        assert!(
+            !b1_content_range.contains("/*"),
+            "comment leaked into b1 content_position: {b1_content_range:?}"
+        );
+
+        // b2 must also parse correctly.
+        let b2 = rain_document
+            .bindings()
+            .iter()
+            .find(|b| b.name == "b2")
+            .expect("binding b2 not found");
+        assert_eq!(b2.content, "! elided2");
+    }
+
+    // Mutation-validated: make the content_position end bound always use the
+    // modified-doc trailing trim (raw_trimmed.2) even for comment-only content and
+    // this test fails because start > end.
+    #[test]
+    fn test_comment_only_binding_content_position_not_inverted() {
+        let meta_store = Arc::new(RwLock::new(Store::new()));
+
+        // Comment-only bindings with leading whitespace: the range must stay valid
+        // (start <= end) and cover the comment.
+        let cases: [(&str, [usize; 2], &str); 4] = [
+            ("---\n#b1\n  /* c */\n#b2\n! e2\n", [10, 17], "/* c */"),
+            ("---\n#b1\n  /* c */\n", [10, 17], "/* c */"),
+            (
+                "---\n#b1\n        /* xxxxx */\n#b2\n! e2\n",
+                [16, 27],
+                "/* xxxxx */",
+            ),
+            ("---\n#b1\n   /* c */", [11, 18], "/* c */"),
+        ];
+        for (text, expected_position, expected_content) in cases {
+            let rain_document =
+                RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
+            let b1 = rain_document
+                .bindings()
+                .iter()
+                .find(|b| b.name == "b1")
+                .expect("binding b1 not found");
+
+            assert!(
+                b1.content_position[0] <= b1.content_position[1],
+                "inverted content_position {:?} for {text:?}",
+                b1.content_position
+            );
+            assert_eq!(b1.content_position, expected_position, "for {text:?}");
+            assert_eq!(b1.content, expected_content, "for {text:?}");
+            assert_eq!(
+                text.get(b1.content_position[0]..b1.content_position[1])
+                    .unwrap(),
+                expected_content,
+                "for {text:?}"
+            );
+        }
+    }
+
+    // Mutation-validated: make the content_position start bound use the modified-doc
+    // leading trim (raw_trimmed.1) instead of the original text's and this test fails
+    // because the doc comment is skipped.
+    #[test]
+    fn test_comment_at_start_of_binding_content_preserved() {
+        let meta_store = Arc::new(RwLock::new(Store::new()));
+
+        // A comment at the start of a binding's own content area belongs to that
+        // binding: it stays inside content and content_position.
+        let text = "---\n#b1\n/* doc */ _: 1;";
+        let rain_document =
+            RainDocument::create(text.to_owned(), Some(meta_store.clone()), None, None);
+        let b1 = rain_document
+            .bindings()
+            .iter()
+            .find(|b| b.name == "b1")
+            .expect("binding b1 not found");
+
+        assert_eq!(b1.content, "/* doc */ _: 1;");
+        assert_eq!(b1.content_position, [8, 23]);
+        assert_eq!(
+            text.get(b1.content_position[0]..b1.content_position[1])
+                .unwrap(),
+            "/* doc */ _: 1;"
+        );
+    }
 }
