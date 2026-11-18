@@ -813,7 +813,7 @@ impl RainDocument {
             content = self
                 .text
                 .get(content_position[0]..content_position[1])
-                .unwrap_or("")
+                .expect("content_position lies on char boundaries inside the binding")
                 .to_owned();
         } else {
             name = parsed_binding.0.clone();
